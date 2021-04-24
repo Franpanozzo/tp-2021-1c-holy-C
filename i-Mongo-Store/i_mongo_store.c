@@ -12,7 +12,7 @@ int main(){
 
 
 		struct sockaddr_in* direccionMiRAM = malloc(sizeof(struct sockaddr_in));
-		direccionMiRAM->sin_addr.s_addr = INADDR_ANY;
+		direccionMiRAM->sin_addr.s_addr = inet_addr("127.0.0.1");
 		direccionMiRAM->sin_port = htons(puerto);
 		direccionMiRAM->sin_family = AF_INET;
 		memset(direccionMiRAM->sin_zero,'\0',8);

@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
 
 	int cliente = socket(AF_INET,SOCK_STREAM,0);
 
-	if(connect(cliente,(void*) &direccionServidor,sizeof(direccionServidor)) != 0){
+	if(connect(cliente, (void *) &direccionServidor,sizeof(direccionServidor)) != 0){
 		perror("No se pudo conectar");
 		return 1;
 	}
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]){
 
 		scanf("%s",mensaje);
 
-		send(cliente,mensaje,strlen(mensaje + 1),0);
+		send(cliente,mensaje,strlen(mensaje) + 1,0);
 	}
 
 	return 0;
