@@ -1,5 +1,5 @@
-#ifndef DISCORDIADOR_H_
-#define DISCORDIADOR_H_
+#ifndef I_MONGO_STORE_H_
+#define I_MONGO_STORE_H_
 
 #include <stdio.h>
 #include <stdlib.h>
