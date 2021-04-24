@@ -5,7 +5,8 @@
 
 int main(){
 	char buffer[TAMANIO_BUFFER];
-	int socketMiRAM,puerto;
+	int socketMiRAM,puerto,socketDiscordiador;
+	unsigned int len = sizeof(struct sockaddr);
 		int yes=1;
 		t_config* MiRAM_Config = config_create("mi_ram_hq.config");
 		puerto = config_get_int_value(MiRAM_Config,"PUERTO");
@@ -31,6 +32,10 @@ int main(){
 		if (listen(socketMiRAM, BACKLOG) == -1) {
 			 perror("listen");
 			 exit(1);
+		}
+
+		if (( socketDiscordiador = accept(socketMiRAM, (struct sockaddr*) direccionMiRAM->sin_addr.s_addr, &len)) == -1) {
+		        perror("accept");
 		}
 		while(1){
 		memset(buffer,'\0',TAMANIO_BUFFER);
