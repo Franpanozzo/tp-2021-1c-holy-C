@@ -4,11 +4,11 @@ int main(int argc, char *argv[]){
 
 	struct sockaddr_in direccionServidor;
 
-	t_config* ipDiscordiador = config_create("config.cfg");
+	t_config* ipDiscordiador = config_create("discordiador.config");
 
 	char *IP = config_get_string_value(ipDiscordiador,"IP_MI_RAM_HQ");
 
-	int *PORT = config_get_int_value(ipDiscordiador,"PUERTO_MI_RAM_HQ");
+	int PORT = config_get_int_value(ipDiscordiador,"PUERTO_MI_RAM_HQ");
 
 	direccionServidor.sin_family = AF_INET;
 	direccionServidor.sin_addr.s_addr = inet_addr(IP);

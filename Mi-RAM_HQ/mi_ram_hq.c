@@ -1,4 +1,4 @@
-#include "Mi-RAM_HQ.h"
+#include "mi_ram_hq.h"
 
 #define TAMANIO_BUFFER 200
 #define BACKLOG 10
@@ -7,9 +7,8 @@ int main(){
 	char buffer[TAMANIO_BUFFER];
 	int socketMiRAM,puerto;
 		int yes=1;
-		t_config* MiRAM_Config = config_create("MiRAM_HQ.config");
-		char* puertoString = config_get_string_value(MiRAM_Config,"PUERTO");
-		puerto = (int) strtol(puertoString,NULL,10);
+		t_config* MiRAM_Config = config_create("mi_ram_hq.config");
+		puerto = config_get_int_value(MiRAM_Config,"PUERTO");
 
 		struct sockaddr_in* direccionMiRAM = malloc(sizeof(struct sockaddr_in));
 		direccionMiRAM->sin_addr.s_addr = INADDR_ANY;
