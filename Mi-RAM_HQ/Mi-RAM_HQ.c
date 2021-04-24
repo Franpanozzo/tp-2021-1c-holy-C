@@ -13,9 +13,9 @@ int main(){
 
 		struct sockaddr_in* direccionMiRAM = malloc(sizeof(struct sockaddr_in));
 		direccionMiRAM->sin_addr.s_addr = INADDR_ANY;
-		direccionMiRAM->sin_port = htoms(puerto);
+		direccionMiRAM->sin_port = htons(puerto);
 		direccionMiRAM->sin_family = AF_INET;
-		memset(direccionMiRAM->sin_zero, '\0', 8);
+		memset(direccionMiRAM->sin_zero,'\0',8);
 
 		if ((socketMiRAM = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		 perror("socket");
@@ -34,10 +34,10 @@ int main(){
 			 exit(1);
 		}
 		while(1){
-		memset(buffer,'/0',TAMANIO_BUFFER);
-		int recv = recv(socketMiRAM,buffer,sizeof(int),MSG_WAITALL);
-			if(recv <= 0){
-				if(recv == -1){
+		memset(buffer,'\0',TAMANIO_BUFFER);
+		int rec = recv(socketMiRAM,buffer,sizeof(int),MSG_WAITALL);
+			if(rec <= 0){
+				if(rec == -1){
 					perror("recv");
 				}
 				close(socketMiRAM);
