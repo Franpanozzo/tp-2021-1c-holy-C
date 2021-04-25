@@ -1,7 +1,8 @@
 #include "discordiador.h"
 
 #define MAX_BUFFER_SIZE  200
-#define PORT 3200
+#define PORTRAM 3200
+#define PORTMONGO 5001
 sem_t sem_conexion;
 pthread_mutex_t mutex_queue;
 int client_socket;
@@ -11,14 +12,14 @@ int main() {
 	pthread_t h1;
 	sem_init(&sem_conexion, 0, 0);
 	pthread_mutex_init(&mutex_queue, NULL);
-	pthread_create(&h1, NULL, (void*) iniciar_conexion, NULL);
+	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) PORTRAM);
 	comunicarse();
 	pthread_join(h1, (void**) NULL);
 
 	return EXIT_SUCCESS;
 }
 
-void iniciar_conexion() {
+void iniciar_conexion(int port) {
 
 	char buffer[MAX_BUFFER_SIZE];
 
@@ -30,7 +31,7 @@ void iniciar_conexion() {
 	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
 
 	serverAddress->sin_addr.s_addr = inet_addr("127.0.0.1");
-	serverAddress->sin_port = htons(PORT);
+	serverAddress->sin_port = htons(port);
 	serverAddress->sin_family = AF_INET;
 
 	if (connect(server_sock, (struct sockaddr*) serverAddress, sizeof(struct sockaddr_in)) == -1) {
