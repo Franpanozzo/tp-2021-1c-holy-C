@@ -14,7 +14,7 @@
 #include <commons/config.h>
 
 
-void iniciar_conexion(int);
+void iniciar_conexion(void*);
 void comunicarse();
 
 #endif /* EJERCICIO10_H_ */

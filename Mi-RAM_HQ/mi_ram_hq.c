@@ -2,7 +2,6 @@
 
 #define MAX_BUFFER_SIZE  200
 sem_t sem_conexion;
-pthread_mutex_t mutex_queue;
 int client_sock;
 
 /*
@@ -13,7 +12,6 @@ int client_sock;
 int main(void) {
 	pthread_t h1;
 	sem_init(&sem_conexion, 0, 0);
-	pthread_mutex_init(&mutex_queue, NULL);
 	pthread_create(&h1, NULL, (void*) iniciar_conexion, NULL);
 	comunicarse();
 	pthread_join(h1, (void**) NULL);
@@ -110,6 +108,7 @@ void comunicarse() {
 
 		if (send(client_sock, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0)
 			close(client_sock);
+		free(mensaje);
 	}
 
 	if (cadena != NULL)

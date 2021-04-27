@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef EJERCICIO10_H_
-#define EJERCICIO10_H_
+#ifndef MI_RAM_HQ_H_
+#define MI_RAM_HQ_H_
 
 #include <stdio.h>
 #include <stdlib.h>

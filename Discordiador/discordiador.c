@@ -2,30 +2,32 @@
 
 #define MAX_BUFFER_SIZE  200
 sem_t sem_conexion;
-pthread_mutex_t mutex_queue;
 int client_socket;
 
 int main() {
 
-	puertoEIP* puertoEIPRAM;
-	puertoEIP* puertoEIPMongo;
+	puertoEIP* puertoEIPRAM = malloc(sizeof(puertoEIP));
+	puertoEIP* puertoEIPMongo = malloc(sizeof(puertoEIP));
 	t_config* config = config_create("./discordiador.config");
+	//char* ip;
 
-
-	puertoEIPRAM->IP = config_get_string_value(config,"IP_MI_RAM_HQ");
 	puertoEIPRAM->puerto = config_get_int_value(config,"PUERTO_MI_RAM_HQ");
+	puertoEIPRAM->IP = strdup(config_get_string_value(config,"IP_MI_RAM_HQ"));
 
-	puertoEIPMongo->IP = config_get_string_value(config,"IP_I_MONGO_STORE");
+	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE"));
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE");
 
 	pthread_t h1;
 	sem_init(&sem_conexion, 0, 0);
-	pthread_mutex_init(&mutex_queue, NULL);
 
 	// Habria que ver como se comunicaria concurrentemente con ambos modulos.
-	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) puertoEIPRAM);
+	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) puertoEIPMongo);
 	comunicarse();
-	pthread_join(h1, (void**) NULL);
+
+	free(puertoEIPRAM->IP);
+	free(puertoEIPRAM);
+	free(puertoEIPMongo->IP);
+	free(puertoEIPMongo);
 
 	return EXIT_SUCCESS;
 }
@@ -50,7 +52,7 @@ void iniciar_conexion(void* port) {
 	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
 
 	serverAddress->sin_addr.s_addr = inet_addr(puertoEIPAConectar->IP);
-	serverAddress->sin_port = htons(puertoEIPAConectar->puerto);
+	serverAddress->sin_port = htons((uint16_t)puertoEIPAConectar->puerto);
 	serverAddress->sin_family = AF_INET;
 
 	if (connect(server_sock, (struct sockaddr*) serverAddress, sizeof(struct sockaddr_in)) == -1) {
@@ -59,6 +61,7 @@ void iniciar_conexion(void* port) {
 
 	client_socket = server_sock;
 	sem_post(&sem_conexion);
+
 
 	while (1) {
 		memset(buffer, '\0', MAX_BUFFER_SIZE);
