@@ -1,37 +1,56 @@
 #include "discordiador.h"
 
 #define MAX_BUFFER_SIZE  200
-#define PORTRAM 3200
-#define PORTMONGO 5001
 sem_t sem_conexion;
 pthread_mutex_t mutex_queue;
 int client_socket;
 
 int main() {
 
+	puertoEIP* puertoEIPRAM;
+	puertoEIP* puertoEIPMongo;
+	t_config* config = config_create("./discordiador.config");
+
+
+	puertoEIPRAM->IP = config_get_string_value(config,"IP_MI_RAM_HQ");
+	puertoEIPRAM->puerto = config_get_int_value(config,"PUERTO_MI_RAM_HQ");
+
+	puertoEIPMongo->IP = config_get_string_value(config,"IP_I_MONGO_STORE");
+	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE");
+
 	pthread_t h1;
 	sem_init(&sem_conexion, 0, 0);
 	pthread_mutex_init(&mutex_queue, NULL);
-	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) PORTRAM);
+
+	// Habria que ver como se comunicaria concurrentemente con ambos modulos.
+	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) puertoEIPRAM);
 	comunicarse();
 	pthread_join(h1, (void**) NULL);
 
 	return EXIT_SUCCESS;
 }
 
-void iniciar_conexion(int port) {
+void iniciar_conexion(void* port) {
 
+	puertoEIP* puertoEIPAConectar = (puertoEIP*) port;
 	char buffer[MAX_BUFFER_SIZE];
+	int server_sock;
 
-	int server_sock = socket(AF_INET, SOCK_STREAM, 0);
+	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+		perror("socket");
+		exit(1);
+	}
 	int yes = 0;
 
-	setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+	if(setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1){
+		perror("setsockopt");
+		exit(1);
+	}
 
 	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
 
-	serverAddress->sin_addr.s_addr = inet_addr("127.0.0.1");
-	serverAddress->sin_port = htons(port);
+	serverAddress->sin_addr.s_addr = inet_addr(puertoEIPAConectar->IP);
+	serverAddress->sin_port = htons(puertoEIPAConectar->puerto);
 	serverAddress->sin_family = AF_INET;
 
 	if (connect(server_sock, (struct sockaddr*) serverAddress, sizeof(struct sockaddr_in)) == -1) {
@@ -84,6 +103,7 @@ void comunicarse() {
 		if (send(client_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0) {
 			close(client_socket);
 		}
+		free(mensaje);
 	}
 
 	if (cadena != NULL)

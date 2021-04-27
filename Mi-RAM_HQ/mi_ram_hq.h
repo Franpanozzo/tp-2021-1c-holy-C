@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include <string.h>
+#include <commons/config.h>
 
 void iniciar_conexion();
 void comunicarse();

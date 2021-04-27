@@ -1,7 +1,6 @@
 #include "mi_ram_hq.h"
 
 #define MAX_BUFFER_SIZE  200
-#define PORT 3200
 sem_t sem_conexion;
 pthread_mutex_t mutex_queue;
 int client_sock;
@@ -24,16 +23,23 @@ int main(void) {
 void iniciar_conexion() {
 
 	char buffer[MAX_BUFFER_SIZE];
-	int server_sock = socket(AF_INET, SOCK_STREAM, 0);
+	int server_sock;
+	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+		perror("socket");
+	}
 	unsigned int len = sizeof(struct sockaddr);
 	int yes = 0;
 	if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
 		perror("setsockopt");
 	}
+
+	t_config* config = config_create("./mi_ram_hq.config");
+	int puerto = config_get_int_value(config,"PUERTO");
+
 	struct sockaddr_in* localAddress = malloc(sizeof(struct sockaddr_in));
 	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
 	localAddress->sin_addr.s_addr = inet_addr("127.0.0.1");
-	localAddress->sin_port = htons(PORT);
+	localAddress->sin_port = htons(puerto);
 	localAddress->sin_family = AF_INET;
 	if (bind(server_sock, (struct sockaddr*) localAddress, (socklen_t) sizeof(struct sockaddr_in)) == -1) {
 		perror("bind");

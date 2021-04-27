@@ -18,3 +18,8 @@ void iniciar_conexion(int);
 void comunicarse();
 
 #endif /* EJERCICIO10_H_ */
+
+typedef struct{
+	char* IP;
+	int puerto;
+} puertoEIP;
