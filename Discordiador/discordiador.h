@@ -16,6 +16,7 @@
 
 void iniciar_conexion(void*);
 void comunicarse();
+t_config* crearConfig();
 
 #endif /* EJERCICIO10_H_ */
 

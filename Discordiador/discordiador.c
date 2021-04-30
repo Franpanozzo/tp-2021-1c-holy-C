@@ -3,12 +3,15 @@
 #define MAX_BUFFER_SIZE  200
 sem_t sem_conexion;
 int client_socket;
+t_config* config;
 
 int main() {
 
 	puertoEIP* puertoEIPRAM = malloc(sizeof(puertoEIP));
 	puertoEIP* puertoEIPMongo = malloc(sizeof(puertoEIP));
-	t_config* config = config_create("./discordiador.config");
+
+	crearConfig();
+
 	//char* ip;
 
 	puertoEIPRAM->puerto = config_get_int_value(config,"PUERTO_MI_RAM_HQ");
@@ -31,6 +34,15 @@ int main() {
 
 	return EXIT_SUCCESS;
 }
+
+t_config* crearConfig(){
+	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
+	if(config == NULL){
+		printf("/nEsta mal la ruta del config negro/n");
+		exit(1);
+		}
+	return config;
+	}
 
 void iniciar_conexion(void* port) {
 
