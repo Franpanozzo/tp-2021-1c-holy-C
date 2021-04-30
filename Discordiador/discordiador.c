@@ -1,31 +1,28 @@
 #include "discordiador.h"
 
 #define MAX_BUFFER_SIZE  200
-sem_t sem_conexion;
-int client_socket;
-t_config* config;
+sem_t sem_conexion; // Variable de tipo semaforo
+int client_socket; // Entero donde se va a almacenar el socket cliente del discordiador
+t_config* config; // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
 
 int main() {
 
-	puertoEIP* puertoEIPRAM = malloc(sizeof(puertoEIP));
-	puertoEIP* puertoEIPMongo = malloc(sizeof(puertoEIP));
+	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
-	crearConfig();
+	puertoEIP* puertoEIPRAM = malloc(sizeof(puertoEIP)); // Reservar memoria para struct Ram
+	puertoEIP* puertoEIPMongo = malloc(sizeof(puertoEIP)); // Reservar memoria para struct Mongo
 
-	//char* ip;
+	puertoEIPRAM->puerto = config_get_int_value(config,"PUERTO_MI_RAM_HQ"); // Asignar puerto tomado desde el config (RAM)
+	puertoEIPRAM->IP = strdup(config_get_string_value(config,"IP_MI_RAM_HQ")); // Asignar IP tomada desde el config (RAM)
 
-	puertoEIPRAM->puerto = config_get_int_value(config,"PUERTO_MI_RAM_HQ");
-	puertoEIPRAM->IP = strdup(config_get_string_value(config,"IP_MI_RAM_HQ"));
+	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE")); // Asignar IP tomada desde el config (Mongo)
+	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE"); // Asignar puerto tomado desde el config (Mongo)
 
-	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE"));
-	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE");
+	pthread_t h1; // Iniciliazar hilo nombrado h1
+	sem_init(&sem_conexion, 0, 0); // Iniciar semaforo
 
-	pthread_t h1;
-	sem_init(&sem_conexion, 0, 0);
-
-	// Habria que ver como se comunicaria concurrentemente con ambos modulos.
-	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) puertoEIPMongo);
-	comunicarse();
+	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) puertoEIPMongo); // Crear hilo con la funcion iniciar_conexion
+	comunicarse(); // Funcion para comunicación tipo chat con la conexión al puerto creado anteriormente
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
@@ -46,19 +43,19 @@ t_config* crearConfig(){
 
 void iniciar_conexion(void* port) {
 
-	puertoEIP* puertoEIPAConectar = (puertoEIP*) port;
-	char buffer[MAX_BUFFER_SIZE];
-	int server_sock;
+	puertoEIP* puertoEIPAConectar = (puertoEIP*) port; // Castear parámetro que recibo por referencia
+	char buffer[MAX_BUFFER_SIZE]; // Reservar buffer de memoria del define que esta al comienzo
+	int server_sock; // Declarar 2 veces??? *
 
 	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("socket");
-		exit(1);
+		exit(1);// *
 	}
 	int yes = 0;
 
 	if(setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1){
 		perror("setsockopt");
-		exit(1);
+		exit(1); // *
 	}
 
 	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
@@ -71,12 +68,12 @@ void iniciar_conexion(void* port) {
 		perror("connect");
 	}
 
-	client_socket = server_sock;
-	sem_post(&sem_conexion);
+	client_socket = server_sock; // *
+	sem_post(&sem_conexion); // Fin semáforo sem_conexion
 
 
 	while (1) {
-		memset(buffer, '\0', MAX_BUFFER_SIZE);
+		memset(buffer, '\0', MAX_BUFFER_SIZE); // Rellena con /0 lo que queda del vector
 		int recvd = recv(client_socket, buffer, sizeof(int), MSG_WAITALL);
 		if (recvd <= 0) {
 			if (recvd == -1) {
@@ -86,7 +83,7 @@ void iniciar_conexion(void* port) {
 			close(client_socket);
 			break;
 		}
-
+		// No entiendo bien porque hace 2 veces esto, o sea, copia a 2 arrays distintos usando memcpy
 		int lenCadena;
 		memcpy(&lenCadena, buffer, sizeof(int));
 		recvd = recv(client_socket, buffer, lenCadena, MSG_WAITALL);
@@ -106,7 +103,7 @@ void iniciar_conexion(void* port) {
 }
 
 void comunicarse() {
-	sem_wait(&sem_conexion);
+	sem_wait(&sem_conexion);// Espera que termine de conectarse para iniciar la función
 	char* cadena = malloc(MAX_BUFFER_SIZE);
 	while (fgets(cadena, MAX_BUFFER_SIZE, stdin) != NULL) {
 		char* mensaje = malloc(sizeof(int) + strlen(cadena) + 1);
