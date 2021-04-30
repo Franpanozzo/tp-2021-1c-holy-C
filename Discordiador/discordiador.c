@@ -2,7 +2,7 @@
 
 #define MAX_BUFFER_SIZE  200
 sem_t sem_conexion; // Variable de tipo semaforo
-int client_socket; // Entero donde se va a almacenar el socket cliente del discordiador
+int discordiador_socket; // Entero donde se va a almacenar el socket cliente del discordiador
 t_config* config; // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
 
 int main() {
@@ -68,31 +68,46 @@ void iniciar_conexion(void* port) {
 		perror("connect");
 	}
 
-	client_socket = server_sock; // *
+	discordiador_socket = server_sock; // *
 	sem_post(&sem_conexion); // Fin semáforo sem_conexion
 
 
 	while (1) {
+		/*
+			 * Para no tener perdida de datos se usa el flag MSG_WAITALL que lo que hace es esperar a que el recv llene el buffer
+			 * Con size bytes. Al poner este flag no se puede hacer que espere MAX_SIZE_BUFFER pq sino hasta que manden
+			 * esa cantidad el recv quedara colgado.
+			 *
+			 * Es por eso que se hace UN UNICO ENVIO con un int y una cadena, consumiendo primero el int que representa
+			 * la cantidad de bytes que se deben recibir en la cadena.
+			 *
+			 * Es importante recalcar que esto no es fraccionar un paquete, ya que se hace un unico envio y este se consume en 2 llamadas.
+			 * Si hicieramos 2 send (uno con el int y otro con la cadena) estaria mal desde el punto de vista de redes ya que habria
+			 * fraccionamiento de paquetes (cuando un paquete es una unidad indivisible que se transmite por la red)
+			 */
 		memset(buffer, '\0', MAX_BUFFER_SIZE); // Rellena con /0 lo que queda del vector
-		int recvd = recv(client_socket, buffer, sizeof(int), MSG_WAITALL);
+
+		int recvd = recv(discordiador_socket, buffer, sizeof(int), MSG_WAITALL);
+
 		if (recvd <= 0) {
 			if (recvd == -1) {
 				perror("recv");
 			}
 
-			close(client_socket);
+			close(discordiador_socket);
 			break;
 		}
-		// No entiendo bien porque hace 2 veces esto, o sea, copia a 2 arrays distintos usando memcpy
 		int lenCadena;
+
 		memcpy(&lenCadena, buffer, sizeof(int));
-		recvd = recv(client_socket, buffer, lenCadena, MSG_WAITALL);
+
+		recvd = recv(discordiador_socket, buffer, lenCadena, MSG_WAITALL);
 		if (recvd <= 0) {
 			if (recvd == -1) {
 				perror("recv");
 			}
 
-			close(client_socket);
+			close(discordiador_socket);
 			break;
 		}
 
@@ -112,8 +127,8 @@ void comunicarse() {
 		memcpy(mensaje, &len, tmpSize = sizeof(int));
 		memcpy(mensaje + tmpSize, cadena, strlen(cadena) + 1);
 
-		if (send(client_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0) {
-			close(client_socket);
+		if (send(discordiador_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0) {
+			close(discordiador_socket);
 		}
 		free(mensaje);
 	}

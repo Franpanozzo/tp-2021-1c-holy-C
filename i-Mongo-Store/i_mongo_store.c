@@ -1,53 +1,65 @@
 #include "i_mongo_store.h"
 
 #define MAX_BUFFER_SIZE  200
-#define PORT 5001
-sem_t sem_conexion;
-pthread_mutex_t mutex_queue;
-int client_sock;
+#define PORT 5001 // Define el nuemero de puerto que va a tener mongo
+sem_t sem_conexion; // Iniciar una variable tipo semaforo
+pthread_mutex_t mutex_queue; // Iniciar mutex (mutua exclusion)
+int ram_socket; // Entero donde se guarda el el valor de accept del socket
 
 /*
  * Para evitar el uso de un socket global, se podria implementar una cola de mensajes
  * entre el hilo que recibe de consola y el hilo de comunicaciones asi este es el unico que se relaciona con el socket
  * Para esto es necesario aplicarle locks al TAD de queue actual.
  */
+
 int main(void) {
-	pthread_t h1;
-	sem_init(&sem_conexion, 0, 0);
-	pthread_mutex_init(&mutex_queue, NULL);
-	pthread_create(&h1, NULL, (void*) iniciar_conexion, NULL);
-	comunicarse();
-	pthread_join(h1, (void**) NULL);
+
+	pthread_t h1; // Crear variable tipo hilo
+
+	sem_init(&sem_conexion, 0, 0); // Iniciar semaforo sem_conexion
+
+	pthread_mutex_init(&mutex_queue, NULL); // Iniciar mutex declarado en las variables globales
+
+	pthread_create(&h1, NULL, (void*) iniciar_conexion, NULL); // Crear hilo con la funcion casteada iniciar_conexion
+
+	comunicarse(); // Hace un chat abierto con el cliente, en este caso Discordiador
+
+	pthread_join(h1, (void**) NULL); // Realiza un orden en los hilos, en este caso, h1
+
 	return EXIT_SUCCESS;
+
 }
 
 void iniciar_conexion() {
 
-	char buffer[MAX_BUFFER_SIZE];
-	int server_sock = socket(AF_INET, SOCK_STREAM, 0);
-	unsigned int len = sizeof(struct sockaddr);
+	char buffer[MAX_BUFFER_SIZE]; // Crea un buffer tipo char con la capacidad del vector de MAX_BUFFER_SIZE
+	int server_sock = socket(AF_INET, SOCK_STREAM, 0);// Crea socket en la variable local server_sock
+	unsigned int len = sizeof(struct sockaddr); // Crea un entero sin signo que almacena la cantidad de bytes que ocupa la estructura sockaddr
 	int yes = 0;
+
 	if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
 		perror("setsockopt");
 	}
-	struct sockaddr_in* localAddress = malloc(sizeof(struct sockaddr_in));
-	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
-	localAddress->sin_addr.s_addr = inet_addr("127.0.0.1");
-	localAddress->sin_port = htons(PORT);
-	localAddress->sin_family = AF_INET;
+	struct sockaddr_in* localAddress = malloc(sizeof(struct sockaddr_in));//*
+	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));//*
+
+	localAddress->sin_addr.s_addr = inet_addr("127.0.0.1");//*
+	localAddress->sin_port = htons(PORT);//*
+	localAddress->sin_family = AF_INET;//*
+
 	if (bind(server_sock, (struct sockaddr*) localAddress, (socklen_t) sizeof(struct sockaddr_in)) == -1) {
-		perror("bind");
+		perror("bind");//*
 	}
 
 	if (listen(server_sock, 10) == -1) {
-		perror("listen");
+		perror("listen");//*
 	}
 
-	if ((client_sock = accept(server_sock, (struct sockaddr*) serverAddress, &len)) == -1) {
-		perror("accept");
+	if ((ram_socket = accept(server_sock, (struct sockaddr*) serverAddress, &len)) == -1) {
+		perror("accept");//*
 	}
 
-	sem_post(&sem_conexion);
+	sem_post(&sem_conexion); // Finalizar semaforo sem_conexion
 
 	while (1) {
 		/*
@@ -63,25 +75,25 @@ void iniciar_conexion() {
 		 * fraccionamiento de paquetes (cuando un paquete es una unidad indivisible que se transmite por la red)
 		 */
 		memset(buffer, '\0', MAX_BUFFER_SIZE);
-		int recvd = recv(client_sock, buffer, sizeof(int), MSG_WAITALL);
+		int recvd = recv(ram_socket, buffer, sizeof(int), MSG_WAITALL);
 		if (recvd <= 0) {
 			if (recvd == -1) {
 				perror("recv");
 			}
 
-			close(client_sock);
+			close(ram_socket);
 			break;
 		}
 
 		int lenCadena;
 		memcpy(&lenCadena, buffer, sizeof(int));
-		recvd = recv(client_sock, buffer, lenCadena, MSG_WAITALL);
+		recvd = recv(ram_socket, buffer, lenCadena, MSG_WAITALL);
 		if (recvd <= 0) {
 			if (recvd == -1) {
 				perror("recv");
 			}
 
-			close(client_sock);
+			close(ram_socket);
 			break;
 		}
 
@@ -93,17 +105,17 @@ void iniciar_conexion() {
 }
 
 void comunicarse() {
-	sem_wait(&sem_conexion);
+	sem_wait(&sem_conexion); // Espera que se conecte para poder comunicarse
 	char* cadena = malloc(MAX_BUFFER_SIZE);
 	while (fgets(cadena, MAX_BUFFER_SIZE, stdin) != NULL) {
 		char* mensaje = malloc(sizeof(int) + strlen(cadena) + 1); //serializamos "on-the fly" un int junto con la cadena para que esta pueda ser de tamaño variable
 		int len = strlen(cadena) + 1;
-		int tmpSize = 0;
-		memcpy(mensaje, &len, tmpSize = sizeof(int));
+		int tmpSize = 0; // MAL
+		memcpy(mensaje, &len, tmpSize = sizeof(int)); // MAL
 		memcpy(mensaje + tmpSize, cadena, strlen(cadena) + 1);
 
-		if (send(client_sock, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0)
-			close(client_sock);
+		if (send(ram_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0)
+			close(ram_socket);
 	}
 
 	if (cadena != NULL)
