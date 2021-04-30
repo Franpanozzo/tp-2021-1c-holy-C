@@ -38,7 +38,7 @@ int main() {
 t_config* crearConfig(){
 	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
 	if(config == NULL){
-		printf("/nEsta mal la ruta del config negro/n");
+		printf("\nEsta mal la ruta del config negro\n");
 		exit(1);
 		}
 	return config;
