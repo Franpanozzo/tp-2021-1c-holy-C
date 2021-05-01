@@ -4,7 +4,7 @@
 #define PORT 5001 // Define el nuemero de puerto que va a tener mongo
 sem_t sem_conexion; // Iniciar una variable tipo semaforo
 pthread_mutex_t mutex_queue; // Iniciar mutex (mutua exclusion)
-int ram_socket; // Entero donde se guarda el el valor de accept del socket
+int discordiador_socket; // Entero donde se guarda el el valor de accept del socket
 
 /*
  * Para evitar el uso de un socket global, se podria implementar una cola de mensajes
@@ -38,25 +38,25 @@ void iniciar_conexion() {
 	int yes = 0;
 
 	if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-		perror("setsockopt");
+		perror("setsockopt"); // exit 1?
 	}
-	struct sockaddr_in* localAddress = malloc(sizeof(struct sockaddr_in));//*
-	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));//*
+	struct sockaddr_in* localAddress = malloc(sizeof(struct sockaddr_in));
+	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
 
-	localAddress->sin_addr.s_addr = inet_addr("127.0.0.1");//*
-	localAddress->sin_port = htons(PORT);//*
-	localAddress->sin_family = AF_INET;//*
+	localAddress->sin_addr.s_addr = inet_addr("127.0.0.1");
+	localAddress->sin_port = htons(PORT);
+	localAddress->sin_family = AF_INET;
 
 	if (bind(server_sock, (struct sockaddr*) localAddress, (socklen_t) sizeof(struct sockaddr_in)) == -1) {
-		perror("bind");//*
+		perror("bind");// exit 1?
 	}
 
 	if (listen(server_sock, 10) == -1) {
-		perror("listen");//*
+		perror("listen");// exit 1?
 	}
 
-	if ((ram_socket = accept(server_sock, (struct sockaddr*) serverAddress, &len)) == -1) {
-		perror("accept");//*
+	if ((discordiador_socket = accept(server_sock, (struct sockaddr*) serverAddress, &len)) == -1) {
+		perror("accept");// exit 1?
 	}
 
 	sem_post(&sem_conexion); // Finalizar semaforo sem_conexion
@@ -75,25 +75,25 @@ void iniciar_conexion() {
 		 * fraccionamiento de paquetes (cuando un paquete es una unidad indivisible que se transmite por la red)
 		 */
 		memset(buffer, '\0', MAX_BUFFER_SIZE);
-		int recvd = recv(ram_socket, buffer, sizeof(int), MSG_WAITALL);
+		int recvd = recv(discordiador_socket, buffer, sizeof(int), MSG_WAITALL);
 		if (recvd <= 0) {
 			if (recvd == -1) {
 				perror("recv");
 			}
 
-			close(ram_socket);
+			close(discordiador_socket);
 			break;
 		}
 
 		int lenCadena;
 		memcpy(&lenCadena, buffer, sizeof(int));
-		recvd = recv(ram_socket, buffer, lenCadena, MSG_WAITALL);
+		recvd = recv(discordiador_socket, buffer, lenCadena, MSG_WAITALL);
 		if (recvd <= 0) {
 			if (recvd == -1) {
 				perror("recv");
 			}
 
-			close(ram_socket);
+			close(discordiador_socket);
 			break;
 		}
 
@@ -110,12 +110,12 @@ void comunicarse() {
 	while (fgets(cadena, MAX_BUFFER_SIZE, stdin) != NULL) {
 		char* mensaje = malloc(sizeof(int) + strlen(cadena) + 1); //serializamos "on-the fly" un int junto con la cadena para que esta pueda ser de tamaño variable
 		int len = strlen(cadena) + 1;
-		int tmpSize = 0; // MAL
-		memcpy(mensaje, &len, tmpSize = sizeof(int)); // MAL
+		int tmpSize = 0;
+		memcpy(mensaje, &len, tmpSize = sizeof(int));
 		memcpy(mensaje + tmpSize, cadena, strlen(cadena) + 1);
 
-		if (send(ram_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0)
-			close(ram_socket);
+		if (send(discordiador_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0)
+			close(discordiador_socket);
 	}
 
 	if (cadena != NULL)

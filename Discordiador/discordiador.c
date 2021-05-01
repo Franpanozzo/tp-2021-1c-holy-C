@@ -2,7 +2,7 @@
 
 #define MAX_BUFFER_SIZE  200
 sem_t sem_conexion; // Variable de tipo semaforo
-int discordiador_socket; // Entero donde se va a almacenar el socket cliente del discordiador
+int server_socket; // Entero donde se va a almacenar el socket cliente del discordiador
 t_config* config; // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
 
 int main() {
@@ -68,7 +68,7 @@ void iniciar_conexion(void* port) {
 		perror("connect");
 	}
 
-	discordiador_socket = server_sock; // *
+	server_socket = server_sock; // *
 	sem_post(&sem_conexion); // Fin semáforo sem_conexion
 
 
@@ -87,27 +87,27 @@ void iniciar_conexion(void* port) {
 			 */
 		memset(buffer, '\0', MAX_BUFFER_SIZE); // Rellena con /0 lo que queda del vector
 
-		int recvd = recv(discordiador_socket, buffer, sizeof(int), MSG_WAITALL);
+		int recvd = recv(server_socket, buffer, sizeof(int), MSG_WAITALL);
 
 		if (recvd <= 0) {
 			if (recvd == -1) {
 				perror("recv");
 			}
 
-			close(discordiador_socket);
+			close(server_socket);
 			break;
 		}
 		int lenCadena;
 
 		memcpy(&lenCadena, buffer, sizeof(int));
 
-		recvd = recv(discordiador_socket, buffer, lenCadena, MSG_WAITALL);
+		recvd = recv(server_socket, buffer, lenCadena, MSG_WAITALL);
 		if (recvd <= 0) {
 			if (recvd == -1) {
 				perror("recv");
 			}
 
-			close(discordiador_socket);
+			close(server_socket);
 			break;
 		}
 
@@ -127,8 +127,8 @@ void comunicarse() {
 		memcpy(mensaje, &len, tmpSize = sizeof(int));
 		memcpy(mensaje + tmpSize, cadena, strlen(cadena) + 1);
 
-		if (send(discordiador_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0) {
-			close(discordiador_socket);
+		if (send(server_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0) {
+			close(server_socket);
 		}
 		free(mensaje);
 	}
