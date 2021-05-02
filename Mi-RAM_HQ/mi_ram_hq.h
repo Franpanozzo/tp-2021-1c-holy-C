@@ -32,5 +32,26 @@
 void iniciar_conexion();
 void comunicarse();
 
+typedef struct {
+    uint32_t size; // Tamaño del payload
+    void* stream; // Payload
+} t_buffer;
 
-#endif /* EJERCICIO10_H_ */
+typedef struct {
+    uint8_t codigo_operacion;
+    t_buffer* buffer;
+} t_paquete;
+
+typedef struct {
+	int longitud;
+	char* contenidoMensaje; //
+} t_mensaje;
+
+typedef enum{
+	STRING = 0,
+	INT = 1
+} tipoDeDato;
+
+
+
+#endif

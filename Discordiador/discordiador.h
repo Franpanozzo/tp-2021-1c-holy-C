@@ -16,7 +16,7 @@
 
 void iniciar_conexion(void*);
 void comunicarse();
-t_config* crearConfig();
+void crearConfig();
 
 #endif /* EJERCICIO10_H_ */
 
@@ -24,3 +24,25 @@ typedef struct{
 	char* IP;
 	int puerto;
 } puertoEIP;
+
+typedef struct {
+    uint32_t size; // Tamaño del payload
+    void* stream; // Payload
+} t_buffer;
+
+typedef struct {
+    uint8_t codigo_operacion;
+    t_buffer* buffer;
+} t_paquete;
+
+typedef struct {
+	int longitud;
+	char* contenidoMensaje; //
+} t_mensaje;
+
+typedef enum{
+	STRING = 0,
+	INT = 1
+} tipoDeDato;
+
+

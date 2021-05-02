@@ -21,8 +21,9 @@ int main() {
 	pthread_t h1; // Iniciliazar hilo nombrado h1
 	sem_init(&sem_conexion, 0, 0); // Iniciar semaforo
 
-	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) puertoEIPMongo); // Crear hilo con la funcion iniciar_conexion
+	pthread_create(&h1, NULL, (void*) iniciar_conexion,(void*) puertoEIPRAM); // Crear hilo con la funcion iniciar_conexion
 	comunicarse(); // Funcion para comunicación tipo chat con la conexión al puerto creado anteriormente
+	pthread_join(h1, (void**) NULL);
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
@@ -32,19 +33,18 @@ int main() {
 	return EXIT_SUCCESS;
 }
 
-t_config* crearConfig(){
+void crearConfig(){
 	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
 	if(config == NULL){
 		printf("\nEsta mal la ruta del config negro\n");
 		exit(1);
 		}
-	return config;
 	}
 
 void iniciar_conexion(void* port) {
 
 	puertoEIP* puertoEIPAConectar = (puertoEIP*) port; // Castear parámetro que recibo por referencia
-	char buffer[MAX_BUFFER_SIZE]; // Reservar buffer de memoria del define que esta al comienzo
+	//char buffer[MAX_BUFFER_SIZE]; // Reservar buffer de memoria del define que esta al comienzo
 	int server_sock; // Declarar 2 veces??? *
 
 	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
@@ -84,7 +84,7 @@ void iniciar_conexion(void* port) {
 			 * Es importante recalcar que esto no es fraccionar un paquete, ya que se hace un unico envio y este se consume en 2 llamadas.
 			 * Si hicieramos 2 send (uno con el int y otro con la cadena) estaria mal desde el punto de vista de redes ya que habria
 			 * fraccionamiento de paquetes (cuando un paquete es una unidad indivisible que se transmite por la red)
-			 */
+
 		memset(buffer, '\0', MAX_BUFFER_SIZE); // Rellena con /0 lo que queda del vector
 
 		int recvd = recv(server_socket, buffer, sizeof(int), MSG_WAITALL);
@@ -112,27 +112,56 @@ void iniciar_conexion(void* port) {
 		}
 
 		printf("Ha recibido del servidor el siguiente mensaje: %s \n", buffer);
+		*/
 	}
 	free(serverAddress);
 
 }
 
 void comunicarse() {
-	sem_wait(&sem_conexion);// Espera que termine de conectarse para iniciar la función
-	char* cadena = malloc(MAX_BUFFER_SIZE);
-	while (fgets(cadena, MAX_BUFFER_SIZE, stdin) != NULL) {
-		char* mensaje = malloc(sizeof(int) + strlen(cadena) + 1);
-		int len = strlen(cadena) + 1;
-		int tmpSize = 0;
-		memcpy(mensaje, &len, tmpSize = sizeof(int));
-		memcpy(mensaje + tmpSize, cadena, strlen(cadena) + 1);
+	sem_wait(&sem_conexion);
 
-		if (send(server_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0) {
-			close(server_socket);
-		}
-		free(mensaje);
+
+	t_mensaje* mensaje = malloc(sizeof(t_mensaje));
+	mensaje->contenidoMensaje = strdup("Juan hace zumbita");
+	mensaje->longitud = strlen(mensaje->contenidoMensaje) + 1;
+
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = sizeof(uint32_t) + mensaje->longitud;
+	buffer->stream = malloc(buffer->size);
+
+	int offset = 0;
+	memcpy(buffer->stream, &(mensaje->longitud) , sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(buffer->stream + offset, mensaje->contenidoMensaje, mensaje->longitud);
+
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = STRING;
+	paquete->buffer = buffer;
+
+	//Empieza la parte de meter to:do en bloque de bytes
+
+	void* a_enviar = malloc(sizeof(uint8_t) + sizeof(paquete->buffer->size) + paquete->buffer->size);
+
+	offset = 0;
+	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
+
+
+	if(send(server_socket,a_enviar, sizeof(uint8_t) + sizeof(paquete->buffer->size) + paquete->buffer->size, 0) == -1){
+		perror("send");
+		exit(1);
 	}
 
-	if (cadena != NULL)
-		free(cadena);
+	free(mensaje->contenidoMensaje);
+	free(mensaje);
+	free(a_enviar);
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
+
+	close(server_socket);
 }

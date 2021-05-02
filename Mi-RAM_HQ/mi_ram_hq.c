@@ -22,7 +22,7 @@ int main(void) {
 
 	pthread_create(&h1, NULL, (void*) iniciar_conexion, NULL); // Crear hilo con la funcion casteada iniciar_conexion
 
-	comunicarse(); // Hace un chat abierto con el cliente, en este caso Discordiador
+	//comunicarse(); // Hace un chat abierto con el cliente, en este caso Discordiador
 
 	pthread_join(h1, (void**) NULL); // Realiza un orden en los hilos, en este caso, h1
 
@@ -31,8 +31,7 @@ int main(void) {
 }
 
 void iniciar_conexion() {
-
-	char buffer[MAX_BUFFER_SIZE]; // Crea un buffer tipo char con la capacidad del vector de MAX_BUFFER_SIZE
+	// Crea un buffer tipo char con la capacidad del vector de MAX_BUFFER_SIZE
 	int server_sock = socket(AF_INET, SOCK_STREAM, 0);// Crea socket en la variable local server_sock
 	unsigned int len = sizeof(struct sockaddr); // Crea un entero sin signo que almacena la cantidad de bytes que ocupa la estructura sockaddr
 	int yes = 0;
@@ -62,49 +61,67 @@ void iniciar_conexion() {
 	sem_post(&sem_conexion); // Finalizar semaforo sem_conexion
 
 	while (1) {
-		/*
-		 * Para no tener perdida de datos se usa el flag MSG_WAITALL que lo que hace es esperar a que el recv llene el buffer
-		 * Con size bytes. Al poner este flag no se puede hacer que espere MAX_SIZE_BUFFER pq sino hasta que manden
-		 * esa cantidad el recv quedara colgado.
-		 *
-		 * Es por eso que se hace UN UNICO ENVIO con un int y una cadena, consumiendo primero el int que representa
-		 * la cantidad de bytes que se deben recibir en la cadena.
-		 *
-		 * Es importante recalcar que esto no es fraccionar un paquete, ya que se hace un unico envio y este se consume en 2 llamadas.
-		 * Si hicieramos 2 send (uno con el int y otro con la cadena) estaria mal desde el punto de vista de redes ya que habria
-		 * fraccionamiento de paquetes (cuando un paquete es una unidad indivisible que se transmite por la red)
-		 */
-		memset(buffer, '\0', MAX_BUFFER_SIZE);
-		int recvd = recv(discordiador_socket, buffer, sizeof(int), MSG_WAITALL);
-		if (recvd <= 0) {
-			if (recvd == -1) {
+
+		t_paquete* paquete = malloc(sizeof(t_paquete));
+		paquete->buffer = malloc(sizeof(t_buffer));
+
+		int recvd = recv(discordiador_socket, &(paquete->codigo_operacion), sizeof(uint8_t), MSG_WAITALL);
+		if(recvd <= 0){
+			if(recvd == -1){
 				perror("recv");
 			}
-
 			close(discordiador_socket);
-			break;
 		}
 
-		int lenCadena;
-		memcpy(&lenCadena, buffer, sizeof(int));
-		recvd = recv(discordiador_socket, buffer, lenCadena, MSG_WAITALL);
-		if (recvd <= 0) {
-			if (recvd == -1) {
+		recvd = recv(discordiador_socket, &(paquete->buffer->size), sizeof(uint32_t), MSG_WAITALL);
+		if(recvd <= 0){
+			if(recvd == -1){
 				perror("recv");
 			}
-
 			close(discordiador_socket);
-			break;
 		}
 
-		printf("Ha recibido del cliente el siguiente mensaje: %s  \n", buffer);
+		paquete->buffer->stream = malloc(paquete->buffer->size);
+		recvd = recv(discordiador_socket, paquete->buffer->stream, paquete->buffer->size, MSG_WAITALL);
+		if(recvd <= 0){
+			if(recvd == -1){
+				perror("recv");
+			}
+			close(discordiador_socket);
+		}
+
+		int offset = 0;
+		void* stream = paquete->buffer->stream;
+		tipoDeDato codigoDeOp;
+		memcpy(&codigoDeOp, stream, sizeof(uint8_t));
+		stream += sizeof(uint8_t);
+
+		//Aca llamariamos a la funcion deserializar segun codOperacion
+
+		char* mensajeRecibido;
+		int longitud;
+
+		memcpy(&longitud, stream, sizeof(int));
+		offset += sizeof(int);
+		mensajeRecibido = malloc(longitud);
+		memcpy(mensajeRecibido, stream + offset, longitud);
+
+
+		printf("Recibi de la conexion el siguiente mensaje: %s", mensajeRecibido);
+
+		free(paquete->buffer->stream);
+		free(paquete->buffer);
+		free(paquete);
+
 	}
 
 	free(serverAddress);
 	free(localAddress);
+	close(discordiador_socket);
 }
 
 void comunicarse() {
+	/*
 	sem_wait(&sem_conexion); // Espera que se conecte para poder comunicarse
 	char* cadena = malloc(MAX_BUFFER_SIZE);
 	while (fgets(cadena, MAX_BUFFER_SIZE, stdin) != NULL) {
@@ -120,4 +137,5 @@ void comunicarse() {
 
 	if (cadena != NULL)
 		free(cadena);
+		*/
 }
