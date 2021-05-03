@@ -1,6 +1,7 @@
 #ifndef EJERCICIO10_H_
 #define EJERCICIO10_H_
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -12,12 +13,6 @@
 #include <sys/select.h>
 #include <memory.h>
 #include <commons/config.h>
-
-
-void iniciar_conexion(void*);
-
-void crearConfig();
-
 
 
 typedef struct{
@@ -47,6 +42,12 @@ typedef enum{
 	PERSONA
 } tipoDeDato;
 
-void comunicarse(t_persona);
 
-#endif /* EJERCICIO10_H_ */
+void crearConfig();
+void iniciarConexionCon(void*);
+void enviarPaquete(t_persona);
+t_persona* deserializar_persona(t_buffer*);
+void recibirPaquete();
+
+
+#endif

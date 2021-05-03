@@ -2,39 +2,34 @@
 
 #define MAX_BUFFER_SIZE  200
 #define PORT 3222 // Define el nuemero de puerto que va a tener mongo
-sem_t sem_conexion; // Iniciar una variable tipo semaforo
-pthread_mutex_t mutex_queue; // Iniciar mutex (mutua exclusion)
 int discordiador_socket; // Entero donde se guarda el el valor de accept del socket
-t_persona* persona;
+t_persona paraEnviar;
+t_persona*  paraRecibir;
 t_buffer* buffer;
-/*
- * Para evitar el uso de un socket global, se podria implementar una cola de mensajes
- * entre el hilo que recibe de consola y el hilo de comunicaciones asi este es el unico que se relaciona con el socket
- * Para esto es necesario aplicarle locks al TAD de queue actual.
- */
+
 
 int main(void) {
 
-	pthread_t h1; // Crear variable tipo hilo
+	paraEnviar.dni = 88;
+	paraEnviar.edad = 33;
+	paraEnviar.nombre = "Mr. Lacteo";
+	paraEnviar.nombre_length = strlen(paraEnviar.nombre) + 1;
+	paraEnviar.pasaporte = 8888881;
 
-	sem_init(&sem_conexion, 0, 0); // Iniciar semaforo sem_conexion
+	iniciarConexion();
+	enviarPaquete(paraEnviar);
 
-	pthread_mutex_init(&mutex_queue, NULL); // Iniciar mutex declarado en las variables globales
+	//printf("Si tuvimos exito se va a leer algo a continuacion: %d",paraRecibir->dni);
 
-	pthread_create(&h1, NULL, (void*) iniciar_conexion, NULL); // Crear hilo con la funcion casteada iniciar_conexion
-
-	//comunicarse(); // Hace un chat abierto con el cliente, en este caso Discordiador
-
-	pthread_join(h1, (void**) NULL); // Realiza un orden en los hilos, en este caso, h1
-
-	printf("Si tuvimos exito se va a leer algo a continuacion: %d",persona->dni);
+	close(discordiador_socket);
 
 	return EXIT_SUCCESS;
 
 }
 
-void iniciar_conexion() {
-	// Crea un buffer tipo char con la capacidad del vector de MAX_BUFFER_SIZE
+
+void iniciarConexion() {
+
 	int server_sock = socket(AF_INET, SOCK_STREAM, 0);// Crea socket en la variable local server_sock
 	unsigned int len = sizeof(struct sockaddr); // Crea un entero sin signo que almacena la cantidad de bytes que ocupa la estructura sockaddr
 	int yes = 1;
@@ -62,9 +57,15 @@ void iniciar_conexion() {
 		perror("accept");
 	}
 
-	sem_post(&sem_conexion); // Finalizar semaforo sem_conexion
+	free(serverAddress);
+	free(localAddress);
 
-	t_paquete* paquete = malloc(sizeof(t_paquete));
+}
+
+
+void recibirPaquete(){
+
+t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
 
 	recv(discordiador_socket, &(paquete->codigo_operacion), sizeof(uint8_t), 0);
@@ -75,7 +76,7 @@ void iniciar_conexion() {
 
 	switch(paquete->codigo_operacion) {
 		case PERSONA:
-			persona = deserializar_persona(paquete->buffer);
+			paraRecibir = deserializar_persona(paquete->buffer);
 								break;
 		default:
 				break;
@@ -84,15 +85,8 @@ void iniciar_conexion() {
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);
-
-
-
-
-	free(serverAddress);
-	free(localAddress);
-	close(discordiador_socket);
-
 }
+
 
 t_persona* deserializar_persona(t_buffer* buffer) {
 
@@ -112,5 +106,51 @@ t_persona* deserializar_persona(t_buffer* buffer) {
 	memcpy(persona->nombre, stream, persona->nombre_length);
 
 	return persona;
+}
+
+
+void enviarPaquete(t_persona persona) {
+
+	int offset = 0;
+
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona.nombre) + 1; // La longitud del string nombre.
+
+	void* stream = malloc(buffer->size);
+
+	memcpy(stream + offset, &persona.dni, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &persona.edad, sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	memcpy(stream + offset, &persona.pasaporte, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &persona.nombre_length, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, persona.nombre, strlen(persona.nombre) + 1);
+
+	buffer->stream = stream;
+
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = PERSONA;
+	paquete->buffer = buffer;
+
+	void* a_enviar = malloc(buffer->size + sizeof(uint8_t) + sizeof(uint32_t));
+
+	offset = 0;
+
+	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
+
+	send(discordiador_socket, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t),
+	0);
+
+
+	free(a_enviar);
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
 }
 
