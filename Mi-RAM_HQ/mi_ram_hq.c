@@ -5,7 +5,8 @@
 sem_t sem_conexion; // Iniciar una variable tipo semaforo
 pthread_mutex_t mutex_queue; // Iniciar mutex (mutua exclusion)
 int discordiador_socket; // Entero donde se guarda el el valor de accept del socket
-
+t_persona* persona;
+t_buffer* buffer;
 /*
  * Para evitar el uso de un socket global, se podria implementar una cola de mensajes
  * entre el hilo que recibe de consola y el hilo de comunicaciones asi este es el unico que se relaciona con el socket
@@ -26,6 +27,8 @@ int main(void) {
 
 	pthread_join(h1, (void**) NULL); // Realiza un orden en los hilos, en este caso, h1
 
+	printf("Si tuvimos exito se va a leer algo a continuacion: %d",persona->dni);
+
 	return EXIT_SUCCESS;
 
 }
@@ -34,7 +37,8 @@ void iniciar_conexion() {
 	// Crea un buffer tipo char con la capacidad del vector de MAX_BUFFER_SIZE
 	int server_sock = socket(AF_INET, SOCK_STREAM, 0);// Crea socket en la variable local server_sock
 	unsigned int len = sizeof(struct sockaddr); // Crea un entero sin signo que almacena la cantidad de bytes que ocupa la estructura sockaddr
-	int yes = 0;
+	int yes = 1;
+
 
 	if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
 		perror("setsockopt");
@@ -60,82 +64,53 @@ void iniciar_conexion() {
 
 	sem_post(&sem_conexion); // Finalizar semaforo sem_conexion
 
-	while (1) {
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
 
-		t_paquete* paquete = malloc(sizeof(t_paquete));
-		paquete->buffer = malloc(sizeof(t_buffer));
+	recv(discordiador_socket, &(paquete->codigo_operacion), sizeof(uint8_t), 0);
 
-		int recvd = recv(discordiador_socket, &(paquete->codigo_operacion), sizeof(uint8_t), MSG_WAITALL);
-		if(recvd <= 0){
-			if(recvd == -1){
-				perror("recv");
-			}
-			close(discordiador_socket);
-		}
+	recv(discordiador_socket, &(paquete->buffer->size), sizeof(uint32_t), 0);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+	recv(discordiador_socket, paquete->buffer->stream, paquete->buffer->size, 0);
 
-		recvd = recv(discordiador_socket, &(paquete->buffer->size), sizeof(uint32_t), MSG_WAITALL);
-		if(recvd <= 0){
-			if(recvd == -1){
-				perror("recv");
-			}
-			close(discordiador_socket);
-		}
-
-		paquete->buffer->stream = malloc(paquete->buffer->size);
-		recvd = recv(discordiador_socket, paquete->buffer->stream, paquete->buffer->size, MSG_WAITALL);
-		if(recvd <= 0){
-			if(recvd == -1){
-				perror("recv");
-			}
-			close(discordiador_socket);
-		}
-
-		int offset = 0;
-		void* stream = paquete->buffer->stream;
-		tipoDeDato codigoDeOp;
-		memcpy(&codigoDeOp, stream, sizeof(uint8_t));
-		stream += sizeof(uint8_t);
-
-		//Aca llamariamos a la funcion deserializar segun codOperacion
-
-		char* mensajeRecibido;
-		int longitud;
-
-		memcpy(&longitud, stream, sizeof(int));
-		offset += sizeof(int);
-		mensajeRecibido = malloc(longitud);
-		memcpy(mensajeRecibido, stream + offset, longitud);
-
-
-		printf("Recibi de la conexion el siguiente mensaje: %s", mensajeRecibido);
-
-		free(paquete->buffer->stream);
-		free(paquete->buffer);
-		free(paquete);
-
+	switch(paquete->codigo_operacion) {
+		case PERSONA:
+			persona = deserializar_persona(paquete->buffer);
+								break;
+		default:
+				break;
 	}
+
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
+
+
+
 
 	free(serverAddress);
 	free(localAddress);
 	close(discordiador_socket);
+
 }
 
-void comunicarse() {
-	/*
-	sem_wait(&sem_conexion); // Espera que se conecte para poder comunicarse
-	char* cadena = malloc(MAX_BUFFER_SIZE);
-	while (fgets(cadena, MAX_BUFFER_SIZE, stdin) != NULL) {
-		char* mensaje = malloc(sizeof(int) + strlen(cadena) + 1); //serializamos "on-the fly" un int junto con la cadena para que esta pueda ser de tamaño variable
-		int len = strlen(cadena) + 1;
-		int tmpSize = 0;
-		memcpy(mensaje, &len, tmpSize = sizeof(int));
-		memcpy(mensaje + tmpSize, cadena, strlen(cadena) + 1);
+t_persona* deserializar_persona(t_buffer* buffer) {
 
-		if (send(discordiador_socket, mensaje, len + tmpSize, MSG_NOSIGNAL) <= 0)
-			close(discordiador_socket);
-	}
+	t_persona* persona = malloc(sizeof(t_persona));
 
-	if (cadena != NULL)
-		free(cadena);
-		*/
+	void* stream = buffer->stream;
+
+	memcpy(&(persona->dni), stream, sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	memcpy(&(persona->edad), stream, sizeof(uint8_t));
+	stream += sizeof(uint8_t);
+	memcpy(&(persona->pasaporte), stream, sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	memcpy(&(persona->nombre_length), stream, sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	persona->nombre = malloc(persona->nombre_length);
+	memcpy(persona->nombre, stream, persona->nombre_length);
+
+	return persona;
 }
+

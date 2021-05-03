@@ -32,6 +32,7 @@
 void iniciar_conexion();
 void comunicarse();
 
+
 typedef struct {
     uint32_t size; // Tamaño del payload
     void* stream; // Payload
@@ -43,15 +44,17 @@ typedef struct {
 } t_paquete;
 
 typedef struct {
-	int longitud;
-	char* contenidoMensaje; //
-} t_mensaje;
+	uint32_t dni;
+	uint8_t edad;
+	uint32_t pasaporte;
+	uint32_t nombre_length;
+	char* nombre;
+} t_persona;
 
 typedef enum{
-	STRING = 0,
-	INT = 1
+	PERSONA
 } tipoDeDato;
 
-
+t_persona* deserializar_persona(t_buffer*);
 
 #endif
