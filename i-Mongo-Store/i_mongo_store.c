@@ -1,4 +1,5 @@
 #include "i_mongo_store.h"
+#include <bibliotecas_nuestras.h>
 
 #define MAX_BUFFER_SIZE  200
 #define PORT 5001 // Define el nuemero de puerto que va a tener mongo

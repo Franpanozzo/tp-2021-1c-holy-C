@@ -1,4 +1,5 @@
 #include "discordiador.h"
+#include <bibliotecas_nuestras.h>
 
 #define MAX_BUFFER_SIZE  200
 int server_socket; // Entero donde se va a almacenar el socket cliente del discordiador

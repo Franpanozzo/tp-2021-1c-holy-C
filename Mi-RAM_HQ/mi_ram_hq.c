@@ -1,4 +1,5 @@
 #include "mi_ram_hq.h"
+#include <bibliotecas_nuestras.h>
 
 #define MAX_BUFFER_SIZE  200
 #define PORT 3222 // Define el nuemero de puerto que va a tener mongo
