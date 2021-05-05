@@ -15,13 +15,17 @@
 #include <commons/config.h>
 
 
+typedef enum{
+	PERSONA
+} tipoDeDato;
+
 typedef struct {
     uint32_t size; // Tamaño del payload
     void* stream; // Payload
 } t_buffer;
 
 typedef struct {
-    uint8_t codigo_operacion;
+    tipoDeDato codigo_operacion;
     t_buffer* buffer;
 } t_paquete;
 
@@ -33,9 +37,6 @@ typedef struct {
 	char* nombre;
 } t_persona;
 
-typedef enum{
-	PERSONA
-} tipoDeDato;
 
 t_persona* deserializar_persona(t_buffer*);
 void iniciarConexion();

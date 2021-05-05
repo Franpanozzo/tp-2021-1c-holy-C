@@ -112,17 +112,17 @@ void enviarPaquete(t_persona persona) {
 	paquete->codigo_operacion = PERSONA;
 	paquete->buffer = buffer;
 
-	void* a_enviar = malloc(buffer->size + sizeof(uint8_t) + sizeof(uint32_t));
+	void* a_enviar = malloc(buffer->size + sizeof(tipoDeDato) + sizeof(uint32_t));
 
 	offset = 0;
 
-	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
-	offset += sizeof(uint8_t);
+	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(tipoDeDato));
+	offset += sizeof(tipoDeDato);
 	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
 
-	send(server_socket, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t),
+	send(server_socket, a_enviar, buffer->size + sizeof(tipoDeDato) + sizeof(uint32_t),
 	0);
 
 
@@ -137,7 +137,7 @@ void recibirPaquete(){
 t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
 
-	recv(server_socket, &(paquete->codigo_operacion), sizeof(uint8_t), 0);
+	recv(server_socket, &(paquete->codigo_operacion), sizeof(tipoDeDato), 0);
 
 	recv(server_socket, &(paquete->buffer->size), sizeof(uint32_t), 0);
 	paquete->buffer->stream = malloc(paquete->buffer->size);

@@ -15,6 +15,10 @@
 #include <commons/config.h>
 
 
+typedef enum{
+	PERSONA
+} tipoDeDato;
+
 typedef struct{
 	char* IP;
 	int puerto;
@@ -26,7 +30,7 @@ typedef struct {
 } t_buffer;
 
 typedef struct {
-    uint8_t codigo_operacion;
+    tipoDeDato codigo_operacion;
     t_buffer* buffer;
 } t_paquete;
 
@@ -37,10 +41,6 @@ typedef struct {
 	uint32_t nombre_length;
 	char* nombre;
 } t_persona;
-
-typedef enum{
-	PERSONA
-} tipoDeDato;
 
 
 void crearConfig();
