@@ -1,12 +1,12 @@
 #include "discordiador.h"
 #include <bibliotecas_nuestras.h>
 
+
 #define MAX_BUFFER_SIZE  200
 int server_socket; // Entero donde se va a almacenar el socket cliente del discordiador
 t_config* config; // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
 t_persona*  paraRecibir;
 t_persona paraEnviar;
-
 
 
 int main() {
@@ -34,12 +34,11 @@ int main() {
 
 	iniciarConexionCon(puertoEIPMongo);
 
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete = armarPaqueteCon(cosaQsePuedeMandar,PERSONA);
+	t_paquete* paquete = armarPaqueteCon(cosaQsePuedeMandar,PERSONA);
 	enviarPaquete(paquete);
 
 	//printf("Si tuvimos exito se va a leer algo a continuacion: %d",paraRecibir->dni);
-
+	free(cosa);
 	close(server_socket);
 	//eliminarPaquete(paquete);
 	free(puertoEIPRAM->IP);
@@ -93,14 +92,19 @@ void iniciarConexionCon(void* port){ //Este iniciarConexionCon lleva parametro p
 	free(serverAddress);
 
 }
+
+
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
-	t_persona* persona = malloc(sizeof(t_persona));
+	t_persona* persona;
+
 
 	switch(cod_op){
 		case PERSONA:
 					persona = (void*) estructura;
-					return sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
+					return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
+
+
 		default:
 				printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
 				exit(1);
@@ -108,9 +112,10 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 }
 
+
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
-	t_persona* persona = malloc(sizeof(t_persona));
+	t_persona* persona;
 
 	void* stream = malloc(tamanio);
 
@@ -131,10 +136,6 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
 				return stream;
 
-				free(persona->nombre);
-				free(persona);
-				break;
-
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
 				exit(1);
@@ -145,8 +146,7 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
 t_paquete* armarPaqueteCon(void* estructura,tipoDeDato cod_op){
 
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete = crearPaquete(cod_op);
+	t_paquete* paquete = crearPaquete(cod_op);
 	paquete->buffer->size = tamanioEstructura(estructura,paquete->codigo_operacion);
 	paquete->buffer->stream = serializarEstructura(estructura,paquete->buffer->size,paquete->codigo_operacion);
 
@@ -154,28 +154,18 @@ t_paquete* armarPaqueteCon(void* estructura,tipoDeDato cod_op){
 
 }
 
+
 void enviarPaquete(t_paquete* paquete) {
 	int tamanioTotal = paquete->buffer->size + sizeof(tipoDeDato) + sizeof(uint32_t);
 	void* a_enviar = serializarPaquete(paquete,tamanioTotal);
 	send(server_socket, a_enviar, tamanioTotal,
 	0);
 
-
 	free(a_enviar);
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
+	eliminarPaquete(paquete);
 }
-/*
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
-{
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio);
 
-	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
 
-	paquete->buffer->size += tamanio;
-}
-*/
 void recibirPaquete(){
 t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -194,9 +184,7 @@ t_paquete* paquete = malloc(sizeof(t_paquete));
 				break;
 	}
 
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
+	eliminarPaquete(paquete);
 }
 
 
@@ -219,6 +207,7 @@ t_persona* deserializarPersona(t_buffer* buffer) {
 
 	return persona;
 }
+
 
 void* serializarPaquete(t_paquete* paquete, int bytes)
 {
@@ -259,6 +248,7 @@ void eliminarPaquete(t_paquete* paquete)
 	free(paquete->buffer);
 	free(paquete);
 }
+
 
 void liberarConexion(int socket_cliente)
 {
