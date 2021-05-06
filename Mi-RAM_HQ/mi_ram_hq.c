@@ -77,7 +77,7 @@ t_paquete* paquete = malloc(sizeof(t_paquete));
 
 	switch(paquete->codigo_operacion) {
 		case PERSONA:
-			paraRecibir = deserializar_persona(paquete->buffer);
+			paraRecibir = deserializarPersona(paquete->buffer);
 								break;
 		default:
 				break;
@@ -89,7 +89,7 @@ t_paquete* paquete = malloc(sizeof(t_paquete));
 }
 
 
-t_persona* deserializar_persona(t_buffer* buffer) {
+t_persona* deserializarPersona(t_buffer* buffer) {
 
 	t_persona* persona = malloc(sizeof(t_persona));
 

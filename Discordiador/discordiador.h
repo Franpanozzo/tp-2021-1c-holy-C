@@ -45,9 +45,19 @@ typedef struct {
 
 void crearConfig();
 void iniciarConexionCon(void*);
-void enviarPaquete(t_persona);
-t_persona* deserializar_persona(t_buffer*);
+t_persona* deserializarPersona(t_buffer*);
 void recibirPaquete();
+void* serializarPaquete(t_paquete*, int);
+void crearBuffer(t_paquete*);
+t_paquete* crearPaquete(tipoDeDato);
+void agregar_a_paquete(t_paquete*,void*,int);
+void enviar_paquete(t_paquete*, int);
+void eliminarPaquete(t_paquete*);
+void liberarConexion(int);
+int tamanioEstructura(void*,tipoDeDato);
+void* serializarEstructura(void* ,int,tipoDeDato );
+t_paquete* armarPaqueteCon(void*,tipoDeDato);
+void enviarPaquete(t_paquete*);
 
 
 #endif

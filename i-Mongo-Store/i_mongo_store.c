@@ -18,9 +18,9 @@ int main(void) {
 	paraEnviar.pasaporte = 8888881;
 
 	iniciarConexion();
-	enviarPaquete(paraEnviar);
+	recibirPaquete();
 
-	//printf("Si tuvimos exito se va a leer algo a continuacion: %d",paraRecibir->dni);
+	printf("Si tuvimos exito se va a leer algo a continuacion: ----%s---- \n",paraRecibir->nombre);
 
 	close(discordiador_socket);
 
@@ -79,7 +79,7 @@ t_paquete* paquete = malloc(sizeof(t_paquete));
 
 	switch(paquete->codigo_operacion) {
 		case PERSONA:
-			paraRecibir = deserializar_persona(paquete->buffer);
+			paraRecibir = deserializarPersona(paquete->buffer);
 								break;
 		default:
 				break;
@@ -91,24 +91,24 @@ t_paquete* paquete = malloc(sizeof(t_paquete));
 }
 
 
-t_persona* deserializar_persona(t_buffer* buffer) {
+t_persona* deserializarPersona(t_buffer* buffer) {
 
 	t_persona* persona = malloc(sizeof(t_persona));
 
-	void* stream = buffer->stream;
+		void* stream = buffer->stream;
 
-	memcpy(&(persona->dni), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->edad), stream, sizeof(uint8_t));
-	stream += sizeof(uint8_t);
-	memcpy(&(persona->pasaporte), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->nombre_length), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	persona->nombre = malloc(persona->nombre_length);
-	memcpy(persona->nombre, stream, persona->nombre_length);
+		memcpy(&(persona->dni), stream, sizeof(uint32_t));
+		stream += sizeof(uint32_t);
+		memcpy(&(persona->edad), stream, sizeof(uint8_t));
+		stream += sizeof(uint8_t);
+		memcpy(&(persona->pasaporte), stream, sizeof(uint32_t));
+		stream += sizeof(uint32_t);
+		memcpy(&(persona->nombre_length), stream, sizeof(uint32_t));
+		stream += sizeof(uint32_t);
+		persona->nombre = malloc(persona->nombre_length);
+		memcpy(persona->nombre, stream, persona->nombre_length);
 
-	return persona;
+		return persona;
 }
 
 
