@@ -40,8 +40,7 @@ typedef struct {
 
 t_persona* deserializarPersona(t_buffer*);
 void iniciarConexion();
-void comunicarse();
-void recibirPaquete();
+t_paquete* recibirPaquete();
 void enviarPaquete(t_persona);
 
 

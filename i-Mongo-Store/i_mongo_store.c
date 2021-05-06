@@ -17,8 +17,19 @@ int main(void) {
 	paraEnviar.nombre_length = strlen(paraEnviar.nombre) + 1;
 	paraEnviar.pasaporte = 8888881;
 
+
+
 	iniciarConexion();
-	recibirPaquete();
+	t_paquete* paquete = recibirPaquete();
+
+
+	switch(paquete->codigo_operacion) {
+		case PERSONA:
+			paraRecibir = deserializarPersona(paquete->buffer);
+								break;
+		default:
+				break;
+	}
 
 	printf("Si tuvimos exito se va a leer algo a continuacion: ----%s---- \n",paraRecibir->nombre);
 
@@ -66,7 +77,7 @@ void iniciarConexion() {
 }
 
 
-void recibirPaquete(){
+t_paquete* recibirPaquete(){
 
 t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -77,13 +88,7 @@ t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 	recv(discordiador_socket, paquete->buffer->stream, paquete->buffer->size, 0);
 
-	switch(paquete->codigo_operacion) {
-		case PERSONA:
-			paraRecibir = deserializarPersona(paquete->buffer);
-								break;
-		default:
-				break;
-	}
+	return paquete;
 
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
