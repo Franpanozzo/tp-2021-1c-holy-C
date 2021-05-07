@@ -1,24 +1,23 @@
 #include "mi_ram_hq.h"
-#include <bibliotecas_nuestras.h>
+
 
 #define MAX_BUFFER_SIZE  200
 #define PORT 3222 // Define el nuemero de puerto que va a tener mongo
 int discordiador_socket; // Entero donde se guarda el el valor de accept del socket
-t_persona paraEnviar;
+//t_persona paraEnviar;
 t_persona*  paraRecibir;
 t_buffer* buffer;
 
 
 int main(void) {
 
-	paraEnviar.dni = 88;
-	paraEnviar.edad = 33;
-	paraEnviar.nombre = "Mr. Lacteo";
-	paraEnviar.nombre_length = strlen(paraEnviar.nombre) + 1;
-	paraEnviar.pasaporte = 8888881;
+	//paraEnviar.dni = 88;
+	//paraEnviar.edad = 33;
+	//paraEnviar.nombre = "Mr. Lacteo";
+	//paraEnviar.nombre_length = strlen(paraEnviar.nombre) + 1;
+	//paraEnviar.pasaporte = 8888881;
 
-	iniciarConexion();
-	enviarPaquete(paraEnviar);
+
 
 	//printf("Si tuvimos exito se va a leer algo a continuacion: %d",paraRecibir->dni);
 
@@ -64,94 +63,5 @@ void iniciarConexion() {
 }
 
 
-void recibirPaquete(){
 
-t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->buffer = malloc(sizeof(t_buffer));
-
-	recv(discordiador_socket, &(paquete->codigo_operacion), sizeof(uint8_t), 0);
-
-	recv(discordiador_socket, &(paquete->buffer->size), sizeof(uint32_t), 0);
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	recv(discordiador_socket, paquete->buffer->stream, paquete->buffer->size, 0);
-
-	switch(paquete->codigo_operacion) {
-		case PERSONA:
-			paraRecibir = deserializarPersona(paquete->buffer);
-								break;
-		default:
-				break;
-	}
-
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
-}
-
-
-t_persona* deserializarPersona(t_buffer* buffer) {
-
-	t_persona* persona = malloc(sizeof(t_persona));
-
-	void* stream = buffer->stream;
-
-	memcpy(&(persona->dni), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->edad), stream, sizeof(uint8_t));
-	stream += sizeof(uint8_t);
-	memcpy(&(persona->pasaporte), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->nombre_length), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	persona->nombre = malloc(persona->nombre_length);
-	memcpy(persona->nombre, stream, persona->nombre_length);
-
-	return persona;
-}
-
-
-void enviarPaquete(t_persona persona) {
-
-	int offset = 0;
-
-	t_buffer* buffer = malloc(sizeof(t_buffer));
-	buffer->size = sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona.nombre) + 1; // La longitud del string nombre.
-
-	void* stream = malloc(buffer->size);
-
-	memcpy(stream + offset, &persona.dni, sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &persona.edad, sizeof(uint8_t));
-	offset += sizeof(uint8_t);
-	memcpy(stream + offset, &persona.pasaporte, sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &persona.nombre_length, sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, persona.nombre, strlen(persona.nombre) + 1);
-
-	buffer->stream = stream;
-
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = PERSONA;
-	paquete->buffer = buffer;
-
-	void* a_enviar = malloc(buffer->size + sizeof(uint8_t) + sizeof(uint32_t));
-
-	offset = 0;
-
-	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
-	offset += sizeof(uint8_t);
-	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
-
-	send(discordiador_socket, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t),
-	0);
-
-
-	free(a_enviar);
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
-}
 
