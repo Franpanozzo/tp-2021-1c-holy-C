@@ -21,6 +21,7 @@ typedef struct{
 	int puerto;
 } puertoEIP;
 
+
 void crearConfig();
 int iniciarConexionCon(void*);
 

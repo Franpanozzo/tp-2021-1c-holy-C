@@ -1,34 +1,34 @@
 #include "mi_ram_hq.h"
 
 
-#define MAX_BUFFER_SIZE  200
 #define PORT 3222 // Define el nuemero de puerto que va a tener mongo
 int discordiador_socket; // Entero donde se guarda el el valor de accept del socket
-//t_persona paraEnviar;
-t_persona*  paraRecibir;
-t_buffer* buffer;
 
 
 int main(void) {
 
-	//paraEnviar.dni = 88;
-	//paraEnviar.edad = 33;
-	//paraEnviar.nombre = "Mr. Lacteo";
-	//paraEnviar.nombre_length = strlen(paraEnviar.nombre) + 1;
-	//paraEnviar.pasaporte = 8888881;
+	/*
+	t_paquete* paquete = recibirPaquete(discordiador_socket);
 
 
+	switch(paquete->codigo_operacion) {
+		case PERSONA:
+			paraRecibir = deserializarPersona(paquete->buffer);
+								break;
+		default:
+				break;
+	}
 
-	//printf("Si tuvimos exito se va a leer algo a continuacion: %d",paraRecibir->dni);
+	printf("Si tuvimos exito se va a leer algo a continuacion: ----%s---- \n",paraRecibir->nombre);
+	 */
 
-	close(discordiador_socket);
 
 	return EXIT_SUCCESS;
 
 }
 
 
-void iniciarConexion() {
+void iniciarConexion(int *discordiador_socket) {
 
 	int server_sock = socket(AF_INET, SOCK_STREAM, 0);// Crea socket en la variable local server_sock
 	unsigned int len = sizeof(struct sockaddr); // Crea un entero sin signo que almacena la cantidad de bytes que ocupa la estructura sockaddr
@@ -53,9 +53,11 @@ void iniciarConexion() {
 		perror("listen");
 	}
 
-	if ((discordiador_socket = accept(server_sock, (struct sockaddr*) serverAddress, &len)) == -1) {
+	if ((*discordiador_socket = accept(server_sock, (struct sockaddr*) serverAddress, &len)) == -1) {
 		perror("accept");
 	}
+
+
 
 	free(serverAddress);
 	free(localAddress);

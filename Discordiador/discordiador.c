@@ -1,21 +1,11 @@
 #include "discordiador.h"
-//#include <bibliotecas.h>
 
 
-#define MAX_BUFFER_SIZE  200
 t_config* config; // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
-t_persona*  paraRecibir;
-t_persona paraEnviar;
+int server_socket; // Entero donde se va a almacenar el socket cliente del discordiador
 
 
 int main() {
-	int server_socket; // Entero donde se va a almacenar el socket cliente del discordiador
-
-	paraEnviar.dni = 33238307;
-	paraEnviar.edad = 33;
-	paraEnviar.nombre = "Mr. Lacteo";
-	paraEnviar.nombre_length = strlen(paraEnviar.nombre) + 1;
-	paraEnviar.pasaporte = 8888881;
 
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
@@ -28,29 +18,32 @@ int main() {
 	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE")); // Asignar IP tomada desde el config (Mongo)
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE"); // Asignar puerto tomado desde el config (Mongo)
 
-	t_persona* cosa = malloc(sizeof(t_persona));
-	*cosa = paraEnviar;
-	void* cosaQsePuedeMandar = (void*)cosa;
 
-	server_socket = iniciarConexionCon(puertoEIPMongo);
+	/*
+	switch(paquete->codigo_operacion) {
 
-	t_paquete* paquete = armarPaqueteCon(cosaQsePuedeMandar,PERSONA);
-	enviarPaquete(paquete, server_socket);
+		case PERSONA:
+			paraRecibir = deserializarPersona(paquete->buffer);
+			break;
 
-
-
-	//printf("Si tuvimos exito se va a leer algo a continuacion: %d",paraRecibir->dni);
-	//estos
-	free(cosa);
+		default:
+			break;
+	}
 
 
-	close(server_socket);
+
+
+	printf("Si tuvimos exito se va a leer algo a continuacion: %d",paraRecibir->dni);
+	 */
+
+
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
 	free(puertoEIPMongo);
 
 	return EXIT_SUCCESS;
+
 }
 
 

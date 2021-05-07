@@ -1,5 +1,6 @@
 #include "bibliotecas.h"
 
+
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 	t_persona* persona;
@@ -7,8 +8,8 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 	switch(cod_op){
 		case PERSONA:
-					persona = (void*) estructura;
-					return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
+				persona = (void*) estructura;
+				return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
 
 
 		default:
@@ -74,6 +75,7 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 
 
 t_paquete* recibirPaquete(int server_socket){
+
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
 
@@ -122,8 +124,6 @@ void* serializarPaquete(t_paquete* paquete, int bytes)
 
 	return magic;
 }
-
-
 
 
 

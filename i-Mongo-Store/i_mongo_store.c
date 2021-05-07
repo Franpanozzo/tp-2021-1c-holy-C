@@ -1,25 +1,13 @@
 #include "i_mongo_store.h"
 
 
-#define MAX_BUFFER_SIZE  200
 #define PORT 5001 // Define el nuemero de puerto que va a tener mongo
-
-t_persona paraEnviar;
-t_persona*  paraRecibir;
-t_buffer* buffer;
+int discordiador_socket; // Entero donde se guarda el el valor de accept del socket
 
 
 int main(void) {
-	int discordiador_socket; // Entero donde se guarda el el valor de accept del socket
-	paraEnviar.dni = 88;
-	paraEnviar.edad = 33;
-	paraEnviar.nombre = "Mr. Lacteo";
-	paraEnviar.nombre_length = strlen(paraEnviar.nombre) + 1;
-	paraEnviar.pasaporte = 8888881;
 
-
-
-	iniciarConexion(&discordiador_socket);
+	/*
 	t_paquete* paquete = recibirPaquete(discordiador_socket);
 
 
@@ -32,9 +20,8 @@ int main(void) {
 	}
 
 	printf("Si tuvimos exito se va a leer algo a continuacion: ----%s---- \n",paraRecibir->nombre);
+	 */
 
-	eliminarPaquete(paquete);
-	close(discordiador_socket);
 
 	return EXIT_SUCCESS;
 
@@ -77,52 +64,4 @@ void iniciarConexion(int *discordiador_socket) {
 
 }
 
-
-/*
-
-
-void enviarPaquete(t_persona persona) {
-
-	int offset = 0;
-
-	t_buffer* buffer = malloc(sizeof(t_buffer));
-	buffer->size = sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona.nombre) + 1; // La longitud del string nombre.
-
-	void* stream = malloc(buffer->size);
-
-	memcpy(stream + offset, &persona.dni, sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &persona.edad, sizeof(uint8_t));
-	offset += sizeof(uint8_t);
-	memcpy(stream + offset, &persona.pasaporte, sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &persona.nombre_length, sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, persona.nombre, strlen(persona.nombre) + 1);
-
-	buffer->stream = stream;
-
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = PERSONA;
-	paquete->buffer = buffer;
-
-	void* a_enviar = malloc(buffer->size + sizeof(tipoDeDato) + sizeof(uint32_t));
-
-	offset = 0;
-
-	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(tipoDeDato));
-	offset += sizeof(tipoDeDato);
-	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
-
-	send(discordiador_socket, a_enviar, buffer->size + sizeof(tipoDeDato) + sizeof(uint32_t),
-	0);
-
-
-	free(a_enviar);
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
-} */
 

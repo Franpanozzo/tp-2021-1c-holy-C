@@ -1,5 +1,7 @@
 #ifndef BIBLIOTECAS_H_
 #define BIBLIOTECAS_H_
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -48,8 +50,6 @@ int tamanioEstructura(void*,tipoDeDato);
 void* serializarEstructura(void* ,int,tipoDeDato );
 void enviarPaquete(t_paquete*, int);
 t_paquete* armarPaqueteCon(void*,tipoDeDato);
-
-
 
 
 #endif

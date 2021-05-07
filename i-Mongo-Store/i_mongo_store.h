@@ -16,12 +16,7 @@
 #include <bibliotecas.h>
 
 
-
-
-
 void iniciarConexion();
-
-//void enviarPaquete(t_persona); este es distinto al del library
 
 
 #endif
