@@ -7,21 +7,6 @@ int discordiador_socket; // Entero donde se guarda el el valor de accept del soc
 
 int main(void) {
 
-	/*
-	t_paquete* paquete = recibirPaquete(discordiador_socket);
-
-
-	switch(paquete->codigo_operacion) {
-		case PERSONA:
-			paraRecibir = deserializarPersona(paquete->buffer);
-								break;
-		default:
-				break;
-	}
-
-	printf("Si tuvimos exito se va a leer algo a continuacion: ----%s---- \n",paraRecibir->nombre);
-	 */
-
 
 	return EXIT_SUCCESS;
 
@@ -56,7 +41,6 @@ void iniciarConexion(int *discordiador_socket) {
 	if ((*discordiador_socket = accept(server_sock, (struct sockaddr*) serverAddress, &len)) == -1) {
 		perror("accept");
 	}
-
 
 
 	free(serverAddress);

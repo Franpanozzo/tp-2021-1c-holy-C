@@ -34,9 +34,24 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 }
 
 
-void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
+void* serializarPersona(void* stream, void* estructura,  int offset){
 
-	t_persona* persona;
+	t_persona* persona = (void*) estructura;
+	memcpy(stream + offset, &(persona->dni), sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(persona->edad), sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	memcpy(stream + offset, &(persona->pasaporte), sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(persona->nombre_length), sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, persona->nombre, strlen(persona->nombre) + 1);
+
+	return stream;
+}
+
+
+void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
 	void* stream = malloc(tamanio);
 
@@ -44,18 +59,8 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
 	switch(cod_op){
 		case PERSONA:
-				persona = (void*) estructura;
-				memcpy(stream + offset, &(persona->dni), sizeof(uint32_t));
-				offset += sizeof(uint32_t);
-				memcpy(stream + offset, &(persona->edad), sizeof(uint8_t));
-				offset += sizeof(uint8_t);
-				memcpy(stream + offset, &(persona->pasaporte), sizeof(uint32_t));
-				offset += sizeof(uint32_t);
-				memcpy(stream + offset, &(persona->nombre_length), sizeof(uint32_t));
-				offset += sizeof(uint32_t);
-				memcpy(stream + offset, persona->nombre, strlen(persona->nombre) + 1);
 
-				return stream;
+				return serializarPersona(stream,estructura, offset);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");

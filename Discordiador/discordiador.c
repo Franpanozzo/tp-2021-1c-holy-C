@@ -23,6 +23,19 @@ int main() {
 
 	log_info(logger, "hola");
 
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = PERSONA;
+	t_persona persona;
+	persona.nombre = "Lechoso";
+	t_persona* punteroApersona = malloc(sizeof(persona));
+	*punteroApersona = persona;
+	void* cosa = (void*) punteroApersona;
+
+	server_socket = iniciarConexionCon(puertoEIPRAM);
+	paquete = armarPaqueteCon(cosa,paquete->codigo_operacion);
+	enviarPaquete(paquete,server_socket);
+
+
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);

@@ -49,6 +49,7 @@ void agregar_a_paquete(t_paquete*,void*,int);
 void eliminarPaquete(t_paquete*);
 void liberarConexion(int);
 int tamanioEstructura(void*,tipoDeDato);
+void* serializarPersona(void*, void*, int);
 void* serializarEstructura(void* ,int,tipoDeDato );
 void enviarPaquete(t_paquete*, int);
 t_paquete* armarPaqueteCon(void*,tipoDeDato);
