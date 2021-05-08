@@ -1,6 +1,20 @@
 #include "bibliotecas.h"
 
 
+t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
+
+	t_log* logger = log_create(archivoLog, nombrePrograma, flagConsola, LOG_LEVEL_INFO);
+	//hay q hacer un chequeo de q el programa q se paso es correcto?
+	if(logger == NULL){
+		printf("No se pudo iniciar el logger del archivo %s perteneciente al programa %s \n"
+				, archivoLog, nombrePrograma);
+		exit(1);
+	}
+	else
+		return logger;
+}
+
+
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 	t_persona* persona;

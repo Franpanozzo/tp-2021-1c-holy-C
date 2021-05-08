@@ -1,6 +1,6 @@
 #include "discordiador.h"
 
-
+t_log* logger;
 t_config* config; // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
 int server_socket; // Entero donde se va a almacenar el socket cliente del discordiador
 
@@ -8,6 +8,9 @@ int server_socket; // Entero donde se va a almacenar el socket cliente del disco
 int main() {
 
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
+	logger = iniciarLogger("prueba.log", "Discordiador", 0);
+
+	log_info(logger, "hola 2");
 
 	puertoEIP* puertoEIPRAM = malloc(sizeof(puertoEIP)); // Reservar memoria para struct Ram
 	puertoEIP* puertoEIPMongo = malloc(sizeof(puertoEIP)); // Reservar memoria para struct Mongo
@@ -18,29 +21,14 @@ int main() {
 	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE")); // Asignar IP tomada desde el config (Mongo)
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE"); // Asignar puerto tomado desde el config (Mongo)
 
-
-	/*
-	switch(paquete->codigo_operacion) {
-
-		case PERSONA:
-			paraRecibir = deserializarPersona(paquete->buffer);
-			break;
-
-		default:
-			break;
-	}
-
-
-
-
-	printf("Si tuvimos exito se va a leer algo a continuacion: %d",paraRecibir->dni);
-	 */
-
+	log_info(logger, "hola");
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
 	free(puertoEIPMongo);
+
+	log_destroy(logger);
 
 	return EXIT_SUCCESS;
 
@@ -50,10 +38,10 @@ int main() {
 void crearConfig(){
 	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
 	if(config == NULL){
-		printf("\nEsta mal la ruta del config negro\n");
+		log_error(logger, "\n La ruta es incorrecta \n");
 		exit(1);
 		}
-	}
+}
 
 
 int iniciarConexionCon(void* port){ //Este iniciarConexionCon lleva parametro porque puede elegir si conectarse con Mongo o RAM
@@ -64,12 +52,14 @@ int iniciarConexionCon(void* port){ //Este iniciarConexionCon lleva parametro po
 
 	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("socket");
+		//aca hay q hacer log?
 		exit(1);
 	}
 	int yes = 0;
 
 	if(setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1){
 		perror("setsockopt");
+		//aca hay q hacer log?
 		exit(1);
 	}
 
@@ -81,6 +71,7 @@ int iniciarConexionCon(void* port){ //Este iniciarConexionCon lleva parametro po
 
 	if (connect(server_sock, (struct sockaddr*) serverAddress, sizeof(struct sockaddr_in)) == -1) {
 		perror("connect");
+		//aca hay q hacer log? y falta exit?
 	}
 
 	free(serverAddress);
@@ -88,7 +79,4 @@ int iniciarConexionCon(void* port){ //Este iniciarConexionCon lleva parametro po
 	return server_sock;
 
 }
-
-
-
 

@@ -13,6 +13,7 @@
 #include <sys/select.h>
 #include <string.h>
 #include <commons/config.h>
+#include <commons/log.h>
 
 
 typedef enum{
@@ -38,6 +39,7 @@ typedef struct {
 } t_persona;
 
 
+t_log* iniciarLogger(char*, char*, int);
 t_persona* deserializarPersona(t_buffer*);
 t_paquete* recibirPaquete(int);
 void* serializarPaquete(t_paquete*, int);
