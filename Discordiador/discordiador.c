@@ -8,7 +8,7 @@ int server_socket; // Entero donde se va a almacenar el socket cliente del disco
 int main() {
 
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
-	logger = iniciarLogger("prueba.log", "Discordiador", 0);
+	logger = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/prueba.log", "Discordiador", 1);
 
 	log_info(logger, "hola 2");
 
@@ -71,6 +71,7 @@ int iniciarConexionCon(void* port){ //Este iniciarConexionCon lleva parametro po
 
 	if (connect(server_sock, (struct sockaddr*) serverAddress, sizeof(struct sockaddr_in)) == -1) {
 		perror("connect");
+		exit(1);
 		//aca hay q hacer log? y falta exit?
 	}
 
