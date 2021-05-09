@@ -74,6 +74,11 @@ void iniciarConexionDesdeServidor(int *discordiador_socket, int puerto) {
 
 }
 
+void liberarConexion(int socket_cliente)
+{
+	close(socket_cliente);
+}
+
 t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 
 	t_log* logger = log_create(archivoLog, nombrePrograma, flagConsola, LOG_LEVEL_INFO);
@@ -87,16 +92,75 @@ t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 		return logger;
 }
 
+t_paquete* recibirPaquete(int server_socket){
+
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	recv(server_socket, &(paquete->codigo_operacion), sizeof(tipoDeDato), 0);
+
+	recv(server_socket, &(paquete->buffer->size), sizeof(uint32_t), 0);
+
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	recv(server_socket, paquete->buffer->stream, paquete->buffer->size, 0);
+
+	return paquete;
+
+
+
+}
+
+
+void deserializarSegun(t_paquete* paquete){
+
+	switch(paquete->codigo_operacion){
+
+			case PERSONA:
+						deserializarPersona(paquete->buffer);
+						break;
+
+
+			default:
+					printf("\n No se puede deserializar ese tipo de estructura negro \n");
+					exit(1);
+		}
+}
+
+void deserializarPersona(t_buffer* buffer) {
+
+	t_persona* persona = malloc(sizeof(t_persona));
+
+	void* stream = buffer->stream;
+
+	memcpy(&(persona->dni), stream, sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	memcpy(&(persona->edad), stream, sizeof(uint8_t));
+	stream += sizeof(uint8_t);
+	memcpy(&(persona->pasaporte), stream, sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	memcpy(&(persona->nombre_length), stream, sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	persona->nombre = malloc(persona->nombre_length);
+	memcpy(persona->nombre, stream, persona->nombre_length);
+
+	printf("El nombre de la persona es: %s \n",persona->nombre);
+	printf("El DNI de la persona es: %d \n",persona->dni);
+
+	free(persona->nombre);
+	free(persona);
+}
+
 
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
-	t_persona* persona;
-
-
 	switch(cod_op){
 		case PERSONA:
-				persona = (void*) estructura;
-				return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
+		{
+			t_persona* persona = (void*) estructura;
+			return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
+		}
+
 
 
 		default:
@@ -124,20 +188,7 @@ void* serializarPersona(void* stream, void* estructura,  int offset){
 }
 
 
-void deserializarSegun(t_paquete* paquete){
 
-	switch(paquete->codigo_operacion){
-
-			case PERSONA:
-						deserializarPersona(paquete->buffer);
-						break;
-
-
-			default:
-					printf("\n No se puede deserializar ese tipo de estructura negro \n");
-					exit(1);
-		}
-}
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
@@ -181,49 +232,6 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 	eliminarPaquete(paquete);
 }
 
-t_paquete* recibirPaquete(int server_socket){
-
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->buffer = malloc(sizeof(t_buffer));
-
-	recv(server_socket, &(paquete->codigo_operacion), sizeof(tipoDeDato), 0);
-
-	recv(server_socket, &(paquete->buffer->size), sizeof(uint32_t), 0);
-
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-
-	recv(server_socket, paquete->buffer->stream, paquete->buffer->size, 0);
-
-	return paquete;
-
-
-
-}
-
-
-void deserializarPersona(t_buffer* buffer) {
-
-	t_persona* persona = malloc(sizeof(t_persona));
-
-	void* stream = buffer->stream;
-
-	memcpy(&(persona->dni), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->edad), stream, sizeof(uint8_t));
-	stream += sizeof(uint8_t);
-	memcpy(&(persona->pasaporte), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->nombre_length), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	persona->nombre = malloc(persona->nombre_length);
-	memcpy(persona->nombre, stream, persona->nombre_length);
-
-	printf("El nombre de la persona es: %s \n",persona->nombre);
-	printf("El DNI de la persona es: %d \n",persona->dni);
-
-	free(persona->nombre);
-	free(persona);
-}
 
 
 void* serializarPaquete(t_paquete* paquete, int bytes){
@@ -269,7 +277,4 @@ void eliminarPaquete(t_paquete* paquete)
 }
 
 
-void liberarConexion(int socket_cliente)
-{
-	close(socket_cliente);
-}
+
