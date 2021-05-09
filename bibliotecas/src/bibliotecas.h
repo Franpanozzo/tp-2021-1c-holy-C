@@ -45,7 +45,7 @@ typedef struct {
 
 t_log* iniciarLogger(char*, char*, int);
 void deserializarPersona(t_buffer*);
-void recibirPaquete(int);
+t_paquete* recibirPaquete(int);
 void* serializarPaquete(t_paquete*, int);
 void crearBuffer(t_paquete*);
 void iniciarConexionDesdeServidor(int*,int);

@@ -181,7 +181,7 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 	eliminarPaquete(paquete);
 }
 
-void recibirPaquete(int server_socket){
+t_paquete* recibirPaquete(int server_socket){
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -194,9 +194,9 @@ void recibirPaquete(int server_socket){
 
 	recv(server_socket, paquete->buffer->stream, paquete->buffer->size, 0);
 
-	deserializarSegun(paquete);
+	return paquete;
 
-	eliminarPaquete(paquete);
+
 
 }
 

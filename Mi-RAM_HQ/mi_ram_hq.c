@@ -9,7 +9,11 @@ int main(void) {
 
 	iniciarConexionDesdeServidor(&discordiador_socket,puerto);
 
-	recibirPaquete(discordiador_socket);
+	t_paquete* paquete = recibirPaquete(discordiador_socket);
+
+	deserializarSegun(paquete);
+
+	eliminarPaquete(paquete);
 
 	return EXIT_SUCCESS;
 }
