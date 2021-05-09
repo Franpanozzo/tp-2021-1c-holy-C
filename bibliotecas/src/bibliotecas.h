@@ -15,6 +15,10 @@
 #include <commons/config.h>
 #include <commons/log.h>
 
+typedef struct{
+	char* IP;
+	int puerto;
+} puertoEIP;
 
 typedef enum{
 	PERSONA
@@ -40,10 +44,13 @@ typedef struct {
 
 
 t_log* iniciarLogger(char*, char*, int);
-t_persona* deserializarPersona(t_buffer*);
-t_paquete* recibirPaquete(int);
+void deserializarPersona(t_buffer*);
+void recibirPaquete(int);
 void* serializarPaquete(t_paquete*, int);
 void crearBuffer(t_paquete*);
+void iniciarConexionDesdeServidor(int*,int);
+int iniciarConexionDesdeClienteHacia(void*);
+void deserializarSegun(t_paquete*);
 t_paquete* crearPaquete(tipoDeDato);
 void agregar_a_paquete(t_paquete*,void*,int);
 void eliminarPaquete(t_paquete*);

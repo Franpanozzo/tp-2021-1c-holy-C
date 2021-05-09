@@ -1,7 +1,9 @@
 #include "discordiador.h"
 
+
+t_config* config;
 t_log* logger;
-t_config* config; // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
+ // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
 int server_socket; // Entero donde se va a almacenar el socket cliente del discordiador
 
 
@@ -21,21 +23,30 @@ int main() {
 	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE")); // Asignar IP tomada desde el config (Mongo)
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE"); // Asignar puerto tomado desde el config (Mongo)
 
+
+
 	log_info(logger, "hola");
 
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = PERSONA;
+	t_paquete* paquete;
+
 	t_persona persona;
-	persona.nombre = "Lechoso";
+
+	persona.nombre = strdup("Lechoso");
+	persona.dni = 30256897;
+	persona.edad = 21;
+	persona.nombre_length = strlen(persona.nombre) + 1;
+	persona.pasaporte = 30256897;
+
 	t_persona* punteroApersona = malloc(sizeof(persona));
 	*punteroApersona = persona;
 	void* cosa = (void*) punteroApersona;
 
-	server_socket = iniciarConexionCon(puertoEIPRAM);
-	paquete = armarPaqueteCon(cosa,paquete->codigo_operacion);
+	server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+	paquete = armarPaqueteCon(cosa,PERSONA);
 	enviarPaquete(paquete,server_socket);
 
-
+	free(punteroApersona->nombre);
+	free(punteroApersona);
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
@@ -57,40 +68,5 @@ void crearConfig(){
 }
 
 
-int iniciarConexionCon(void* port){ //Este iniciarConexionCon lleva parametro porque puede elegir si conectarse con Mongo o RAM
 
-	puertoEIP* puertoEIPAConectar = (puertoEIP*) port; // Castear parámetro que recibo por referencia
-
-	int server_sock;
-
-	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
-		perror("socket");
-		//aca hay q hacer log?
-		exit(1);
-	}
-	int yes = 0;
-
-	if(setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1){
-		perror("setsockopt");
-		//aca hay q hacer log?
-		exit(1);
-	}
-
-	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
-
-	serverAddress->sin_addr.s_addr = inet_addr(puertoEIPAConectar->IP);
-	serverAddress->sin_port = htons((uint16_t)puertoEIPAConectar->puerto);
-	serverAddress->sin_family = AF_INET;
-
-	if (connect(server_sock, (struct sockaddr*) serverAddress, sizeof(struct sockaddr_in)) == -1) {
-		perror("connect");
-		exit(1);
-		//aca hay q hacer log? y falta exit?
-	}
-
-	free(serverAddress);
-
-	return server_sock;
-
-}
 

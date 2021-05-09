@@ -16,7 +16,4 @@
 #include <bibliotecas.h>
 
 
-void iniciarConexion();
-
-
 #endif

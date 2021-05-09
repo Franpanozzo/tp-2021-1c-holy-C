@@ -16,14 +16,7 @@
 #include <commons/config.h>
 
 
-typedef struct{
-	char* IP;
-	int puerto;
-} puertoEIP;
-
-
 void crearConfig();
-int iniciarConexionCon(void*);
 
 
 #endif
