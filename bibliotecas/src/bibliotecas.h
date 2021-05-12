@@ -43,7 +43,7 @@
 	} t_persona;
 
 
-	void iniciarConexionDesdeServidor(int*,int);
+	int iniciarConexionDesdeServidor(int);
 
 	int iniciarConexionDesdeClienteHacia(void*);
 

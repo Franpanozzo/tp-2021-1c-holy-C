@@ -39,10 +39,9 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 }
 
 
-void iniciarConexionDesdeServidor(int *discordiador_socket, int puerto) {
+int iniciarConexionDesdeServidor(int puerto) {
 
 	int server_sock = socket(AF_INET, SOCK_STREAM, 0);// Crea socket en la variable local server_sock
-	unsigned int len = sizeof(struct sockaddr); // Crea un entero sin signo que almacena la cantidad de bytes que ocupa la estructura sockaddr
 	int yes = 1;
 
 
@@ -64,9 +63,8 @@ void iniciarConexionDesdeServidor(int *discordiador_socket, int puerto) {
 		perror("listen");
 	}
 
-	if ((*discordiador_socket = accept(server_sock, (struct sockaddr*) serverAddress, &len)) == -1) {
-		perror("accept");
-	}
+
+	return server_sock;
 
 
 	free(serverAddress);

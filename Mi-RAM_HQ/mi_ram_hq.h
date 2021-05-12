@@ -15,5 +15,7 @@
 #include <commons/config.h>
 #include <bibliotecas.h>
 
-
+void atender_tripulantes(int serverSock);
+int esperar_tripulante(int serverSock);
+void manejar_tripulante(int tripulanteSock);
 #endif

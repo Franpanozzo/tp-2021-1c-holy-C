@@ -3,19 +3,63 @@
 
 int main(void) {
 
-	int discordiador_socket = 0;
-
 	int puerto = 3222;
 
-	iniciarConexionDesdeServidor(&discordiador_socket,puerto);
+	int serverSock = iniciarConexionDesdeServidor(puerto);
 
-	t_paquete* paquete = recibirPaquete(discordiador_socket);
+	atender_tripulantes(serverSock);
 
-	deserializarSegun(paquete);
-
-	eliminarPaquete(paquete);
 
 	return EXIT_SUCCESS;
+}
+
+
+void atender_tripulantes(int serverSock) {
+
+	while(1){
+
+	int tripulanteSock = esperar_tripulante(serverSock);
+
+	manejar_tripulante(tripulanteSock);
+
+
+	}
+
+}
+
+
+int esperar_tripulante(int serverSock) {
+
+	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
+	unsigned int len = sizeof(struct sockaddr);
+
+	int socket_tripulante = accept(serverSock, (struct sockaddr*) serverAddress, &len);
+
+	//log_info(logger, "Se conecto un cliente!");
+
+	return socket_tripulante;
+
+}
+
+
+void manejar_tripulante(int tripulanteSock) {
+
+	t_paquete* paquete = recibirPaquete(tripulanteSock);
+
+
+	switch(paquete->codigo_operacion){
+
+				case PERSONA:
+							deserializarPersona(paquete->buffer);
+							break;
+
+
+				default:
+						printf("\n No se puede deserializar ese tipo de estructura negro \n");
+						exit(1);
+			}
+
+	eliminarPaquete(paquete);
 }
 
 
