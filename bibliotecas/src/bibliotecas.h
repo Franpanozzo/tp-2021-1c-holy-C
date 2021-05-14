@@ -16,13 +16,26 @@
 	#include <commons/log.h>
 
 	typedef struct{
+		uint32_t posX;
+		uint32_t posY;
+	}t_coordenadas;
+
+	typedef struct{
 		char* IP;
 		int puerto;
 	} puertoEIP;
 
 	typedef enum{
-		PERSONA
+		PERSONA,
+		TAREA_PATOTA
 	} tipoDeDato;
+
+	typedef enum{
+		NEW,
+		READY,
+		EXEC,
+		BLOCKED
+	}t_estado;
 
 	typedef struct {
 		uint32_t size; // Tamaño del payload
@@ -42,6 +55,14 @@
 		char* nombre;
 	} t_persona;
 
+	typedef struct{
+		uint32_t ID;
+		t_estado estado;
+		uint32_t posX;
+		uint32_t posY;
+		char* instruccionAejecutar;// esto es un char*?
+		sem_t semaforo;// esta bien esta variable?
+	} t_tripulante;
 
 	int iniciarConexionDesdeServidor(int);
 
@@ -136,6 +157,11 @@
 	*/
 	void enviarPaquete(t_paquete*, int);
 
+	/**
+	* @NAME: serializarString
+	* @DESC: recibe una tarea patota y la serializa como string
+	*/
+	void* serializarTareaPatota(void*,void*);
 
 
 #endif
