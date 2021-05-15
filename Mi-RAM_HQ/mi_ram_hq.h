@@ -28,9 +28,9 @@ typedef struct {
 
 
 
-void atender_tripulantes(int serverSock);
+void atender_tripulantes(int* serverSock);
 int esperar_tripulante(int serverSock);
-void manejar_tripulante(int tripulanteSock);
+void manejar_tripulante(int* tripulanteSock);
 void deserializarTareas(t_buffer* buffer,t_list* listaTareas);
 void procesarStringTarea(char* tareaEnString,t_list* listaTareas);
 

@@ -33,7 +33,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 	}
 
 	free(serverAddress);
-
+	printf("conectado\n");
 	return server_sock;
 
 }
@@ -161,7 +161,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		}
 		case TAREA_PATOTA:
 		{
-			char* string = (void*) estructura;
+			char* string = (char*) estructura;
 			return strlen(string) + 1;
 		}
 
@@ -192,8 +192,8 @@ void* serializarPersona(void* stream, void* estructura,  int offset){
 
 void* serializarTareaPatota(void* stream, void* estructura){
 
-	char* string = (void*) estructura;
-	memcpy(stream,&string,strlen(string) + 1);
+	char* string = (char*) estructura;
+	memcpy(stream,string,strlen(string) + 1);
 
 	return stream;
 }

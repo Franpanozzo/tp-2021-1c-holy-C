@@ -13,28 +13,26 @@ int main(void) {
 
     //Abro un thread manejar las conexiones
     pthread_t manejo_tripulante;
-    pthread_create(&manejo_tripulante, NULL, (void*) atender_tripulantes, (void*)serverSock);
+    pthread_create(&manejo_tripulante, NULL, (void*) atender_tripulantes, (void*) &serverSock);
     pthread_join(manejo_tripulante, (void*) NULL);
 
-    pcb* nuevoPCB = list_remove(listaPCB,0);
-    t_tarea* tarea = list_remove(nuevoPCB->listaTareas,0);
-    printf("Recibi pa %s \n", tarea->tipoTarea);
 
+    //falta hacer funcion para destruir las tareas de la lista de tareas del pcb
+    //falta hacer funcion para destruir los pcb de las lista de pcbs
 
     return EXIT_SUCCESS;
 }
 
 
-void atender_tripulantes(int serverSock) {
+void atender_tripulantes(int* serverSock) {
 
     while(1){
 
-    int tripulanteSock = esperar_tripulante(serverSock);
+		int tripulanteSock = esperar_tripulante(*serverSock);
 
-    pthread_t t;
-    pthread_create(&t, NULL, (void*) manejar_tripulante, (void*) tripulanteSock);
-    pthread_detach(t);
-
+		pthread_t t;
+		pthread_create(&t, NULL, (void*) manejar_tripulante, (void*) &tripulanteSock);
+		pthread_detach(t);
     }
 
 }
@@ -46,7 +44,7 @@ int esperar_tripulante(int serverSock) {
     unsigned int len = sizeof(struct sockaddr);
 
     int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
-
+    printf("Se conecto un cliente!\n");
     //log_info(logger, "Se conecto un cliente!");
 
     return socket_tripulante;
@@ -54,33 +52,36 @@ int esperar_tripulante(int serverSock) {
 }
 
 
-void manejar_tripulante(int tripulanteSock) { // Esta funcion deberia usar la funcion deserializarSegun() de bibliotecas
+void manejar_tripulante(int *tripulanteSock) { // Esta funcion deberia usar la funcion deserializarSegun() de bibliotecas
 
-    t_paquete* paquete = recibirPaquete(tripulanteSock);
-
+    t_paquete* paquete = recibirPaquete(*tripulanteSock);
+    printf("sizeBuffer: %d\n",paquete->buffer->size);
 
     switch(paquete->codigo_operacion){
 
-                case PERSONA:
-                            deserializarPersona(paquete->buffer);
-                            break;
+		case PERSONA:
 
-                case TAREA_PATOTA:
-                {
-                            pcb* nuevoPCB = malloc(sizeof(pcb));
-                            nuevoPCB->pid = idPatota;
-                            idPatota++;
-                            nuevoPCB->listaTareas = list_create();
+			deserializarPersona(paquete->buffer);
+			break;
 
-                            deserializarTareas(paquete->buffer, nuevoPCB->listaTareas);
-                            list_add(listaPCB, (void*) nuevoPCB);
-                            break;
-                }
+		case TAREA_PATOTA:
+		{
+			pcb* nuevoPCB = malloc(sizeof(pcb));
+			nuevoPCB->pid = idPatota;
+			idPatota++;
+			nuevoPCB->listaTareas = list_create();
 
-                default:
-                        printf("\n No se puede deserializar ese tipo de estructura negro \n");
-                        exit(1);
-            }
+			deserializarTareas(paquete->buffer, nuevoPCB->listaTareas);
+			t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
+			printf("Recibi pa %s \n", tarea->tipoTarea);
+			list_add(listaPCB,nuevoPCB);
+			break;
+		}
+
+		default:
+			printf("\n No se puede deserializar ese tipo de estructura negro \n");
+			exit(1);
+    }
 
     eliminarPaquete(paquete);
 }
@@ -88,7 +89,7 @@ void manejar_tripulante(int tripulanteSock) { // Esta funcion deberia usar la fu
 
 void deserializarTareas(t_buffer* buffer,t_list* listaTareas){
 
-    char* string = (void*) buffer->stream; // Se puede castear directo a (char*)? Es necesario un memcpy()?
+    char* string = (char*) buffer->stream; // Se puede castear directo a (char*)? Es necesario un memcpy()?
 
     char**arrayDeTareasEnString = string_split(string,"\n");
     int i = 0;
