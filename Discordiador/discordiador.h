@@ -17,7 +17,6 @@
 
 
 void crearConfig();
-void iniciarPatota(t_coordenadas[], char*, uint32_t);
 
 
 #endif

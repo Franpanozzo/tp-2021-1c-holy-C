@@ -1,5 +1,5 @@
-#ifndef MI_RAM_HQH
-#define MI_RAM_HQH
+#ifndef MI_RAM_HQ_H_
+#define MI_RAM_HQ_H_
 
 
 #include <stdio.h>
@@ -14,26 +14,8 @@
 #include <string.h>
 #include <commons/config.h>
 #include <bibliotecas.h>
-#include <commons/string.h>
-#include <commons/collections/list.h>
-
-
-
-typedef struct {
-
-    uint32_t pid;
-    t_list* listaTareas;
-
-} pcb;
-
-
 
 void atender_tripulantes(int serverSock);
 int esperar_tripulante(int serverSock);
 void manejar_tripulante(int tripulanteSock);
-void deserializarTareas(t_buffer* buffer,t_list* listaTareas);
-void procesarStringTarea(char* tareaEnString,t_list* listaTareas);
-
-
-
 #endif
