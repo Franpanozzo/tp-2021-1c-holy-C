@@ -14,26 +14,12 @@
 #include <string.h>
 #include <commons/config.h>
 #include <bibliotecas.h>
+#include <commons/string.h>
+#include <commons/collections/list.h>
 
-typedef enum {
-
-    GENERAR_OXIGENO
-
-} tipoTarea;
 
 
 typedef struct {
-
-    tipoTarea tarea;
-    uint32_t parametro;
-    uint32_t posX;
-    uint32_t posY;
-    uint32_t tiempo;
-
-} t_tarea;
-
-
-typedef enum {
 
     uint32_t pid;
     t_list* listaTareas;
@@ -45,4 +31,9 @@ typedef enum {
 void atender_tripulantes(int serverSock);
 int esperar_tripulante(int serverSock);
 void manejar_tripulante(int tripulanteSock);
+void deserializarTareas(t_buffer* buffer,t_list* listaTareas);
+void procesarStringTarea(char* tareaEnString,t_list* listaTareas);
+
+
+
 #endif

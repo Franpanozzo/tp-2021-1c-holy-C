@@ -22,12 +22,20 @@ int main() {
 	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE")); // Asignar IP tomada desde el config (Mongo)
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE"); // Asignar puerto tomado desde el config (Mongo)
 
+	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+
+	char* tarea = strdup("GENERAR_OXIGENO 3;2;2;3  \nDESCARTAR_BASURA 2;4;5;5");
+
+	t_paquete* paquete = armarPaqueteCon((void*) tarea,TAREA_PATOTA);
+
+	enviarPaquete(paquete,server_socket);
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
 	free(puertoEIPMongo);
 
+	free(tarea);
 
 
 	return EXIT_SUCCESS;

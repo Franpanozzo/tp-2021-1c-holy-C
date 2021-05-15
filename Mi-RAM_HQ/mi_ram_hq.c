@@ -2,18 +2,23 @@
 
 int idPatota = 1;
 
-t_list* listaPCB = list_Create();
+t_list* listaPCB;
 
 int main(void) {
 
     int puerto = 3222;
+    listaPCB = list_create();
 
     int serverSock = iniciarConexionDesdeServidor(puerto);
 
     //Abro un thread manejar las conexiones
     pthread_t manejo_tripulante;
-    pthread_create(&manejo_tripulante, NULL, (void) atender_tripulantes, (void)serverSock);
+    pthread_create(&manejo_tripulante, NULL, (void*) atender_tripulantes, (void*)serverSock);
     pthread_join(manejo_tripulante, (void*) NULL);
+
+    pcb* nuevoPCB = list_remove(listaPCB,0);
+    t_tarea* tarea = list_remove(nuevoPCB->listaTareas,0);
+    printf("Recibi pa %s \n", tarea->tipoTarea);
 
 
     return EXIT_SUCCESS;
@@ -27,7 +32,7 @@ void atender_tripulantes(int serverSock) {
     int tripulanteSock = esperar_tripulante(serverSock);
 
     pthread_t t;
-    pthread_create(&t, NULL, (void) manejar_tripulante, (void) tripulanteSock);
+    pthread_create(&t, NULL, (void*) manejar_tripulante, (void*) tripulanteSock);
     pthread_detach(t);
 
     }
@@ -37,10 +42,10 @@ void atender_tripulantes(int serverSock) {
 
 int esperar_tripulante(int serverSock) {
 
-    struct sockaddr_in serverAddress = malloc(sizeof(struct sockaddr_in));
+    struct sockaddr_in serverAddress;
     unsigned int len = sizeof(struct sockaddr);
 
-    int socket_tripulante = accept(serverSock, (struct sockaddr) serverAddress, &len);
+    int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
 
     //log_info(logger, "Se conecto un cliente!");
 
@@ -51,7 +56,7 @@ int esperar_tripulante(int serverSock) {
 
 void manejar_tripulante(int tripulanteSock) { // Esta funcion deberia usar la funcion deserializarSegun() de bibliotecas
 
-    t_paquete paquete = recibirPaquete(tripulanteSock);
+    t_paquete* paquete = recibirPaquete(tripulanteSock);
 
 
     switch(paquete->codigo_operacion){
@@ -65,10 +70,11 @@ void manejar_tripulante(int tripulanteSock) { // Esta funcion deberia usar la fu
                             pcb* nuevoPCB = malloc(sizeof(pcb));
                             nuevoPCB->pid = idPatota;
                             idPatota++;
-                            nuevoPCB->listaTareas = list_Create();
+                            nuevoPCB->listaTareas = list_create();
 
-                            deserializarTarea(paquete->buffer, nuevoPCB->listaTareas);
+                            deserializarTareas(paquete->buffer, nuevoPCB->listaTareas);
                             list_add(listaPCB, (void*) nuevoPCB);
+                            break;
                 }
 
                 default:
@@ -77,6 +83,38 @@ void manejar_tripulante(int tripulanteSock) { // Esta funcion deberia usar la fu
             }
 
     eliminarPaquete(paquete);
+}
+
+
+void deserializarTareas(t_buffer* buffer,t_list* listaTareas){
+
+    char* string = (void*) buffer->stream; // Se puede castear directo a (char*)? Es necesario un memcpy()?
+
+    char**arrayDeTareasEnString = string_split(string,"\n");
+    int i = 0;
+
+    while(arrayDeTareasEnString[i] != NULL){
+        procesarStringTarea(arrayDeTareasEnString[i],listaTareas);
+        i++;
+    }
+}
+
+
+void procesarStringTarea(char* tareaEnString,t_list* listaTareas){
+
+    t_tarea* tarea = malloc(sizeof(t_tarea));
+
+    char**arrayNombreTareaSeparado = string_n_split(tareaEnString,2," ");
+    tarea->tipoTarea = strdup(arrayNombreTareaSeparado[0]);
+
+    char**arrayParametros = string_split(arrayNombreTareaSeparado[1],";");
+    tarea->parametro = (int) atoi(arrayParametros[0]);
+    tarea->posX = (int) atoi(arrayParametros[1]);
+    tarea->posY = (int) atoi(arrayParametros[2]);
+    tarea->tiempo = (int) atoi(arrayParametros[3]);
+
+    list_add(listaTareas,tarea);
+
 }
 
 

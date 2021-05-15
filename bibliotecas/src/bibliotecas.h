@@ -30,6 +30,14 @@
 		TAREA_PATOTA
 	} tipoDeDato;
 
+	typedef struct {
+	    char* tipoTarea;
+	    uint32_t parametro;
+	    uint32_t posX;
+	    uint32_t posY;
+	    uint32_t tiempo;
+	} t_tarea;
+
 	typedef enum{
 		NEW,
 		READY,
