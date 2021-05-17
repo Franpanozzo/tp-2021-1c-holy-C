@@ -8,6 +8,9 @@ t_log* logger;
 puertoEIP* puertoEIPRAM;
 puertoEIP* puertoEIPMongo;
 
+int idTripulante = 0;
+t_list* listaDeNew;
+
 
 int main() {
 
@@ -21,6 +24,8 @@ int main() {
 
 	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE")); // Asignar IP tomada desde el config (Mongo)
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE"); // Asignar puerto tomado desde el config (Mongo)
+
+	listaDeNew = list_create();
 
 	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 
@@ -61,6 +66,26 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 	t_paquete* paquete = armarPaqueteCon(estructura,TAREA_PATOTA);
 
 	enviarPaquete(paquete,server_socket);
+
+	for (int i=0; i<cantidadTripulantes; i++){
+
+		t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+
+		tripulante->posX = coordenadas[i].posX;
+
+		tripulante->posY = coordenadas[i].posY;
+
+		idTripulante++;
+
+		tripulante->ID = idTripulante;
+
+		tripulante->estado = NEW;
+
+		sem_init(&tripulante->semaforo, 0, 0);
+
+		list_add(listaDeNew,(void*)tripulante);
+
+	}
 }
 
 

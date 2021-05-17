@@ -263,6 +263,18 @@ void* serializarPaquete(t_paquete* paquete, int bytes){
 }
 
 
+void lock(pthread_mutex_t mutex){
+
+    pthread_mutex_lock(&mutex);
+}
+
+
+void unlock(pthread_mutex_t mutex){
+
+    pthread_mutex_lock(&mutex);
+}
+
+
 
 void crearBuffer(t_paquete* paquete)
 {

@@ -72,6 +72,11 @@
 		sem_t semaforo;
 	} t_tripulante;
 
+
+	void lock(pthread_mutex_t);
+
+	void unlock(pthread_mutex_t);
+
 	int iniciarConexionDesdeServidor(int);
 
 	int iniciarConexionDesdeClienteHacia(void*);

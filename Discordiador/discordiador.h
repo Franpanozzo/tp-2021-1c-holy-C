@@ -14,6 +14,7 @@
 #include <sys/select.h>
 #include <memory.h>
 #include <commons/config.h>
+#include <commons/collections/list.h>
 
 
 void crearConfig();
