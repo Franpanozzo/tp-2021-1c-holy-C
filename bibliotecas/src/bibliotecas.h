@@ -25,6 +25,22 @@
 	} tipoDeDato;
 
 	typedef struct {
+	    char* cod_op;
+	    uint32_t parametro;
+	    uint32_t posX;
+	    uint32_t posY;
+	    uint32_t tiempo;
+	} t_tarea;
+
+	typedef enum{
+		NEW,
+		READY,
+		EXEC,
+		BLOCKED
+	}t_estado;
+
+	typedef struct {
+
 		uint32_t size; // Tamaño del payload
 		void* stream; // Payload
 	} t_buffer;
@@ -41,6 +57,15 @@
 		uint32_t nombre_length;
 		char* nombre;
 	} t_persona;
+
+	typedef struct{
+		uint32_t ID;
+		t_estado estado;
+		uint32_t posX;
+		uint32_t posY;
+		char* instruccionAejecutar;
+		sem_t semaforo;
+	} t_tripulante;
 
 
 	int iniciarConexionDesdeServidor(int);

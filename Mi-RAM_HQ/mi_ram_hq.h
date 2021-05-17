@@ -15,7 +15,14 @@
 #include <commons/config.h>
 #include <bibliotecas.h>
 
-void atender_tripulantes(int serverSock);
+void atender_tripulantes(int* serverSock);
 int esperar_tripulante(int serverSock);
-void manejar_tripulante(int tripulanteSock);
+
+void manejar_tripulante(int* tripulanteSock);
+void deserializarTareas(t_buffer* buffer,t_list* listaTareas);
+void armarTarea(char*,t_list*);
+
+
+
+
 #endif
