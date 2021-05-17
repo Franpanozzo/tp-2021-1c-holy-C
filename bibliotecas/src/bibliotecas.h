@@ -16,18 +16,12 @@
 	#include <commons/log.h>
 
 	typedef struct{
-		uint32_t posX;
-		uint32_t posY;
-	}t_coordenadas;
-
-	typedef struct{
 		char* IP;
 		int puerto;
 	} puertoEIP;
 
 	typedef enum{
-		PERSONA,
-		TAREA_PATOTA
+		PERSONA
 	} tipoDeDato;
 
 	typedef struct {
@@ -46,6 +40,7 @@
 	}t_estado;
 
 	typedef struct {
+
 		uint32_t size; // Tamaño del payload
 		void* stream; // Payload
 	} t_buffer;
@@ -71,6 +66,7 @@
 		char* instruccionAejecutar;
 		sem_t semaforo;
 	} t_tripulante;
+
 
 	int iniciarConexionDesdeServidor(int);
 
@@ -165,11 +161,6 @@
 	*/
 	void enviarPaquete(t_paquete*, int);
 
-	/**
-	* @NAME: serializarString
-	* @DESC: recibe una tarea patota y la serializa como string
-	*/
-	void* serializarTareaPatota(void*,void*);
 
 
 #endif

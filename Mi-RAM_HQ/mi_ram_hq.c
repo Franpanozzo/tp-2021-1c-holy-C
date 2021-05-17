@@ -1,15 +1,10 @@
 #include "mi_ram_hq.h"
 
-int idPatota = 1;
-
-t_list* listaPCB;
 
 int main(void) {
 
-    int puerto = 3222;
-    listaPCB = list_create();
+	int puerto = 3222;
 
-    int serverSock = iniciarConexionDesdeServidor(puerto);
 
     //Abro un thread manejar las conexiones
     pthread_t manejo_tripulante;
@@ -17,16 +12,18 @@ int main(void) {
     pthread_join(manejo_tripulante, (void*) NULL);
 
 
+
     //falta hacer funcion para destruir las tareas de la lista de tareas del pcb
     //falta hacer funcion para destruir los pcb de las lista de pcbs
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
 
 
 void atender_tripulantes(int* serverSock) {
 
-    while(1){
+	while(1){
+
 
 		int tripulanteSock = esperar_tripulante(*serverSock);
 
@@ -35,21 +32,25 @@ void atender_tripulantes(int* serverSock) {
 		pthread_detach(t);
     }
 
+
 }
 
 
 int esperar_tripulante(int serverSock) {
 
-    struct sockaddr_in serverAddress;
-    unsigned int len = sizeof(struct sockaddr);
+	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
+	unsigned int len = sizeof(struct sockaddr);
+
 
     int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
     printf("Se conecto un cliente!\n");
     //log_info(logger, "Se conecto un cliente!");
 
-    return socket_tripulante;
+
+	return socket_tripulante;
 
 }
+
 
 
 void manejar_tripulante(int *tripulanteSock) { // Esta funcion deberia usar la funcion deserializarSegun() de bibliotecas
@@ -57,7 +58,8 @@ void manejar_tripulante(int *tripulanteSock) { // Esta funcion deberia usar la f
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
     printf("sizeBuffer: %d\n",paquete->buffer->size);
 
-    switch(paquete->codigo_operacion){
+
+
 
 		case PERSONA:
 
@@ -83,8 +85,10 @@ void manejar_tripulante(int *tripulanteSock) { // Esta funcion deberia usar la f
 			exit(1);
     }
 
-    eliminarPaquete(paquete);
+
+	eliminarPaquete(paquete);
 }
+
 
 
 void deserializarTareas(t_buffer* buffer,t_list* listaTareas){
@@ -118,6 +122,7 @@ void armarTarea(char* string,t_list* lista){
 
     list_add(lista,tarea);
 }
+
 
 
 
