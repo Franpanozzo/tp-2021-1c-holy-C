@@ -72,6 +72,7 @@ int iniciarConexionDesdeServidor(int puerto) {
 
 }
 
+
 void liberarConexion(int socket_cliente)
 {
 	close(socket_cliente);
@@ -158,13 +159,11 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			t_persona* persona = (void*) estructura;
 			return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
 		}
-
 		case TAREA_PATOTA:
 		{
 			char* string = (char*) estructura;
 			return strlen(string) + 1;
 		}
-
 
 
 		default:
@@ -191,7 +190,6 @@ void* serializarPersona(void* stream, void* estructura,  int offset){
 	return stream;
 }
 
-
 void* serializarTareaPatota(void* stream, void* estructura){
 
 	char* string = (char*) estructura;
@@ -199,6 +197,7 @@ void* serializarTareaPatota(void* stream, void* estructura){
 
 	return stream;
 }
+
 
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
@@ -211,6 +210,8 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 		case PERSONA:
 
 				return serializarPersona(stream,estructura, offset);
+		case TAREA_PATOTA:
+				return serializarTareaPatota(stream,estructura);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
