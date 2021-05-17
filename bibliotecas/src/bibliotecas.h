@@ -31,7 +31,7 @@
 	} tipoDeDato;
 
 	typedef struct {
-	    char* tipoTarea;
+	    char* cod_op;
 	    uint32_t parametro;
 	    uint32_t posX;
 	    uint32_t posY;
@@ -68,8 +68,8 @@
 		t_estado estado;
 		uint32_t posX;
 		uint32_t posY;
-		char* instruccionAejecutar;// esto es un char*?
-		sem_t semaforo;// esta bien esta variable?
+		char* instruccionAejecutar;
+		sem_t semaforo;
 	} t_tripulante;
 
 	int iniciarConexionDesdeServidor(int);

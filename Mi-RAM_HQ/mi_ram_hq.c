@@ -73,7 +73,7 @@ void manejar_tripulante(int *tripulanteSock) { // Esta funcion deberia usar la f
 
 			deserializarTareas(paquete->buffer, nuevoPCB->listaTareas);
 			t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
-			printf("Recibi pa %s \n", tarea->tipoTarea);
+			printf("Recibi pa %s \n", tarea->cod_op);
 			list_add(listaPCB,nuevoPCB);
 			break;
 		}
@@ -89,33 +89,34 @@ void manejar_tripulante(int *tripulanteSock) { // Esta funcion deberia usar la f
 
 void deserializarTareas(t_buffer* buffer,t_list* listaTareas){
 
-    char* string = (char*) buffer->stream; // Se puede castear directo a (char*)? Es necesario un memcpy()?
+    char* string = (char*) buffer->stream;
 
-    char**arrayDeTareasEnString = string_split(string,"\n");
+     char** arrayDeTareas = string_split(string,"\n");
+
     int i = 0;
-
-    while(arrayDeTareasEnString[i] != NULL){
-        procesarStringTarea(arrayDeTareasEnString[i],listaTareas);
-        i++;
-    }
+    while(arrayDeTareas[i] != NULL){
+        armarTarea(arrayDeTareas[i],listaTareas);
+   }
 }
 
 
-void procesarStringTarea(char* tareaEnString,t_list* listaTareas){
-
+void armarTarea(char* string,t_list* lista){
     t_tarea* tarea = malloc(sizeof(t_tarea));
 
-    char**arrayNombreTareaSeparado = string_n_split(tareaEnString,2," ");
-    tarea->tipoTarea = strdup(arrayNombreTareaSeparado[0]);
+    char** arrayParametros = string_split(string,";");
 
-    char**arrayParametros = string_split(arrayNombreTareaSeparado[1],";");
-    tarea->parametro = (int) atoi(arrayParametros[0]);
+    if(string_contains(arrayParametros[0]," ")){
+    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
+    	tarea->cod_op = arrayPrimerElemento[0];
+    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
+    } else {
+    	tarea->cod_op = arrayParametros[0];
+    }
     tarea->posX = (int) atoi(arrayParametros[1]);
     tarea->posY = (int) atoi(arrayParametros[2]);
     tarea->tiempo = (int) atoi(arrayParametros[3]);
 
-    list_add(listaTareas,tarea);
-
+    list_add(lista,tarea);
 }
 
 
