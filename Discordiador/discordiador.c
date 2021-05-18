@@ -35,6 +35,10 @@ int main() {
 
 	enviarPaquete(paquete,server_socket);
 
+	pthread_t consola;
+	pthread_create(&consola, NULL, (void*) leerConsola, NULL);
+	pthread_join(consola);
+
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
@@ -85,8 +89,38 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		list_add(listaDeNew,(void*)tripulante);
 
+
+		pthread_t t;
+		pthread_create(&t, NULL, (void*) hilo_tripulante, (void*) tripulante);
+		pthread_detach(t);
+
 	}
 }
+
+void hilo_tripulante(t_tripulante* triuplante) {
+
+	/*Prepararse (comunicarse con ramInformar al módulo Mi-RAM HQ que desea iniciar, indicando a qué patota pertenece
+	Solicitar la primera tarea a realizar.*/
+
+
+	//Se conecta con discordiador y le dice che toy ready, meteme en lista de ready y actualiza estado
+
+	//While 1
+	//sem_wait(semEstructura);
+	//Solicitar la primera tarea a realizar
+
+	//Hablar con imongo (haceme esta tarea,modifica este archivo)
+	//Funciones varias del discordiador
+}
+
+
+
+
+
+
+
+
+
 
 
 

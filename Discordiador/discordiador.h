@@ -19,6 +19,7 @@
 
 void crearConfig();
 void iniciarPatota(t_coordenadas[], char*, uint32_t);
+void hilo_tripulante(t_tripulante* );
 
 
 #endif
