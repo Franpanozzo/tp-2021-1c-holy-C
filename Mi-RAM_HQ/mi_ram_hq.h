@@ -17,23 +17,26 @@
 #include <commons/string.h>
 #include <commons/collections/list.h>
 
-
-
 typedef struct {
 
-    uint32_t pid;
-    t_list* listaTareas;
+	    uint32_t pid;
+	    t_list* listaTareas;
 
-} pcb;
+	} pcb;
 
-
-
-void atender_tripulantes(int* serverSock);
-int esperar_tripulante(int serverSock);
-void manejar_tripulante(int* tripulanteSock);
-void deserializarTareas(t_buffer* buffer,t_list* listaTareas);
+void atender_tripulantes(int*);
+int esperar_tripulante(int);
+void manejar_tripulante(int*);
+void deserializarTareas(void*,t_list*);
+void deserializarInfoPCB(t_paquete*);
 void armarTarea(char*,t_list*);
 
+/**
+	* @NAME: deserializarSegun
+	* @DESC: recibe un t_paquete* para deserializarlo al TAD que contiene el t_buffer*
+	* segun el tipoDeDato y operarlo como corresponda dentro del switch(nunca salir de ahi)
+	*/
+void deserializarSegun(t_paquete*);
 
 
 #endif

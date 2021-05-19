@@ -111,21 +111,6 @@ t_paquete* recibirPaquete(int server_socket){
 }
 
 
-void deserializarSegun(t_paquete* paquete){
-
-	switch(paquete->codigo_operacion){
-
-			case PERSONA:
-						deserializarPersona(paquete->buffer);
-						break;
-
-
-			default:
-					printf("\n No se puede deserializar ese tipo de estructura negro \n");
-					exit(1);
-		}
-}
-
 void deserializarPersona(t_buffer* buffer) {
 
 	t_persona* persona = malloc(sizeof(t_persona));

@@ -2,18 +2,18 @@
 #define BIBLIOTECAS_H_
 
 
-	#include <stdio.h>
-	#include <stdlib.h>
-	#include <pthread.h>
-	#include <sys/socket.h>
-	#include <sys/types.h>
-	#include <semaphore.h>
-	#include <arpa/inet.h>
-	#include <unistd.h>
-	#include <sys/select.h>
-	#include <string.h>
-	#include <commons/config.h>
-	#include <commons/log.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <semaphore.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <string.h>
+#include <commons/config.h>
+#include <commons/log.h>
 
 	typedef struct{
 		uint32_t posX;
@@ -93,12 +93,6 @@
 
 	t_paquete* recibirPaquete(int);
 
-	/**
-	* @NAME: deserializarSegun
-	* @DESC: recibe un t_paquete* para deserializarlo al TAD que contiene el t_buffer*
-	* segun el tipoDeDato y operarlo como corresponda dentro del switch(nunca salir de ahi)
-	*/
-	void deserializarSegun(t_paquete*);
 
 	/**
 	* @NAME: deserializarPersona
@@ -106,6 +100,7 @@
 	* con ese TAD, la funcion libera la memoria alocada
 	*/
 	void deserializarPersona(t_buffer*);
+
 
 	/**
 	* @NAME: serializarPaquete

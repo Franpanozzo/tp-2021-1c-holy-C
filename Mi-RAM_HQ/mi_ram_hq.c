@@ -1,7 +1,5 @@
 #include "mi_ram_hq.h"
 
-int idPatota = 1;
-
 t_list* listaPCB;
 
 int main(void) {
@@ -55,43 +53,17 @@ int esperar_tripulante(int serverSock) {
 void manejar_tripulante(int *tripulanteSock) { // Esta funcion deberia usar la funcion deserializarSegun() de bibliotecas
 
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
-    printf("sizeBuffer: %d\n",paquete->buffer->size);
 
-    switch(paquete->codigo_operacion){
-
-		case PERSONA:
-
-			deserializarPersona(paquete->buffer);
-			break;
-
-		case TAREA_PATOTA:
-		{
-			pcb* nuevoPCB = malloc(sizeof(pcb));
-			nuevoPCB->pid = idPatota;
-			idPatota++;
-			nuevoPCB->listaTareas = list_create();
-
-			deserializarTareas(paquete->buffer, nuevoPCB->listaTareas);
-			t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
-			printf("Recibi pa %s \n", tarea->cod_op);
-			list_add(listaPCB,nuevoPCB);
-			break;
-		}
-
-		default:
-			printf("\n No se puede deserializar ese tipo de estructura negro \n");
-			exit(1);
-    }
+    deserializarSegun(paquete);
 
     eliminarPaquete(paquete);
 }
 
+void deserializarTareas(void* stream,t_list* listaTareas){
 
-void deserializarTareas(t_buffer* buffer,t_list* listaTareas){
+    char* string = (char*) stream;
 
-    char* string = (char*) buffer->stream;
-
-     char** arrayDeTareas = string_split(string,"\n");
+    char** arrayDeTareas = string_split(string,"\n");
 
     int i = 0;
     while(arrayDeTareas[i] != NULL){
@@ -118,6 +90,43 @@ void armarTarea(char* string,t_list* lista){
 
     list_add(lista,tarea);
 }
+
+
+void deserializarInfoPCB(t_paquete* paquete) {
+
+	pcb* nuevoPCB = malloc(sizeof(pcb));
+
+	void* stream = paquete->buffer->stream;
+
+	int offset = 0;
+	memcpy(&(nuevoPCB->pid),stream,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	nuevoPCB->listaTareas = list_create();
+
+	deserializarTareas(stream + offset, nuevoPCB->listaTareas);
+
+	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
+	printf("Recibi pa %s \n", tarea->cod_op);
+	list_add(listaPCB,nuevoPCB);
+}
+
+void deserializarSegun(t_paquete* paquete){
+
+	switch(paquete->codigo_operacion){
+
+			case PATOTA:
+
+						deserializarInfoPCB(paquete);
+						break;
+
+			default:
+					printf("\n No se puede deserializar ese tipo de estructura negro \n");
+					exit(1);
+		}
+}
+
+
 
 
 
