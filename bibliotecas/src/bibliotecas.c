@@ -139,15 +139,29 @@ void deserializarPersona(t_buffer* buffer) {
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 	switch(cod_op){
+
 		case PERSONA:
 		{
 			t_persona* persona = (void*) estructura;
 			return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
 		}
+
 		case PATOTA:
 		{
 			t_patota* patota = (t_patota*) estructura;
 			return sizeof(uint32_t) * 2 + patota->tamanioTareas;
+		}
+
+		case TRIPULANTE:
+		{
+			t_tripulante* tripulante = (t_tripulante*) estructura;
+			return sizeof(uint32_t) * 3 + sizeof(t_estado) + sizeof(sem_t) + strlen(tripulante->instruccionAejecutar) + 1;
+		}
+
+		case STRING:
+		{
+			char* string = (char*) estructura;
+			return strlen(string) + 1;
 		}
 
 
@@ -156,6 +170,14 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 				exit(1);
 	}
 
+}
+
+void* serializarString(void* stream, void* estructura){
+
+	char* string = (char*) estructura;
+	memcpy(stream, string, strlen(string) + 1);
+
+	return stream;
 }
 
 
@@ -187,6 +209,24 @@ void* serializarPatota(void* stream, void* estructura, int offset){
 	return stream;
 }
 
+void* serializarTripulante(void* stream, void* estructura, int offset){
+
+	t_tripulante* tripulante = (t_tripulante*) estructura;
+	memcpy(stream + offset, &(tripulante->ID),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->estado),sizeof(t_estado));
+	offset += sizeof(t_estado);
+	memcpy(stream + offset, &(tripulante->posX),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->posY),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->semaforo),sizeof(sem_t));
+	offset += sizeof(sem_t);
+	memcpy(stream + offset, &(tripulante->instruccionAejecutar),strlen(tripulante->instruccionAejecutar) + 1);
+
+	return stream;
+}
+
 
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
@@ -196,11 +236,22 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 	int offset = 0;
 
 	switch(cod_op){
+
 		case PERSONA:
 
 				return serializarPersona(stream,estructura, offset);
+
 		case PATOTA:
+
 				return serializarPatota(stream,estructura,offset);
+
+		case TRIPULANTE:
+
+				return serializarTripulante(stream,estructura,offset);
+
+		case STRING:
+
+				return serializarString(stream,estructura);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");

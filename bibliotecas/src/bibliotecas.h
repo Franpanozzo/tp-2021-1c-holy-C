@@ -27,7 +27,9 @@
 
 	typedef enum{
 		PERSONA,
-		PATOTA
+		PATOTA,
+		TRIPULANTE,
+		STRING
 	} tipoDeDato;
 
 	typedef struct {
@@ -92,6 +94,10 @@
 	t_log* iniciarLogger(char*, char*, int);
 
 	t_paquete* recibirPaquete(int);
+
+	void* serializarString(void*, void*);
+
+	void* serializarTripulante(void*, void*, int);
 
 
 	/**
