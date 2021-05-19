@@ -9,6 +9,7 @@ puertoEIP* puertoEIPRAM;
 puertoEIP* puertoEIPMongo;
 
 int idTripulante = 0;
+int idPatota = 0;
 t_list* listaDeNew;
 
 
@@ -31,13 +32,9 @@ int main() {
 
 	char* tarea = strdup("GENERAR_OXIGENO 3;2;2;3  \nDESCARTAR_BASURA 2;4;5;5");
 
-	t_paquete* paquete = armarPaqueteCon((void*) tarea,TAREA_PATOTA);
+	t_paquete* paquete = armarPaqueteCon((void*) tarea,PATOTA);
 
 	enviarPaquete(paquete,server_socket);
-
-	pthread_t consola;
-	pthread_create(&consola, NULL, (void*) leerConsola, NULL);
-	pthread_join(consola);
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
@@ -60,14 +57,29 @@ void crearConfig(){
 		}
 }
 
+t_patota* asignarDatosAPatota(char* string){
+
+	t_patota* patota = malloc(sizeof(t_patota));
+
+		patota->tamanioTareas = strlen(string) + 1;
+
+		idPatota++;
+
+		patota->ID = idPatota;
+
+		patota->tareas = string;
+
+		return patota;
+}
+
 
 void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadTripulantes){
 
 	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 
-	void* estructura = (void*) string;
+	void* estructura = (void*) asignarDatosAPatota(string);
 
-	t_paquete* paquete = armarPaqueteCon(estructura,TAREA_PATOTA);
+	t_paquete* paquete = armarPaqueteCon(estructura,PATOTA);
 
 	enviarPaquete(paquete,server_socket);
 
@@ -89,7 +101,6 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		list_add(listaDeNew,(void*)tripulante);
 
-
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) hilo_tripulante, (void*) tripulante);
 		pthread_detach(t);
@@ -97,7 +108,7 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 	}
 }
 
-void hilo_tripulante(t_tripulante* triuplante) {
+void hilo_tripulante(t_tripulante* tripulante) {
 
 	/*Prepararse (comunicarse con ramInformar al módulo Mi-RAM HQ que desea iniciar, indicando a qué patota pertenece
 	Solicitar la primera tarea a realizar.*/

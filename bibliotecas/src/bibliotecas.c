@@ -159,10 +159,10 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			t_persona* persona = (void*) estructura;
 			return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
 		}
-		case TAREA_PATOTA:
+		case PATOTA:
 		{
-			char* string = (char*) estructura;
-			return strlen(string) + 1;
+			t_patota* patota = (t_patota*) estructura;
+			return sizeof(uint32_t) * 2 + patota->tamanioTareas;
 		}
 
 
@@ -190,10 +190,14 @@ void* serializarPersona(void* stream, void* estructura,  int offset){
 	return stream;
 }
 
-void* serializarTareaPatota(void* stream, void* estructura){
+void* serializarPatota(void* stream, void* estructura, int offset){
 
-	char* string = (char*) estructura;
-	memcpy(stream,string,strlen(string) + 1);
+	t_patota* patota = (t_patota*) estructura;
+	memcpy(stream + offset, &(patota->ID),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(patota->tamanioTareas),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, patota->tareas, patota->tamanioTareas);
 
 	return stream;
 }
@@ -210,8 +214,8 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 		case PERSONA:
 
 				return serializarPersona(stream,estructura, offset);
-		case TAREA_PATOTA:
-				return serializarTareaPatota(stream,estructura);
+		case PATOTA:
+				return serializarPatota(stream,estructura,offset);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");

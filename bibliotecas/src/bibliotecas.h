@@ -27,7 +27,7 @@
 
 	typedef enum{
 		PERSONA,
-		TAREA_PATOTA
+		PATOTA
 	} tipoDeDato;
 
 	typedef struct {
@@ -71,6 +71,12 @@
 		char* instruccionAejecutar;
 		sem_t semaforo;
 	} t_tripulante;
+
+	typedef struct{
+		uint32_t ID;
+		uint32_t tamanioTareas;
+		char* tareas;
+	}t_patota;
 
 
 	void lock(pthread_mutex_t);
@@ -174,7 +180,7 @@
 	* @NAME: serializarString
 	* @DESC: recibe una tarea patota y la serializa como string
 	*/
-	void* serializarTareaPatota(void*,void*);
+	void* serializarPatota(void*,void*,int);
 
 
 #endif
