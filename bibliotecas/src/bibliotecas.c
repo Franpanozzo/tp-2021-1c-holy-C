@@ -110,41 +110,9 @@ t_paquete* recibirPaquete(int server_socket){
 
 }
 
-
-void deserializarPersona(t_buffer* buffer) {
-
-	t_persona* persona = malloc(sizeof(t_persona));
-
-	void* stream = buffer->stream;
-
-	memcpy(&(persona->dni), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->edad), stream, sizeof(uint8_t));
-	stream += sizeof(uint8_t);
-	memcpy(&(persona->pasaporte), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->nombre_length), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	persona->nombre = malloc(persona->nombre_length);
-	memcpy(persona->nombre, stream, persona->nombre_length);
-
-	printf("El nombre de la persona es: %s \n",persona->nombre);
-	printf("El DNI de la persona es: %d \n",persona->dni);
-
-	free(persona->nombre);
-	free(persona);
-}
-
-
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 	switch(cod_op){
-
-		case PERSONA:
-		{
-			t_persona* persona = (void*) estructura;
-			return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
-		}
 
 		case PATOTA:
 		{
@@ -181,22 +149,6 @@ void* serializarString(void* stream, void* estructura){
 }
 
 
-void* serializarPersona(void* stream, void* estructura,  int offset){
-
-	t_persona* persona = (void*) estructura;
-	memcpy(stream + offset, &(persona->dni), sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(persona->edad), sizeof(uint8_t));
-	offset += sizeof(uint8_t);
-	memcpy(stream + offset, &(persona->pasaporte), sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(persona->nombre_length), sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(stream + offset, persona->nombre, strlen(persona->nombre) + 1);
-
-	return stream;
-}
-
 void* serializarPatota(void* stream, void* estructura, int offset){
 
 	t_patota* patota = (t_patota*) estructura;
@@ -222,8 +174,11 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, &(tripulante->posY),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
+
+	//Los dos datos que siguen no les sirven al tcb
 	memcpy(stream + offset, &(tripulante->semaforo),sizeof(sem_t));
 	offset += sizeof(sem_t);
+	//Porque se esta serializando la proxima instruccion a ejecutar???
 	memcpy(stream + offset, &(tripulante->instruccionAejecutar),strlen(tripulante->instruccionAejecutar) + 1);
 
 	return stream;
@@ -238,10 +193,6 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 	int offset = 0;
 
 	switch(cod_op){
-
-		case PERSONA:
-
-				return serializarPersona(stream,estructura, offset);
 
 		case PATOTA:
 

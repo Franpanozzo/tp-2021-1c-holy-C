@@ -24,10 +24,20 @@ typedef struct {
 
 	} pcb;
 
+typedef struct {
+
+	uint32_t idTripulante;
+	t_estado estado;
+	uint32_t posX;
+	uint32_t posY;
+	t_tarea* proximaAEjecutar;
+	pcb* patota;
+} tcb;
+
 void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
-void deserializarTareas(void*,t_list*);
+void deserializarTareas(void*,t_list*,uint32_t);
 void deserializarInfoPCB(t_paquete*);
 void armarTarea(char*,t_list*);
 
@@ -37,6 +47,9 @@ void armarTarea(char*,t_list*);
 	* segun el tipoDeDato y operarlo como corresponda dentro del switch(nunca salir de ahi)
 	*/
 void deserializarSegun(t_paquete*);
+void deserializarTripulante(t_paquete*);
+void asignarPatota(uint32_t, tcb*);
+void asignarSiguienteTarea(tcb*);
 
 
 #endif

@@ -1,11 +1,13 @@
 #include "mi_ram_hq.h"
 
 t_list* listaPCB;
+t_list* listaTCB;
 
 int main(void) {
 
     int puerto = 3222;
     listaPCB = list_create();
+    listaTCB = list_create();
 
     int serverSock = iniciarConexionDesdeServidor(puerto);
 
@@ -17,10 +19,39 @@ int main(void) {
 
     //falta hacer funcion para destruir las tareas de la lista de tareas del pcb
     //falta hacer funcion para destruir los pcb de las lista de pcbs
+    //Prototipo:
+    /*
+     eliminarListaPCB(listaPCB);
+     eliminarListaTCB(listaTCB);
+     * */
 
     return EXIT_SUCCESS;
 }
 
+/*
+ void eliminarTarea(t_tarea* tarea){
+    free(tarea);
+}
+
+void eliminarPCB(pcb* pcb){
+    list_destroy_and_destroy_elements(pcb->listaTareas, &eliminarTarea);
+    free(pcb);
+}
+
+void eliminarListaPCB(t_list* listaPCB){
+    list_destroy_and_destroy_elements( listaPCB, &eliminarPCB);
+}
+
+void eliminarListaTCB(t_list* listaTCB){
+	list_destroy_and_destroy_elements( listaTCB, &eliminarTCB);
+}
+
+void eliminarTCB(tcb* tcb){
+	free(tcb->proximaAEjecutar);
+	free(tcb->pcb);
+	free(tcb);
+}
+ */
 
 void atenderTripulantes(int* serverSock) {
 
@@ -50,7 +81,7 @@ int esperarTripulante(int serverSock) {
 }
 
 
-void manejarTripulante(int *tripulanteSock) { // Esta funcion deberia usar la funcion deserializarSegun() de bibliotecas
+void manejarTripulante(int *tripulanteSock) {
 
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
@@ -59,9 +90,36 @@ void manejarTripulante(int *tripulanteSock) { // Esta funcion deberia usar la fu
     eliminarPaquete(paquete);
 }
 
-void deserializarTareas(void* stream,t_list* listaTareas){
 
-    char* string = (char*) stream;
+void deserializarSegun(t_paquete* paquete){
+
+	switch(paquete->codigo_operacion){
+
+			case PATOTA:
+
+						deserializarInfoPCB(paquete);
+						break;
+
+			case TRIPULANTE:
+
+						deserializarTripulante(paquete);
+						break;
+
+			case STRING:
+						break;
+
+			default:
+					printf("\n No se puede deserializar ese tipo de estructura negro \n");
+					exit(1);
+		}
+}
+
+
+void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
+
+    char* string;
+
+    memcpy(&(string),stream,tamanio);
 
     char** arrayDeTareas = string_split(string,"\n");
 
@@ -97,19 +155,25 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	pcb* nuevoPCB = malloc(sizeof(pcb));
 
 	void* stream = paquete->buffer->stream;
+	uint32_t* tamanio = malloc(sizeof(uint32_t));
 
 	int offset = 0;
 	memcpy(&(nuevoPCB->pid),stream,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
+	memcpy(&(tamanio),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
 
 	nuevoPCB->listaTareas = list_create();
 
-	deserializarTareas(stream + offset, nuevoPCB->listaTareas);
+	deserializarTareas(stream + offset, nuevoPCB->listaTareas, *tamanio);
 
 	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
 	printf("Recibi pa %s \n", tarea->cod_op);
 	list_add(listaPCB,nuevoPCB);
+
+	free(tamanio);
 }
+
 
 char* deserializarString (t_paquete* paquete){
 
@@ -121,23 +185,64 @@ char* deserializarString (t_paquete* paquete){
 	return string;
 }
 
-void deserializarSegun(t_paquete* paquete){
+void deserializarTripulante(t_paquete* paquete) {
 
-	switch(paquete->codigo_operacion){
+	tcb* nuevoTCB = malloc(sizeof(tcb));
+	uint32_t* idPatota = malloc(sizeof(uint32_t));
+	void* stream = paquete->buffer->stream;
 
-			case PATOTA:
+	int offset=0;
 
-						deserializarInfoPCB(paquete);
-						break;
+	memcpy(&(idPatota),stream,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(nuevoTCB->idTripulante),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(nuevoTCB->estado),stream + offset,sizeof(t_estado));
+	offset += sizeof(t_estado);
+	memcpy(&(nuevoTCB->posX),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
 
-			case STRING:
-						break;
+	asignarPatota(*idPatota,nuevoTCB);
+	asignarSiguienteTarea(nuevoTCB);
+	list_add(listaTCB,nuevoTCB);
 
-			default:
-					printf("\n No se puede deserializar ese tipo de estructura negro \n");
-					exit(1);
-		}
 }
+
+void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
+
+	bool idIgualA(pcb* pcbAComparar){
+
+		return pcbAComparar->pid == idPatotaBuscada;
+	}
+
+	pcb* patotaCorrespondiente = malloc(sizeof(pcb));
+
+	patotaCorrespondiente = list_find(listaPCB,(void*) idIgualA);
+
+	if(patotaCorrespondiente == NULL){
+
+		//Importante revisar las consignas para contemplar el caso de que la patota no exista
+		printf("No existe patota para ese tripulante negro\n");
+		exit(1);
+	}else{
+
+		tripulante->patota = patotaCorrespondiente;
+	}
+}
+
+void asignarSiguienteTarea(tcb* tripulante) {
+
+	//Hago que su proxima tarea a ejecutar sea la primera de las lista,
+	//despues hay que hablar bien como va a pedirle las tareas
+	tripulante->proximaAEjecutar = list_get(tripulante->patota->listaTareas,0);
+
+}
+
+
+
+
 
 
 

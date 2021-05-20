@@ -27,7 +27,6 @@
 	} puertoEIP;
 
 	typedef enum{
-		PERSONA,
 		PATOTA,
 		TRIPULANTE,
 		STRING
@@ -57,14 +56,6 @@
 		tipoDeDato codigo_operacion;
 		t_buffer* buffer;
 	} t_paquete;
-
-	typedef struct {
-		uint32_t dni;
-		uint8_t edad;
-		uint32_t pasaporte;
-		uint32_t nombre_length;
-		char* nombre;
-	} t_persona;
 
 	typedef struct{
 		uint32_t idPatota;
@@ -100,14 +91,6 @@
 	void* serializarString(void*, void*);
 
 	void* serializarTripulante(void*, void*, int);
-
-
-	/**
-	* @NAME: deserializarPersona
-	* @DESC: recibe un t_buffer* para deserializarlo a un t_persona* y operar
-	* con ese TAD, la funcion libera la memoria alocada
-	*/
-	void deserializarPersona(t_buffer*);
 
 
 	/**
@@ -150,15 +133,7 @@
 	int tamanioEstructura(void*,tipoDeDato);
 
 	/**
-	* @NAME: serializarPersona
-	* @DESC: recibe un stream de datos, un *esrctura cualquiera y un int offset
-	* y te retorna el stream cargado con la informacion cargada como t_persona
-	* y te retorna el stream
-	*/
-	void* serializarPersona(void*, void*, int);
-
-	/**
-	* @NAME: serializarPersona
+	* @NAME: serializarEstructura
 	* @DESC: recibe un stream de datos, un *estructura cualquiera el tamanio de la
 	* estructuroa y el tipoDeDato de la estructura para serializar segun corresponda
 	* y te devuelve el stream de datos para empaquetar
