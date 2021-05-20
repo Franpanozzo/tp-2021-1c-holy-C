@@ -70,7 +70,9 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 
-	void* estructura = (void*) asignarDatosAPatota(string);
+	t_patota* patota = asignarDatosAPatota(string);
+
+	void* estructura = (void*) patota;
 
 	t_paquete* paquete = armarPaqueteCon(estructura,PATOTA);
 
@@ -86,7 +88,9 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		idTripulante++;
 
-		tripulante->ID = idTripulante;
+		tripulante->idTripulante = idTripulante;
+
+		tripulante->idPatota = patota->ID;
 
 		tripulante->estado = NEW;
 

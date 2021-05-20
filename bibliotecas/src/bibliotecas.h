@@ -66,7 +66,8 @@
 	} t_persona;
 
 	typedef struct{
-		uint32_t ID;
+		uint32_t idPatota;
+		uint32_t idTripulante;
 		t_estado estado;
 		uint32_t posX;
 		uint32_t posY;

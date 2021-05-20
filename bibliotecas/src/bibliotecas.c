@@ -155,7 +155,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		case TRIPULANTE:
 		{
 			t_tripulante* tripulante = (t_tripulante*) estructura;
-			return sizeof(uint32_t) * 3 + sizeof(t_estado) + sizeof(sem_t) + strlen(tripulante->instruccionAejecutar) + 1;
+			return sizeof(uint32_t) * 4 + sizeof(t_estado) + sizeof(sem_t) + strlen(tripulante->instruccionAejecutar) + 1;
 		}
 
 		case STRING:
@@ -212,7 +212,9 @@ void* serializarPatota(void* stream, void* estructura, int offset){
 void* serializarTripulante(void* stream, void* estructura, int offset){
 
 	t_tripulante* tripulante = (t_tripulante*) estructura;
-	memcpy(stream + offset, &(tripulante->ID),sizeof(uint32_t));
+	memcpy(stream + offset, &(tripulante->idPatota),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->idTripulante),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, &(tripulante->estado),sizeof(t_estado));
 	offset += sizeof(t_estado);
