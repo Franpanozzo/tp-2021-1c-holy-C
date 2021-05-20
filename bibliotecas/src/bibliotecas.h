@@ -14,6 +14,7 @@
 #include <string.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <stdbool.h>
 
 	typedef struct{
 		uint32_t posX;

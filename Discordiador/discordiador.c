@@ -72,9 +72,7 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 	t_patota* patota = asignarDatosAPatota(string);
 
-	void* estructura = (void*) patota;
-
-	t_paquete* paquete = armarPaqueteCon(estructura,PATOTA);
+	t_paquete* paquete = armarPaqueteCon((void*) patota,PATOTA);
 
 	enviarPaquete(paquete,server_socket);
 
@@ -116,6 +114,8 @@ char* deserializarString (t_paquete* paquete){
 	return string;
 }
 
+
+
 void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     while(1){
@@ -126,17 +126,22 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     	//CUANDO ESTA BLOQUEADO, ES AK?
     	if(paqueteRecibido->codigo_operacion == STRING && string_equals_ignore_case(string, "OK")){
 
-    		queue_push(colaDeReady,(void*) tripulante);
+    		bool idIgualA(t_tripulante* tripulanteAcomparar){
 
+    			return tripulanteAcomparar->idTripulante == tripulante->idTripulante;
+    		}
 
-
+    		if(list_remove_by_condition(listaDeNew, (void*) idIgualA) == NULL){
+    			printf("Estas queriendo eliminar un tripulante de la lista de New que no existe negro\n");
+    			exit(1);
+    		}
+    		else{
+    			queue_push(colaDeReady,(void*) list_remove_by_condition(listaDeNew, (void*) idIgualA));
+    		}
 
     	}
 
-    	eliminarPaquete(paqueteRecibido);
-    	}
-
-
+    }
 }
 
 
@@ -154,33 +159,3 @@ void hiloTripulante(t_tripulante* tripulante) {
 
 
 }
-
-
-
-
-
-
-/*Prepararse (comunicarse con ramInformar al módulo Mi-RAM HQ que desea iniciar, indicando a qué patota pertenece
-	Solicitar la primera tarea a realizar.*/
-
-
-	//Se conecta con discordiador y le dice che toy ready, meteme en lista de ready y actualiza estado
-
-	//While 1
-	//sem_wait(semEstructura);
-	//Solicitar la primera tarea a realizar
-
-	//Hablar con imongo (haceme esta tarea,modifica este archivo)
-	//Funciones varias del discordiador
-
-
-
-
-
-
-
-
-
-
-
-
