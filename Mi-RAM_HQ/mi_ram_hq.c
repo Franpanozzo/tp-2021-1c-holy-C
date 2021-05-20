@@ -11,7 +11,7 @@ int main(void) {
 
     //Abro un thread manejar las conexiones
     pthread_t manejo_tripulante;
-    pthread_create(&manejo_tripulante, NULL, (void*) atender_tripulantes, (void*) &serverSock);
+    pthread_create(&manejo_tripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
     pthread_join(manejo_tripulante, (void*) NULL);
 
 
@@ -22,21 +22,21 @@ int main(void) {
 }
 
 
-void atender_tripulantes(int* serverSock) {
+void atenderTripulantes(int* serverSock) {
 
     while(1){
 
-		int tripulanteSock = esperar_tripulante(*serverSock);
+		int tripulanteSock = esperarTripulante(*serverSock);
 
 		pthread_t t;
-		pthread_create(&t, NULL, (void*) manejar_tripulante, (void*) &tripulanteSock);
+		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
 		pthread_detach(t);
     }
 
 }
 
 
-int esperar_tripulante(int serverSock) {
+int esperarTripulante(int serverSock) {
 
     struct sockaddr_in serverAddress;
     unsigned int len = sizeof(struct sockaddr);
@@ -50,7 +50,7 @@ int esperar_tripulante(int serverSock) {
 }
 
 
-void manejar_tripulante(int *tripulanteSock) { // Esta funcion deberia usar la funcion deserializarSegun() de bibliotecas
+void manejarTripulante(int *tripulanteSock) { // Esta funcion deberia usar la funcion deserializarSegun() de bibliotecas
 
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
@@ -111,6 +111,16 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	list_add(listaPCB,nuevoPCB);
 }
 
+char* deserializarString (t_paquete* paquete){
+
+	char* string = malloc(sizeof(paquete->buffer->size));
+
+	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
+
+
+	return string;
+}
+
 void deserializarSegun(t_paquete* paquete){
 
 	switch(paquete->codigo_operacion){
@@ -118,6 +128,9 @@ void deserializarSegun(t_paquete* paquete){
 			case PATOTA:
 
 						deserializarInfoPCB(paquete);
+						break;
+
+			case STRING:
 						break;
 
 			default:

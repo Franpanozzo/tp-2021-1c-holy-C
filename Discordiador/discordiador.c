@@ -11,6 +11,7 @@ puertoEIP* puertoEIPMongo;
 int idTripulante = 0;
 int idPatota = 0;
 t_list* listaDeNew;
+t_queue* colaDeReady;
 
 
 int main() {
@@ -27,22 +28,14 @@ int main() {
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE"); // Asignar puerto tomado desde el config (Mongo)
 
 	listaDeNew = list_create();
+	colaDeReady = queue_create();
 
-	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 
-	char* tarea = strdup("GENERAR_OXIGENO 3;2;2;3  \nDESCARTAR_BASURA 2;4;5;5");
-
-	t_paquete* paquete = armarPaqueteCon((void*) tarea,PATOTA);
-
-	enviarPaquete(paquete,server_socket);
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
 	free(puertoEIPMongo);
-
-	free(tarea);
-
 
 	return EXIT_SUCCESS;
 
@@ -102,15 +95,68 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 		list_add(listaDeNew,(void*)tripulante);
 
 		pthread_t t;
-		pthread_create(&t, NULL, (void*) hilo_tripulante, (void*) tripulante);
+		pthread_create(&t, NULL, (void*) hiloTripulante, (void*) tripulante);
 		pthread_detach(t);
 
 	}
 }
 
-void hilo_tripulante(t_tripulante* tripulante) {
 
-	/*Prepararse (comunicarse con ramInformar al módulo Mi-RAM HQ que desea iniciar, indicando a qué patota pertenece
+char* deserializarString (t_paquete* paquete){
+
+	char* string = malloc(sizeof(paquete->buffer->size));
+
+	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
+
+
+	return string;
+}
+
+void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
+
+    while(1){
+
+    	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
+
+    	char* string = deserializarString(paqueteRecibido);
+    	//CUANDO ESTA BLOQUEADO, ES AK?
+    	if(paqueteRecibido->codigo_operacion == STRING && string_equals_ignore_case(string, "OK")){
+
+    		queue_push(colaDeReady,(void*) tripulante);
+
+
+
+
+    	}
+
+    	eliminarPaquete(paqueteRecibido);
+    	}
+
+
+}
+
+
+void hiloTripulante(t_tripulante* tripulante) {
+
+	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM); // Duda porque no se si hay q iniciarla de vuelta ya q la anterior no se cerró
+
+	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
+
+	enviarPaquete(paqueteEnviado, miRAMsocket);
+
+	atenderMiRAM(miRAMsocket,tripulante);
+
+	eliminarPaquete(paqueteEnviado);
+
+
+}
+
+
+
+
+
+
+/*Prepararse (comunicarse con ramInformar al módulo Mi-RAM HQ que desea iniciar, indicando a qué patota pertenece
 	Solicitar la primera tarea a realizar.*/
 
 
@@ -122,7 +168,6 @@ void hilo_tripulante(t_tripulante* tripulante) {
 
 	//Hablar con imongo (haceme esta tarea,modifica este archivo)
 	//Funciones varias del discordiador
-}
 
 
 

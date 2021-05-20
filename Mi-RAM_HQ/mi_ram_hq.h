@@ -24,9 +24,9 @@ typedef struct {
 
 	} pcb;
 
-void atender_tripulantes(int*);
-int esperar_tripulante(int);
-void manejar_tripulante(int*);
+void atenderTripulantes(int*);
+int esperarTripulante(int);
+void manejarTripulante(int*);
 void deserializarTareas(void*,t_list*);
 void deserializarInfoPCB(t_paquete*);
 void armarTarea(char*,t_list*);

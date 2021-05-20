@@ -33,7 +33,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 	}
 
 	free(serverAddress);
-	printf("conectado\n");
+	printf("Conectado\n");
 	return server_sock;
 
 }

@@ -15,12 +15,16 @@
 #include <memory.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
+#include <commons/collections/queue.h>
+#include <commons/string.h>
 
 
 void crearConfig();
 void iniciarPatota(t_coordenadas[], char*, uint32_t);
-void hilo_tripulante(t_tripulante* );
+void hiloTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
+void atenderMiRAM(int,t_tripulante*);
+char* deserializarString (t_paquete*);
 
 
 #endif
