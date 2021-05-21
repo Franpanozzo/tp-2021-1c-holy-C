@@ -33,7 +33,7 @@
 	} tipoDeDato;
 
 	typedef struct {
-	    char* cod_op;
+	    char* nombreTarea;
 	    uint32_t parametro;
 	    uint32_t posX;
 	    uint32_t posY;
@@ -88,7 +88,7 @@
 
 	t_paquete* recibirPaquete(int);
 
-	void* serializarTarea(void*, void*);
+	void* serializarTarea(void*, void*, int);
 
 	void* serializarTripulante(void*, void*, int);
 

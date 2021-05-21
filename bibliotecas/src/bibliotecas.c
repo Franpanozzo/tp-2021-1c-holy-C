@@ -128,8 +128,8 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 		case TAREA:
 		{
-			char* string = (char*) estructura;
-			return strlen(string) + 1;
+			t_tarea* tarea = (t_tarea*) estructura;
+			return strlen(tarea->nombreTarea) + 1 + sizeof(uint32_t) * 4;
 
 		}
 
@@ -140,12 +140,24 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 }
 
-void* serializarTarea(void* stream, void* estructura){
 
-	char* string = (char*) estructura;
-	memcpy(stream, string, strlen(string) + 1);
+void* serializarTarea(void* stream, void* estructura, int offset){
 
-	return stream;
+    t_tarea* tarea = (t_tarea*) estructura;
+    uint32_t tamanioNombreTarea = strlen(tarea->nombreTarea) + 1;
+    memcpy(stream + offset, &(tarea->parametro),sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, &(tarea->posX),sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, &(tarea->posY),sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, &(tarea->tiempo),sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, &(tamanioNombreTarea),sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, tarea->nombreTarea, tamanioNombreTarea);
+
+    return stream;
 }
 
 
@@ -198,7 +210,7 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
 		case TAREA:
 
-			return serializarTarea(stream,estructura);
+			return serializarTarea(stream,estructura,offset);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
