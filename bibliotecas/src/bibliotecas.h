@@ -29,7 +29,7 @@
 	typedef enum{
 		PATOTA,
 		TRIPULANTE,
-		STRING
+		TAREA
 	} tipoDeDato;
 
 	typedef struct {
@@ -88,7 +88,7 @@
 
 	t_paquete* recibirPaquete(int);
 
-	void* serializarString(void*, void*);
+	void* serializarTarea(void*, void*);
 
 	void* serializarTripulante(void*, void*, int);
 

@@ -105,7 +105,7 @@ void deserializarSegun(t_paquete* paquete){
 						deserializarTripulante(paquete);
 						break;
 
-			case STRING:
+			case TAREA:
 						break;
 
 			default:
@@ -188,12 +188,12 @@ char* deserializarString (t_paquete* paquete){
 void deserializarTripulante(t_paquete* paquete) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
-	uint32_t* idPatota = malloc(sizeof(uint32_t));
+	uint32_t idPatota;
 	void* stream = paquete->buffer->stream;
 
 	int offset=0;
 
-	memcpy(&(idPatota),stream,sizeof(uint32_t));
+	memcpy(idPatota,stream,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(&(nuevoTCB->idTripulante),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
@@ -204,7 +204,7 @@ void deserializarTripulante(t_paquete* paquete) {
 	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	asignarPatota(*idPatota,nuevoTCB);
+	asignarPatota(idPatota,nuevoTCB);
 	asignarSiguienteTarea(nuevoTCB);
 	list_add(listaTCB,nuevoTCB);
 
@@ -221,15 +221,17 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 
 	patotaCorrespondiente = list_find(listaPCB,(void*) idIgualA);
 
-	if(patotaCorrespondiente == NULL){
+		if(patotaCorrespondiente == NULL){
 
-		//Importante revisar las consignas para contemplar el caso de que la patota no exista
-		printf("No existe patota para ese tripulante negro\n");
+		printf("No existe PCB para ese TCB negro\n");
+
 		exit(1);
-	}else{
+
+		}
+		else{
 
 		tripulante->patota = patotaCorrespondiente;
-	}
+		}
 }
 
 void asignarSiguienteTarea(tcb* tripulante) {

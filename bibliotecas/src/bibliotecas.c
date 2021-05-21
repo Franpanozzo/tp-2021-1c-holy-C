@@ -122,16 +122,16 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 		case TRIPULANTE:
 		{
-			t_tripulante* tripulante = (t_tripulante*) estructura;
-			return sizeof(uint32_t) * 4 + sizeof(t_estado) + sizeof(sem_t) + strlen(tripulante->instruccionAejecutar) + 1;
+			return sizeof(uint32_t) * 4 + sizeof(t_estado);
 		}
 
-		case STRING:
+
+		case TAREA:
 		{
 			char* string = (char*) estructura;
 			return strlen(string) + 1;
-		}
 
+		}
 
 		default:
 				printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
@@ -140,7 +140,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 }
 
-void* serializarString(void* stream, void* estructura){
+void* serializarTarea(void* stream, void* estructura){
 
 	char* string = (char*) estructura;
 	memcpy(stream, string, strlen(string) + 1);
@@ -175,12 +175,6 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 	memcpy(stream + offset, &(tripulante->posY),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	//Los dos datos que siguen no les sirven al tcb
-	memcpy(stream + offset, &(tripulante->semaforo),sizeof(sem_t));
-	offset += sizeof(sem_t);
-	//Porque se esta serializando la proxima instruccion a ejecutar???
-	memcpy(stream + offset, &(tripulante->instruccionAejecutar),strlen(tripulante->instruccionAejecutar) + 1);
-
 	return stream;
 }
 
@@ -202,9 +196,9 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
 				return serializarTripulante(stream,estructura,offset);
 
-		case STRING:
+		case TAREA:
 
-				return serializarString(stream,estructura);
+			return serializarTarea(stream,estructura);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
@@ -264,7 +258,7 @@ void lock(pthread_mutex_t mutex){
 
 void unlock(pthread_mutex_t mutex){
 
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_unlock(&mutex);
 }
 
 

@@ -32,6 +32,7 @@ typedef struct {
 	uint32_t posY;
 	t_tarea* proximaAEjecutar;
 	pcb* patota;
+
 } tcb;
 
 void atenderTripulantes(int*);

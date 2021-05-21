@@ -30,8 +30,6 @@ int main() {
 	listaDeNew = list_create();
 	colaDeReady = queue_create();
 
-
-
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
@@ -110,7 +108,6 @@ char* deserializarString (t_paquete* paquete){
 
 	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
 
-
 	return string;
 }
 
@@ -118,30 +115,34 @@ char* deserializarString (t_paquete* paquete){
 
 void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
-    while(1){
-
     	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
 
-    	char* string = deserializarString(paqueteRecibido);
-    	//CUANDO ESTA BLOQUEADO, ES AK?
-    	if(paqueteRecibido->codigo_operacion == STRING && string_equals_ignore_case(string, "OK")){
+    	t_tripulante* tripulanteParaCheckear;
+
+    	char* tarea = deserializarString(paqueteRecibido);
+
+    	if(paqueteRecibido->codigo_operacion == TAREA){
 
     		bool idIgualA(t_tripulante* tripulanteAcomparar){
 
     			return tripulanteAcomparar->idTripulante == tripulante->idTripulante;
     		}
 
-    		if(list_remove_by_condition(listaDeNew, (void*) idIgualA) == NULL){
-    			printf("Estas queriendo eliminar un tripulante de la lista de New que no existe negro\n");
-    			exit(1);
+    		if((tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)) != NULL){
+
+    		tripulante->instruccionAejecutar = tarea;
+
+    		queue_push(colaDeReady,(void*) tripulanteParaCheckear);
+
     		}
+
     		else{
-    			queue_push(colaDeReady,(void*) list_remove_by_condition(listaDeNew, (void*) idIgualA));
+
+    			printf("Estas queriendo meter a Ready un NULL negro\n");
+    			exit(1);
+
     		}
-
     	}
-
-    }
 }
 
 
