@@ -1,20 +1,13 @@
 #include "discordiador.h"
 
 
-t_config* config;
-t_log* logger;
- // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
-
-puertoEIP* puertoEIPRAM;
-puertoEIP* puertoEIPMongo;
-
-int idTripulante = 0;
-int idPatota = 0;
-t_list* listaDeNew;
-t_queue* colaDeReady;
-
 
 int main() {
+	idTripulante = 0;
+	idPatota = 0;
+
+	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador"
+			, "Discordiador", 1);
 
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
@@ -47,6 +40,7 @@ void crearConfig(){
 		exit(1);
 		}
 }
+
 
 t_patota* asignarDatosAPatota(char* string){
 
@@ -90,9 +84,15 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		tripulante->estado = NEW;
 
+		t_log* bitacora = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador"
+					, "Discordiador", 1);
+
 		sem_init(&tripulante->semaforo, 0, 0);
 
+		//no hace falta el mutex aca pero bueno sha fue
+		lock(mutexListaNew);
 		list_add(listaDeNew,(void*)tripulante);
+		unlock(mutexListaNew);
 
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) hiloTripulante, (void*) tripulante);
@@ -102,24 +102,13 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 }
 
 
-char* deserializarString (t_paquete* paquete){
-
-	char* string = malloc(sizeof(paquete->buffer->size));
-
-	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
-
-	return string;
-}
-
-
-
 void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
 
     	t_tripulante* tripulanteParaCheckear;
 
-    	char* tarea = deserializarString(paqueteRecibido);
+    	t_tarea* tarea = deserializarTarea(paqueteRecibido);
 
     	if(paqueteRecibido->codigo_operacion == TAREA){
 
@@ -128,17 +117,21 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     			return tripulanteAcomparar->idTripulante == tripulante->idTripulante;
     		}
 
-    		if((tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)) != NULL){
+    		lock(mutexListaNew);
+    		tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
+    		unlock(mutexListaNew);
 
-    		tripulante->instruccionAejecutar = tarea;
 
-    		queue_push(colaDeReady,(void*) tripulanteParaCheckear);
+    		if(tripulanteParaCheckear != NULL){
+
+				tripulante->instruccionAejecutar = tarea;
+
+				queue_push(colaDeReady,(void*) tripulanteParaCheckear);
 
     		}
 
     		else{
-
-    			printf("Estas queriendo meter a Ready un NULL negro\n");
+    			log_info(logDiscordiador, "Estas queriendo meter a Ready un NULL negro\n");
     			exit(1);
 
     		}
