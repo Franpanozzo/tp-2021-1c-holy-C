@@ -6,6 +6,9 @@ int main() {
 	idTripulante = 0;
 	idPatota = 0;
 
+	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador"
+			, "Discordiador", 1);
+
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
 	puertoEIPRAM = malloc(sizeof(puertoEIP)); // Reservar memoria para struct Ram
@@ -37,6 +40,7 @@ void crearConfig(){
 		exit(1);
 		}
 }
+
 
 t_patota* asignarDatosAPatota(char* string){
 
@@ -79,6 +83,9 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 		tripulante->idPatota = patota->ID;
 
 		tripulante->estado = NEW;
+
+		t_log* bitacora = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador"
+					, "Discordiador", 1);
 
 		sem_init(&tripulante->semaforo, 0, 0);
 
@@ -124,8 +131,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     		}
 
     		else{
-
-    			printf("Estas queriendo meter a Ready un NULL negro\n");
+    			log_info(logDiscordiador, "Estas queriendo meter a Ready un NULL negro\n");
     			exit(1);
 
     		}

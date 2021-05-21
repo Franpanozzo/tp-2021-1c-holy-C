@@ -21,7 +21,7 @@
 
 
 t_config* config;
-t_log* logger;
+t_log* logDiscordiador;
  // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
 
 puertoEIP* puertoEIPRAM;
