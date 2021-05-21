@@ -20,6 +20,20 @@
 #include <stdbool.h>
 
 
+t_config* config;
+t_log* logger;
+ // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
+
+puertoEIP* puertoEIPRAM;
+puertoEIP* puertoEIPMongo;
+
+int idTripulante;
+int idPatota;
+t_list* listaDeNew;
+t_queue* colaDeReady;
+pthread_mutex_t mutexListaNew;
+pthread_mutex_t mutexColaReady;
+
 void crearConfig();
 void iniciarPatota(t_coordenadas[], char*, uint32_t);
 void hiloTripulante(t_tripulante* );

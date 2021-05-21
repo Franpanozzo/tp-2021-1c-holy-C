@@ -1,20 +1,10 @@
 #include "discordiador.h"
 
 
-t_config* config;
-t_log* logger;
- // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
-
-puertoEIP* puertoEIPRAM;
-puertoEIP* puertoEIPMongo;
-
-int idTripulante = 0;
-int idPatota = 0;
-t_list* listaDeNew;
-t_queue* colaDeReady;
-
 
 int main() {
+	idTripulante = 0;
+	idPatota = 0;
 
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
@@ -92,7 +82,10 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		sem_init(&tripulante->semaforo, 0, 0);
 
+		//no hace falta el mutex aca pero bueno sha fue
+		lock(mutexListaNew);
 		list_add(listaDeNew,(void*)tripulante);
+		unlock(mutexListaNew);
 
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) hiloTripulante, (void*) tripulante);
@@ -119,7 +112,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	t_tripulante* tripulanteParaCheckear;
 
-    	char* tarea = deserializarString(paqueteRecibido);
+    	t_tarea* tarea = deserializarString(paqueteRecibido);
 
     	if(paqueteRecibido->codigo_operacion == TAREA){
 
@@ -128,11 +121,16 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     			return tripulanteAcomparar->idTripulante == tripulante->idTripulante;
     		}
 
-    		if((tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)) != NULL){
+    		lock(mutexListaNew);
+    		tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)
+    		unlock(mutexListaNew);
 
-    		tripulante->instruccionAejecutar = tarea;
 
-    		queue_push(colaDeReady,(void*) tripulanteParaCheckear);
+    		if(tripulanteParaCheckear != NULL){
+
+				tripulante->instruccionAejecutar = tarea;
+
+				queue_push(colaDeReady,(void*) tripulanteParaCheckear);
 
     		}
 

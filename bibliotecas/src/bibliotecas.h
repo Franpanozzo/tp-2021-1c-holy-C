@@ -16,6 +16,7 @@
 #include <commons/log.h>
 #include <stdbool.h>
 
+
 	typedef struct{
 		uint32_t posX;
 		uint32_t posY;
@@ -33,7 +34,7 @@
 	} tipoDeDato;
 
 	typedef struct {
-	    char* cod_op;
+	    char* tarea;
 	    uint32_t parametro;
 	    uint32_t posX;
 	    uint32_t posY;
