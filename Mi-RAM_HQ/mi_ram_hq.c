@@ -3,11 +3,16 @@
 t_list* listaPCB;
 t_list* listaTCB;
 
+pthread_mutex_t mutexListaTCB;
+pthread_mutex_t mutexListaPCB;
+
 int main(void) {
 
     int puerto = 3222;
     listaPCB = list_create();
     listaTCB = list_create();
+    pthread_mutex_init(&mutexListaTCB, NULL);
+    pthread_mutex_init(&mutexListaPCB, NULL);
 
     int serverSock = iniciarConexionDesdeServidor(puerto);
 
@@ -30,6 +35,7 @@ int main(void) {
 
 /*
  void eliminarTarea(t_tarea* tarea){
+ 	free(tarea->nombreTarea);
     free(tarea);
 }
 
@@ -47,8 +53,6 @@ void eliminarListaTCB(t_list* listaTCB){
 }
 
 void eliminarTCB(tcb* tcb){
-	free(tcb->proximaAEjecutar);
-	free(tcb->pcb);
 	free(tcb);
 }
  */
@@ -85,13 +89,13 @@ void manejarTripulante(int *tripulanteSock) {
 
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
-    deserializarSegun(paquete);
+    deserializarSegun(paquete,*tripulanteSock);
 
     eliminarPaquete(paquete);
 }
 
 
-void deserializarSegun(t_paquete* paquete){
+void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 	switch(paquete->codigo_operacion){
 
@@ -99,10 +103,10 @@ void deserializarSegun(t_paquete* paquete){
 
 						deserializarInfoPCB(paquete);
 						break;
-
+//CAMBIAR NOMBRE DE ENUM
 			case TRIPULANTE:
 
-						deserializarTripulante(paquete);
+						deserializarTripulante(paquete,*tripulanteSock);
 						break;
 
 			case TAREA:
@@ -137,10 +141,10 @@ void armarTarea(char* string,t_list* lista){
 
     if(string_contains(arrayParametros[0]," ")){
     	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
-    	tarea->cod_op = arrayPrimerElemento[0];
+    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
     	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
     } else {
-    	tarea->cod_op = arrayParametros[0];
+    	tarea->nombreTarea = strdup(arrayParametros[0]);
     }
     tarea->posX = (int) atoi(arrayParametros[1]);
     tarea->posY = (int) atoi(arrayParametros[2]);
@@ -168,8 +172,11 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	deserializarTareas(stream + offset, nuevoPCB->listaTareas, *tamanio);
 
 	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
-	printf("Recibi pa %s \n", tarea->cod_op);
+	printf("Recibi pa %s \n", tarea->nombreTarea);
+
+	lock(mutexListaPCB);
 	list_add(listaPCB,nuevoPCB);
+    unlock(mutexListaPCB);
 
 	free(tamanio);
 }
@@ -185,7 +192,7 @@ char* deserializarString (t_paquete* paquete){
 	return string;
 }
 
-void deserializarTripulante(t_paquete* paquete) {
+void deserializarTripulante(t_paquete* paquete, int* tripulanteSock) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
 	uint32_t idPatota;
@@ -193,7 +200,7 @@ void deserializarTripulante(t_paquete* paquete) {
 
 	int offset=0;
 
-	memcpy(idPatota,stream,sizeof(uint32_t));
+	memcpy(&(idPatota),stream,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(&(nuevoTCB->idTripulante),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
@@ -206,7 +213,11 @@ void deserializarTripulante(t_paquete* paquete) {
 
 	asignarPatota(idPatota,nuevoTCB);
 	asignarSiguienteTarea(nuevoTCB);
+	mandarTarea(nuevoTCB->proximaAEjecutar, *tripulanteSock);
+
+	lock(mutexListaTCB);
 	list_add(listaTCB,nuevoTCB);
+	unlock(mutexListaTCB);
 
 }
 
@@ -217,7 +228,7 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 		return pcbAComparar->pid == idPatotaBuscada;
 	}
 
-	pcb* patotaCorrespondiente = malloc(sizeof(pcb));
+	pcb* patotaCorrespondiente;
 
 	patotaCorrespondiente = list_find(listaPCB,(void*) idIgualA);
 
@@ -231,8 +242,10 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 		else{
 
 		tripulante->patota = patotaCorrespondiente;
+		// ASIGNAR TAREATRIPULANTE A LA PRIMERA POSICION DE LA LISTA DE LAS TAREAS DEL PCB
 		}
 }
+
 
 void asignarSiguienteTarea(tcb* tripulante) {
 
@@ -243,7 +256,15 @@ void asignarSiguienteTarea(tcb* tripulante) {
 }
 
 
+mandarTarea(t_tarea* tarea, int* socketTrip) {
 
+	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tarea, TAREA);
+
+	enviarPaquete(paqueteEnviado, socketTrip);
+
+	eliminarPaquete(paqueteEnviado);
+
+}
 
 
 

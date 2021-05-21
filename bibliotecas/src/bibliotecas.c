@@ -129,6 +129,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		case TAREA:
 		{
 			t_tarea* tarea = (t_tarea*) estructura;
+
 			return sizeof(uint32_t) * 5 + strlen(tarea->nombreTarea) + 1;
 
 		}
@@ -179,7 +180,22 @@ void* serializarTarea(void* stream, void* estructura, int offset){
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, tarea->nombreTarea, tamanioNombreTarea);
 
-	return stream;
+
+    t_tarea* tarea = (t_tarea*) estructura;
+    uint32_t tamanioNombreTarea = strlen(tarea->nombreTarea) + 1;
+    memcpy(stream + offset, &(tarea->parametro),sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, &(tarea->posX),sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, &(tarea->posY),sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, &(tarea->tiempo),sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, &(tamanioNombreTarea),sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
+    offset += sizeof(uint32_t);
+    memcpy(stream + offset, tarea->nombreTarea, tamanioNombreTarea);
+
+    return stream;
 }
 
 
@@ -211,7 +227,6 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 
 	return stream;
 }
-
 
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
