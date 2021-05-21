@@ -95,24 +95,13 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 }
 
 
-char* deserializarString (t_paquete* paquete){
-
-	char* string = malloc(sizeof(paquete->buffer->size));
-
-	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
-
-	return string;
-}
-
-
-
 void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
 
     	t_tripulante* tripulanteParaCheckear;
 
-    	t_tarea* tarea = deserializarString(paqueteRecibido);
+    	t_tarea* tarea = deserializarTarea(paqueteRecibido);
 
     	if(paqueteRecibido->codigo_operacion == TAREA){
 
@@ -122,7 +111,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     		}
 
     		lock(mutexListaNew);
-    		tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)
+    		tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
     		unlock(mutexListaNew);
 
 

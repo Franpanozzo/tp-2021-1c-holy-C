@@ -34,11 +34,13 @@
 	} tipoDeDato;
 
 	typedef struct {
-	    char* tarea;
+
+	    char* nombreTarea;
 	    uint32_t parametro;
 	    uint32_t posX;
 	    uint32_t posY;
 	    uint32_t tiempo;
+
 	} t_tarea;
 
 	typedef enum{
@@ -64,7 +66,7 @@
 		t_estado estado;
 		uint32_t posX;
 		uint32_t posY;
-		char* instruccionAejecutar;
+		t_tarea* instruccionAejecutar;
 		sem_t semaforo;
 	} t_tripulante;
 
@@ -89,9 +91,11 @@
 
 	t_paquete* recibirPaquete(int);
 
-	void* serializarTarea(void*, void*);
+	void* serializarTarea(void*, void*, int);
 
 	void* serializarTripulante(void*, void*, int);
+
+	t_tarea* deserializarTarea(void*);
 
 
 	/**
