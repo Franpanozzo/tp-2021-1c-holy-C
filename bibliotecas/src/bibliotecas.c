@@ -177,6 +177,7 @@ t_tarea* deserializarTarea(void* stream){
     offset += sizeof(uint32_t);
     memcpy(&(tamanioNombreTarea),stream + offset, sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
     offset += sizeof(uint32_t);
+    tarea->nombreTarea = malloc(tamanioNombreTarea);
     memcpy(tarea->nombreTarea, stream + offset, tamanioNombreTarea);
 
     return tarea;

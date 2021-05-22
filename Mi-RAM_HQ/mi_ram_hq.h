@@ -16,6 +16,9 @@
 #include <bibliotecas.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
+#include <commons/log.h>
+
+t_log* logMiRAM;
 
 typedef struct {
 

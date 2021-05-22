@@ -14,6 +14,8 @@ int main(void) {
     pthread_mutex_init(&mutexListaTCB, NULL);
     pthread_mutex_init(&mutexListaPCB, NULL);
 
+    logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);
+
     int serverSock = iniciarConexionDesdeServidor(puerto);
 
     //Abro un thread manejar las conexiones
@@ -93,7 +95,7 @@ void manejarTripulante(int *tripulanteSock) {
 
     deserializarSegun(paquete,*tripulanteSock);
 
-    eliminarPaquete(paquete);
+    //eliminarPaquete(paquete);
 }
 
 
@@ -136,7 +138,7 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
    }
 
-    free(string);
+    //free(string);
 }
 
 
@@ -193,17 +195,19 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
 	deserializarTareas(stream + offset, nuevoPCB->listaTareas, tamanio);
 
-	/*
-	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
-	printf("Recibi pa %s \n", tarea->nombreTarea);
 
-	t_tarea* tarea = list_get(nuevoPCB->listaTareas,2);
-		printf("Recibi pa %s \n", tarea->nombreTarea);
+	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
+	log_info(logMiRAM, "Recibi pa %s \n", tarea->nombreTarea);
+
+	t_tarea* tarea2 = list_get(nuevoPCB->listaTareas,1);
+	log_info(logMiRAM, "Recibi pa %s \n", tarea2->nombreTarea);
+
+
 
 	lock(mutexListaPCB);
 	list_add(listaPCB,nuevoPCB);
     unlock(mutexListaPCB);
-    */
+
 }
 
 
@@ -236,7 +240,12 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
+	log_info(logMiRAM,"Recibi el tribulante de id %d y supuesta patota %d",nuevoTCB->idTripulante, idPatota);
+
 	asignarPatota(idPatota,nuevoTCB);
+
+	log_info(logMiRAM,"Se le asigno la patota %d al tripulante %d",idPatota, nuevoTCB->idTripulante);
+
 	asignarSiguienteTarea(nuevoTCB);
 	mandarTarea(nuevoTCB->proximaAEjecutar, tripulanteSock);
 
@@ -250,7 +259,10 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 
 	bool idIgualA(pcb* pcbAComparar){
 
-		return pcbAComparar->pid == idPatotaBuscada;
+		bool a;
+		a = pcbAComparar->pid == idPatotaBuscada;
+		log_info(logMiRAM,"Comparado con primer patota %d",a);
+		return a;
 	}
 
 	pcb* patotaCorrespondiente;
@@ -287,7 +299,7 @@ void mandarTarea(t_tarea* tarea, int socketTrip) {
 
 	enviarPaquete(paqueteEnviado, socketTrip);
 
-	eliminarPaquete(paqueteEnviado);
+	//eliminarPaquete(paqueteEnviado);
 
 }
 
