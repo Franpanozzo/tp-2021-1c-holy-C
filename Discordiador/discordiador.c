@@ -22,18 +22,21 @@ int main() {
 	listaDeNew = list_create();
 	colaDeReady = queue_create();
 
+	pthread_mutex_init(&mutexListaNew, NULL);
+	pthread_mutex_init(&mutexColaReady, NULL);
+
 	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_YOGUR 4;5;6;7\n");
 
-		t_coordenadas coordenadas[4];
+		t_coordenadas coordenadas[1];
 
-		for(int i = 0; i<4 ;i++) {
+		for(int i = 0; i<1 ;i++) {
 
 			coordenadas[i].posX = i;
 			coordenadas[i].posY = i+ 1;
 		}
 
 
-	iniciarPatota(coordenadas, tarea, 4);
+	iniciarPatota(coordenadas, tarea, 1);
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
@@ -101,11 +104,14 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		list_add(listaDeNew,(void*)tripulante);
 
+		//esto va en detach
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) hiloTripulante, (void*) tripulante);
-		pthread_detach(t);
+		pthread_join(t, (void**) NULL);
 
 	}
+
+	close(server_socket);
 }
 
 
@@ -126,7 +132,9 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	t_tripulante* tripulanteParaCheckear;
 
-    	char* tarea = deserializarString(paqueteRecibido);
+    	t_tarea* tarea = deserializarTarea(paqueteRecibido->buffer->stream);
+
+    	printf("Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
 
     	if(paqueteRecibido->codigo_operacion == TAREA){
 
@@ -135,7 +143,9 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     			return tripulanteAcomparar->idTripulante == tripulante->idTripulante;
     		}
 
+    		lock(mutexListaNew);
     		if((tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)) != NULL){
+    		unlock(mutexListaNew);
 
     		tripulante->instruccionAejecutar = tarea;
 

@@ -161,6 +161,28 @@ void* serializarTarea(void* stream, void* estructura, int offset){
 }
 
 
+t_tarea* deserializarTarea(void* stream){
+
+    int offset = 0;
+    t_tarea* tarea = malloc(sizeof(t_tarea));
+    uint32_t tamanioNombreTarea = 0;
+
+    memcpy(&(tarea->parametro),stream + offset ,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->posX),stream + offset,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->posY),stream + offset,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->tiempo),stream + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tamanioNombreTarea),stream + offset, sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
+    offset += sizeof(uint32_t);
+    memcpy(tarea->nombreTarea, stream + offset, tamanioNombreTarea);
+
+    return tarea;
+}
+
+
 void* serializarPatota(void* stream, void* estructura, int offset){
 
 	t_patota* patota = (t_patota*) estructura;

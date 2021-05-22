@@ -31,6 +31,8 @@ int idTripulante;
 int idPatota;
 t_list* listaDeNew;
 t_queue* colaDeReady;
+pthread_mutex_t mutexListaNew;
+pthread_mutex_t mutexColaReady;
 
 
 void crearConfig();

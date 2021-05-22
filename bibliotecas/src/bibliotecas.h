@@ -63,7 +63,7 @@
 		t_estado estado;
 		uint32_t posX;
 		uint32_t posY;
-		char* instruccionAejecutar;
+		t_tarea* instruccionAejecutar;
 		sem_t semaforo;
 	} t_tripulante;
 
@@ -91,6 +91,8 @@
 	void* serializarTarea(void*, void*, int);
 
 	void* serializarTripulante(void*, void*, int);
+
+	t_tarea* deserializarTarea(void*);
 
 
 	/**

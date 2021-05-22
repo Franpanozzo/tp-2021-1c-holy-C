@@ -62,8 +62,6 @@ void atenderTripulantes(int* serverSock) {
     while(1){
 
 		int tripulanteSock = esperarTripulante(*serverSock);
-		manejarTripulante(&tripulanteSock);
-
 
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
@@ -143,22 +141,38 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
 
 void armarTarea(char* string,t_list* lista){
-    t_tarea* tarea = malloc(sizeof(t_tarea));
+    /*t_tarea* tarea = malloc(sizeof(t_tarea));
 
-    char** arrayParametros = string_split(string,";");
+    char** arrayTareaYParametros = string_split(string," ");
 
-    if(string_contains(arrayParametros[0]," ")){
-    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
-    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
-    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
-    } else {
-        tarea->nombreTarea = strdup(arrayParametros[0]);
+    char* nombreTarea = arrayTareaYParametros[0];
+    char* arrayParametros = arrayTareaYParametros[1];
+
+    int i = 0;
+    while(arrayParametros != NULL){
+    	if(*arrayParametros == ";")) i++;
+    	arrayParametros++;
     }
-    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
-    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
-    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
+    printf("La cantidad de parametros es %d", i);
+*/
 
-    list_add(lista,tarea);
+	t_tarea* tarea = malloc(sizeof(t_tarea));
+
+	    char** arrayParametros = string_split(string,";");
+
+	    if(string_contains(arrayParametros[0]," ")){
+	    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
+	    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
+	    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
+	    } else {
+	        tarea->nombreTarea = strdup(arrayParametros[0]);
+	    }
+	    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
+	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
+	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
+
+	    list_add(lista,tarea);
+
 }
 
 
@@ -179,12 +193,17 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
 	deserializarTareas(stream + offset, nuevoPCB->listaTareas, tamanio);
 
+	/*
 	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
 	printf("Recibi pa %s \n", tarea->nombreTarea);
+
+	t_tarea* tarea = list_get(nuevoPCB->listaTareas,2);
+		printf("Recibi pa %s \n", tarea->nombreTarea);
 
 	lock(mutexListaPCB);
 	list_add(listaPCB,nuevoPCB);
     unlock(mutexListaPCB);
+    */
 }
 
 
