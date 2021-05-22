@@ -63,9 +63,11 @@ void atenderTripulantes(int* serverSock) {
 
 		int tripulanteSock = esperarTripulante(*serverSock);
 
+		/*
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
 		pthread_detach(t);
+		*/
     }
 
 }
