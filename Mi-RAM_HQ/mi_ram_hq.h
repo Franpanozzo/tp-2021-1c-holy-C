@@ -47,7 +47,7 @@ void armarTarea(char*,t_list*);
 	* @DESC: recibe un t_paquete* para deserializarlo al TAD que contiene el t_buffer*
 	* segun el tipoDeDato y operarlo como corresponda dentro del switch(nunca salir de ahi)
 	*/
-void deserializarSegun(t_paquete*, int tripulanteSock);
+void deserializarSegun(t_paquete*, int);
 void deserializarTripulante(t_paquete*,int);
 void asignarPatota(uint32_t, tcb*);
 void asignarSiguienteTarea(tcb*);

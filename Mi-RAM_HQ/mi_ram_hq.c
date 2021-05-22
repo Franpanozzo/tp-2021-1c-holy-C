@@ -62,12 +62,13 @@ void atenderTripulantes(int* serverSock) {
     while(1){
 
 		int tripulanteSock = esperarTripulante(*serverSock);
+		manejarTripulante(&tripulanteSock);
 
-		/*
+
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
 		pthread_detach(t);
-		*/
+
     }
 
 }
@@ -105,14 +106,12 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			case PATOTA:
 
 						deserializarInfoPCB(paquete);
+
 						break;
 //CAMBIAR NOMBRE DE ENUM
 			case TRIPULANTE:
 
 						deserializarTripulante(paquete,tripulanteSock);
-						break;
-
-			case TAREA:
 						break;
 
 			default:
@@ -131,9 +130,12 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
     char** arrayDeTareas = string_split(string,"\n");
 
     int i = 0;
-    while(arrayDeTareas[i] != NULL){
+
+    while(strcmp(arrayDeTareas[i], "") != 0){
+
         armarTarea(arrayDeTareas[i],listaTareas);
         i++;
+
    }
 
     free(string);
@@ -150,11 +152,11 @@ void armarTarea(char* string,t_list* lista){
     	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
     	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
     } else {
-    	tarea->nombreTarea = strdup(arrayParametros[0]);
+        tarea->nombreTarea = strdup(arrayParametros[0]);
     }
-    tarea->posX = (int) atoi(arrayParametros[1]);
-    tarea->posY = (int) atoi(arrayParametros[2]);
-    tarea->tiempo = (int) atoi(arrayParametros[3]);
+    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
+    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
+    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 
     list_add(lista,tarea);
 }
@@ -183,8 +185,6 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	lock(mutexListaPCB);
 	list_add(listaPCB,nuevoPCB);
     unlock(mutexListaPCB);
-
-
 }
 
 

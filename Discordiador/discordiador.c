@@ -22,23 +22,25 @@ int main() {
 	listaDeNew = list_create();
 	colaDeReady = queue_create();
 
+	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_YOGUR 4;5;6;7\n");
+
+		t_coordenadas coordenadas[4];
+
+		for(int i = 0; i<4 ;i++) {
+
+			coordenadas[i].posX = i;
+			coordenadas[i].posY = i+ 1;
+		}
+
+
+	iniciarPatota(coordenadas, tarea, 4);
+
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
 	free(puertoEIPMongo);
 
-	char* tarea = strdup("GENERAR OXIGENO 4;5;6;7\n");
 
-	t_coordenadas coordenadas[4];
-
-	for(int i = 0; i<4 ;i++) {
-
-		coordenadas[i].posX = i;
-		coordenadas[i].posY = i+ 1;
-	}
-
-
-	iniciarPatota(coordenadas, tarea, 4);
 
 	return EXIT_SUCCESS;
 
