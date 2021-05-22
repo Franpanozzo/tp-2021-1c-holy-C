@@ -159,7 +159,7 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	pcb* nuevoPCB = malloc(sizeof(pcb));
 
 	void* stream = paquete->buffer->stream;
-	uint32_t* tamanio = malloc(sizeof(uint32_t));
+	uint32_t* tamanio;
 
 	int offset = 0;
 	memcpy(&(nuevoPCB->pid),stream,sizeof(uint32_t));
@@ -169,7 +169,7 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
 	nuevoPCB->listaTareas = list_create();
 
-	deserializarTareas(stream + offset, nuevoPCB->listaTareas, *tamanio);
+	deserializarTareas(stream + offset, nuevoPCB->listaTareas, tamanio);
 
 	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
 	printf("Recibi pa %s \n", tarea->nombreTarea);

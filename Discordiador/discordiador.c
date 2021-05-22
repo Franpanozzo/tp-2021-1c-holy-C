@@ -1,21 +1,13 @@
 #include "discordiador.h"
 
 
-t_config* config;
-t_log* logger;
- // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
-
-puertoEIP* puertoEIPRAM;
-puertoEIP* puertoEIPMongo;
-
-int idTripulante = 0;
-int idPatota = 0;
-t_list* listaDeNew;
-t_queue* colaDeReady;
-
-
 int main() {
 
+	idTripulante = 0;
+	idPatota = 0;
+
+
+	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/logDisocridador.log","Discordiador",1);
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
 	puertoEIPRAM = malloc(sizeof(puertoEIP)); // Reservar memoria para struct Ram
@@ -35,6 +27,19 @@ int main() {
 	free(puertoEIPMongo->IP);
 	free(puertoEIPMongo);
 
+	char* tarea = strdup("GENERAR OXIGENO 4;5;6;7\n");
+
+	t_coordenadas coordenadas[4];
+
+	for(int i = 0; i<4 ;i++) {
+
+		coordenadas[i].posX = i;
+		coordenadas[i].posY = i+ 1;
+	}
+
+
+	iniciarPatota(coordenadas, tarea, 4);
+
 	return EXIT_SUCCESS;
 
 }
@@ -43,7 +48,7 @@ int main() {
 void crearConfig(){
 	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
 	if(config == NULL){
-		log_error(logger, "\n La ruta es incorrecta \n");
+		log_error(logDiscordiador, "\n La ruta es incorrecta \n");
 		exit(1);
 		}
 }
