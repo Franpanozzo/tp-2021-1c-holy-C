@@ -84,6 +84,7 @@ int esperarTripulante(int serverSock) {
 
 }
 
+//CUANDO CREAS UN HILO HAY QUE PASAR SI O SI UN PUNTERO
 
 void manejarTripulante(int *tripulanteSock) {
 
@@ -95,7 +96,7 @@ void manejarTripulante(int *tripulanteSock) {
 }
 
 
-void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
+void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 	switch(paquete->codigo_operacion){
 
@@ -106,7 +107,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 //CAMBIAR NOMBRE DE ENUM
 			case TRIPULANTE:
 
-						deserializarTripulante(paquete,*tripulanteSock);
+						deserializarTripulante(paquete,tripulanteSock);
 						break;
 
 			case TAREA:
@@ -121,16 +122,19 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
-    char* string;
+    char* string = malloc(tamanio);
 
-    memcpy(&(string),stream,tamanio);
+    memcpy(string,stream,tamanio);
 
     char** arrayDeTareas = string_split(string,"\n");
 
     int i = 0;
     while(arrayDeTareas[i] != NULL){
         armarTarea(arrayDeTareas[i],listaTareas);
+        i++;
    }
+
+    free(string);
 }
 
 
@@ -159,7 +163,7 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	pcb* nuevoPCB = malloc(sizeof(pcb));
 
 	void* stream = paquete->buffer->stream;
-	uint32_t* tamanio;
+	uint32_t tamanio;
 
 	int offset = 0;
 	memcpy(&(nuevoPCB->pid),stream,sizeof(uint32_t));
@@ -178,7 +182,7 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	list_add(listaPCB,nuevoPCB);
     unlock(mutexListaPCB);
 
-	free(tamanio);
+
 }
 
 
@@ -192,7 +196,7 @@ char* deserializarString (t_paquete* paquete){
 	return string;
 }
 
-void deserializarTripulante(t_paquete* paquete, int* tripulanteSock) {
+void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
 	uint32_t idPatota;
@@ -213,7 +217,7 @@ void deserializarTripulante(t_paquete* paquete, int* tripulanteSock) {
 
 	asignarPatota(idPatota,nuevoTCB);
 	asignarSiguienteTarea(nuevoTCB);
-	mandarTarea(nuevoTCB->proximaAEjecutar, *tripulanteSock);
+	mandarTarea(nuevoTCB->proximaAEjecutar, tripulanteSock);
 
 	lock(mutexListaTCB);
 	list_add(listaTCB,nuevoTCB);
@@ -256,7 +260,7 @@ void asignarSiguienteTarea(tcb* tripulante) {
 }
 
 
-mandarTarea(t_tarea* tarea, int* socketTrip) {
+void mandarTarea(t_tarea* tarea, int socketTrip) {
 
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tarea, TAREA);
 
