@@ -33,7 +33,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 	}
 
 	free(serverAddress);
-	printf("Conectado\n");
+	printf("Cliente conectado del puerto %d y IP %s \n",puertoEIPAConectar->puerto,puertoEIPAConectar->IP);
 	return server_sock;
 
 }
@@ -63,7 +63,7 @@ int iniciarConexionDesdeServidor(int puerto) {
 		perror("listen");
 	}
 
-
+	printf("Servidor conectado \n");
 	return server_sock;
 
 
@@ -129,9 +129,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		case TAREA:
 		{
 			t_tarea* tarea = (t_tarea*) estructura;
-
-			return sizeof(uint32_t) * 5 + strlen(tarea->nombreTarea) + 1;
-
+			return strlen(tarea->nombreTarea) + 1 + sizeof(uint32_t) * 5;
 		}
 
 		default:
@@ -199,6 +197,29 @@ void* serializarTarea(void* stream, void* estructura, int offset){
 }
 
 
+t_tarea* deserializarTarea(void* stream){
+
+    int offset = 0;
+    t_tarea* tarea = malloc(sizeof(t_tarea));
+    uint32_t tamanioNombreTarea = 0;
+
+    memcpy(&(tarea->parametro),stream + offset ,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->posX),stream + offset,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->posY),stream + offset,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->tiempo),stream + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tamanioNombreTarea),stream + offset, sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
+    offset += sizeof(uint32_t);
+    tarea->nombreTarea = malloc(tamanioNombreTarea);
+    memcpy(tarea->nombreTarea, stream + offset, tamanioNombreTarea);
+
+    return tarea;
+}
+
+
 void* serializarPatota(void* stream, void* estructura, int offset){
 
 	t_patota* patota = (t_patota*) estructura;
@@ -263,6 +284,8 @@ t_paquete* armarPaqueteCon(void* estructura,tipoDeDato cod_op){
 	paquete->buffer->size = tamanioEstructura(estructura,paquete->codigo_operacion);
 	paquete->buffer->stream = serializarEstructura(estructura,paquete->buffer->size,paquete->codigo_operacion);
 
+	printf("Paquete %d creado \n", paquete->codigo_operacion);
+
 	return  paquete;
 
 }
@@ -274,6 +297,8 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 
 	void* a_enviar = serializarPaquete(paquete,tamanioTotal);
 	send(socket, a_enviar, tamanioTotal,0);
+
+	printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
 
 	free(a_enviar);
 	//hay que tener cuidado, definir donde hacer free's y que seamos consitente en el tp

@@ -13,7 +13,7 @@ void leerConsola(){
 	///home/utnso/tp-2021-1c-holy-C/Discordiador/tareas.txt
 	if(strcmp(comandoYparametros[cursor], "INICIAR_PATOTA") == 0){
 
-		log_info(logger, "\nSe ingreso el comando iniciar patota");
+		log_info(logDiscordiador, "\nSe ingreso el comando iniciar patota");
 		cursor ++;
 
 		uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
@@ -23,16 +23,16 @@ void leerConsola(){
 		//iniciarPatota(coordenadasTripulantes, tareas, uint32_t cantidadTripulantes);
 
 		//logear todo el comando
-		log_info(logger, " con parametros: \n  cantidad de tripulantes: %d"
+		log_info(logDiscordiador, " con parametros: \n  cantidad de tripulantes: %d"
 				"\n  tareas: %s"
 				"\n posiciones:", cantidadTripulantes, tareas);
 		for(int c=0; c<cantidadTripulantes; c++){
-			log_info(logger, " %d|%d", coordenadasTripulantes[c].posX, coordenadasTripulantes[c].posY);
+			log_info(logDiscordiador, " %d|%d", coordenadasTripulantes[c].posX, coordenadasTripulantes[c].posY);
 		}
 
 	}
 	else{
-		log_error(logger, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
+		log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
 	}
 
 	free(leido);
@@ -42,14 +42,14 @@ void leerConsola(){
 uint32_t procesarCantidadTripulantes(char** parametros, int* cursor){
 
 	if(parametros[*cursor] == NULL){
-		log_error(logger, "\n Faltan parametros en el comando iniciar patota, no se ingreso la cantidad de tripulantes \n");
+		log_error(logDiscordiador, "\n Faltan parametros en el comando iniciar patota, no se ingreso la cantidad de tripulantes \n");
 		exit(1);
 	}
 
 	int cantidad = atoi(parametros[*cursor]);
 
 	if(cantidad <= 0){
-		log_error(logger,"\n Se ingreso una cantidad no valida de tripulantes: %d \n", cantidad);
+		log_error(logDiscordiador,"\n Se ingreso una cantidad no valida de tripulantes: %d \n", cantidad);
 	}
 
 	*cursor = *cursor+1;
@@ -72,7 +72,7 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 			coordenadasString = string_split(parametros[*cursor], "|");
 
 			if(strcmp(coordenadasString[1], "") == 0){
-				log_info(logger, "La coordenada numero %d esta incompleta \n", c);
+				log_info(logDiscordiador, "La coordenada numero %d esta incompleta \n", c);
 			}
 
 			coordenadasTripulantes[c].posX = atoi(coordenadasString[0]);
@@ -83,7 +83,7 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 	}
 
 	if(parametros[*cursor] != NULL){
-		log_info(logger,"Se ingresaron coordenadas de mas, solo se tendran en cuenta "
+		log_info(logDiscordiador,"Se ingresaron coordenadas de mas, solo se tendran en cuenta "
 				"las primeras %d coordenadas \n", cantidadTripulantes);
 	}
 
@@ -94,14 +94,14 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 char* procesarPathTareas(char** parametros, int* cursor){
 
 	if(parametros[*cursor] == NULL){
-		log_error(logger,"\n Faltan parametros en el comando INICIAR_PATOTA, no se ingreso el path de las tareas");
+		log_error(logDiscordiador,"\n Faltan parametros en el comando INICIAR_PATOTA, no se ingreso el path de las tareas");
 					//break se tiene q romper el leer consola
 		}
 
 	FILE* archivo = fopen(parametros[*cursor], "r");
 
 	if(archivo == NULL){
-		log_error(logger,"\n No se encontro el archivo con las tareas, revise la direccion ingresada %s", parametros[*cursor]);
+		log_error(logDiscordiador,"\n No se encontro el archivo con las tareas, revise la direccion ingresada %s", parametros[*cursor]);
 	}
 
 	char* unaTarea = malloc(sizeof(char) * 50);
