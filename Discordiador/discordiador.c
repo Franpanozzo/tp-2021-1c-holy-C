@@ -64,6 +64,12 @@ void crearConfig(){
 }
 
 
+void eliminarPatota(t_patota* patota){
+	free(patota->tareas);
+	free(patota);
+}
+
+
 t_patota* asignarDatosAPatota(char* string){
 
 	t_patota* patota = malloc(sizeof(t_patota));
@@ -121,6 +127,7 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		unlock(mutexListaNew);
 
+
 		//esto va en detach
 		pthread_t t;
 
@@ -130,6 +137,7 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 	}
 
+	eliminarPatota(patota);
 	close(server_socket);
 
 }
@@ -144,7 +152,6 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     	t_tarea* tarea = deserializarTarea(paqueteRecibido->buffer->stream);
 
     	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
-
 
     	if(paqueteRecibido->codigo_operacion == TAREA){
 
@@ -177,6 +184,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	}
 
+    	eliminarPaquete(paqueteRecibido);
 }
 
 
@@ -189,7 +197,5 @@ void hiloTripulante(t_tripulante* tripulante) {
 	enviarPaquete(paqueteEnviado, miRAMsocket);
 
 	atenderMiRAM(miRAMsocket,tripulante);
-
-	eliminarPaquete(paqueteEnviado);
 
 }

@@ -40,6 +40,7 @@ pthread_mutex_t mutexColaReady;
 
 
 void crearConfig();
+void eliminarPatota(t_patota*);
 void iniciarPatota(t_coordenadas[], char*, uint32_t);
 void hiloTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
