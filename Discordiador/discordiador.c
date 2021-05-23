@@ -106,8 +106,7 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		tripulante->estado = NEW;
 
-		t_log* bitacora = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador"
-					, "Discordiador", 1);
+		//t_log* bitacora = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador", "Discordiador", 1);
 
 		sem_init(&tripulante->semaforo, 0, 0);
 
@@ -146,7 +145,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     		}
 
     		lock(mutexListaNew);
-    		if((tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)) != NULL){
+    		tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
     		unlock(mutexListaNew);
 
     		if(tripulanteParaCheckear != NULL){
