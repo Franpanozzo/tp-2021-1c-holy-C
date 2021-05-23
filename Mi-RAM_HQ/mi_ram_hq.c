@@ -143,22 +143,51 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
 
 void armarTarea(char* string,t_list* lista){
-    /*t_tarea* tarea = malloc(sizeof(t_tarea));
+    t_tarea* tarea = malloc(sizeof(t_tarea));
 
     char** arrayTareaYParametros = string_split(string," ");
 
     char* nombreTarea = arrayTareaYParametros[0];
     char* arrayParametros = arrayTareaYParametros[1];
 
-    int i = 0;
+    //free(arrayTareaYParametros);
+
+
+//Si tengo 2 comas tengo 3 parametros, si tengo 3 comas tengo 3 parametros
+
+    int cantParametros = 1;
     while(arrayParametros != NULL){
-    	if(*arrayParametros == ";")) i++;
+    	if(*(arrayParametros) == ";") {
+    		cantParametros++;
+    	}
     	arrayParametros++;
     }
-    printf("La cantidad de parametros es %d", i);
-*/
 
-	t_tarea* tarea = malloc(sizeof(t_tarea));
+    log_info(logMiRAM,"La cantidad de parametros de la tarea recibida es %d", cantParametros);
+
+
+    tarea->nombreTarea = strdup(nombreTarea);
+
+		if(cantParametros == 4){
+			char** arrayParametrosSeparados = string_split(arrayParametros,";");
+
+			tarea->parametro= (uint32_t) atoi(arrayParametrosSeparados[0]);
+			tarea->posX = (uint32_t) atoi(arrayParametrosSeparados[1]);
+			tarea->posY = (uint32_t) atoi(arrayParametrosSeparados[2]);
+			tarea->tiempo = (uint32_t) atoi(arrayParametrosSeparados[3]);
+			}
+		if(cantParametros == 3){
+			tarea->posX = (uint32_t) atoi(arrayParametros[0]);
+			tarea->posY = (uint32_t) atoi(arrayParametros[1]);
+			tarea->tiempo = (uint32_t) atoi(arrayParametros[2]);
+			}
+		else {
+			log_info(logMiRAM,"Estas recibiendo cualquier cantidad de modulos negro\n",1);
+		}
+
+    list_add(lista,tarea);
+
+	/*t_tarea* tarea = malloc(sizeof(t_tarea));
 
 	    char** arrayParametros = string_split(string,";");
 
@@ -173,7 +202,7 @@ void armarTarea(char* string,t_list* lista){
 	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
 	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 
-	    list_add(lista,tarea);
+	    list_add(lista,tarea);*/
 
 }
 

@@ -25,18 +25,18 @@ int main() {
 	pthread_mutex_init(&mutexListaNew, NULL);
 	pthread_mutex_init(&mutexColaReady, NULL);
 
-	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_YOGUR 4;5;6;7\n");
+	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA 4;5;6;7\n");
 
-		t_coordenadas coordenadas[1];
+		t_coordenadas coordenadas[4];
 
-		for(int i = 0; i<1 ;i++) {
+		for(int i = 0; i<4 ;i++) {
 
 			coordenadas[i].posX = i;
 			coordenadas[i].posY = i+ 1;
 		}
 
 
-	iniciarPatota(coordenadas, tarea, 1);
+	iniciarPatota(coordenadas, tarea, 4);
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
