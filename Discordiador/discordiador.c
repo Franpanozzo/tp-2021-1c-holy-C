@@ -7,7 +7,7 @@ int main() {
 	idPatota = 0;
 
 
-	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/logDisocridador.log","Discordiador",1);
+	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/logDiscordiador.log","Discordiador",1);
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
 	puertoEIPRAM = malloc(sizeof(puertoEIP)); // Reservar memoria para struct Ram
@@ -25,7 +25,7 @@ int main() {
 	pthread_mutex_init(&mutexListaNew, NULL);
 	pthread_mutex_init(&mutexColaReady, NULL);
 
-	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA 4;5;6;7\n");
+	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
 
 		t_coordenadas coordenadas[4];
 
@@ -66,6 +66,8 @@ t_patota* asignarDatosAPatota(char* string){
 
 		idPatota++;
 
+		log_info(logDiscordiador,"Se creo la patota numero %d\n",idPatota);
+
 		patota->ID = idPatota;
 
 		patota->tareas = string;
@@ -93,6 +95,8 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 		tripulante->posY = coordenadas[i].posY;
 
 		idTripulante++;
+
+		log_info(logDiscordiador,"Se creo el tripulante numero %d\n",idTripulante);
 
 		tripulante->idTripulante = idTripulante;
 
@@ -134,7 +138,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	t_tarea* tarea = deserializarTarea(paqueteRecibido->buffer->stream);
 
-    	printf("Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
+    	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
 
     	if(paqueteRecibido->codigo_operacion == TAREA){
 
@@ -155,7 +159,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     		else{
 
-    			printf("Estas queriendo meter a Ready un NULL negro\n");
+    			log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL negro\n");
     			exit(1);
 
     		}

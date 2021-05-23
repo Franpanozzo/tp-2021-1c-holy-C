@@ -80,8 +80,8 @@ int esperarTripulante(int serverSock) {
     unsigned int len = sizeof(struct sockaddr);
 
     int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
-    printf("Se conecto un cliente!\n");
-    //log_info(logger, "Se conecto un cliente!");
+
+    log_info(logMiRAM, "Se conecto un cliente!\n");
 
     return socket_tripulante;
 
@@ -101,21 +101,22 @@ void manejarTripulante(int *tripulanteSock) {
 
 void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
+	log_info(logMiRAM,"Deserializando...");
+
 	switch(paquete->codigo_operacion){
 
 			case PATOTA:
 
 						deserializarInfoPCB(paquete);
-
 						break;
-//CAMBIAR NOMBRE DE ENUM
+
 			case TRIPULANTE:
 
 						deserializarTripulante(paquete,tripulanteSock);
 						break;
 
 			default:
-					printf("\n No se puede deserializar ese tipo de estructura negro \n");
+					log_info(logMiRAM,"No se puede deserializar ese tipo de estructura negro \n");
 					exit(1);
 		}
 }
@@ -132,7 +133,7 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
     int i = 0;
 
     while(strcmp(arrayDeTareas[i], "") != 0){
-
+    	log_info(logMiRAM,"Procesando... %s\n",arrayDeTareas[i]);
         armarTarea(arrayDeTareas[i],listaTareas);
         i++;
 
@@ -143,66 +144,28 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
 
 void armarTarea(char* string,t_list* lista){
-    t_tarea* tarea = malloc(sizeof(t_tarea));
-
-    char** arrayTareaYParametros = string_split(string," ");
-
-    char* nombreTarea = arrayTareaYParametros[0];
-    char* arrayParametros = arrayTareaYParametros[1];
-
-    //free(arrayTareaYParametros);
 
 
-//Si tengo 2 comas tengo 3 parametros, si tengo 3 comas tengo 3 parametros
-
-    int cantParametros = 1;
-    while(arrayParametros != NULL){
-    	if(*(arrayParametros) == ";") {
-    		cantParametros++;
-    	}
-    	arrayParametros++;
-    }
-
-    log_info(logMiRAM,"La cantidad de parametros de la tarea recibida es %d", cantParametros);
-
-
-    tarea->nombreTarea = strdup(nombreTarea);
-
-		if(cantParametros == 4){
-			char** arrayParametrosSeparados = string_split(arrayParametros,";");
-
-			tarea->parametro= (uint32_t) atoi(arrayParametrosSeparados[0]);
-			tarea->posX = (uint32_t) atoi(arrayParametrosSeparados[1]);
-			tarea->posY = (uint32_t) atoi(arrayParametrosSeparados[2]);
-			tarea->tiempo = (uint32_t) atoi(arrayParametrosSeparados[3]);
-			}
-		if(cantParametros == 3){
-			tarea->posX = (uint32_t) atoi(arrayParametros[0]);
-			tarea->posY = (uint32_t) atoi(arrayParametros[1]);
-			tarea->tiempo = (uint32_t) atoi(arrayParametros[2]);
-			}
-		else {
-			log_info(logMiRAM,"Estas recibiendo cualquier cantidad de modulos negro\n",1);
-		}
-
-    list_add(lista,tarea);
-
-	/*t_tarea* tarea = malloc(sizeof(t_tarea));
+	t_tarea* tarea = malloc(sizeof(t_tarea));
 
 	    char** arrayParametros = string_split(string,";");
 
 	    if(string_contains(arrayParametros[0]," ")){
+
 	    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
 	    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
 	    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
+
 	    } else {
+
 	        tarea->nombreTarea = strdup(arrayParametros[0]);
+
 	    }
 	    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
 	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
 	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 
-	    list_add(lista,tarea);*/
+	    list_add(lista,tarea);
 
 }
 
@@ -223,15 +186,6 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	nuevoPCB->listaTareas = list_create();
 
 	deserializarTareas(stream + offset, nuevoPCB->listaTareas, tamanio);
-
-
-	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
-	log_info(logMiRAM, "Recibi pa %s \n", tarea->nombreTarea);
-
-	t_tarea* tarea2 = list_get(nuevoPCB->listaTareas,1);
-	log_info(logMiRAM, "Recibi pa %s \n", tarea2->nombreTarea);
-
-
 
 	lock(mutexListaPCB);
 	list_add(listaPCB,nuevoPCB);
@@ -269,7 +223,7 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	log_info(logMiRAM,"Recibi el tribulante de id %d y supuesta patota %d",nuevoTCB->idTripulante, idPatota);
+	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d",nuevoTCB->idTripulante, idPatota);
 
 	asignarPatota(idPatota,nuevoTCB);
 
@@ -290,7 +244,7 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 
 		bool a;
 		a = pcbAComparar->pid == idPatotaBuscada;
-		log_info(logMiRAM,"Comparado con primer patota %d",a);
+		log_info(logMiRAM,"Comparado con primer patota %d \n",a);
 		return a;
 	}
 
@@ -300,7 +254,7 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 
 		if(patotaCorrespondiente == NULL){
 
-		printf("No existe PCB para ese TCB negro\n");
+		log_info(logMiRAM,"No existe PCB para ese TCB negro\n");
 
 		exit(1);
 
@@ -319,12 +273,16 @@ void asignarSiguienteTarea(tcb* tripulante) {
 	//despues hay que hablar bien como va a pedirle las tareas
 	tripulante->proximaAEjecutar = list_get(tripulante->patota->listaTareas,0);
 
+	log_info(logMiRAM,"Asignando la tarea: %s\n", tripulante->proximaAEjecutar->nombreTarea);
+
 }
 
 
 void mandarTarea(t_tarea* tarea, int socketTrip) {
 
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tarea, TAREA);
+
+	log_info(logMiRAM,"Tarea enviada\n");
 
 	enviarPaquete(paqueteEnviado, socketTrip);
 
