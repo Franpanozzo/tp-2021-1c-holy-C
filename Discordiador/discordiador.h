@@ -34,12 +34,14 @@ t_queue* colaDeReady;
 pthread_mutex_t mutexListaNew;
 pthread_mutex_t mutexColaReady;
 
+
 void crearConfig();
 void iniciarPatota(t_coordenadas[], char*, uint32_t);
 void hiloTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
 void atenderMiRAM(int,t_tripulante*);
 char* deserializarString (t_paquete*);
+
 
 
 #endif

@@ -1,13 +1,13 @@
 #include "discordiador.h"
 
 
-
 int main() {
+
 	idTripulante = 0;
 	idPatota = 0;
 
-	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador"
-			, "Discordiador", 1);
+
+	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/logDiscordiador.log","Discordiador",1);
 
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
@@ -23,10 +23,28 @@ int main() {
 	listaDeNew = list_create();
 	colaDeReady = queue_create();
 
+	pthread_mutex_init(&mutexListaNew, NULL);
+	pthread_mutex_init(&mutexColaReady, NULL);
+
+	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
+
+		t_coordenadas coordenadas[4];
+
+		for(int i = 0; i<4 ;i++) {
+
+			coordenadas[i].posX = i;
+			coordenadas[i].posY = i+ 1;
+		}
+
+
+	iniciarPatota(coordenadas, tarea, 4);
+
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
 	free(puertoEIPMongo);
+
+
 
 	return EXIT_SUCCESS;
 
@@ -36,7 +54,7 @@ int main() {
 void crearConfig(){
 	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
 	if(config == NULL){
-		log_error(logger, "\n La ruta es incorrecta \n");
+		log_error(logDiscordiador, "\n La ruta es incorrecta \n");
 		exit(1);
 		}
 }
@@ -49,6 +67,8 @@ t_patota* asignarDatosAPatota(char* string){
 		patota->tamanioTareas = strlen(string) + 1;
 
 		idPatota++;
+
+		log_info(logDiscordiador,"Se creo la patota numero %d\n",idPatota);
 
 		patota->ID = idPatota;
 
@@ -78,6 +98,8 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		idTripulante++;
 
+		log_info(logDiscordiador,"Se creo el tripulante numero %d\n",idTripulante);
+
 		tripulante->idTripulante = idTripulante;
 
 		tripulante->idPatota = patota->ID;
@@ -94,11 +116,14 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 		list_add(listaDeNew,(void*)tripulante);
 		unlock(mutexListaNew);
 
+		//esto va en detach
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) hiloTripulante, (void*) tripulante);
-		pthread_detach(t);
+		pthread_join(t, (void**) NULL);
 
 	}
+
+	close(server_socket);
 }
 
 
@@ -108,7 +133,10 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	t_tripulante* tripulanteParaCheckear;
 
-    	t_tarea* tarea = deserializarTarea(paqueteRecibido);
+    	t_tarea* tarea = deserializarTarea(paqueteRecibido->buffer->stream);
+
+    	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
+
 
     	if(paqueteRecibido->codigo_operacion == TAREA){
 
@@ -118,9 +146,8 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     		}
 
     		lock(mutexListaNew);
-    		tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
+    		if((tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)) != NULL){
     		unlock(mutexListaNew);
-
 
     		if(tripulanteParaCheckear != NULL){
 
@@ -131,9 +158,8 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     		}
 
     		else{
-    			log_info(logDiscordiador, "Estas queriendo meter a Ready un NULL negro\n");
+    			log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL negro\n");
     			exit(1);
-
     		}
     	}
 }

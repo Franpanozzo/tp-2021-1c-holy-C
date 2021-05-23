@@ -14,6 +14,8 @@ int main(void) {
     pthread_mutex_init(&mutexListaTCB, NULL);
     pthread_mutex_init(&mutexListaPCB, NULL);
 
+    logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);
+
     int serverSock = iniciarConexionDesdeServidor(puerto);
 
     //Abro un thread manejar las conexiones
@@ -66,6 +68,7 @@ void atenderTripulantes(int* serverSock) {
 		pthread_t t;
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
 		pthread_detach(t);
+
     }
 
 }
@@ -77,13 +80,14 @@ int esperarTripulante(int serverSock) {
     unsigned int len = sizeof(struct sockaddr);
 
     int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
-    printf("Se conecto un cliente!\n");
-    //log_info(logger, "Se conecto un cliente!");
+
+    log_info(logMiRAM, "Se conecto un cliente!\n");
 
     return socket_tripulante;
 
 }
 
+//CUANDO CREAS UN HILO HAY QUE PASAR SI O SI UN PUNTERO
 
 void manejarTripulante(int *tripulanteSock) {
 
@@ -91,11 +95,13 @@ void manejarTripulante(int *tripulanteSock) {
 
     deserializarSegun(paquete,*tripulanteSock);
 
-    eliminarPaquete(paquete);
+    //eliminarPaquete(paquete);
 }
 
 
-void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
+void deserializarSegun(t_paquete* paquete, int tripulanteSock){
+
+	log_info(logMiRAM,"Deserializando...");
 
 	switch(paquete->codigo_operacion){
 
@@ -103,17 +109,14 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 						deserializarInfoPCB(paquete);
 						break;
-//CAMBIAR NOMBRE DE ENUM
+
 			case TRIPULANTE:
 
-						deserializarTripulante(paquete,*tripulanteSock);
-						break;
-
-			case TAREA:
+						deserializarTripulante(paquete,tripulanteSock);
 						break;
 
 			default:
-					printf("\n No se puede deserializar ese tipo de estructura negro \n");
+					log_info(logMiRAM,"No se puede deserializar ese tipo de estructura negro \n");
 					exit(1);
 		}
 }
@@ -121,36 +124,49 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
-    char* string;
+    char* string = malloc(tamanio);
 
-    memcpy(&(string),stream,tamanio);
+    memcpy(string,stream,tamanio);
 
     char** arrayDeTareas = string_split(string,"\n");
 
     int i = 0;
-    while(arrayDeTareas[i] != NULL){
+
+    while(strcmp(arrayDeTareas[i], "") != 0){
+    	log_info(logMiRAM,"Procesando... %s\n",arrayDeTareas[i]);
         armarTarea(arrayDeTareas[i],listaTareas);
+        i++;
+
    }
+
+    //free(string);
 }
 
 
 void armarTarea(char* string,t_list* lista){
-    t_tarea* tarea = malloc(sizeof(t_tarea));
 
-    char** arrayParametros = string_split(string,";");
 
-    if(string_contains(arrayParametros[0]," ")){
-    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
-    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
-    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
-    } else {
-    	tarea->nombreTarea = strdup(arrayParametros[0]);
-    }
-    tarea->posX = (int) atoi(arrayParametros[1]);
-    tarea->posY = (int) atoi(arrayParametros[2]);
-    tarea->tiempo = (int) atoi(arrayParametros[3]);
+	t_tarea* tarea = malloc(sizeof(t_tarea));
 
-    list_add(lista,tarea);
+	    char** arrayParametros = string_split(string,";");
+
+	    if(string_contains(arrayParametros[0]," ")){
+
+	    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
+	    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
+	    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
+
+	    } else {
+
+	        tarea->nombreTarea = strdup(arrayParametros[0]);
+
+	    }
+	    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
+	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
+	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
+
+	    list_add(lista,tarea);
+
 }
 
 
@@ -159,7 +175,7 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	pcb* nuevoPCB = malloc(sizeof(pcb));
 
 	void* stream = paquete->buffer->stream;
-	uint32_t* tamanio = malloc(sizeof(uint32_t));
+	uint32_t tamanio;
 
 	int offset = 0;
 	memcpy(&(nuevoPCB->pid),stream,sizeof(uint32_t));
@@ -169,16 +185,12 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
 	nuevoPCB->listaTareas = list_create();
 
-	deserializarTareas(stream + offset, nuevoPCB->listaTareas, *tamanio);
-
-	t_tarea* tarea = list_get(nuevoPCB->listaTareas,0);
-	printf("Recibi pa %s \n", tarea->nombreTarea);
+	deserializarTareas(stream + offset, nuevoPCB->listaTareas, tamanio);
 
 	lock(mutexListaPCB);
 	list_add(listaPCB,nuevoPCB);
     unlock(mutexListaPCB);
 
-	free(tamanio);
 }
 
 
@@ -192,7 +204,7 @@ char* deserializarString (t_paquete* paquete){
 	return string;
 }
 
-void deserializarTripulante(t_paquete* paquete, int* tripulanteSock) {
+void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
 	uint32_t idPatota;
@@ -211,9 +223,14 @@ void deserializarTripulante(t_paquete* paquete, int* tripulanteSock) {
 	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
+	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d",nuevoTCB->idTripulante, idPatota);
+
 	asignarPatota(idPatota,nuevoTCB);
+
+	log_info(logMiRAM,"Se le asigno la patota %d al tripulante %d",idPatota, nuevoTCB->idTripulante);
+
 	asignarSiguienteTarea(nuevoTCB);
-	mandarTarea(nuevoTCB->proximaAEjecutar, *tripulanteSock);
+	mandarTarea(nuevoTCB->proximaAEjecutar, tripulanteSock);
 
 	lock(mutexListaTCB);
 	list_add(listaTCB,nuevoTCB);
@@ -225,7 +242,10 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 
 	bool idIgualA(pcb* pcbAComparar){
 
-		return pcbAComparar->pid == idPatotaBuscada;
+		bool a;
+		a = pcbAComparar->pid == idPatotaBuscada;
+		log_info(logMiRAM,"Comparado con primer patota %d \n",a);
+		return a;
 	}
 
 	pcb* patotaCorrespondiente;
@@ -234,7 +254,7 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 
 		if(patotaCorrespondiente == NULL){
 
-		printf("No existe PCB para ese TCB negro\n");
+		log_info(logMiRAM,"No existe PCB para ese TCB negro\n");
 
 		exit(1);
 
@@ -253,16 +273,20 @@ void asignarSiguienteTarea(tcb* tripulante) {
 	//despues hay que hablar bien como va a pedirle las tareas
 	tripulante->proximaAEjecutar = list_get(tripulante->patota->listaTareas,0);
 
+	log_info(logMiRAM,"Asignando la tarea: %s\n", tripulante->proximaAEjecutar->nombreTarea);
+
 }
 
 
-mandarTarea(t_tarea* tarea, int* socketTrip) {
+void mandarTarea(t_tarea* tarea, int socketTrip) {
 
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tarea, TAREA);
 
+	log_info(logMiRAM,"Tarea enviada\n");
+
 	enviarPaquete(paqueteEnviado, socketTrip);
 
-	eliminarPaquete(paqueteEnviado);
+	//eliminarPaquete(paqueteEnviado);
 
 }
 
