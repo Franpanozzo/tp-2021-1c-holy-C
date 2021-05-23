@@ -105,7 +105,6 @@
 	*/
 	void* serializarPaquete(t_paquete*, int);
 
-
 	/**
 	* @NAME: crearBuffer
 	* @DESC: recibe un t_paquete* y crea el TAD t_buffer* contenido en el t_paquete*
@@ -118,8 +117,6 @@
 	* todas los TAD que contiene ya alocados
 	*/
 	t_paquete* crearPaquete(tipoDeDato);
-
-
 
 	//void agregarAPaquete(t_paquete*,void*,int);
 
@@ -151,7 +148,6 @@
 	* serializado listo para enviar
 	*/
 	t_paquete* armarPaqueteCon(void*,tipoDeDato);
-
 
 	/**
 	* @NAME: enviarPaquete

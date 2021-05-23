@@ -9,7 +9,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 
 	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("socket");
-		//aca hay q hacer log?
+
 		exit(1);
 	}
 	int yes = 0;
@@ -73,10 +73,10 @@ int iniciarConexionDesdeServidor(int puerto) {
 }
 
 
-void liberarConexion(int socket_cliente)
-{
+void liberarConexion(int socket_cliente){
 	close(socket_cliente);
 }
+
 
 t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 
@@ -90,6 +90,7 @@ t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 	else
 		return logger;
 }
+
 
 t_paquete* recibirPaquete(int server_socket){
 
@@ -106,9 +107,8 @@ t_paquete* recibirPaquete(int server_socket){
 
 	return paquete;
 
-
-
 }
+
 
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
@@ -119,6 +119,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			t_patota* patota = (t_patota*) estructura;
 			return sizeof(uint32_t) * 2 + patota->tamanioTareas;
 		}
+
 
 		case TRIPULANTE:
 		{
@@ -131,6 +132,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			t_tarea* tarea = (t_tarea*) estructura;
 			return strlen(tarea->nombreTarea) + 1 + sizeof(uint32_t) * 5;
 		}
+
 
 		default:
 				printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
@@ -231,7 +233,7 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
 		case TAREA:
 
-			return serializarTarea(stream,estructura,offset);
+				return serializarTarea(stream,estructura,offset);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
@@ -269,7 +271,6 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 }
 
 
-
 void* serializarPaquete(t_paquete* paquete, int bytes){
 
 	void * magic = malloc(bytes);
@@ -299,7 +300,6 @@ void unlock(pthread_mutex_t mutex){
 }
 
 
-
 void crearBuffer(t_paquete* paquete)
 {
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -308,8 +308,8 @@ void crearBuffer(t_paquete* paquete)
 }
 
 
-t_paquete* crearPaquete(tipoDeDato cod_op)
-{
+t_paquete* crearPaquete(tipoDeDato cod_op){
+
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = cod_op;
 	crearBuffer(paquete);
@@ -317,8 +317,7 @@ t_paquete* crearPaquete(tipoDeDato cod_op)
 }
 
 
-void eliminarPaquete(t_paquete* paquete)
-{
+void eliminarPaquete(t_paquete* paquete){
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);

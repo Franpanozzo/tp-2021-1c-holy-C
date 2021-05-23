@@ -6,7 +6,6 @@ int main() {
 	idTripulante = 0;
 	idPatota = 0;
 
-
 	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/logDiscordiador.log","Discordiador",1);
 
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
@@ -45,18 +44,23 @@ int main() {
 	free(puertoEIPMongo);
 
 
-
 	return EXIT_SUCCESS;
 
 }
 
 
 void crearConfig(){
+
 	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
+
 	if(config == NULL){
+
 		log_error(logDiscordiador, "\n La ruta es incorrecta \n");
+
 		exit(1);
+
 		}
+
 }
 
 
@@ -64,17 +68,17 @@ t_patota* asignarDatosAPatota(char* string){
 
 	t_patota* patota = malloc(sizeof(t_patota));
 
-		patota->tamanioTareas = strlen(string) + 1;
+	patota->tamanioTareas = strlen(string) + 1;
 
-		idPatota++;
+	idPatota++;
 
-		log_info(logDiscordiador,"Se creo la patota numero %d\n",idPatota);
+	log_info(logDiscordiador,"Se creo la patota numero %d\n",idPatota);
 
-		patota->ID = idPatota;
+	patota->ID = idPatota;
 
-		patota->tareas = string;
+	patota->tareas = string;
 
-		return patota;
+	return patota;
 }
 
 
@@ -112,17 +116,22 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		//no hace falta el mutex aca pero bueno sha fue
 		lock(mutexListaNew);
+
 		list_add(listaDeNew,(void*)tripulante);
+
 		unlock(mutexListaNew);
 
 		//esto va en detach
 		pthread_t t;
+
 		pthread_create(&t, NULL, (void*) hiloTripulante, (void*) tripulante);
+
 		pthread_join(t, (void**) NULL);
 
 	}
 
 	close(server_socket);
+
 }
 
 
@@ -145,7 +154,9 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     		}
 
     		lock(mutexListaNew);
+
     		tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
+
     		unlock(mutexListaNew);
 
     		if(tripulanteParaCheckear != NULL){
@@ -157,10 +168,15 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     		}
 
     		else{
+
     			log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL negro\n");
+
     			exit(1);
+
     		}
+
     	}
+
 }
 
 
@@ -175,6 +191,5 @@ void hiloTripulante(t_tripulante* tripulante) {
 	atenderMiRAM(miRAMsocket,tripulante);
 
 	eliminarPaquete(paqueteEnviado);
-
 
 }
