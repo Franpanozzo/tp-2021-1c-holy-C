@@ -8,6 +8,7 @@ int main() {
 
 
 	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/logDiscordiador.log","Discordiador",1);
+
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
 	puertoEIPRAM = malloc(sizeof(puertoEIP)); // Reservar memoria para struct Ram
@@ -58,6 +59,7 @@ void crearConfig(){
 		}
 }
 
+
 t_patota* asignarDatosAPatota(char* string){
 
 	t_patota* patota = malloc(sizeof(t_patota));
@@ -104,9 +106,15 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 
 		tripulante->estado = NEW;
 
+		t_log* bitacora = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador"
+					, "Discordiador", 1);
+
 		sem_init(&tripulante->semaforo, 0, 0);
 
+		//no hace falta el mutex aca pero bueno sha fue
+		lock(mutexListaNew);
 		list_add(listaDeNew,(void*)tripulante);
+		unlock(mutexListaNew);
 
 		//esto va en detach
 		pthread_t t;
@@ -119,17 +127,6 @@ void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadT
 }
 
 
-char* deserializarString (t_paquete* paquete){
-
-	char* string = malloc(sizeof(paquete->buffer->size));
-
-	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
-
-	return string;
-}
-
-
-
 void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
@@ -139,6 +136,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     	t_tarea* tarea = deserializarTarea(paqueteRecibido->buffer->stream);
 
     	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
+
 
     	if(paqueteRecibido->codigo_operacion == TAREA){
 
@@ -151,17 +149,17 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
     		if((tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA)) != NULL){
     		unlock(mutexListaNew);
 
-    		tripulante->instruccionAejecutar = tarea;
+    		if(tripulanteParaCheckear != NULL){
 
-    		queue_push(colaDeReady,(void*) tripulanteParaCheckear);
+				tripulante->instruccionAejecutar = tarea;
+
+				queue_push(colaDeReady,(void*) tripulanteParaCheckear);
 
     		}
 
     		else{
-
     			log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL negro\n");
     			exit(1);
-
     		}
     	}
 }

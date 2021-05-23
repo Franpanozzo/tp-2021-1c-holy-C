@@ -130,7 +130,6 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		{
 			t_tarea* tarea = (t_tarea*) estructura;
 			return strlen(tarea->nombreTarea) + 1 + sizeof(uint32_t) * 5;
-
 		}
 
 		default:
@@ -141,7 +140,44 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 }
 
 
+t_tarea* deserializarTarea(void* stream){
+
+	int offset = 0;
+	t_tarea* tarea = malloc(sizeof(t_tarea));
+	uint32_t tamanioNombreTarea = 0;
+
+	memcpy(&(tarea->parametro),stream + offset ,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(tarea->posX),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(tarea->posY),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(tarea->tiempo),stream + offset, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(tamanioNombreTarea),stream + offset, sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
+	offset += sizeof(uint32_t);
+	memcpy(tarea->nombreTarea, stream + offset, tamanioNombreTarea);
+
+	return tarea;
+}
+
+
 void* serializarTarea(void* stream, void* estructura, int offset){
+
+	t_tarea* tarea = (t_tarea*) estructura;
+	uint32_t tamanioNombreTarea = strlen(tarea->nombreTarea) + 1;
+	memcpy(stream + offset, &(tarea->parametro),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tarea->posX),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tarea->posY),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tarea->tiempo),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tamanioNombreTarea),sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, tarea->nombreTarea, tamanioNombreTarea);
+
 
     t_tarea* tarea = (t_tarea*) estructura;
     uint32_t tamanioNombreTarea = strlen(tarea->nombreTarea) + 1;
@@ -212,7 +248,6 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 
 	return stream;
 }
-
 
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){

@@ -16,6 +16,7 @@
 #include <commons/log.h>
 #include <stdbool.h>
 
+
 	typedef struct{
 		uint32_t posX;
 		uint32_t posY;
@@ -33,11 +34,13 @@
 	} tipoDeDato;
 
 	typedef struct {
+
 	    char* nombreTarea;
 	    uint32_t parametro;
 	    uint32_t posX;
 	    uint32_t posY;
 	    uint32_t tiempo;
+
 	} t_tarea;
 
 	typedef enum{
