@@ -1,5 +1,5 @@
-#ifndef EJERCICIO10_H_
-#define EJERCICIO10_H_
+#ifndef DISCORDIADOR_H_
+#define DISCORDIADOR_H_
 
 
 #include <stdio.h>
@@ -18,6 +18,7 @@
 #include <commons/collections/queue.h>
 #include <commons/string.h>
 #include <stdbool.h>
+#include "consola.h"
 
 
 t_config* config;

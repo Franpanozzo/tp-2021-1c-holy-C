@@ -27,14 +27,13 @@ int main() {
 
 	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
 
-		t_coordenadas coordenadas[4];
+	t_coordenadas coordenadas[4];
 
-		for(int i = 0; i<4 ;i++) {
+	for(int i = 0; i<4 ;i++) {
 
 			coordenadas[i].posX = i;
 			coordenadas[i].posY = i+ 1;
 		}
-
 
 	iniciarPatota(coordenadas, tarea, 4);
 

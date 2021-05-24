@@ -1,5 +1,5 @@
-#ifndef EJERCICIO10_H_
-#define EJERCICIO10_H_
+#ifndef IMONGOSTORE_H_
+#define IMONGOSTORE_H_
 
 
 #include <stdio.h>
