@@ -1,5 +1,6 @@
 #include "consola.h"
 
+//INICIAR_PATOTA 3 /home/utnso/tp-2021-1c-holy-C/Discordiador/tareas.txt 3|1
 
 void leerConsola(){
 	char* leido;
@@ -10,7 +11,7 @@ void leerConsola(){
 
 	char** comandoYparametros = string_split(leido, " ");
 	int cursor = 0;
-	///home/utnso/tp-2021-1c-holy-C/Discordiador/tareas.txt
+
 	if(strcmp(comandoYparametros[cursor], "INICIAR_PATOTA") == 0){
 
 		log_info(logDiscordiador, "\nSe ingreso el comando iniciar patota");
@@ -22,25 +23,19 @@ void leerConsola(){
 		log_info(logDiscordiador, "Las tareas son: %s\n",tareas);
 		t_coordenadas* coordenadasTripulantes= procesarPosicionesTripulantes(comandoYparametros, cantidadTripulantes, &cursor);
 		for(int i=0; i<cantidadTripulantes; i++){
-		log_info(logDiscordiador, "Las coordenadas son %d , %d \n",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
+			log_info(logDiscordiador, "Las coordenadas son %d , %d \n",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
 		}
 
-
-
-		iniciarPatota(coordenadasTripulantes, tareas,cantidadTripulantes);
-
-		//logear todo el comando
-		//log_info(logDiscordiador, " con parametros: \n  cantidad de tripulantes: %d"
-				//"\n  tareas: %s"
-				//"\n posiciones:", cantidadTripulantes, tareas);
-		//for(int c=0; c<cantidadTripulantes; c++){
-			//log_info(logDiscordiador, " %d|%d", coordenadasTripulantes[c].posX, coordenadasTripulantes[c].posY);
-		//}
+		iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
 
 	}
-	//else{
-		//log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
-	//}
+	else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
+		log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
+				cursor ++;
+	}
+	else{
+		log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
+	}
 
 	free(leido);
 }
@@ -116,7 +111,7 @@ char* procesarPathTareas(char** parametros, int* cursor){
 
 	while(!feof(archivo)){
 		fgets(unaTarea, 50, archivo);
-		string_append(&tareas, "\n");
+		//string_append(&tareas, "\n");
 		string_append(&tareas, unaTarea);
 	}
 

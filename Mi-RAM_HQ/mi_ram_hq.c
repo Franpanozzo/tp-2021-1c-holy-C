@@ -139,8 +139,8 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
     char** arrayDeTareas = string_split(string,"\n");
 
     int i = 0;
-
-    while(strcmp(arrayDeTareas[i], "") != 0){
+    //strcmp(arrayDeTareas[i], "") != 0
+    while(arrayDeTareas[i] != NULL){
 
     	log_info(logMiRAM,"Procesando... %s\n",arrayDeTareas[i]);
 

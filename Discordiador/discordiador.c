@@ -34,7 +34,7 @@ int main() {
 	enviarPaquete(paquetePatota,serverImongo);
 */
 
-	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
+/*	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
 
 	t_coordenadas coordenadas[4];
 
@@ -45,7 +45,9 @@ int main() {
 		}
 
 	iniciarPatota(coordenadas, tarea, 4);
+*/
 
+	leerConsola();
 
 
 	free(puertoEIPRAM->IP);
@@ -80,11 +82,11 @@ void eliminarPatota(t_patota* patota){
 }
 
 
-t_patota* asignarDatosAPatota(char* string){
+t_patota* asignarDatosAPatota(char* tareasString){
 
 	t_patota* patota = malloc(sizeof(t_patota));
 
-	patota->tamanioTareas = strlen(string) + 1;
+	patota->tamanioTareas = strlen(tareasString) + 1;
 
 	idPatota++;
 
@@ -92,21 +94,29 @@ t_patota* asignarDatosAPatota(char* string){
 
 	patota->ID = idPatota;
 
-	patota->tareas = string;
+	//aca no seria mejor hacer un strdup y hacer un free de tareasString??
+	// asi despues no perdemos referencia de tareasString para hacer el free
+	// o es que despues se puede hacer free(patota->tareas)??
+	//no estaria haciendo un free a una posicion que ya esta apuntada por otro puntero?
+	patota->tareas = tareasString;
 
 	return patota;
 }
 
 
-void iniciarPatota(t_coordenadas* coordenadas, char* string, uint32_t cantidadTripulantes){
+void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cantidadTripulantes){
 
 	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 
-	t_patota* patota = asignarDatosAPatota(string);
+	t_patota* patota = asignarDatosAPatota(tareasString);
 
 	t_paquete* paquete = armarPaqueteCon((void*) patota,PATOTA);
 
 	enviarPaquete(paquete,server_socket);
+
+	//lo que esta dentro del for no se podria abstraer en una funcion que sea iniciarTripulante?
+	//separa la logica de iniciar la patota y la de inciar el tripunlante.
+	//Ademas hace mas expresivo el codigo y la funcion no seria tan larga
 
 	for (int i=0; i<cantidadTripulantes; i++){
 
@@ -128,6 +138,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* string, uint32_t cantidadTr
 
 		//t_log* bitacora = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador", "Discordiador", 1);
 
+		//aca no hay que empezar en 1 por lo menos?
 		sem_init(&tripulante->semaforo, 0, 0);
 
 		//no hace falta el mutex aca pero bueno sha fue
