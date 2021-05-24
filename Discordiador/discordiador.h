@@ -42,8 +42,11 @@ pthread_mutex_t mutexColaReady;
 
 void crearConfig();
 void eliminarPatota(t_patota*);
+void iniciarTripulante(t_coordenadas, uint32_t);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
-void hiloTripulante(t_tripulante* );
+void recibirTareaDeMiRAM(int,t_tripulante*);
+void pasarDeEstado(t_tripulante*, t_estado);
+void newTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
 void atenderMiRAM(int,t_tripulante*);
 char* deserializarString (t_paquete*);

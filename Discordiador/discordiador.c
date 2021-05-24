@@ -34,19 +34,6 @@ int main() {
 	enviarPaquete(paquetePatota,serverImongo);
 */
 
-/*	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
-
-	t_coordenadas coordenadas[4];
-
-	for(int i = 0; i<4 ;i++) {
-
-		coordenadas[i].posX = i;
-		coordenadas[i].posY = i+ 1;
-		}
-
-	iniciarPatota(coordenadas, tarea, 4);
-*/
-
 	leerConsola();
 
 
@@ -55,9 +42,7 @@ int main() {
 	free(puertoEIPMongo->IP);
 	free(puertoEIPMongo);
 
-
 	return EXIT_SUCCESS;
-
 }
 
 
@@ -68,11 +53,8 @@ void crearConfig(){
 	if(config == NULL){
 
 		log_error(logDiscordiador, "\n La ruta es incorrecta \n");
-
 		exit(1);
-
 		}
-
 }
 
 
@@ -114,53 +96,41 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 
 	enviarPaquete(paquete,server_socket);
 
-	//lo que esta dentro del for no se podria abstraer en una funcion que sea iniciarTripulante?
-	//separa la logica de iniciar la patota y la de inciar el tripunlante.
-	//Ademas hace mas expresivo el codigo y la funcion no seria tan larga
-
 	for (int i=0; i<cantidadTripulantes; i++){
 
-		t_tripulante* tripulante = malloc(sizeof(t_tripulante));
-
-		tripulante->posX = coordenadas[i].posX;
-
-		tripulante->posY = coordenadas[i].posY;
-
-		idTripulante++;
-
-		log_info(logDiscordiador,"Se creo el tripulante numero %d\n",idTripulante);
-
-		tripulante->idTripulante = idTripulante;
-
-		tripulante->idPatota = patota->ID;
-
-		tripulante->estado = NEW;
-
-		//t_log* bitacora = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador", "Discordiador", 1);
-
-		//aca no hay que empezar en 1 por lo menos?
-		sem_init(&tripulante->semaforo, 0, 0);
-
-		//no hace falta el mutex aca pero bueno sha fue
-		lock(mutexListaNew);
-
-		list_add(listaDeNew,(void*)tripulante);
-
-		unlock(mutexListaNew);
-
-
-		//esto va en detach
-		pthread_t t;
-
-		pthread_create(&t, NULL, (void*) hiloTripulante, (void*) tripulante);
-
-		pthread_join(t, (void**) NULL);
-
+		iniciarTripulante(coordenadas[i], patota->ID);
 	}
 
 	eliminarPatota(patota);
 	close(server_socket);
 
+}
+
+void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
+
+	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+	pthread_t hiloTripulante;
+	idTripulante++;
+
+	tripulante->posX = coordenada.posX;
+	tripulante->posY = coordenada.posY;
+	tripulante->idTripulante = idTripulante;
+	tripulante->idPatota = idPatota;
+	tripulante->estado = NEW;
+	sem_init(&tripulante->semaforo, 0, 0);
+	//arriba no hay que empezar en 1 por lo menos?
+
+	//no hace falta el mutex aca pero bueno sha fue
+	lock(mutexListaNew);
+	list_add(listaDeNew,(void*)tripulante);
+	unlock(mutexListaNew);
+
+	log_info(logDiscordiador,"Se creo el tripulante numero %d\n",tripulante->idTripulante);
+
+	//esto va en detach
+
+	pthread_create(&hiloTripulante, NULL, (void*) newTripulante, (void*) tripulante);
+	pthread_join(hiloTripulante, (void**) NULL);
 }
 
 
@@ -197,20 +167,103 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     		else{
 
-    			log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL negro\n");
-
+    			log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL  \n");
     			exit(1);
-
     		}
-
     	}
-
-
     	eliminarPaquete(paqueteRecibido);
 }
 
 
-void hiloTripulante(t_tripulante* tripulante) {
+void recibirTareaDeMiRAM(int socketMiRAM,t_tripulante* tripulante){
+
+	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
+
+	if(paqueteRecibido->codigo_operacion == TAREA){
+
+	    tripulante->instruccionAejecutar = deserializarTarea(paqueteRecibido->buffer->stream);
+
+	    log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
+	    		tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	}
+	else{
+	    	log_error(logDiscordiador,"El paquete recibido no es una tarea\n");
+	    	exit(1);
+	}
+
+	eliminarPaquete(paqueteRecibido);
+}
+
+
+void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
+
+	t_tripulante* tripulanteParaCheckear;
+
+	bool idIgualA(t_tripulante* tripulanteAcomparar){
+
+		return tripulanteAcomparar->idTripulante == tripulante->idTripulante;
+	}
+
+	switch(tripulante->estado){
+
+		case NEW:
+			lock(mutexListaNew);
+			tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
+			unlock(mutexListaNew);
+
+			break;
+
+		case READY:
+
+			break;
+
+		case EXEC:
+
+			break;
+
+		case BLOCKED:
+
+			break;
+
+		default:
+				printf("\n No se reconoce el estado \n");
+				exit(1);
+	}
+
+
+	switch(siguienteEstado){
+
+		case READY:
+			if(tripulanteParaCheckear != NULL){
+				tripulante->estado = READY;
+				//faltan los mutex
+				queue_push(colaDeReady,(void*) tripulanteParaCheckear);
+				log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
+			}
+			else{
+				log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL  \n");
+				exit(1);
+			}
+
+			break;
+
+		case EXEC:
+
+			break;
+
+		case BLOCKED:
+
+			break;
+
+		default:
+				printf("\n No se reconoce el siguiente estado \n");
+				exit(1);
+	}
+
+}
+
+
+void newTripulante(t_tripulante* tripulante) {
 
 	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 	// Duda porque no se si hay q iniciarla de vuelta ya q la anterior no se cerró
@@ -219,10 +272,9 @@ void hiloTripulante(t_tripulante* tripulante) {
 
 	enviarPaquete(paqueteEnviado, miRAMsocket);
 
-	atenderMiRAM(miRAMsocket,tripulante);
+	//atenderMiRAM(miRAMsocket,tripulante);
+	recibirTareaDeMiRAM(miRAMsocket,tripulante);
+	pasarDeEstado(tripulante, READY);
 
 	close(miRAMsocket);
-
-	//dameTareaMiRam()
-	//atenderMiRam
 }
