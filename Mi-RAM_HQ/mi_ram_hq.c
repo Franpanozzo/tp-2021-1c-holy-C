@@ -101,8 +101,6 @@ void manejarTripulante(int *tripulanteSock) {
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
     deserializarSegun(paquete,*tripulanteSock);
-
-    //eliminarPaquete(paquete);
 }
 
 
@@ -128,7 +126,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 					exit(1);
 
 		}
-
+	eliminarPaquete(paquete);
 }
 
 
@@ -152,7 +150,7 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
    }
 
-    //free(string);
+    free(string);
 
 }
 
@@ -213,7 +211,6 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	list_add(listaPCB,nuevoPCB);
 
     unlock(mutexListaPCB);
-
 }
 
 
@@ -267,7 +264,6 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 	list_add(listaTCB,nuevoTCB);
 
 	unlock(mutexListaTCB);
-
 }
 
 void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
@@ -321,8 +317,6 @@ void mandarTarea(t_tarea* tarea, int socketTrip) {
 	log_info(logMiRAM,"Tarea enviada\n");
 
 	enviarPaquete(paqueteEnviado, socketTrip);
-
-	//eliminarPaquete(paqueteEnviado);
 
 }
 

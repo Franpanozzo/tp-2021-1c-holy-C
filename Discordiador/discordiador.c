@@ -190,7 +190,8 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
 void hiloTripulante(t_tripulante* tripulante) {
 
-	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM); // Duda porque no se si hay q iniciarla de vuelta ya q la anterior no se cerró
+	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+	// Duda porque no se si hay q iniciarla de vuelta ya q la anterior no se cerró
 
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
 
@@ -198,4 +199,5 @@ void hiloTripulante(t_tripulante* tripulante) {
 
 	atenderMiRAM(miRAMsocket,tripulante);
 
+	close(miRAMsocket);
 }

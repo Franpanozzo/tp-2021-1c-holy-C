@@ -63,12 +63,11 @@ int iniciarConexionDesdeServidor(int puerto) {
 		perror("listen");
 	}
 
-	printf("Servidor conectado \n");
-	return server_sock;
-
-
 	free(serverAddress);
 	free(localAddress);
+
+	printf("Servidor conectado \n");
+	return server_sock;
 
 }
 
