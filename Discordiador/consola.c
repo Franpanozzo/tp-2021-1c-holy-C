@@ -109,6 +109,8 @@ char* procesarPathTareas(char** parametros, int* cursor){
 	char* unaTarea = malloc(sizeof(char) * 50);
 	char* tareas = string_new();
 
+	rewind(archivo);
+
 	while(!feof(archivo)){
 		fgets(unaTarea, 50, archivo);
 		//string_append(&tareas, "\n");

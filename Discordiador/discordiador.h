@@ -48,7 +48,6 @@ void recibirTareaDeMiRAM(int,t_tripulante*);
 void pasarDeEstado(t_tripulante*, t_estado);
 void newTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
-void atenderMiRAM(int,t_tripulante*);
 char* deserializarString (t_paquete*);
 
 

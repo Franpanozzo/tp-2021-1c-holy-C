@@ -36,7 +36,6 @@ int main() {
 
 	leerConsola();
 
-
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
@@ -76,10 +75,6 @@ t_patota* asignarDatosAPatota(char* tareasString){
 
 	patota->ID = idPatota;
 
-	//aca no seria mejor hacer un strdup y hacer un free de tareasString??
-	// asi despues no perdemos referencia de tareasString para hacer el free
-	// o es que despues se puede hacer free(patota->tareas)??
-	//no estaria haciendo un free a una posicion que ya esta apuntada por otro puntero?
 	patota->tareas = tareasString;
 
 	return patota;
@@ -99,7 +94,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 	for (int i=0; i<cantidadTripulantes; i++){
 
 		iniciarTripulante(coordenadas[i], patota->ID);
-	}
+		}
 
 	eliminarPatota(patota);
 	close(server_socket);
@@ -109,7 +104,9 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+
 	pthread_t hiloTripulante;
+
 	idTripulante++;
 
 	tripulante->posX = coordenada.posX;
@@ -117,61 +114,18 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	tripulante->idTripulante = idTripulante;
 	tripulante->idPatota = idPatota;
 	tripulante->estado = NEW;
-	sem_init(&tripulante->semaforo, 0, 0);
-	//arriba no hay que empezar en 1 por lo menos?
 
-	//no hace falta el mutex aca pero bueno sha fue
+	sem_init(&tripulante->semaforo, 0, 0);
+
 	lock(mutexListaNew);
 	list_add(listaDeNew,(void*)tripulante);
 	unlock(mutexListaNew);
 
 	log_info(logDiscordiador,"Se creo el tripulante numero %d\n",tripulante->idTripulante);
 
-	//esto va en detach
 
 	pthread_create(&hiloTripulante, NULL, (void*) newTripulante, (void*) tripulante);
 	pthread_join(hiloTripulante, (void**) NULL);
-}
-
-
-void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
-
-    	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
-
-    	t_tripulante* tripulanteParaCheckear;
-
-    	if(paqueteRecibido->codigo_operacion == TAREA){
-
-    		t_tarea* tarea = deserializarTarea(paqueteRecibido->buffer->stream);
-
-    		log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
-
-    		bool idIgualA(t_tripulante* tripulanteAcomparar){
-
-    			return tripulanteAcomparar->idTripulante == tripulante->idTripulante;
-    		}
-
-    		lock(mutexListaNew);
-
-    		tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
-
-    		unlock(mutexListaNew);
-
-    		if(tripulanteParaCheckear != NULL){
-
-				tripulante->instruccionAejecutar = tarea;
-
-				queue_push(colaDeReady,(void*) tripulanteParaCheckear);
-
-    		}
-
-    		else{
-
-    			log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL  \n");
-    			exit(1);
-    		}
-    	}
-    	eliminarPaquete(paqueteRecibido);
 }
 
 
@@ -207,6 +161,7 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 	switch(tripulante->estado){
 
 		case NEW:
+
 			lock(mutexListaNew);
 			tripulanteParaCheckear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
 			unlock(mutexListaNew);
@@ -235,10 +190,15 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 
 		case READY:
 			if(tripulanteParaCheckear != NULL){
+
 				tripulante->estado = READY;
-				//faltan los mutex
+
+				lock(mutexColaReady);
 				queue_push(colaDeReady,(void*) tripulanteParaCheckear);
+				unlock(mutexColaReady);
+
 				log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
+
 			}
 			else{
 				log_info(logDiscordiador,"Estas queriendo meter a Ready un NULL  \n");
@@ -272,8 +232,8 @@ void newTripulante(t_tripulante* tripulante) {
 
 	enviarPaquete(paqueteEnviado, miRAMsocket);
 
-	//atenderMiRAM(miRAMsocket,tripulante);
 	recibirTareaDeMiRAM(miRAMsocket,tripulante);
+
 	pasarDeEstado(tripulante, READY);
 
 	close(miRAMsocket);
