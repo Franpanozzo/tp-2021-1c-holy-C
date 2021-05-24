@@ -9,7 +9,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 
 	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("socket");
-		//aca hay q hacer log?
+
 		exit(1);
 	}
 	int yes = 0;
@@ -63,20 +63,19 @@ int iniciarConexionDesdeServidor(int puerto) {
 		perror("listen");
 	}
 
-	printf("Servidor conectado \n");
-	return server_sock;
-
-
 	free(serverAddress);
 	free(localAddress);
 
+	printf("Servidor conectado \n");
+	return server_sock;
+
 }
 
 
-void liberarConexion(int socket_cliente)
-{
+void liberarConexion(int socket_cliente){
 	close(socket_cliente);
 }
+
 
 t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 
@@ -90,6 +89,7 @@ t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 	else
 		return logger;
 }
+
 
 t_paquete* recibirPaquete(int server_socket){
 
@@ -106,9 +106,8 @@ t_paquete* recibirPaquete(int server_socket){
 
 	return paquete;
 
-
-
 }
+
 
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
@@ -119,6 +118,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			t_patota* patota = (t_patota*) estructura;
 			return sizeof(uint32_t) * 2 + patota->tamanioTareas;
 		}
+
 
 		case TRIPULANTE:
 		{
@@ -132,33 +132,12 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			return strlen(tarea->nombreTarea) + 1 + sizeof(uint32_t) * 5;
 		}
 
+
 		default:
 				printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
 				exit(1);
 	}
 
-}
-
-
-t_tarea* deserializarTarea(void* stream){
-
-	int offset = 0;
-	t_tarea* tarea = malloc(sizeof(t_tarea));
-	uint32_t tamanioNombreTarea = 0;
-
-	memcpy(&(tarea->parametro),stream + offset ,sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(&(tarea->posX),stream + offset,sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(&(tarea->posY),stream + offset,sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(&(tarea->tiempo),stream + offset, sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	memcpy(&(tamanioNombreTarea),stream + offset, sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
-	offset += sizeof(uint32_t);
-	memcpy(tarea->nombreTarea, stream + offset, tamanioNombreTarea);
-
-	return tarea;
 }
 
 
@@ -177,21 +156,6 @@ void* serializarTarea(void* stream, void* estructura, int offset){
 	memcpy(stream + offset, &(tamanioNombreTarea),sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, tarea->nombreTarea, tamanioNombreTarea);
-
-
-    t_tarea* tarea = (t_tarea*) estructura;
-    uint32_t tamanioNombreTarea = strlen(tarea->nombreTarea) + 1;
-    memcpy(stream + offset, &(tarea->parametro),sizeof(uint32_t));
-    offset += sizeof(uint32_t);
-    memcpy(stream + offset, &(tarea->posX),sizeof(uint32_t));
-    offset += sizeof(uint32_t);
-    memcpy(stream + offset, &(tarea->posY),sizeof(uint32_t));
-    offset += sizeof(uint32_t);
-    memcpy(stream + offset, &(tarea->tiempo),sizeof(uint32_t));
-    offset += sizeof(uint32_t);
-    memcpy(stream + offset, &(tamanioNombreTarea),sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
-    offset += sizeof(uint32_t);
-    memcpy(stream + offset, tarea->nombreTarea, tamanioNombreTarea);
 
     return stream;
 }
@@ -268,7 +232,7 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 
 		case TAREA:
 
-			return serializarTarea(stream,estructura,offset);
+				return serializarTarea(stream,estructura,offset);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
@@ -306,7 +270,6 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 }
 
 
-
 void* serializarPaquete(t_paquete* paquete, int bytes){
 
 	void * magic = malloc(bytes);
@@ -336,7 +299,6 @@ void unlock(pthread_mutex_t mutex){
 }
 
 
-
 void crearBuffer(t_paquete* paquete)
 {
 	paquete->buffer = malloc(sizeof(t_buffer));
@@ -345,8 +307,8 @@ void crearBuffer(t_paquete* paquete)
 }
 
 
-t_paquete* crearPaquete(tipoDeDato cod_op)
-{
+t_paquete* crearPaquete(tipoDeDato cod_op){
+
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = cod_op;
 	crearBuffer(paquete);
@@ -354,8 +316,7 @@ t_paquete* crearPaquete(tipoDeDato cod_op)
 }
 
 
-void eliminarPaquete(t_paquete* paquete)
-{
+void eliminarPaquete(t_paquete* paquete){
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);

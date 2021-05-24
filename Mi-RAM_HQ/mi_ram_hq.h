@@ -22,10 +22,10 @@ t_log* logMiRAM;
 
 typedef struct {
 
-	    uint32_t pid;
-	    t_list* listaTareas;
+	uint32_t pid;
+	t_list* listaTareas;
 
-	} pcb;
+} pcb;
 
 typedef struct {
 
@@ -38,12 +38,14 @@ typedef struct {
 
 } tcb;
 
+
 void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
 void deserializarTareas(void*,t_list*,uint32_t);
 void deserializarInfoPCB(t_paquete*);
 void armarTarea(char*,t_list*);
+
 
 /**
 	* @NAME: deserializarSegun

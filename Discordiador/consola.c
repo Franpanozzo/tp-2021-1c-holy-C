@@ -17,23 +17,30 @@ void leerConsola(){
 		cursor ++;
 
 		uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
+		log_info(logDiscordiador, "La cantidad de tripulantes es: %d\n",cantidadTripulantes);
 		char* tareas = procesarPathTareas(comandoYparametros, &cursor);
+		log_info(logDiscordiador, "Las tareas son: %s\n",tareas);
 		t_coordenadas* coordenadasTripulantes= procesarPosicionesTripulantes(comandoYparametros, cantidadTripulantes, &cursor);
-
-		//iniciarPatota(coordenadasTripulantes, tareas, uint32_t cantidadTripulantes);
-
-		//logear todo el comando
-		log_info(logDiscordiador, " con parametros: \n  cantidad de tripulantes: %d"
-				"\n  tareas: %s"
-				"\n posiciones:", cantidadTripulantes, tareas);
-		for(int c=0; c<cantidadTripulantes; c++){
-			log_info(logDiscordiador, " %d|%d", coordenadasTripulantes[c].posX, coordenadasTripulantes[c].posY);
+		for(int i=0; i<cantidadTripulantes; i++){
+		log_info(logDiscordiador, "Las coordenadas son %d , %d \n",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
 		}
 
+
+
+		iniciarPatota(coordenadasTripulantes, tareas,cantidadTripulantes);
+
+		//logear todo el comando
+		//log_info(logDiscordiador, " con parametros: \n  cantidad de tripulantes: %d"
+				//"\n  tareas: %s"
+				//"\n posiciones:", cantidadTripulantes, tareas);
+		//for(int c=0; c<cantidadTripulantes; c++){
+			//log_info(logDiscordiador, " %d|%d", coordenadasTripulantes[c].posX, coordenadasTripulantes[c].posY);
+		//}
+
 	}
-	else{
-		log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
-	}
+	//else{
+		//log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
+	//}
 
 	free(leido);
 }
