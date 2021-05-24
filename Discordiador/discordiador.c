@@ -37,6 +37,8 @@ int main() {
 
 	iniciarPatota(coordenadas, tarea, 4);
 
+
+
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
@@ -87,7 +89,7 @@ t_patota* asignarDatosAPatota(char* string){
 }
 
 
-void iniciarPatota(t_coordenadas coordenadas[], char* string, uint32_t cantidadTripulantes){
+void iniciarPatota(t_coordenadas* coordenadas, char* string, uint32_t cantidadTripulantes){
 
 	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 
@@ -148,11 +150,11 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	t_tripulante* tripulanteParaCheckear;
 
-    	t_tarea* tarea = deserializarTarea(paqueteRecibido->buffer->stream);
-
-    	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
-
     	if(paqueteRecibido->codigo_operacion == TAREA){
+
+    		t_tarea* tarea = deserializarTarea(paqueteRecibido->buffer->stream);
+
+    		log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",tripulante->idTripulante,tarea->nombreTarea);
 
     		bool idIgualA(t_tripulante* tripulanteAcomparar){
 
@@ -183,6 +185,7 @@ void atenderMiRAM(int socketMiRAM,t_tripulante* tripulante) {
 
     	}
 
+
     	eliminarPaquete(paqueteRecibido);
 }
 
@@ -199,4 +202,7 @@ void hiloTripulante(t_tripulante* tripulante) {
 	atenderMiRAM(miRAMsocket,tripulante);
 
 	close(miRAMsocket);
+
+	//dameTareaMiRam()
+	//atenderMiRam
 }

@@ -30,38 +30,38 @@ int main(void) {
     //falta hacer funcion para destruir las tareas de la lista de tareas del pcb
     //falta hacer funcion para destruir los pcb de las lista de pcbs
     //Prototipo:
-    /*
-     eliminarListaPCB(listaPCB);
-     eliminarListaTCB(listaTCB);
-     * */
 
-    return EXIT_SUCCESS;
+     //eliminarListaTCB(listaTCB);
+     //eliminarListaPCB(listaPCB);
+
+     return EXIT_SUCCESS;
 
 }
 
-/*
- void eliminarTarea(t_tarea* tarea){
+
+void eliminarTarea(t_tarea* tarea) {
  	free(tarea->nombreTarea);
     free(tarea);
 }
 
-void eliminarPCB(pcb* pcb){
-    list_destroy_and_destroy_elements(pcb->listaTareas, &eliminarTarea);
+void eliminarPCB(pcb* pcb) {
+    list_destroy_and_destroy_elements(pcb->listaTareas, (void*) eliminarTarea);
     free(pcb);
 }
 
-void eliminarListaPCB(t_list* listaPCB){
-    list_destroy_and_destroy_elements( listaPCB, &eliminarPCB);
+void eliminarListaPCB(t_list* listaPCB) {
+    list_destroy_and_destroy_elements( listaPCB, (void*) eliminarPCB);
 }
 
 void eliminarListaTCB(t_list* listaTCB){
-	list_destroy_and_destroy_elements( listaTCB, &eliminarTCB);
+	list_destroy_and_destroy_elements( listaTCB, (void*) eliminarTCB);
 }
 
 void eliminarTCB(tcb* tcb){
 	free(tcb);
 }
- */
+
+
 
 void atenderTripulantes(int* serverSock) {
 
@@ -151,6 +151,7 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
    }
 
     free(string);
+    free(arrayDeTareas);
 
 }
 
@@ -170,6 +171,8 @@ void armarTarea(char* string,t_list* lista){
 
 	    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
 
+	    	free(arrayPrimerElemento);
+
 	    } else {
 
 	        tarea->nombreTarea = strdup(arrayParametros[0]);
@@ -182,6 +185,9 @@ void armarTarea(char* string,t_list* lista){
 	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 
 	    list_add(lista,tarea);
+
+	    free(arrayParametros);
+
 
 }
 
@@ -281,7 +287,9 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 
 	pcb* patotaCorrespondiente;
 
+	lock(mutexListaPCB);
 	patotaCorrespondiente = list_find(listaPCB,(void*) idIgualA);
+	unlock(mutexListaPCB);
 
 		if(patotaCorrespondiente == NULL){
 
@@ -317,6 +325,7 @@ void mandarTarea(t_tarea* tarea, int socketTrip) {
 	log_info(logMiRAM,"Tarea enviada\n");
 
 	enviarPaquete(paqueteEnviado, socketTrip);
+
 
 }
 
