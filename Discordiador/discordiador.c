@@ -24,6 +24,15 @@ int main() {
 
 	pthread_mutex_init(&mutexListaNew, NULL);
 	pthread_mutex_init(&mutexColaReady, NULL);
+/*
+	int serverImongo = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
+
+	t_patota* patotaPrueba = asignarDatosAPatota("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
+
+	t_paquete*paquetePatota = armarPaqueteCon((void*) patotaPrueba,PATOTA);
+
+	enviarPaquete(paquetePatota,serverImongo);
+*/
 
 	char* tarea = strdup("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
 
@@ -31,8 +40,8 @@ int main() {
 
 	for(int i = 0; i<4 ;i++) {
 
-			coordenadas[i].posX = i;
-			coordenadas[i].posY = i+ 1;
+		coordenadas[i].posX = i;
+		coordenadas[i].posY = i+ 1;
 		}
 
 	iniciarPatota(coordenadas, tarea, 4);

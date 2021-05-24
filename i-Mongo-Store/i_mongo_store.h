@@ -14,6 +14,18 @@
 #include <string.h>
 #include <commons/config.h>
 #include <bibliotecas.h>
+#include <commons/string.h>
+#include <commons/collections/list.h>
+#include <commons/log.h>
+
+
+t_log* logImongo;
+
+
+void atenderTripulantes(int*);
+int esperarTripulante(int);
+void manejarTripulante(int*);
+void deserializarSegun(t_paquete*, int);
 
 
 #endif
