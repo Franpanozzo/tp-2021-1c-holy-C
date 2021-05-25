@@ -131,6 +131,10 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			t_tarea* tarea = (t_tarea*) estructura;
 			return strlen(tarea->nombreTarea) + 1 + sizeof(uint32_t) * 5;
 		}
+		case SIGUIENTETAREA:
+		{
+			return sizeof(uint32_t) * 2;
+		}
 
 
 		default:
@@ -212,6 +216,14 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 
 	return stream;
 }
+void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offset){
+	t_tripulante* tripulante = (t_tripulante*) estructura;
+	memcpy(stream + offset, &(tripulante->idPatota),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->idTripulante),sizeof(uint32_t));
+
+	return stream;
+}
 
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
@@ -229,6 +241,9 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 		case TRIPULANTE:
 
 				return serializarTripulante(stream,estructura,offset);
+
+		case SIGUIENTETAREA:
+				return serializarSolicitudSiguienteTarea(stream,estructura,offset);
 
 		case TAREA:
 

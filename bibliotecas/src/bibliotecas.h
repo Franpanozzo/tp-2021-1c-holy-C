@@ -30,6 +30,7 @@
 	typedef enum{
 		PATOTA,
 		TRIPULANTE,
+		SIGUIENTETAREA,
 		TAREA
 	} tipoDeDato;
 
@@ -94,6 +95,7 @@
 	void* serializarTarea(void*, void*, int);
 
 	void* serializarTripulante(void*, void*, int);
+	void* serializarSolicitudSiguienteTarea(void*, void* , int);
 
 	t_tarea* deserializarTarea(void*);
 
