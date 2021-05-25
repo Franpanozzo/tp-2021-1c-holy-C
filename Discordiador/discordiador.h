@@ -49,13 +49,14 @@ void crearConfig();
 void eliminarPatota(t_patota*);
 void iniciarTripulante(t_coordenadas, uint32_t);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
-void recibirPrimerTareaDeMiRAM(int,t_tripulante*);
 void pasarDeEstado(t_tripulante*, t_estado);
-void newTripulante(t_tripulante* );
+void hiloTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
 char* deserializarString (t_paquete*);
 void mandarTareaAejecutar(t_tripulante*,int);
 void recibirConfirmacionDeMongo(int,t_tarea*);
 void recibirPrimerTareaDeMiRAM(t_tripulante*);
 void recibirProximaTareaDeMiRAM(t_tripulante*);
+void cpuPlanificacion(char*);
+void sacarDeNew(t_tripulante*);
 #endif
