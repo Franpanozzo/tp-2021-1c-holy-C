@@ -25,6 +25,7 @@ int main() {
 
 	pthread_mutex_init(&mutexListaNew, NULL);
 	pthread_mutex_init(&mutexColaReady, NULL);
+	pthread_mutex_init(&mutexListaExec, NULL);
 /*
 	int serverImongo = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
 
@@ -50,11 +51,15 @@ void cpuPlanificacion(char* algoritmo) {
 
 	log_info(logDiscordiador,"Empezando planificacion usando el algoritmo %s",algoritmo);
 
+	while(1){
+
 	if(list_size(listaExec) < 4/*configDiscordiador.multiProcesamiento*/){
 
 		if(strcmp(algoritmo,"FIFO") == 0) {
 
+			lock(mutexColaReady);
 			t_tripulante* tripulanteAExec =  queue_pop(colaDeReady);
+			unlock(mutexColaReady);
 			pasarDeEstado(tripulanteAExec,EXEC);
 
 		}
@@ -69,6 +74,8 @@ void cpuPlanificacion(char* algoritmo) {
 			log_info(logDiscordiador,"No existe ese algoritmo de planificacion negro");
 		}
 	}
+
+ }
 
 }
 
