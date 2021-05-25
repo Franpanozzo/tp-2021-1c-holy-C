@@ -220,16 +220,6 @@ void deserializarInfoPCB(t_paquete* paquete) {
 }
 
 
-char* deserializarString (t_paquete* paquete){
-
-	char* string = malloc(sizeof(paquete->buffer->size));
-
-	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
-
-	return string;
-}
-
-
 void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));

@@ -21,6 +21,7 @@ int main() {
 
 	listaDeNew = list_create();
 	colaDeReady = queue_create();
+	listaExec = list_create();
 
 	pthread_mutex_init(&mutexListaNew, NULL);
 	pthread_mutex_init(&mutexColaReady, NULL);
@@ -129,7 +130,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 }
 
 
-void recibirTareaDeMiRAM(int socketMiRAM,t_tripulante* tripulante){
+void recibirPrimerTareaDeMiRAM(int socketMiRAM,t_tripulante* tripulante){
 
 	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
 
@@ -139,11 +140,11 @@ void recibirTareaDeMiRAM(int socketMiRAM,t_tripulante* tripulante){
 
 	    log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
 	    		tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
-	}
+		}
 	else{
 	    	log_error(logDiscordiador,"El paquete recibido no es una tarea\n");
 	    	exit(1);
-	}
+		}
 
 	eliminarPaquete(paqueteRecibido);
 }
@@ -226,15 +227,72 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 void newTripulante(t_tripulante* tripulante) {
 
 	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-	// Duda porque no se si hay q iniciarla de vuelta ya q la anterior no se cerró
 
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
 
 	enviarPaquete(paqueteEnviado, miRAMsocket);
 
-	recibirTareaDeMiRAM(miRAMsocket,tripulante);
+	recibirPrimerTareaDeMiRAM(miRAMsocket,tripulante);
+
+	close(miRAMsocket);
+
+	int iMongoSocket = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
 
 	pasarDeEstado(tripulante, READY);
 
-	close(miRAMsocket);
+	mandarTareaAejecutar(tripulante,iMongoSocket);
+
+	close(iMongoSocket);
+
+}
+
+
+void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
+
+	pasarDeEstado(tripulante,EXEC);
+
+	t_paquete* paqueteConLaTarea = armarPaqueteCon((void*) tripulante->instruccionAejecutar,TAREA);
+
+	enviarPaquete(paqueteConLaTarea,socketMongo);
+
+	recibirConfirmacionDeMongo(socketMongo,tripulante->instruccionAejecutar);
+}
+
+
+char* deserializarString (t_paquete* paquete){
+
+	char* string = malloc(sizeof(paquete->buffer->size));
+
+	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
+
+	return string;
+}
+
+
+
+void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
+
+	t_paquete* paqueteRecibido = recibirPaquete(socketMongo);
+
+	char* mensajeRecibido = deserializarString(paqueteRecibido);
+
+	if(strcmp(mensajeRecibido,"OK") == 0){
+
+		log_info(logDiscordiador,"Se elimino la tarea %s\n",tarea->nombreTarea);
+
+		free(tarea->nombreTarea);
+		free(tarea);
+		free(mensajeRecibido);
+	}
+
+	else{
+
+		log_info(logDiscordiador, "No sabemos q hacer todavia =(\n");
+
+		free(tarea->nombreTarea);
+		free(tarea);
+		free(mensajeRecibido);
+
+	}
+
 }

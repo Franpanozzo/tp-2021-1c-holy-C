@@ -36,6 +36,8 @@ t_list* listaDeNew;
 
 t_queue* colaDeReady;
 
+t_list* listaExec;
+
 pthread_mutex_t mutexListaNew;
 pthread_mutex_t mutexColaReady;
 
@@ -49,6 +51,8 @@ void pasarDeEstado(t_tripulante*, t_estado);
 void newTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
 char* deserializarString (t_paquete*);
+void mandarTareaAejecutar(t_tripulante*,int);
+void recibirConfirmacionDeMongo(int,t_tarea*);
 
 
 #endif
