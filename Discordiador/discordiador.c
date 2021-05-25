@@ -95,7 +95,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 	for (int i=0; i<cantidadTripulantes; i++){
 
 		iniciarTripulante(coordenadas[i], patota->ID);
-		}
+	}
 
 	eliminarPatota(patota);
 	close(server_socket);
@@ -130,26 +130,6 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 }
 
 
-void recibirPrimerTareaDeMiRAM(int socketMiRAM,t_tripulante* tripulante){
-
-	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
-
-	if(paqueteRecibido->codigo_operacion == TAREA){
-
-	    tripulante->instruccionAejecutar = deserializarTarea(paqueteRecibido->buffer->stream);
-
-	    log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
-	    		tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
-		}
-	else{
-	    	log_error(logDiscordiador,"El paquete recibido no es una tarea\n");
-	    	exit(1);
-		}
-
-	eliminarPaquete(paqueteRecibido);
-}
-
-
 void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 
 	t_tripulante* tripulanteParaCheckear;
@@ -170,6 +150,7 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 			break;
 
 		case READY:
+			//remover de ready
 
 			break;
 
@@ -197,7 +178,7 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 				lock(mutexColaReady);
 				queue_push(colaDeReady,(void*) tripulanteParaCheckear);
 				unlock(mutexColaReady);
-
+				//¿Aca se mandaria el mensaje para actualiazar el tcb?
 				log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
 
 			}
@@ -209,7 +190,12 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 			break;
 
 		case EXEC:
+			tripulante->estado = EXEC;
+			lock(mutexListaExec);
+			list_add(listaExec,(void*) tripulanteParaCheckear);
+			unlock(mutexListaExec);
 
+			//¿Aca se mandaria el mensaje para actualiazar el tcb?
 			break;
 
 		case BLOCKED:
@@ -225,31 +211,65 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 
 
 void newTripulante(t_tripulante* tripulante) {
+	//id patato y tripulante
 
-	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-
-	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
-
-	enviarPaquete(paqueteEnviado, miRAMsocket);
-
-	recibirPrimerTareaDeMiRAM(miRAMsocket,tripulante);
-
-	close(miRAMsocket);
-
-	int iMongoSocket = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
+	recibirPrimerTareaDeMiRAM(tripulante);
 
 	pasarDeEstado(tripulante, READY);
 
-	mandarTareaAejecutar(tripulante,iMongoSocket);
 
-	close(iMongoSocket);
+	//pasarDeEstado(tripulante,EXEC);//
+
+	while(strcmp(tripulante->instruccionAejecutar->nombreTarea,"tareaFinal") != 0){
+		//sem_wait(tripulante->semaforo);
+		int iMongoSocket = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
+		mandarTareaAejecutar(tripulante,iMongoSocket);
+		close(iMongoSocket);
+
+		//recibirProximaTareaDeMiRAM(tripulante);
+	}
+
 
 }
 
+void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
+
+	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
+
+	if(paqueteRecibido->codigo_operacion == TAREA){
+
+	    tripulante->instruccionAejecutar = deserializarTarea(paqueteRecibido->buffer->stream);
+
+	    log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
+	    		tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	}
+	else{
+	    log_error(logDiscordiador,"El paquete recibido no es una tarea\n");
+	    exit(1);
+	}
+
+	eliminarPaquete(paqueteRecibido);
+}
+
+void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
+	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
+	enviarPaquete(paqueteEnviado, miRAMsocket);
+
+	recibirTareaDeMiRAM(miRAMsocket, tripulante);
+	close(miRAMsocket);
+}
+
+void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
+	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+	t_paquete * paquete = armarPaqueteCon((void*) tripulante,SIGUIENTETAREA);
+	enviarPaquete(paquete, miRAMsocket);
+
+	recibirTareaDeMiRAM(miRAMsocket,tripulante);
+	close(miRAMsocket);
+}
 
 void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
-
-	pasarDeEstado(tripulante,EXEC);
 
 	t_paquete* paqueteConLaTarea = armarPaqueteCon((void*) tripulante->instruccionAejecutar,TAREA);
 

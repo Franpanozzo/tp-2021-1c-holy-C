@@ -42,6 +42,7 @@ t_list* listaDeFinish;
 
 pthread_mutex_t mutexListaNew;
 pthread_mutex_t mutexColaReady;
+pthread_mutex_t mutexListaExec;
 
 
 void crearConfig();
@@ -55,6 +56,6 @@ t_patota* asignarDatosAPatota(char*);
 char* deserializarString (t_paquete*);
 void mandarTareaAejecutar(t_tripulante*,int);
 void recibirConfirmacionDeMongo(int,t_tarea*);
-
-
+void recibirPrimerTareaDeMiRAM(t_tripulante*);
+void recibirProximaTareaDeMiRAM(t_tripulante*);
 #endif

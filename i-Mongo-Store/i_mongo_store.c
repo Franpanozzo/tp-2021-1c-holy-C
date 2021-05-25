@@ -2,7 +2,7 @@
 
 
 int main(void) {
-/*
+
 	int puerto = 5001;
 
 	int serverSock = iniciarConexionDesdeServidor(puerto);
@@ -13,7 +13,7 @@ int main(void) {
 
 
 	return EXIT_SUCCESS;
-*/
+
 }
 
 void atenderTripulantes(int* serverSock) {
@@ -73,6 +73,13 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 						log_info(logImongo,"Tripulante recibido negro \n");
 						break;
 
+			case TAREA:
+			{
+
+						log_info(logImongo,"Tarea recibida negro \n");
+
+						break;
+			}
 			default:
 
 					log_info(logImongo,"No se puede deserializar ese tipo de estructura negro \n");
