@@ -276,7 +276,7 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 
 	char* mensajeRecibido = deserializarString(paqueteRecibido);
 
-	if(strcmp(mensajeRecibido,"OK") == 0){
+	if(strcmp(mensajeRecibido,"TAREA REALIZADA") == 0){
 
 		log_info(logDiscordiador,"Se elimino la tarea %s\n",tarea->nombreTarea);
 

@@ -38,6 +38,8 @@ t_queue* colaDeReady;
 
 t_list* listaExec;
 
+t_list* listaDeFinish;
+
 pthread_mutex_t mutexListaNew;
 pthread_mutex_t mutexColaReady;
 
@@ -46,7 +48,7 @@ void crearConfig();
 void eliminarPatota(t_patota*);
 void iniciarTripulante(t_coordenadas, uint32_t);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
-void recibirTareaDeMiRAM(int,t_tripulante*);
+void recibirPrimerTareaDeMiRAM(int,t_tripulante*);
 void pasarDeEstado(t_tripulante*, t_estado);
 void newTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
