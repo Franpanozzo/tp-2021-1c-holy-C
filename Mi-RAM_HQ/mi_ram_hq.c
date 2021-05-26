@@ -119,6 +119,11 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 						deserializarTripulante(paquete,tripulanteSock);
 						break;
+			case SIGUIENTETAREA:
+			{
+					deserializarSolicitudTarea(paquete,tripulanteSock);
+					break;
+			}
 
 			default:
 
@@ -127,6 +132,42 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 		}
 	eliminarPaquete(paquete);
+}
+void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock){
+	uint32_t idPatota;
+	uint32_t idTripulante;
+	void * stream = paquete->buffer->stream;
+	int offset = 0;
+	memcpy(&(idPatota), stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(idTripulante), stream + offset, sizeof(uint32_t));
+
+	bool esIgualA(tcb* tcbAcomparar){
+
+		return tcbAcomparar->idTripulante == idTripulante
+				&& tcbAcomparar->patota->pid == idPatota;
+	}
+
+
+	tcb* buscado = list_find(listaTCB, (void*) esIgualA);
+
+	setearSgteTarea(buscado);
+
+	t_paquete *paqueteTarea  = armarPaqueteCon(buscado->proximaAEjecutar,TAREA);
+	enviarPaquete(paqueteTarea,tripulanteSock);
+
+}
+
+void setearSgteTarea(tcb *buscado){
+	t_list_iterator * iterator = list_iterator_create(buscado->patota->listaTareas);
+	while(list_iterator_has_next(iterator)){
+		t_tarea* tarea = list_iterator_next(iterator);
+		if(tarea == buscado->proximaAEjecutar){
+			tarea = list_iterator_next(iterator);
+			buscado->proximaAEjecutar = tarea;
+			break;
+		}
+	}
 }
 
 
@@ -148,7 +189,10 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
         i++;
 
-   }
+    }
+    t_tarea * tareaFinal = malloc(sizeof(t_tarea));
+    tareaFinal->nombreTarea = strdup("TAREA_NULA");
+	list_add(listaTareas,tareaFinal);
 
     free(string);
     free(arrayDeTareas);
@@ -218,7 +262,6 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
     unlock(mutexListaPCB);
 }
-
 
 void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 

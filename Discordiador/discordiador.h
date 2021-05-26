@@ -31,6 +31,7 @@ puertoEIP* puertoEIPMongo;
 
 int idTripulante;
 int idPatota;
+int planificacion_pausada;
 
 t_list* listaDeNew;
 
@@ -38,11 +39,16 @@ t_queue* colaDeReady;
 
 t_list* listaExec;
 
+t_queue* colaES;
+
 t_list* listaDeFinish;
 
 pthread_mutex_t mutexListaNew;
 pthread_mutex_t mutexColaReady;
 pthread_mutex_t mutexListaExec;
+
+sem_t semPlanificacion;
+
 
 
 void crearConfig();
@@ -57,6 +63,6 @@ void mandarTareaAejecutar(t_tripulante*,int);
 void recibirConfirmacionDeMongo(int,t_tarea*);
 void recibirPrimerTareaDeMiRAM(t_tripulante*);
 void recibirProximaTareaDeMiRAM(t_tripulante*);
-void cpuPlanificacion(char*);
+void cpuPlanificacion();
 void sacarDeNew(t_tripulante*);
 #endif

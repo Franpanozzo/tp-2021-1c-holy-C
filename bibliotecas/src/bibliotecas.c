@@ -135,7 +135,11 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		{
 			return sizeof(uint32_t) * 2;
 		}
-
+		case STRING:
+		{
+			char * string = (char *) estructura;
+			return strlen(string) + 1;
+		}
 
 		default:
 				printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
@@ -216,6 +220,12 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 
 	return stream;
 }
+void* serializarString(void* stream, void* estructura, int offset){
+	char* string = (char*) estructura;
+	memcpy(stream,string,strlen(string) + 1);
+	return stream;
+}
+
 void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offset){
 	t_tripulante* tripulante = (t_tripulante*) estructura;
 	memcpy(stream + offset, &(tripulante->idPatota),sizeof(uint32_t));
@@ -224,6 +234,7 @@ void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offs
 
 	return stream;
 }
+
 
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
@@ -248,6 +259,8 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 		case TAREA:
 
 				return serializarTarea(stream,estructura,offset);
+		case STRING:
+				return serializarString(stream,estructura,offset);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");

@@ -44,6 +44,8 @@ int esperarTripulante(int);
 void manejarTripulante(int*);
 void deserializarTareas(void*,t_list*,uint32_t);
 void deserializarInfoPCB(t_paquete*);
+void deserializarSolicitudTarea(t_paquete*,int);
+void setearSgteTarea(tcb*);
 void armarTarea(char*,t_list*);
 void eliminarTarea(t_tarea*);
 void eliminarPCB(pcb*);

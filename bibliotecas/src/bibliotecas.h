@@ -31,7 +31,8 @@
 		PATOTA,
 		TRIPULANTE,
 		SIGUIENTETAREA,
-		TAREA
+		TAREA,
+		STRING
 	} tipoDeDato;
 
 	typedef struct {
@@ -96,7 +97,7 @@
 
 	void* serializarTripulante(void*, void*, int);
 	void* serializarSolicitudSiguienteTarea(void*, void* , int);
-
+	void* serializarString(void*, void*, int);
 	t_tarea* deserializarTarea(void*);
 
 

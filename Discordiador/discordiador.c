@@ -47,16 +47,25 @@ int main() {
 }
 
 //LO LLAMA SANTI DESDE LA CONSOLA
-void cpuPlanificacion(char* algoritmo) {
-
+void cpuPlanificacion() {
+	char* algoritmo;
+	int grado_multiprocesamiento;
+	algoritmo = config_get_string_value(config,"ALGORITMO");
+	grado_multiprocesamiento = config_get_int_value(config,"GRADO_MULTITAREA");
 	log_info(logDiscordiador,"Empezando planificacion usando el algoritmo %s",algoritmo);
 
-	while(1){
+	planificacion_pausada= 1;
+	//Iniciar_planificaion -> pausado=1;
+	//Pausar_planificacion -> pausado=0;
 
-	if(list_size(listaExec) < 4/*configDiscordiador.multiProcesamiento*/){
+	while(1){
+	if(planificacion_pausada){
+		sem_wait(&semPlanificacion);//lo hace consola
+	}
+
+	if(list_size(listaExec) < grado_multiprocesamiento){//Cuando la planificacion esta activa
 
 		if(strcmp(algoritmo,"FIFO") == 0) {
-
 			lock(mutexColaReady);
 			t_tripulante* tripulanteAExec =  queue_pop(colaDeReady);
 			unlock(mutexColaReady);
@@ -65,14 +74,19 @@ void cpuPlanificacion(char* algoritmo) {
 		}
 
 		if(strcmp(algoritmo,"RR") == 0) {
-
-
-
+			//TODO
 		}
 
 		else {
 			log_info(logDiscordiador,"No existe ese algoritmo de planificacion negro");
 		}
+	}
+	if(list_size(listaDeNew)>0){//independiente del algoritmo de planificacion
+		lock(mutexListaNew);
+		t_tripulante* tripulanteARedy =  list_remove(listaDeNew,0);
+		unlock(mutexListaNew);
+		pasarDeEstado(tripulanteARedy,READY);
+
 	}
 
  }
@@ -141,7 +155,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
 
-	pthread_t hiloTripulante;
+	pthread_t _hiloTripulante;
 
 	idTripulante++;
 
@@ -160,8 +174,8 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	log_info(logDiscordiador,"Se creo el tripulante numero %d\n",tripulante->idTripulante);
 
 
-	pthread_create(&hiloTripulante, NULL, (void*) hiloTripulante, (void*) tripulante);
-	pthread_join(hiloTripulante, (void**) NULL);
+	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripulante, (void*) tripulante);
+	pthread_join(_hiloTripulante, (void**) NULL);
 }
 
 
@@ -171,13 +185,14 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 	switch(siguienteEstado){
 
 		case READY:
-
+			//Ir a Hoja 10 del tp
 			tripulante->estado = READY;
 			lock(mutexColaReady);
 			queue_push(colaDeReady,(void*) tripulante);
 			unlock(mutexColaReady);
-			//¿Aca se mandaria el mensaje para actualiazar el tcb?
+			//¿Aca se mandaria el mensaje para actualiazar el tcb
 			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
+			sem_post(&tripulante->semaforo);//le permitimos ir a ready
 			break;
 
 		case EXEC:
@@ -227,19 +242,21 @@ void hiloTripulante(t_tripulante* tripulante) {
 
 	recibirPrimerTareaDeMiRAM(tripulante);
 
-	sacarDeNew(tripulante);
-
-	pasarDeEstado(tripulante, READY);
-
-
+	//sem_wait(&tripulante->semaforo);//esperando a que planificador lo ponga en ready
+	//Esto es responsabilidad del planificador y no del tripulante
+	//sacarDeNew(tripulante);
+	//pasarDeEstado(tripulante, READY);
+	//fachini dice en el video que es el planificador el que pasa de new a ready
+	//sem_wait(&tripulante->semaforo);//esperando a que planificador lo ponga en exec
 	//ARANCA EL TRIPULANTE A LABURAR
-
 	while(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") != 0){
 
-		if(primerWait == 0){
-		sem_wait(&tripulante->semaforo);
-		primerWait = 1;
-		}
+		//if(primerWait == 0){
+			//sem_wait(&tripulante->semaforo);
+			//primerWait = 1;
+		//}
+
+
 		//(atencion) PROXIMOS COMENTARIOS TIENEN QUE VER CON RR
 
 		//MOVERNOS A LA TAREAM MODIFICANDONOS EN X E Y, CONSUMIENDO QUANTUM
@@ -266,9 +283,15 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 	if(paqueteRecibido->codigo_operacion == TAREA){
 
 	    tripulante->instruccionAejecutar = deserializarTarea(paqueteRecibido->buffer->stream);
+	    if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") > 0){
+	    	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
+	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	    }
+	    else{
+	    	log_info(logDiscordiador,"Soy el tripulante %d y se me acabaron las tareas!\n",
+	    		    tripulante->idTripulante);
+	    }
 
-	    log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
-	    		tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 	}
 	else{
 	    log_error(logDiscordiador,"El paquete recibido no es una tarea\n");
@@ -299,6 +322,7 @@ void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 }
 
 
+
 void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
 
 	t_paquete* paqueteConLaTarea = armarPaqueteCon((void*) tripulante->instruccionAejecutar,TAREA);
@@ -311,9 +335,9 @@ void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
 
 char* deserializarString (t_paquete* paquete){
 
-	char* string = malloc(sizeof(paquete->buffer->size));
+	char* string = malloc(paquete->buffer->size);
 
-	memcpy(string,&(paquete->buffer->stream),sizeof(paquete->buffer->size));
+	memcpy(string,(paquete->buffer->stream),paquete->buffer->size);
 
 	return string;
 }
@@ -324,6 +348,7 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 	t_paquete* paqueteRecibido = recibirPaquete(socketMongo);
 
 	char* mensajeRecibido = deserializarString(paqueteRecibido);
+	log_info(logDiscordiador,"Confirmacion %s\n",mensajeRecibido);
 
 	if(strcmp(mensajeRecibido,"TAREA REALIZADA") == 0){
 

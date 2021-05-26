@@ -7,6 +7,10 @@ int main(void) {
 
 	int serverSock = iniciarConexionDesdeServidor(puerto);
 
+	logImongo = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i-mongo-store.log", "i-mongo-store",1);
+
+
+
 	pthread_t manejo_tripulante2;
 	pthread_create(&manejo_tripulante2, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	pthread_join(manejo_tripulante2, (void*) NULL);
@@ -75,10 +79,17 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 			case TAREA:
 			{
+				log_info(logImongo,"Tarea recibida negro \n");
+				t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
+				log_info(logImongo,"tareaRecibida %s, tripulante %d",tarea->nombreTarea,tripulanteSock);
 
-						log_info(logImongo,"Tarea recibida negro \n");
+				t_paquete * paquete = armarPaqueteCon(tarea->nombreTarea,STRING);
+				enviarPaquete(paquete, tripulanteSock);
 
-						break;
+				free(tarea->nombreTarea);
+				free(tarea);
+
+				break;
 			}
 			default:
 
