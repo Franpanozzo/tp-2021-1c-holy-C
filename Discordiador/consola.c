@@ -4,48 +4,51 @@
 
 void leerConsola(){
 	char* leido;
+	char** comandoYparametros;
+	int cursor;
 
-	leido = readline("Discordiador-->");
+	while(1){
+		leido = readline("Discordiador-->");
+		string_trim(&leido);
+		comandoYparametros = string_split(leido, " ");
+		cursor = 0;
 
-	string_trim(&leido);
+		if(strcmp(comandoYparametros[cursor], "INICIAR_PATOTA") == 0){
 
-	char** comandoYparametros = string_split(leido, " ");
-	int cursor = 0;
+			log_info(logDiscordiador, "\nSe ingreso el comando iniciar patota");
+			cursor ++;
 
-	if(strcmp(comandoYparametros[cursor], "INICIAR_PATOTA") == 0){
+			uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
+			log_info(logDiscordiador, "La cantidad de tripulantes es: %d\n",cantidadTripulantes);
+			char* tareas = procesarPathTareas(comandoYparametros, &cursor);
+			log_info(logDiscordiador, "Las tareas son: %s\n",tareas);
+			t_coordenadas* coordenadasTripulantes= procesarPosicionesTripulantes(comandoYparametros, cantidadTripulantes, &cursor);
+			for(int i=0; i<cantidadTripulantes; i++){
+				log_info(logDiscordiador, "Las coordenadas son %d , %d \n",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
+			}
 
-		log_info(logDiscordiador, "\nSe ingreso el comando iniciar patota");
-		cursor ++;
+			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
 
-		uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
-		log_info(logDiscordiador, "La cantidad de tripulantes es: %d\n",cantidadTripulantes);
-		char* tareas = procesarPathTareas(comandoYparametros, &cursor);
-		log_info(logDiscordiador, "Las tareas son: %s\n",tareas);
-		t_coordenadas* coordenadasTripulantes= procesarPosicionesTripulantes(comandoYparametros, cantidadTripulantes, &cursor);
-		for(int i=0; i<cantidadTripulantes; i++){
-			log_info(logDiscordiador, "Las coordenadas son %d , %d \n",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
 		}
+		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
+			sem_post(&semPlanificacion);//le permites arrancar a planificar las listas/colas
+			planificacion_pausada=0;
 
-		iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
-
-	}
-	else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
-		sem_post(&semPlanificacion);//le permites arrancar a planificar las listas/colas
-		planificacion_pausada=0;
-
-		log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
-				cursor ++;
-	}
-	else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-			planificacion_pausada=1;
 			log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
 					cursor ++;
 		}
-	else{
-		log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
+		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
+				planificacion_pausada=1;
+				log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
+						cursor ++;
+			}
+		else{
+			log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
+		}
+
+		free(leido);
 	}
 
-	free(leido);
 }
 
 

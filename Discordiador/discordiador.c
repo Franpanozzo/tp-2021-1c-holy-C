@@ -59,8 +59,19 @@ void cpuPlanificacion() {
 	//Pausar_planificacion -> pausado=0;
 
 	while(1){
+
+	while(planificacion_pausada);
+
 	if(planificacion_pausada){
 		sem_wait(&semPlanificacion);//lo hace consola
+	}
+
+	if(list_size(listaDeNew)>0){//independiente del algoritmo de planificacion
+		lock(mutexListaNew);
+		t_tripulante* tripulanteARedy =  list_remove(listaDeNew,0);
+		unlock(mutexListaNew);
+		pasarDeEstado(tripulanteARedy,READY);
+
 	}
 
 	if(list_size(listaExec) < grado_multiprocesamiento){//Cuando la planificacion esta activa
@@ -81,14 +92,6 @@ void cpuPlanificacion() {
 			log_info(logDiscordiador,"No existe ese algoritmo de planificacion negro");
 		}
 	}
-	if(list_size(listaDeNew)>0){//independiente del algoritmo de planificacion
-		lock(mutexListaNew);
-		t_tripulante* tripulanteARedy =  list_remove(listaDeNew,0);
-		unlock(mutexListaNew);
-		pasarDeEstado(tripulanteARedy,READY);
-
-	}
-
  }
 
 }
