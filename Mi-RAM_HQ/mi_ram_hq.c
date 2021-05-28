@@ -215,13 +215,14 @@ void armarTarea(char* string,t_list* lista){
 
 	    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
 
-	    	free(arrayPrimerElemento);
+			liberarDoblesPunterosAChar(arrayPrimerElemento);
 
 	    } else {
 
 	        tarea->nombreTarea = strdup(arrayParametros[0]);
 
 	    }
+
 	    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
 
 	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
@@ -230,8 +231,23 @@ void armarTarea(char* string,t_list* lista){
 
 	    list_add(lista,tarea);
 
-	    free(arrayParametros);
+	    liberarDoblesPunterosAChar(arrayParametros);
 
+}
+
+void liberarDoblesPunterosAChar(char** arrayParametros) {
+
+	char** liberadorDeStrings = arrayParametros;
+
+	while((*liberadorDeStrings) != NULL) {
+
+		free(*liberadorDeStrings);
+		liberadorDeStrings++;
+		//if((*liberadorDeStrings) == NULL) free(arrayParametros);
+
+	}
+
+	free(arrayParametros);
 
 }
 

@@ -372,4 +372,7 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 
 	}
 
+	eliminarPaquete(paqueteRecibido);
+
+
 }

@@ -52,6 +52,7 @@ void eliminarPCB(pcb*);
 void eliminarListaPCB(t_list*);
 void eliminarListaTCB(t_list*);
 void eliminarTCB(tcb* tcb);
+void liberarDoblesPunterosAChar(char**);
 
 
 /**
