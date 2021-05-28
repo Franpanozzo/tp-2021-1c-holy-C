@@ -55,5 +55,6 @@ dkms.conf
 /Discordiador/Debug/
 /i-Mongo-Store/Debug/
 /Mi-RAM_HQ/Debug
+*.log
 
 

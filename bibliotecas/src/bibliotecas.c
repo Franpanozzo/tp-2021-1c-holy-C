@@ -9,7 +9,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 
 	if((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		perror("socket");
-		//aca hay q hacer log?
+
 		exit(1);
 	}
 	int yes = 0;
@@ -33,7 +33,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 	}
 
 	free(serverAddress);
-	printf("conectado\n");
+	printf("Cliente conectado del puerto %d y IP %s \n",puertoEIPAConectar->puerto,puertoEIPAConectar->IP);
 	return server_sock;
 
 }
@@ -63,20 +63,19 @@ int iniciarConexionDesdeServidor(int puerto) {
 		perror("listen");
 	}
 
-
-	return server_sock;
-
-
 	free(serverAddress);
 	free(localAddress);
 
+	printf("Servidor conectado \n");
+	return server_sock;
+
 }
 
 
-void liberarConexion(int socket_cliente)
-{
+void liberarConexion(int socket_cliente){
 	close(socket_cliente);
 }
+
 
 t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 
@@ -90,6 +89,7 @@ t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 	else
 		return logger;
 }
+
 
 t_paquete* recibirPaquete(int server_socket){
 
@@ -106,65 +106,40 @@ t_paquete* recibirPaquete(int server_socket){
 
 	return paquete;
 
-
-
-}
-
-
-void deserializarSegun(t_paquete* paquete){
-
-	switch(paquete->codigo_operacion){
-
-			case PERSONA:
-						deserializarPersona(paquete->buffer);
-						break;
-
-
-			default:
-					printf("\n No se puede deserializar ese tipo de estructura negro \n");
-					exit(1);
-		}
-}
-
-void deserializarPersona(t_buffer* buffer) {
-
-	t_persona* persona = malloc(sizeof(t_persona));
-
-	void* stream = buffer->stream;
-
-	memcpy(&(persona->dni), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->edad), stream, sizeof(uint8_t));
-	stream += sizeof(uint8_t);
-	memcpy(&(persona->pasaporte), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(persona->nombre_length), stream, sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	persona->nombre = malloc(persona->nombre_length);
-	memcpy(persona->nombre, stream, persona->nombre_length);
-
-	printf("El nombre de la persona es: %s \n",persona->nombre);
-	printf("El DNI de la persona es: %d \n",persona->dni);
-
-	free(persona->nombre);
-	free(persona);
 }
 
 
 int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 	switch(cod_op){
-		case PERSONA:
+
+		case PATOTA:
 		{
-			t_persona* persona = (void*) estructura;
-			return  sizeof(uint32_t) * 3 + sizeof(uint8_t) + strlen(persona->nombre) + 1;
-		}
-		case TAREA_PATOTA:
-		{
-			char* string = (char*) estructura;
-			return strlen(string) + 1;
+			t_patota* patota = (t_patota*) estructura;
+			return sizeof(uint32_t) * 2 + patota->tamanioTareas;
 		}
 
+
+		case TRIPULANTE:
+		{
+			return sizeof(uint32_t) * 4 + sizeof(t_estado);
+		}
+
+
+		case TAREA:
+		{
+			t_tarea* tarea = (t_tarea*) estructura;
+			return strlen(tarea->nombreTarea) + 1 + sizeof(uint32_t) * 5;
+		}
+		case SIGUIENTETAREA:
+		{
+			return sizeof(uint32_t) * 2;
+		}
+		case STRING:
+		{
+			char * string = (char *) estructura;
+			return strlen(string) + 1;
+		}
 
 		default:
 				printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
@@ -174,26 +149,88 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 }
 
 
-void* serializarPersona(void* stream, void* estructura,  int offset){
+void* serializarTarea(void* stream, void* estructura, int offset){
 
-	t_persona* persona = (void*) estructura;
-	memcpy(stream + offset, &(persona->dni), sizeof(uint32_t));
+	t_tarea* tarea = (t_tarea*) estructura;
+	uint32_t tamanioNombreTarea = strlen(tarea->nombreTarea) + 1;
+	memcpy(stream + offset, &(tarea->parametro),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(persona->edad), sizeof(uint8_t));
-	offset += sizeof(uint8_t);
-	memcpy(stream + offset, &(persona->pasaporte), sizeof(uint32_t));
+	memcpy(stream + offset, &(tarea->posX),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(persona->nombre_length), sizeof(uint32_t));
+	memcpy(stream + offset, &(tarea->posY),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset, persona->nombre, strlen(persona->nombre) + 1);
+	memcpy(stream + offset, &(tarea->tiempo),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tamanioNombreTarea),sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, tarea->nombreTarea, tamanioNombreTarea);
+
+    return stream;
+}
+
+
+t_tarea* deserializarTarea(void* stream){
+
+    int offset = 0;
+    t_tarea* tarea = malloc(sizeof(t_tarea));
+    uint32_t tamanioNombreTarea = 0;
+
+    memcpy(&(tarea->parametro),stream + offset ,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->posX),stream + offset,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->posY),stream + offset,sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tarea->tiempo),stream + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&(tamanioNombreTarea),stream + offset, sizeof(uint32_t));// este uint no pertenece a la estructura original, OJO!!!!
+    offset += sizeof(uint32_t);
+    tarea->nombreTarea = malloc(tamanioNombreTarea);
+    memcpy(tarea->nombreTarea, stream + offset, tamanioNombreTarea);
+
+    return tarea;
+}
+
+
+void* serializarPatota(void* stream, void* estructura, int offset){
+
+	t_patota* patota = (t_patota*) estructura;
+	memcpy(stream + offset, &(patota->ID),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(patota->tamanioTareas),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, patota->tareas, patota->tamanioTareas);
 
 	return stream;
 }
 
-void* serializarTareaPatota(void* stream, void* estructura){
+void* serializarTripulante(void* stream, void* estructura, int offset){
 
+	t_tripulante* tripulante = (t_tripulante*) estructura;
+	memcpy(stream + offset, &(tripulante->idPatota),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->idTripulante),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->estado),sizeof(t_estado));
+	offset += sizeof(t_estado);
+	memcpy(stream + offset, &(tripulante->posX),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->posY),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	return stream;
+}
+void* serializarString(void* stream, void* estructura, int offset){
 	char* string = (char*) estructura;
 	memcpy(stream,string,strlen(string) + 1);
+	return stream;
+}
+
+void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offset){
+	t_tripulante* tripulante = (t_tripulante*) estructura;
+	memcpy(stream + offset, &(tripulante->idPatota),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(tripulante->idTripulante),sizeof(uint32_t));
 
 	return stream;
 }
@@ -207,11 +244,23 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 	int offset = 0;
 
 	switch(cod_op){
-		case PERSONA:
 
-				return serializarPersona(stream,estructura, offset);
-		case TAREA_PATOTA:
-				return serializarTareaPatota(stream,estructura);
+		case PATOTA:
+
+				return serializarPatota(stream,estructura,offset);
+
+		case TRIPULANTE:
+
+				return serializarTripulante(stream,estructura,offset);
+
+		case SIGUIENTETAREA:
+				return serializarSolicitudSiguienteTarea(stream,estructura,offset);
+
+		case TAREA:
+
+				return serializarTarea(stream,estructura,offset);
+		case STRING:
+				return serializarString(stream,estructura,offset);
 
 		default:
 				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
@@ -227,6 +276,8 @@ t_paquete* armarPaqueteCon(void* estructura,tipoDeDato cod_op){
 	paquete->buffer->size = tamanioEstructura(estructura,paquete->codigo_operacion);
 	paquete->buffer->stream = serializarEstructura(estructura,paquete->buffer->size,paquete->codigo_operacion);
 
+	printf("Paquete %d creado \n", paquete->codigo_operacion);
+
 	return  paquete;
 
 }
@@ -239,11 +290,12 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 	void* a_enviar = serializarPaquete(paquete,tamanioTotal);
 	send(socket, a_enviar, tamanioTotal,0);
 
+	printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
+
 	free(a_enviar);
 	//hay que tener cuidado, definir donde hacer free's y que seamos consitente en el tp
 	eliminarPaquete(paquete);
 }
-
 
 
 void* serializarPaquete(t_paquete* paquete, int bytes){
@@ -263,6 +315,17 @@ void* serializarPaquete(t_paquete* paquete, int bytes){
 }
 
 
+void lock(pthread_mutex_t mutex){
+
+    pthread_mutex_lock(&mutex);
+}
+
+
+void unlock(pthread_mutex_t mutex){
+
+    pthread_mutex_unlock(&mutex);
+}
+
 
 void crearBuffer(t_paquete* paquete)
 {
@@ -272,8 +335,8 @@ void crearBuffer(t_paquete* paquete)
 }
 
 
-t_paquete* crearPaquete(tipoDeDato cod_op)
-{
+t_paquete* crearPaquete(tipoDeDato cod_op){
+
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = cod_op;
 	crearBuffer(paquete);
@@ -281,8 +344,7 @@ t_paquete* crearPaquete(tipoDeDato cod_op)
 }
 
 
-void eliminarPaquete(t_paquete* paquete)
-{
+void eliminarPaquete(t_paquete* paquete){
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);

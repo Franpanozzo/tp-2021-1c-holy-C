@@ -2,18 +2,20 @@
 #define BIBLIOTECAS_H_
 
 
-	#include <stdio.h>
-	#include <stdlib.h>
-	#include <pthread.h>
-	#include <sys/socket.h>
-	#include <sys/types.h>
-	#include <semaphore.h>
-	#include <arpa/inet.h>
-	#include <unistd.h>
-	#include <sys/select.h>
-	#include <string.h>
-	#include <commons/config.h>
-	#include <commons/log.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <semaphore.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <string.h>
+#include <commons/config.h>
+#include <commons/log.h>
+#include <stdbool.h>
+
 
 	typedef struct{
 		uint32_t posX;
@@ -26,16 +28,21 @@
 	} puertoEIP;
 
 	typedef enum{
-		PERSONA,
-		TAREA_PATOTA
+		PATOTA,
+		TRIPULANTE,
+		SIGUIENTETAREA,
+		TAREA,
+		STRING
 	} tipoDeDato;
 
 	typedef struct {
-	    char* cod_op;
+
+	    char* nombreTarea;
 	    uint32_t parametro;
 	    uint32_t posX;
 	    uint32_t posY;
 	    uint32_t tiempo;
+
 	} t_tarea;
 
 	typedef enum{
@@ -55,22 +62,26 @@
 		t_buffer* buffer;
 	} t_paquete;
 
-	typedef struct {
-		uint32_t dni;
-		uint8_t edad;
-		uint32_t pasaporte;
-		uint32_t nombre_length;
-		char* nombre;
-	} t_persona;
-
 	typedef struct{
-		uint32_t ID;
+		uint32_t idPatota;
+		uint32_t idTripulante;
 		t_estado estado;
 		uint32_t posX;
 		uint32_t posY;
-		char* instruccionAejecutar;
+		t_tarea* instruccionAejecutar;
 		sem_t semaforo;
 	} t_tripulante;
+
+	typedef struct{
+		uint32_t ID;
+		uint32_t tamanioTareas;
+		char* tareas;
+	}t_patota;
+
+
+	void lock(pthread_mutex_t);
+
+	void unlock(pthread_mutex_t);
 
 	int iniciarConexionDesdeServidor(int);
 
@@ -82,19 +93,13 @@
 
 	t_paquete* recibirPaquete(int);
 
-	/**
-	* @NAME: deserializarSegun
-	* @DESC: recibe un t_paquete* para deserializarlo al TAD que contiene el t_buffer*
-	* segun el tipoDeDato y operarlo como corresponda dentro del switch(nunca salir de ahi)
-	*/
-	void deserializarSegun(t_paquete*);
+	void* serializarTarea(void*, void*, int);
 
-	/**
-	* @NAME: deserializarPersona
-	* @DESC: recibe un t_buffer* para deserializarlo a un t_persona* y operar
-	* con ese TAD, la funcion libera la memoria alocada
-	*/
-	void deserializarPersona(t_buffer*);
+	void* serializarTripulante(void*, void*, int);
+	void* serializarSolicitudSiguienteTarea(void*, void* , int);
+	void* serializarString(void*, void*, int);
+	t_tarea* deserializarTarea(void*);
+
 
 	/**
 	* @NAME: serializarPaquete
@@ -102,7 +107,6 @@
 	* y que pueda ser enviado por socket
 	*/
 	void* serializarPaquete(t_paquete*, int);
-
 
 	/**
 	* @NAME: crearBuffer
@@ -116,8 +120,6 @@
 	* todas los TAD que contiene ya alocados
 	*/
 	t_paquete* crearPaquete(tipoDeDato);
-
-
 
 	//void agregarAPaquete(t_paquete*,void*,int);
 
@@ -136,15 +138,7 @@
 	int tamanioEstructura(void*,tipoDeDato);
 
 	/**
-	* @NAME: serializarPersona
-	* @DESC: recibe un stream de datos, un *esrctura cualquiera y un int offset
-	* y te retorna el stream cargado con la informacion cargada como t_persona
-	* y te retorna el stream
-	*/
-	void* serializarPersona(void*, void*, int);
-
-	/**
-	* @NAME: serializarPersona
+	* @NAME: serializarEstructura
 	* @DESC: recibe un stream de datos, un *estructura cualquiera el tamanio de la
 	* estructuroa y el tipoDeDato de la estructura para serializar segun corresponda
 	* y te devuelve el stream de datos para empaquetar
@@ -158,7 +152,6 @@
 	*/
 	t_paquete* armarPaqueteCon(void*,tipoDeDato);
 
-
 	/**
 	* @NAME: enviarPaquete
 	* @DESC: recibe un t_paquete* y el socket de la conexion a donde enviar el paquete
@@ -169,7 +162,7 @@
 	* @NAME: serializarString
 	* @DESC: recibe una tarea patota y la serializa como string
 	*/
-	void* serializarTareaPatota(void*,void*);
+	void* serializarPatota(void*,void*,int);
 
 
 #endif
