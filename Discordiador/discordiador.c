@@ -1,7 +1,17 @@
 #include "discordiador.h"
 
+char** todasLasTareasIO;
 
 int main() {
+
+	todasLasTareasIO = malloc(sizeof(char*) * 6);
+
+	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
+	todasLasTareasIO[1] = strdup("CONSUMIR_OXIGENO");
+	todasLasTareasIO[2] = strdup("GENERAR_BASURA");
+	todasLasTareasIO[3] = strdup("DESCARTAR_BASURA");
+	todasLasTareasIO[4] = strdup("GENERAR_COMIDA");
+	todasLasTareasIO[5] = strdup("CONSUMIR_COMIDA");
 
 	idTripulante = 0;
 	idPatota = 0;
@@ -22,21 +32,22 @@ int main() {
 	listaDeNew = list_create();
 	colaDeReady = queue_create();
 	listaExec = list_create();
+	colaES = queue_create();
 
 	pthread_mutex_init(&mutexListaNew, NULL);
 	pthread_mutex_init(&mutexColaReady, NULL);
 	pthread_mutex_init(&mutexListaExec, NULL);
-/*
-	int serverImongo = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
 
-	t_patota* patotaPrueba = asignarDatosAPatota("GENERAR_OXIGENO 4;5;6;7\nGENERAR_COMIDA;5;6;7\n");
+	//leerConsola();
 
-	t_paquete*paquetePatota = armarPaqueteCon((void*) patotaPrueba,PATOTA);
+	t_coordenadas coordenadas[4];
+	for(int i=0; i<4;i++){
+		coordenadas[i].posX = i;
+		coordenadas[i].posY = i + 1;
+	}
 
-	enviarPaquete(paquetePatota,serverImongo);
-*/
+	planificador("INICIAR_PLANIFICACION",coordenadas);
 
-	leerConsola();
 
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
@@ -46,6 +57,167 @@ int main() {
 	return EXIT_SUCCESS;
 }
 
+void planificador(char* string,t_coordenadas* coordenadas){
+
+	char* algoritmo;
+	int grado_multiprocesamiento;
+	algoritmo = config_get_string_value(config,"ALGORITMO");
+	grado_multiprocesamiento = config_get_int_value(config,"GRADO_MULTITAREA");
+	log_info(logDiscordiador,"Empezando planificacion usando el algoritmo %s",algoritmo);
+
+	if(strcmp(string,"INICIAR_PLANIFICACION") == 0){
+		iniciarPatota(coordenadas, "GENERAR_OXIGENO 4;5;6;7\nCONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2", 4);
+
+	}
+
+
+	while(list_size(listaExec) <= grado_multiprocesamiento && queue_is_empty(colaDeReady) != 1){
+
+		t_tripulante* tripulante = queue_peek(colaDeReady);
+
+		log_info(logDiscordiador,"Moviendo tripulante %d a EXEC", tripulante->idTripulante);
+
+		queue_pop(colaDeReady);
+
+		pasarDeEstado(tripulante, EXEC);
+	}
+
+	t_list_iterator* iterador = list_iterator_create(listaExec);
+
+	while(list_iterator_has_next(iterador)){
+
+		t_tripulante* tripulanteAsacar = (t_tripulante*) list_iterator_next(iterador);
+
+		if(strcmp(algoritmo,"FIFO") == 0){
+			planificacionFIFO(tripulanteAsacar);
+		}
+		else if(strcmp(algoritmo,"RR") == 0){
+			planificacionRR(tripulanteAsacar);
+		}
+		else{
+			log_info(logDiscordiador,"No puedo planificar en ese algoritmo negro\n");
+			exit(1);
+		}
+	}
+}
+
+int calculoCiclosARealizar(t_tripulante* tripulante){
+
+	int movimientosEnX = fabs(tripulante->instruccionAejecutar->posX - tripulante->posX);
+	int movimientosEnY = fabs(tripulante->instruccionAejecutar->posY - tripulante->posY);
+
+	return movimientosEnX + movimientosEnY;
+}
+
+void tareasIO(t_tripulante* tripulante){
+
+	int ciclos = calculoCiclosARealizar(tripulante) + 1;
+
+	while(ciclos > 0){
+
+		//int socketMiRAM = iniciarConexionDesdeCliente(puertoEIPRAM);
+
+		if(tripulante->posX > tripulante->instruccionAejecutar->posX){
+			log_info(logDiscordiador,"Moviendose de la posicion en X %d ",tripulante->posX);
+			tripulante->posX--;
+			log_info(logDiscordiador,"A la posicion en X %d\n",tripulante->posX);
+			ciclos--;
+			sleep(1);
+			//t_paquete* paquete = armarPaqueteCon()
+
+		}
+
+		if(tripulante->posX < tripulante->instruccionAejecutar->posX){
+			log_info(logDiscordiador,"Moviendose de la posicion en X %d ",tripulante->posX);
+			tripulante->posX++;
+			log_info(logDiscordiador,"A la posicion en X %d\n",tripulante->posX);
+			ciclos--;
+			sleep(1);
+			//t_paquete* paquete = armarPaqueteCon()
+
+			}
+
+		if(tripulante->posY > tripulante->instruccionAejecutar->posY){
+			log_info(logDiscordiador,"Moviendose de la posicion en Y %d\n",tripulante->posY);
+			tripulante->posY--;
+			log_info(logDiscordiador,"A la posicion en Y %d\n",tripulante->posY);
+			ciclos--;
+			sleep(1);
+			//t_paquete* paquete = armarPaqueteCon()
+
+			}
+
+		if(tripulante->posY < tripulante->instruccionAejecutar->posY){
+			log_info(logDiscordiador,"Moviendose de la posicion en Y %d\n",tripulante->posY);
+			tripulante->posY++;
+			log_info(logDiscordiador,"A la posicion en Y %d\n",tripulante->posY);
+			ciclos--;
+			sleep(1);
+			//t_paquete* paquete = armarPaqueteCon()
+
+			}
+		if(tripulante->posX == tripulante->instruccionAejecutar->posX && tripulante->posY == tripulante->instruccionAejecutar->posY){
+			ciclos--;
+			sleep(1);
+			int socketMongo = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
+			t_paquete* tareaArealizar = armarPaqueteCon((void*) tripulante->instruccionAejecutar,TAREA);
+			enviarPaquete(tareaArealizar,socketMongo);
+			t_paquete* prueba = recibirPaquete(socketMongo);
+			char* respuesta = deserializarString(prueba);
+			log_info(logDiscordiador,"Recibi %s \n", respuesta);
+			//bool esIgualA(t_tripulante* tripulanteAcomparar){
+				//return tripulanteAcomparar == tripulante;
+			//}
+			//list_remove_by_condition(listaExec,(void*) esIgualA);
+			t_bloqueado* tripulanteBloqueado = malloc(sizeof(t_bloqueado));
+			tripulanteBloqueado->socket = socketMongo;
+			tripulanteBloqueado->tripulante = tripulante;
+			queue_push(colaES, tripulanteBloqueado);
+
+		}
+
+	}
+
+
+}
+
+
+void tareasNoIO(t_tripulante* tripulante){
+
+	//int cantidadAciclar = calculoCiclosARealizar(tripulante) + tripulante->instruccionAejecutar->tiempo;
+}
+
+void planificacionFIFO(t_tripulante* tripulante){
+
+	switch(esIO(tripulante->instruccionAejecutar->nombreTarea)){
+
+			case 1:
+			{
+					log_info(logDiscordiador,"Recibi una accion IO del tripulante %d",tripulante->idTripulante);
+					tareasIO(tripulante);
+					break;
+			}
+			case 0:
+			{		log_info(logDiscordiador,"Recibi una accion que no es IO del tripulante %d",tripulante->idTripulante);
+					tareasNoIO(tripulante);
+					break;
+			}
+
+			default:
+			{
+					log_info(logDiscordiador,"Recibi cualquier cosa negro\n");
+					exit(1);
+			}
+			}
+}
+
+
+
+void planificacionRR(t_tripulante* tripulante){
+
+}
+
+/*-------------------------------------------------------------------------------
 //LO LLAMA SANTI DESDE LA CONSOLA
 void cpuPlanificacion() {
 	char* algoritmo;
@@ -85,7 +257,7 @@ void cpuPlanificacion() {
 		}
 
 		if(strcmp(algoritmo,"RR") == 0) {
-			//TODO
+			//Todo
 		}
 
 		else {
@@ -95,6 +267,9 @@ void cpuPlanificacion() {
  }
 
 }
+
+------------------------------------------------------------------------------------------------
+*/
 
 
 void crearConfig(){
@@ -148,7 +323,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		iniciarTripulante(coordenadas[i], patota->ID);
 	}
 
-	eliminarPatota(patota);
+	//eliminarPatota(patota);
 	close(server_socket);
 
 }
@@ -177,8 +352,28 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	log_info(logDiscordiador,"Se creo el tripulante numero %d\n",tripulante->idTripulante);
 
 
+
 	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripulante, (void*) tripulante);
 	pthread_join(_hiloTripulante, (void**) NULL);
+}
+
+
+int esIO(char* tarea){
+
+	int i = 0;
+
+	while(todasLasTareasIO[i] != NULL){
+
+		if(strcmp(todasLasTareasIO[i],tarea) == 0){
+			return 1;
+		}
+
+
+		i++;
+	}
+
+	return 0;
+
 }
 
 
@@ -220,7 +415,7 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 
 }
 
-
+/*
 void sacarDeNew(t_tripulante* tripulante) {
 
 	t_tripulante* tripulanteParaChequear;
@@ -236,48 +431,40 @@ void sacarDeNew(t_tripulante* tripulante) {
 
 
 }
-
+*/
 
 void hiloTripulante(t_tripulante* tripulante) {
-	//id patato y tripulante
-
-	int primerWait = 0;
 
 	recibirPrimerTareaDeMiRAM(tripulante);
 
-	//sem_wait(&tripulante->semaforo);//esperando a que planificador lo ponga en ready
-	//Esto es responsabilidad del planificador y no del tripulante
-	//sacarDeNew(tripulante);
-	//pasarDeEstado(tripulante, READY);
-	//fachini dice en el video que es el planificador el que pasa de new a ready
-	//sem_wait(&tripulante->semaforo);//esperando a que planificador lo ponga en exec
-	//ARANCA EL TRIPULANTE A LABURAR
-	while(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") != 0){
-
-		//if(primerWait == 0){
-			//sem_wait(&tripulante->semaforo);
-			//primerWait = 1;
-		//}
 
 
-		//(atencion) PROXIMOS COMENTARIOS TIENEN QUE VER CON RR
+    if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") != 0){
+	    	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
+	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	    	pasarDeEstado(tripulante, READY);
 
-		//MOVERNOS A LA TAREAM MODIFICANDONOS EN X E Y, CONSUMIENDO QUANTUM
+	    	log_info(logDiscordiador,"La tarea %s del tripulante %d esta en Ready", tripulante->instruccionAejecutar->nombreTarea,tripulante->idTripulante);
 
-		//CUANDO LLEGUE A LA POSICION DE LA TAREA LE DIGO A IMONGO QUE LA HAGA, MODIFICANDO LOS ARCHIVOS CORRESP.
-		int iMongoSocket = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
-		mandarTareaAejecutar(tripulante,iMongoSocket);
-		close(iMongoSocket);
+	    }
+	    else{
+	    	log_info(logDiscordiador,"Soy el tripulante %d y se me acabaron las tareas!\n",
+	    		    tripulante->idTripulante);
 
-		//Esto hacer independientemente del algoritmo
-		//MOVERSE EN X E Y
-		//AVISAR A MI RAM CONSTANTEMENTE LA ACTUALIZACION DEL TCB
+	    }
 
-		recibirProximaTareaDeMiRAM(tripulante);
-	}
+
+
+	//while(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") != 0){
+
+		//int iMongoSocket = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
+		//mandarTareaAejecutar(tripulante,iMongoSocket);
+		//close(iMongoSocket);
+
+		//recibirProximaTareaDeMiRAM(tripulante);
+	//}
 
 }
-
 
 void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
@@ -286,14 +473,7 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 	if(paqueteRecibido->codigo_operacion == TAREA){
 
 	    tripulante->instruccionAejecutar = deserializarTarea(paqueteRecibido->buffer->stream);
-	    if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") > 0){
-	    	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
-	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
-	    }
-	    else{
-	    	log_info(logDiscordiador,"Soy el tripulante %d y se me acabaron las tareas!\n",
-	    		    tripulante->idTripulante);
-	    }
+
 
 	}
 	else{
@@ -306,11 +486,13 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 
 void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
+
 	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
 	enviarPaquete(paqueteEnviado, miRAMsocket);
 
 	recibirTareaDeMiRAM(miRAMsocket, tripulante);
+
 	close(miRAMsocket);
 }
 
@@ -371,5 +553,6 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 		free(mensajeRecibido);
 
 	}
-
 }
+
+

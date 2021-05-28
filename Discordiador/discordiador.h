@@ -19,6 +19,7 @@
 #include <commons/string.h>
 #include <stdbool.h>
 #include "consola.h"
+#include <math.h>
 
 
 t_config* config;
@@ -49,6 +50,11 @@ pthread_mutex_t mutexListaExec;
 
 sem_t semPlanificacion;
 
+typedef struct{
+	int socket;
+	t_tripulante* tripulante;
+
+}t_bloqueado;
 
 
 void crearConfig();
@@ -65,4 +71,11 @@ void recibirPrimerTareaDeMiRAM(t_tripulante*);
 void recibirProximaTareaDeMiRAM(t_tripulante*);
 void cpuPlanificacion();
 void sacarDeNew(t_tripulante*);
+void recibirTareaDeMiRAM(int ,t_tripulante*);
+void tareasIO(t_tripulante*);
+void tareasNoIO(t_tripulante*);
+int esIO(char*);
+void planificacionFIFO(t_tripulante*);
+void planificacionRR(t_tripulante*);
+void planificador(char*,t_coordenadas*);
 #endif
