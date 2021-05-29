@@ -552,6 +552,9 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 		free(mensajeRecibido);
 
 	}
+
+	eliminarPaquete(paqueteRecibido);
+
 }
 
 
