@@ -70,7 +70,6 @@ void planificador(char* string,t_coordenadas* coordenadas){
 
 	}
 
-
 	while(list_size(listaExec) <= grado_multiprocesamiento && queue_is_empty(colaDeReady) != 1){
 
 		t_tripulante* tripulante = queue_peek(colaDeReady);
@@ -118,9 +117,9 @@ void tareasIO(t_tripulante* tripulante){
 		//int socketMiRAM = iniciarConexionDesdeCliente(puertoEIPRAM);
 
 		if(tripulante->posX > tripulante->instruccionAejecutar->posX){
-			log_info(logDiscordiador,"Moviendose de la posicion en X %d ",tripulante->posX);
+			log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
 			tripulante->posX--;
-			log_info(logDiscordiador,"A la posicion en X %d\n",tripulante->posX);
+			log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
 			ciclos--;
 			sleep(1);
 			//t_paquete* paquete = armarPaqueteCon()
@@ -128,9 +127,9 @@ void tareasIO(t_tripulante* tripulante){
 		}
 
 		if(tripulante->posX < tripulante->instruccionAejecutar->posX){
-			log_info(logDiscordiador,"Moviendose de la posicion en X %d ",tripulante->posX);
+			log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
 			tripulante->posX++;
-			log_info(logDiscordiador,"A la posicion en X %d\n",tripulante->posX);
+			log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
 			ciclos--;
 			sleep(1);
 			//t_paquete* paquete = armarPaqueteCon()
@@ -138,9 +137,9 @@ void tareasIO(t_tripulante* tripulante){
 			}
 
 		if(tripulante->posY > tripulante->instruccionAejecutar->posY){
-			log_info(logDiscordiador,"Moviendose de la posicion en Y %d\n",tripulante->posY);
+			log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
 			tripulante->posY--;
-			log_info(logDiscordiador,"A la posicion en Y %d\n",tripulante->posY);
+			log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
 			ciclos--;
 			sleep(1);
 			//t_paquete* paquete = armarPaqueteCon()
@@ -148,9 +147,9 @@ void tareasIO(t_tripulante* tripulante){
 			}
 
 		if(tripulante->posY < tripulante->instruccionAejecutar->posY){
-			log_info(logDiscordiador,"Moviendose de la posicion en Y %d\n",tripulante->posY);
+			log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
 			tripulante->posY++;
-			log_info(logDiscordiador,"A la posicion en Y %d\n",tripulante->posY);
+			log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
 			ciclos--;
 			sleep(1);
 			//t_paquete* paquete = armarPaqueteCon()
