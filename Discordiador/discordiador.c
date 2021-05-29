@@ -57,6 +57,112 @@ int main() {
 	return EXIT_SUCCESS;
 }
 
+
+
+
+
+
+
+
+//------ PLANIFICADOR SIN HILO PLANIFICIADOR INICIO -----
+/*
+ * Cuando se inicia un tripu se lo agrega a una lista de tripus
+ * Va haber siempre un hilo (hilitoSabo)que se va a fijar si mongo
+ * le mando un sabotaje. Si le mando lo que hace es:
+ * fijarse cual es el que mas cerca esta comparandolo con los demas,
+ * osea agarro dos, los comparo, el q esta mas cerca me lo quedo para
+ * compararlo con el q sigue y al otro lo bloqueo por sabotaje (BLOCKED_SABO).
+ * Al que me queda (el mas cerca), le guarda su "imagen" (osea los ciclos a
+ * ejecutar, ciclos a bloquear, su quantum restante y su estado) y le
+ * cambio su tarea a la tarea que me mando el mongo y lo pongo en EXEC
+ * para que la realice. Cuando finaliza le tiene que avisar al hilitoSabo
+ * que ya termino (se sincroniza con un semaforo) y ahi el hilitoSabo los
+ * vuelve a todos a su estado inicial (mediante un semaforo q esta en el switch
+ * de BLOCKED_SABO)
+ */
+
+/*
+ * DUDAS:
+ * 1. Si a un tripu le queda un ciclo de quantum y hay un sabotaje. Cuando
+ * vuelve se reinicia el quantum?
+ * 2. Si hay un sabotaje, cuando los tripus vuelven, hay que volverlos a
+ * su estado que estaban antes del sabotaje o a ready?
+ */
+
+void hilitoTripu(t_tripulante* tripu){
+	int ciclosExec = 0;
+	int ciclosBlocked = 0;
+	int quantumPendiente = gradoMultiprocesamiento;
+	int noCorroMiBloqueo = 1;
+	while(1){
+		if(planificacion_play){
+			correr un ciclo;
+			switch(tripu->estado){
+				case NEW:
+					pasarDeEstado(tripu, READY);
+					break;
+				case READY:
+					sem_wait(&semaforoEjecutor); //pasa a EXEC solo si el grado de multiprocesamiento se lo permite
+					if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
+						ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
+					quantumPendiente = gradoMultiprocesamiento;
+					pasarDeEstado(tripu,EXEC);
+					break;
+				case EXEC:
+					ciclosExec --;
+					quantumPendiente--;
+					if(ciclosExec > 0 && quantumPendiente > 0){
+						desplazarse(tripu); //mueve al tripu hasta el lugar y si esta en el lugar no se mueve
+					}
+					else{
+						if(quantumPendiente == 0){
+							sem_post(&semaforoEjecutor); // permite que el proximo q esta en READY pase
+							pasarDeEstado(tripu,READY);
+						}
+						else{
+							if(esIO(tripu->instruccionAejecutar)){
+								pasarleAMongoTarea(tripu->instruccionAejecutar);
+								ciclosBlocked = tripu->instruccionAejecutar->tiempo;
+								sem_post(&semaforoEjecutor);
+								pasarDeEstado(tripu,BLOCKED);
+							}
+							tripu->instruccionAejecutar = pedirTareaRAM(tripu);
+							if(tripu->instruccionAejecutar == "TAREA_NULA"){
+								sem_post(&semaforoEjecutor);
+								pasarDeEstado(tripu,END); //se tiene que romper el hilo y eliminar el tripu
+							}
+						}
+					}
+					break;
+				case BLOCKED:
+					if(noCorroMiBloqueo){
+						lock(&semaforoBlockeado);
+					}
+					noCorroMiBloqueo = 0;
+					ciclosBlocked --;
+					if(ciclosBlocked == 0){
+						unlock(&semaforoBlockeado);
+						pasarDeEstado(tripu, READY);
+					}
+				case BLOCKED_SABO:
+					//aca tendria q volver a su estado antes del bloqueo, se hace desde el hiloSabo antes de liberarlos
+					sem_wait(semaforoSabo);//el post se hace desde el hiloSabo y se hace tantos post como cant tripus
+			}
+			actualizarEstado(tripu);
+		}
+	}
+}
+
+
+//------ PLANIFICADOR SIN HILO PLANIFICADOR FIN ------
+
+
+
+
+
+
+
+
 void planificador(char* string,t_coordenadas* coordenadas){
 
 	char* algoritmo;
