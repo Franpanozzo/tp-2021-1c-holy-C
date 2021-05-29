@@ -1,7 +1,19 @@
 #include "i_mongo_store.h"
 
 
+char** todasLasTareasIO;
+
+
 int main(void) {
+
+	todasLasTareasIO = malloc(sizeof(char*) * 6);
+
+	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
+	todasLasTareasIO[1] = strdup("CONSUMIR_OXIGENO");
+	todasLasTareasIO[2] = strdup("GENERAR_BASURA");
+	todasLasTareasIO[3] = strdup("DESCARTAR_BASURA");
+	todasLasTareasIO[4] = strdup("GENERAR_COMIDA");
+	todasLasTareasIO[5] = strdup("CONSUMIR_COMIDA");
 
 	int puerto = 5001;
 
@@ -61,41 +73,97 @@ void manejarTripulante(int *tripulanteSock) {
 }
 
 
+int indiceTarea(t_tarea* tarea){
+
+	int i = 0;
+
+	while(todasLasTareasIO[i] != NULL){
+
+		if(strcmp(todasLasTareasIO[i],tarea->nombreTarea) == 0){
+			return i;
+		}
+
+		i++;
+	}
+
+	return -1;
+}
+
+
 void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 	log_info(logImongo,"Deserializando...");
 
 	switch(paquete->codigo_operacion){
 
-			case PATOTA:
-
-						log_info(logImongo,"Patota recibida negro \n");
-						break;
-
-			case TRIPULANTE:
-
-						log_info(logImongo,"Tripulante recibido negro \n");
-						break;
-
-			case TAREA:
-			{
-				log_info(logImongo,"Tarea recibida negro \n");
+		case TAREA:
+		{
 				t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
-				log_info(logImongo,"tareaRecibida %s, tripulante %d",tarea->nombreTarea,tripulanteSock);
 
-				t_paquete * paquete = armarPaqueteCon(tarea->nombreTarea,STRING);
-				enviarPaquete(paquete, tripulanteSock);
+				log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
 
-				free(tarea->nombreTarea);
-				free(tarea);
+				switch(indiceTarea(tarea)){
 
+						case 0:
+						{
+									log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO \n");
+									t_paquete* respuesta = armarPaqueteCon((void*)"GENERAR_OXIGENO",STRING);
+									enviarPaquete(respuesta,tripulanteSock);
+									break;
+						}
+						case 1:
+						{
+									log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO \n");
+									t_paquete* respuesta = armarPaqueteCon((void*)"CONSUMIR_OXIGENO",STRING);
+									enviarPaquete(respuesta,tripulanteSock);
+									break;
+
+						}
+						case 2:
+						{
+									log_info(logImongo,"Recibi una tarea de GENERAR_BASURA \n");
+									t_paquete* respuesta = armarPaqueteCon((void*)"GENERAR_BASURA",STRING);
+									enviarPaquete(respuesta,tripulanteSock);
+									break;
+
+						}
+						case 3:
+						{
+									log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
+									t_paquete* respuesta = armarPaqueteCon((void*)"DESCARTAR_BASURA",STRING);
+									enviarPaquete(respuesta,tripulanteSock);
+									break;
+						}
+						case 4:
+						{
+									log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA \n");
+									t_paquete* respuesta = armarPaqueteCon((void*)"GENERAR_COMIDA",STRING);
+									enviarPaquete(respuesta,tripulanteSock);
+									break;
+						}
+						case 5:
+						{
+									log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA \n");
+									t_paquete* respuesta = armarPaqueteCon((void*)"CONSUMIR_COMIDA",STRING);
+									enviarPaquete(respuesta,tripulanteSock);
+									break;
+						}
+
+						default:
+
+								log_info(logImongo,"No existe ese tipo de tarea negro \n");
+								exit(1);
+
+					}
 				break;
-			}
-			default:
-
-					log_info(logImongo,"No se puede deserializar ese tipo de estructura negro \n");
-					exit(1);
 
 		}
+
+		default:
+				log_info(logImongo,"Estos casos todavia no estan contemplados");
+
+	}
+
 	eliminarPaquete(paquete);
+
 }
