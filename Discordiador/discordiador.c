@@ -79,6 +79,15 @@ int main() {
  * que ya termino (se sincroniza con un semaforo) y ahi el hilitoSabo los
  * vuelve a todos a su estado inicial (mediante un semaforo q esta en el switch
  * de BLOCKED_SABO)
+ *
+ * el semaforoEjecutor(un contador q se inicializa segun el grado de
+ * multiprocesamiento) simula la cola de READY, por eso en READY se hace un
+ * wait y el post se hace en el EXEC.
+ *
+ * el semaforoBlocked (un mutex) simula la cola de blocked, en la cual
+ * solo se restan los ciclos de un tripu a la vez
+ *
+ *
  */
 
 /*
@@ -89,14 +98,27 @@ int main() {
  * su estado que estaban antes del sabotaje o a ready?
  */
 
+/*
+ * EJEMPLO:
+ * quantum = 2, grado multiprocesamiento = 1, tarea = 3, I/O = 2 tarea2 = 1
+ *
+ * momento 0: q = 2, t1 = 3, I/O = 2, t2 = 1
+ * momento 1: q = , t1 = , I/O = , t2 =
+ * momento 2: q = , t1 = , I/O = , t2 =
+ * momento 3: q = , t1 = , I/O = , t2 =
+ * momento 4: q = , t1 = , I/O = , t2 =
+ * momento 5: q = , t1 = , I/O = , t2 =
+ * momento 6: q = , t1 = , I/O = , t2 =
+ */
+
+
 void hilitoTripu(t_tripulante* tripu){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
-	int quantumPendiente = gradoMultiprocesamiento;
+	int quantumPendiente = quantum;
 	int noCorroMiBloqueo = 1;
 	while(1){
 		if(planificacion_play){
-			correr un ciclo;
 			switch(tripu->estado){
 				case NEW:
 					pasarDeEstado(tripu, READY);
@@ -105,10 +127,11 @@ void hilitoTripu(t_tripulante* tripu){
 					sem_wait(&semaforoEjecutor); //pasa a EXEC solo si el grado de multiprocesamiento se lo permite
 					if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
 						ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
-					quantumPendiente = gradoMultiprocesamiento;
+					quantumPendiente = quantum;
 					pasarDeEstado(tripu,EXEC);
 					break;
 				case EXEC:
+					sleep(1);//correr un ciclo;
 					ciclosExec --;
 					quantumPendiente--;
 					if(ciclosExec > 0 && quantumPendiente > 0){
@@ -131,6 +154,7 @@ void hilitoTripu(t_tripulante* tripu){
 								sem_post(&semaforoEjecutor);
 								pasarDeEstado(tripu,END); //se tiene que romper el hilo y eliminar el tripu
 							}
+							ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
 						}
 					}
 					break;
@@ -139,11 +163,14 @@ void hilitoTripu(t_tripulante* tripu){
 						lock(&semaforoBlockeado);
 					}
 					noCorroMiBloqueo = 0;
+					sleep(1);//correr un ciclo;
 					ciclosBlocked --;
 					if(ciclosBlocked == 0){
 						unlock(&semaforoBlockeado);
+						noCorroMiBloqueo = 1;
 						pasarDeEstado(tripu, READY);
 					}
+					break;
 				case BLOCKED_SABO:
 					//aca tendria q volver a su estado antes del bloqueo, se hace desde el hiloSabo antes de liberarlos
 					sem_wait(semaforoSabo);//el post se hace desde el hiloSabo y se hace tantos post como cant tripus
