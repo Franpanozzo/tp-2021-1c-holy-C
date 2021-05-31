@@ -78,7 +78,22 @@ int main() {
  * para que la realice. Cuando finaliza le tiene que avisar al hilitoSabo
  * que ya termino (se sincroniza con un semaforo) y ahi el hilitoSabo los
  * vuelve a todos a su estado inicial (mediante un semaforo q esta en el switch
- * de BLOCKED_SABO)
+ * de BLOCKED_SABO).
+ *
+ * if(noHaySabotaje + tripu.arreglandoElSabotaje)
+ * noHaySabotaje es una variable global que la maneja el hilitoSabo. Se inicializa
+ * en 1 cosa de que todos los tripus puedan pasar el if mientras no haya un sabotaje.
+ * tripu.arreglandoElSabotaje es una variable q tiene cada tripu. La idea es que
+ * despues de recibir el sabotaje lo que haga el hilitoSabo es revisar uno por uno los
+ * tripus y elegir a uno para que arregle el sabotaje. A ese tripu se le pone la
+ * variable arreglandoElSabotaje en 1, cosa de que entre al if para poder arreglarlo.
+ * Dentro del switch grande hay un case q seria el SABOTAJE: donde el tripu hace la
+ * tarea, pero a diferencia del EXEC q se pide la tarea siguiente y te fijas si es
+ * I/O, cuando termina lo q hace es cambiar la varibe noHaySabotaje y la pone en 0 para
+ * q los otros tripus se liberen y puedan seguir con sus tareas. Tambien antes de
+ * liberar a los otros tripus, quien resolvio el sabotaje tiene q recuperar su "imagen",
+ * es decir, su estado, tarea, ciclos pendientes y otros datos q tenia antes de q
+ * aparezca el sabotaje
  *
  * el semaforoEjecutor(un contador q se inicializa segun el grado de
  * multiprocesamiento) simula la cola de READY, por eso en READY se hace un
@@ -111,71 +126,114 @@ int main() {
  * momento 6: q = , t1 = , I/O = , t2 =
  */
 
+void hilitoSabo(){
+
+	/*
+	 * TODO la parte de recibir un saboteje, osea un recv y se
+	 * deserializa para ver si llego un sabotaje en el caso de
+	 * que si, se hace lo siguiente:
+	 */
+
+	noHaySabotaje = 0;
+	todosLosTripus
+	tripuSabataje = list_get(todosLosTripus, 0);
+	unTripu;
+	for(int i = 1; i<list_size(todosLosTripus); i++){
+		unTripu = list_get(todosLosTripus, i);
+		if(estaMasCerca(unTripu.coordenadas, tripuSabataje.coordenadas, sabotaje.coordenadas)){ //dada true si el primero esta mas cerca
+			tripuSabotaje = unTripu;
+		}
+	}
+	imagenTripu = tripuSabotaje;
+	tripuSabotaje.arreglandoElSabotaje = 1;
+	sem_wait(&semaforoSabo);
+	tripuSabotaje = imagenTripu;
+	sem_post(semaforoImagen); // se inicializa en 0
+	noHaySabotaje = 1;
+}
+
+
 
 void hilitoTripu(t_tripulante* tripu){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
 	int quantumPendiente = quantum;
+	// si es FIFO el quantum sera -1, si es RR sera lo q dice el config,
+	// esta opcion la posibilidad de cambiar el modo de ejecucion y
+	// dejar q unos hagan FIFO y otros RR, pero si el qpendiente se
+	// lo asigna al final de inicarTripu, se puede.
 	int noCorroMiBloqueo = 1;
 	while(1){
 		if(planificacion_play){
-			switch(tripu->estado){
-				case NEW:
-					pasarDeEstado(tripu, READY);
-					break;
-				case READY:
-					sem_wait(&semaforoEjecutor); //pasa a EXEC solo si el grado de multiprocesamiento se lo permite
-					if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
-						ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
-					quantumPendiente = quantum;
-					pasarDeEstado(tripu,EXEC);
-					break;
-				case EXEC:
-					sleep(1);//correr un ciclo;
-					ciclosExec --;
-					quantumPendiente--;
-					if(ciclosExec > 0 && quantumPendiente > 0){
-						desplazarse(tripu); //mueve al tripu hasta el lugar y si esta en el lugar no se mueve
-					}
-					else{
-						if(quantumPendiente == 0){
-							sem_post(&semaforoEjecutor); // permite que el proximo q esta en READY pase
-							pasarDeEstado(tripu,READY);
+			if(noHaySabotaje + tripu.arreglandoElSabotaje){
+				switch(tripu->estado){
+					case NEW:
+						pasarDeEstado(tripu, READY);
+						break;
+					case READY:
+						sem_wait(&semaforoEjecutor); //pasa a EXEC solo si el grado de multiprocesamiento se lo permite
+						if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
+							ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
+						quantumPendiente = quantum;
+						pasarDeEstado(tripu,EXEC);
+						break;
+					case EXEC:
+						sleep(1);//correr un ciclo;
+						ciclosExec --;
+						quantumPendiente--;
+						if(ciclosExec > 0 && quantumPendiente != 0){
+							desplazarse(tripu); //mueve al tripu hasta el lugar y si esta en el lugar no se mueve
 						}
 						else{
-							if(esIO(tripu->instruccionAejecutar)){
-								pasarleAMongoTarea(tripu->instruccionAejecutar);
-								ciclosBlocked = tripu->instruccionAejecutar->tiempo;
-								sem_post(&semaforoEjecutor);
-								pasarDeEstado(tripu,BLOCKED);
+							if(quantumPendiente == 0){
+								sem_post(&semaforoEjecutor); // permite que el proximo q esta en READY pase
+								pasarDeEstado(tripu,READY);
 							}
-							tripu->instruccionAejecutar = pedirTareaRAM(tripu);
-							if(tripu->instruccionAejecutar == "TAREA_NULA"){
-								sem_post(&semaforoEjecutor);
-								pasarDeEstado(tripu,END); //se tiene que romper el hilo y eliminar el tripu
+							else{
+								if(esIO(tripu->instruccionAejecutar)){
+									pasarleAMongoTarea(tripu->instruccionAejecutar);
+									ciclosBlocked = tripu->instruccionAejecutar->tiempo;
+									sem_post(&semaforoEjecutor);
+									pasarDeEstado(tripu,BLOCKED);
+								}
+								tripu->instruccionAejecutar = pedirTareaRAM(tripu);
+								if(tripu->instruccionAejecutar == "TAREA_NULA"){
+									sem_post(&semaforoEjecutor);
+									pasarDeEstado(tripu,END); //se tiene que romper el hilo y eliminar el tripu
+								}
+								ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
 							}
-							ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
 						}
-					}
-					break;
-				case BLOCKED:
-					if(noCorroMiBloqueo){
-						lock(&semaforoBlockeado);
-					}
-					noCorroMiBloqueo = 0;
-					sleep(1);//correr un ciclo;
-					ciclosBlocked --;
-					if(ciclosBlocked == 0){
-						unlock(&semaforoBlockeado);
-						noCorroMiBloqueo = 1;
-						pasarDeEstado(tripu, READY);
-					}
-					break;
-				case BLOCKED_SABO:
-					//aca tendria q volver a su estado antes del bloqueo, se hace desde el hiloSabo antes de liberarlos
-					sem_wait(semaforoSabo);//el post se hace desde el hiloSabo y se hace tantos post como cant tripus
+						break;
+					case BLOCKED:
+						if(noCorroMiBloqueo){
+							lock(&semaforoBlockeado);
+						}
+						noCorroMiBloqueo = 0;
+						sleep(1);//correr un ciclo;
+						ciclosBlocked --;
+						if(ciclosBlocked == 0){
+							unlock(&semaforoBlockeado);
+							noCorroMiBloqueo = 1;
+							pasarDeEstado(tripu, READY);
+						}
+						break;
+					case SABOTAJE:
+						sleep(1);
+						ciclosExec --;
+						if(ciclosExec > 0){
+							desplazarse(tripu);
+						}
+						else{
+						sem_post(semaforoSabo); //este semaforo le permite recuperar su "imagen"
+						//el wait se hace dentro del hiloSabotaje antes de q devolverle la imagen
+						//y el semaforo se inicializa en 0
+						sem_wait(semaforoImagen); //lo hago para asegurarme q le devuelva la imagen
+						}
+						break;
+				}
+				actualizarEstado(tripu);
 			}
-			actualizarEstado(tripu);
 		}
 	}
 }
