@@ -196,56 +196,59 @@ void hilitoTripu(t_tripulante* tripu){
 	 */
 	int tripuVivo = 1;
 	while(tripuVivo){
-		if(tripu->idTripulante != tripuDesaboteador->idTripulante)
-			sem_wait(semaforoPlanificadorFin);
-		if(noHaySabotaje || tripu->idTripulante == tripuDesaboteador->idTripulante){
-			switch(tripu->estado){
-				case NEW:
-					//TODO pedir la tarea y hacer lo mas q se pueda aca
-					tripu->estado = READY;
-					break;
-				case READY:
-					if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
-						ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
-					quantumPendiente = quantum;
-					tripu->estado = EXEC;
-					break;
-				case EXEC:
-					sleep(1);//correr un ciclo;
-					ciclosExec --;
-					quantumPendiente--;
-					if(ciclosExec > 0 && quantumPendiente != 0){
-						desplazarse(tripu); //mueve al tripu hasta el lugar y si esta en el lugar no se mueve
+		sem_wait(semaforoPlanificadorFin);
+		switch(tripu->estado){
+			case NEW:
+				//TODO pedir la tarea y hacer lo mas q se pueda aca
+				tripu->estado = READY;
+				sem_post(semaforoPlanificadorInicio);
+				break;
+			case READY:
+				if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
+					ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
+				quantumPendiente = quantum;
+				tripu->estado = EXEC;
+				sem_post(semaforoPlanificadorInicio);
+				break;
+			case EXEC:
+				sleep(1);//correr un ciclo;
+				ciclosExec --;
+				quantumPendiente--;
+				if(ciclosExec > 0 && quantumPendiente != 0){
+					desplazarse(tripu); //mueve al tripu hasta el lugar y si esta en el lugar no se mueve
+				}
+				else{
+					if(quantumPendiente == 0){
+						tripu->estado = READY;
 					}
 					else{
-						if(quantumPendiente == 0){
-							tripu->estado = READY;
+						if(esIO(tripu->instruccionAejecutar)){
+							pasarleAMongoTarea(tripu->instruccionAejecutar);
+							ciclosBlocked = tripu->instruccionAejecutar->tiempo;
+							tripu->estado = BLOCKED;
 						}
-						else{
-							if(esIO(tripu->instruccionAejecutar)){
-								pasarleAMongoTarea(tripu->instruccionAejecutar);
-								ciclosBlocked = tripu->instruccionAejecutar->tiempo;
-								tripu->estado = BLOCKED;
-							}
-							tripu->instruccionAejecutar = pedirTareaRAM(tripu);
-							if(tripu->instruccionAejecutar == "TAREA_NULA"){
-								tripu->estado = END;
-							}
-							ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
+						tripu->instruccionAejecutar = pedirTareaRAM(tripu);
+						if(tripu->instruccionAejecutar == "TAREA_NULA"){
+							tripu->estado = END;
 						}
+						ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
 					}
-					break;
-				case BLOCKED:
-					if(tripu->idTripulante == idTripulanteBlocked){
-						sleep(1);//correr un ciclo;
-						ciclosBlocked --;
-						if(ciclosBlocked == 0){
-							idTripulanteBlocked = -1;
-							tripu->estado = READY;
-						}
+				}
+				sem_post(semaforoPlanificadorInicio);
+				break;
+			case BLOCKED:
+				if(tripu->idTripulante == idTripulanteBlocked){
+					sleep(1);//correr un ciclo;
+					ciclosBlocked --;
+					if(ciclosBlocked == 0){
+						idTripulanteBlocked = -1;
+						tripu->estado = READY;
 					}
-					break;
-				case SABOTAJE:
+				}
+				sem_post(semaforoPlanificadorInicio);
+				break;
+			case SABOTAJE: // para algunos es como un bloqueo donde no se hace nada
+				if(tripu->idTripulante == tripulanteDesabotaje->idTripulante){
 					sleep(1);
 					ciclosSabo --;
 					if(ciclosSabo > 0){
@@ -257,15 +260,16 @@ void hilitoTripu(t_tripulante* tripu){
 					//y el semaforo se inicializa en 0
 					sem_wait(semaforoImagen); //lo hago para asegurarme q le devuelva la imagen
 					}
-					break;
-				case END:
-					totalTripus--;
-					tripuVivo = 0;
-					break;
-			}
-			actualizarEstado(tripu); //esto tambien se usa para indicar q el tripu termino
-			if(tripu->idTripulante != tripuDesaboteador->idTripulante)
+				}
 				sem_post(semaforoPlanificadorInicio);
+				break;
+			case END:
+				totalTripus--;
+				tripuVivo = 0;
+				// el unico caso donde no se hace un post al inicio del plani
+				// esta asi porq como arriba se hace un totalTripu --, el wait
+				// del planiInicio va a hacer una iteracion menos
+				break;
 		}
 	}
 }
@@ -276,6 +280,7 @@ void actualizar(t_estado estado, t_queue* cola){
 	t_tripulante* tripulante;
 	while(cola != NULL && queue_size(colaExec)=<gradoMultiprocesamiento){
 		tripulante = (t_tripulante*) queue_pop(cola);
+		actualizarEstadoEnRAM(tripulante);
 		if(tripulante->estado != estado){
 			pasarDeEstado(tripulante);
 		}
