@@ -119,6 +119,10 @@ int main() {
  * su estado que estaban antes del sabotaje o a ready?
  * 3. Puede llegar un sabotaje mientras la plani esta pausada? Si se puede
  * q debo hacer?
+ * 4. Cuando hay un sabotaje, hay q ir hasta la posicion donde esta? En ese
+ * caso si el tripu que lo resolvio estaba en exec, tiene q volver al lugar
+ * donde estaba haciendo su tarea y recalcular su tiempo de exec? Con los
+ * bloqueos pasa lo mismo?
  */
 
 // TODO eliminar el semaforo del tripu
@@ -147,8 +151,8 @@ void hiloPlani(){
 				tripulanteDesabotaje->estado = estadoAnterior;
 				tripulanteDesabotaje->instruccionAejecutar = tareaAnterior;
 //				tripulanteDesabotaje tiene q ponerse como en un null, un tripu null
-				sem_post(semaforoImagen); // se inicializa en 0
 				noHaySabotaje = 1;
+				sem_post(semaforoImagen); // se inicializa en 0
 				sem_post(&semaforoSabotajeResuelto); //se usa para indicar al hiloSabotaje
 				// q ya se termino. Mas q nada por si nos mandan dos sabos juntos
 			}
@@ -181,8 +185,8 @@ void hilitoSabo(){
 void hilitoTripu(t_tripulante* tripu){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
-	int quantumPendiente = quantum;
 	int ciclosSabo = 0;
+	int quantumPendiente = quantum;
 	/*
 	 *	si es FIFO el quantum sera -1, si es RR sera lo q dice el config,
 	 *  esta opcion la posibilidad de cambiar el modo de ejecucion y
@@ -190,13 +194,13 @@ void hilitoTripu(t_tripulante* tripu){
 	 *  lo asigna al final de inicarTripu, se puede.
 	 *
 	 */
-	int noCorroMiBloqueo = 1;
 	int tripuVivo = 1;
 	while(tripuVivo){
-		sem_wait(semaforoPlanificadorFin);
+		if(tripu->idTripulante != tripuDesaboteador->idTripulante)
+			sem_wait(semaforoPlanificadorFin);
 		if(noHaySabotaje || tripu->idTripulante == tripuDesaboteador->idTripulante){
 			switch(tripu->estado){
-				case NEW:SIN HILO PLANIFICIADOR
+				case NEW:
 					//TODO pedir la tarea y hacer lo mas q se pueda aca
 					tripu->estado = READY;
 					break;
@@ -232,16 +236,13 @@ void hilitoTripu(t_tripulante* tripu){
 					}
 					break;
 				case BLOCKED:
-					if(noCorroMiBloqueo){
-						lock(&semaforoBlockeado);
-					}
-					noCorroMiBloqueo = 0;
-					sleep(1);//correr un ciclo;
-					ciclosBlocked --;
-					if(ciclosBlocked == 0){
-						unlock(&semaforoBlockeado);
-						noCorroMiBloqueo = 1;
-						tripu->estado = READY;
+					if(tripu->idTripulante == idTripulanteBlocked){
+						sleep(1);//correr un ciclo;
+						ciclosBlocked --;
+						if(ciclosBlocked == 0){
+							idTripulanteBlocked = -1;
+							tripu->estado = READY;
+						}
 					}
 					break;
 				case SABOTAJE:
@@ -630,6 +631,8 @@ void pasarDeEstado(t_tripulante* tripulante){
 			break;
 
 		case BLOCKED:
+			if(idTripulanteBlocked == -1)
+				idTripulanteBlocked = tripulante->idTripulante;
 			queue_push(colaDeReady, &tripulante);
 			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
 			break;
