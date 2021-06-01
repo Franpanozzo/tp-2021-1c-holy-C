@@ -50,6 +50,8 @@ pthread_mutex_t mutexListaExec;
 
 sem_t semPlanificacion;
 
+t_tripulante* tripulanteDesabotaje;
+
 typedef struct{
 	int socket;
 	t_tripulante* tripulante;

@@ -64,7 +64,7 @@ int main() {
 
 
 
-//------ PLANIFICADOR SIN HILO PLANIFICIADOR INICIO -----
+//------ PLANIFICADOR SANTI INICIO -----
 /*
  * Cuando se inicia un tripu se lo agrega a una lista de tripus
  * Va haber siempre un hilo (hilitoSabo)que se va a fijar si mongo
@@ -103,143 +103,200 @@ int main() {
  * solo se restan los ciclos de un tripu a la vez
  *
  *
+ * Nosotros tenemos en el hiloPlani una lista para cada esta estado (es global)
+ * entonces una vez q todos los tripus terminen su ciclo, lo q se hace es
+ * revisar la lista de los exec, aquellos q ahora su estado no es EXEC
+ * los paso a sus respectivas lista (se ponen al final de la lista), lo
+ * libero para q haga sus cosas (un post al semaforo q lo paraba). Lo
+ * mismo hago con BLOCK, NEW, READY (tambien tengo q tener en cuenta
+ * el grado de multiprocesamiento), END(en ese orden).
  */
-
 /*
  * DUDAS:
  * 1. Si a un tripu le queda un ciclo de quantum y hay un sabotaje. Cuando
  * vuelve se reinicia el quantum?
  * 2. Si hay un sabotaje, cuando los tripus vuelven, hay que volverlos a
  * su estado que estaban antes del sabotaje o a ready?
+ * 3. Puede llegar un sabotaje mientras la plani esta pausada? Si se puede
+ * q debo hacer?
  */
 
-/*
- * EJEMPLO:
- * quantum = 2, grado multiprocesamiento = 1, tarea = 3, I/O = 2 tarea2 = 1
- *
- * momento 0: q = 2, t1 = 3, I/O = 2, t2 = 1
- * momento 1: q = , t1 = , I/O = , t2 =
- * momento 2: q = , t1 = , I/O = , t2 =
- * momento 3: q = , t1 = , I/O = , t2 =
- * momento 4: q = , t1 = , I/O = , t2 =
- * momento 5: q = , t1 = , I/O = , t2 =
- * momento 6: q = , t1 = , I/O = , t2 =
- */
+// TODO eliminar el semaforo del tripu
 
-void hilitoSabo(){
-
-	/*
-	 * TODO la parte de recibir un saboteje, osea un recv y se
-	 * deserializa para ver si llego un sabotaje en el caso de
-	 * que si, se hace lo siguiente:
-	 */
-
-	noHaySabotaje = 0;
-	todosLosTripus
-	tripuSabataje = list_get(todosLosTripus, 0);
-	unTripu;
-	for(int i = 1; i<list_size(todosLosTripus); i++){
-		unTripu = list_get(todosLosTripus, i);
-		if(estaMasCerca(unTripu.coordenadas, tripuSabataje.coordenadas, sabotaje.coordenadas)){ //dada true si el primero esta mas cerca
-			tripuSabotaje = unTripu;
-		}
-	}
-	imagenTripu = tripuSabotaje;
-	tripuSabotaje.arreglandoElSabotaje = 1;
-	sem_wait(&semaforoSabo);
-	tripuSabotaje = imagenTripu;
-	sem_post(semaforoImagen); // se inicializa en 0
-	noHaySabotaje = 1;
-}
-
-
-
-void hilitoTripu(t_tripulante* tripu){
-	int ciclosExec = 0;
-	int ciclosBlocked = 0;
-	int quantumPendiente = quantum;
-	// si es FIFO el quantum sera -1, si es RR sera lo q dice el config,
-	// esta opcion la posibilidad de cambiar el modo de ejecucion y
-	// dejar q unos hagan FIFO y otros RR, pero si el qpendiente se
-	// lo asigna al final de inicarTripu, se puede.
-	int noCorroMiBloqueo = 1;
+void hiloPlani(){
 	while(1){
 		if(planificacion_play){
-			if(noHaySabotaje + tripu.arreglandoElSabotaje){
-				switch(tripu->estado){
-					case NEW:
-						pasarDeEstado(tripu, READY);
-						break;
-					case READY:
-						sem_wait(&semaforoEjecutor); //pasa a EXEC solo si el grado de multiprocesamiento se lo permite
-						if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
-							ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
-						quantumPendiente = quantum;
-						pasarDeEstado(tripu,EXEC);
-						break;
-					case EXEC:
-						sleep(1);//correr un ciclo;
-						ciclosExec --;
-						quantumPendiente--;
-						if(ciclosExec > 0 && quantumPendiente != 0){
-							desplazarse(tripu); //mueve al tripu hasta el lugar y si esta en el lugar no se mueve
-						}
-						else{
-							if(quantumPendiente == 0){
-								sem_post(&semaforoEjecutor); // permite que el proximo q esta en READY pase
-								pasarDeEstado(tripu,READY);
-							}
-							else{
-								if(esIO(tripu->instruccionAejecutar)){
-									pasarleAMongoTarea(tripu->instruccionAejecutar);
-									ciclosBlocked = tripu->instruccionAejecutar->tiempo;
-									sem_post(&semaforoEjecutor);
-									pasarDeEstado(tripu,BLOCKED);
-								}
-								tripu->instruccionAejecutar = pedirTareaRAM(tripu);
-								if(tripu->instruccionAejecutar == "TAREA_NULA"){
-									sem_post(&semaforoEjecutor);
-									pasarDeEstado(tripu,END); //se tiene que romper el hilo y eliminar el tripu
-								}
-								ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
-							}
-						}
-						break;
-					case BLOCKED:
-						if(noCorroMiBloqueo){
-							lock(&semaforoBlockeado);
-						}
-						noCorroMiBloqueo = 0;
-						sleep(1);//correr un ciclo;
-						ciclosBlocked --;
-						if(ciclosBlocked == 0){
-							unlock(&semaforoBlockeado);
-							noCorroMiBloqueo = 1;
-							pasarDeEstado(tripu, READY);
-						}
-						break;
-					case SABOTAJE:
-						sleep(1);
-						ciclosExec --;
-						if(ciclosExec > 0){
-							desplazarse(tripu);
-						}
-						else{
-						sem_post(semaforoSabo); //este semaforo le permite recuperar su "imagen"
-						//el wait se hace dentro del hiloSabotaje antes de q devolverle la imagen
-						//y el semaforo se inicializa en 0
-						sem_wait(semaforoImagen); //lo hago para asegurarme q le devuelva la imagen
-						}
-						break;
-				}
-				actualizarEstado(tripu);
+
+			for(int i=0; i<totalTripus; i++){
+				sem_wait(&semaforoPlanificadorInicio);
+			}
+
+				actualizar(EXEC, colaExec);
+				actualizar(BLOCKED, colaBlocked);
+				actualizar(NEW, colaNew);
+				actualizar(READY, colaReady);
+
+			if(noHaySabotaje == 0){ // HAY SABOTAJE
+				tripulanteDesabotaje = elTripuMasCerca(sabotaje.coordenadas);
+				// el sabotaje es una variable global de tipo t_tarea y tripulanteDesabotaje tambien es global
+				t_estado estadoAnterior = imagenTripu->estado;
+				t_estado tareaAnterior = imagenTripu->instruccionAejecutar;
+				tripulanteDesabotaje->estado = SABOTAJE;
+				tripulanteDesabotaje->instruccionAejecutar = sabotaje;
+				sem_wait(&semaforoSabo);
+				tripulanteDesabotaje->estado = estadoAnterior;
+				tripulanteDesabotaje->instruccionAejecutar = tareaAnterior;
+//				tripulanteDesabotaje tiene q ponerse como en un null, un tripu null
+				sem_post(semaforoImagen); // se inicializa en 0
+				noHaySabotaje = 1;
+				sem_post(&semaforoSabotajeResuelto); //se usa para indicar al hiloSabotaje
+				// q ya se termino. Mas q nada por si nos mandan dos sabos juntos
+			}
+
+
+			for(int i=0; i<totalTripus; i++){
+				sem_post(&semaforoPlanificadorFin);
 			}
 		}
 	}
 }
 
 
-//------ PLANIFICADOR SIN HILO PLANIFICADOR FIN ------
+
+void hilitoSabo(){
+
+	while(1){
+		/*
+		 * TODO la parte de recibir un saboteje, osea un recv y se
+		 * deserializa para ver si llego un sabotaje en el caso de
+		 * que si, se hace lo siguiente:
+		 */
+
+		noHaySabotaje = 0;
+		sem_wait(&semaforoSabotajeResuelto);
+	}
+}
+
+
+void hilitoTripu(t_tripulante* tripu){
+	int ciclosExec = 0;
+	int ciclosBlocked = 0;
+	int quantumPendiente = quantum;
+	int ciclosSabo = 0;
+	/*
+	 *	si es FIFO el quantum sera -1, si es RR sera lo q dice el config,
+	 *  esta opcion la posibilidad de cambiar el modo de ejecucion y
+	 *  dejar q unos hagan FIFO y otros RR, pero si el qpendiente se
+	 *  lo asigna al final de inicarTripu, se puede.
+	 *
+	 */
+	int noCorroMiBloqueo = 1;
+	int tripuVivo = 1;
+	while(tripuVivo){
+		sem_wait(semaforoPlanificadorFin);
+		if(noHaySabotaje || tripu->idTripulante == tripuDesaboteador->idTripulante){
+			switch(tripu->estado){
+				case NEW:SIN HILO PLANIFICIADOR
+					//TODO pedir la tarea y hacer lo mas q se pueda aca
+					tripu->estado = READY;
+					break;
+				case READY:
+					if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
+						ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
+					quantumPendiente = quantum;
+					tripu->estado = EXEC;
+					break;
+				case EXEC:
+					sleep(1);//correr un ciclo;
+					ciclosExec --;
+					quantumPendiente--;
+					if(ciclosExec > 0 && quantumPendiente != 0){
+						desplazarse(tripu); //mueve al tripu hasta el lugar y si esta en el lugar no se mueve
+					}
+					else{
+						if(quantumPendiente == 0){
+							tripu->estado = READY;
+						}
+						else{
+							if(esIO(tripu->instruccionAejecutar)){
+								pasarleAMongoTarea(tripu->instruccionAejecutar);
+								ciclosBlocked = tripu->instruccionAejecutar->tiempo;
+								tripu->estado = BLOCKED;
+							}
+							tripu->instruccionAejecutar = pedirTareaRAM(tripu);
+							if(tripu->instruccionAejecutar == "TAREA_NULA"){
+								tripu->estado = END;
+							}
+							ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
+						}
+					}
+					break;
+				case BLOCKED:
+					if(noCorroMiBloqueo){
+						lock(&semaforoBlockeado);
+					}
+					noCorroMiBloqueo = 0;
+					sleep(1);//correr un ciclo;
+					ciclosBlocked --;
+					if(ciclosBlocked == 0){
+						unlock(&semaforoBlockeado);
+						noCorroMiBloqueo = 1;
+						tripu->estado = READY;
+					}
+					break;
+				case SABOTAJE:
+					sleep(1);
+					ciclosSabo --;
+					if(ciclosSabo > 0){
+						desplazarse(tripu);
+					}
+					else{
+					sem_post(semaforoSabo); //este semaforo le permite recuperar su "imagen"
+					//el wait se hace dentro del hiloSabotaje antes de q devolverle la imagen
+					//y el semaforo se inicializa en 0
+					sem_wait(semaforoImagen); //lo hago para asegurarme q le devuelva la imagen
+					}
+					break;
+				case END:
+					totalTripus--;
+					tripuVivo = 0;
+					break;
+			}
+			actualizarEstado(tripu); //esto tambien se usa para indicar q el tripu termino
+			if(tripu->idTripulante != tripuDesaboteador->idTripulante)
+				sem_post(semaforoPlanificadorInicio);
+		}
+	}
+}
+
+
+void actualizar(t_estado estado, t_queue* cola){
+	t_queue* aux = queue_create();
+	t_tripulante* tripulante;
+	while(cola != NULL && queue_size(colaExec)=<gradoMultiprocesamiento){
+		tripulante = (t_tripulante*) queue_pop(cola);
+		if(tripulante->estado != estado){
+			pasarDeEstado(tripulante);
+		}
+		else{
+			queue_push(aux, &tripulante);
+		}
+	}
+	cola = aux;
+	aux = NULL;
+	free(aux); //esto no se si lo tengo q hacer, capaz no es necesario liberar a aux
+}
+
+t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
+	/*
+	 * TODO devuelve el tripu mas cerca a una cierta posicion.
+	 * Hay q recorrer todas las colas e ir comparando las posiciones
+	 * de los tripus hasta q quede un solo tripu. De las colas no
+	 * hay q sacar nada, solo estamos leyendo. Es decir q las
+	 * colas deben quedar como estaban.
+	 */
+}
+//------ PLANIFICADOR SANTI FIN ------
 
 
 
@@ -247,7 +304,7 @@ void hilitoTripu(t_tripulante* tripu){
 
 
 
-
+// ---- NO LA USAMOS ----
 void planificador(char* string,t_coordenadas* coordenadas){
 
 	char* algoritmo;
@@ -377,6 +434,7 @@ void tareasNoIO(t_tripulante* tripulante){
 	//int cantidadAciclar = calculoCiclosARealizar(tripulante) + tripulante->instruccionAejecutar->tiempo;
 }
 
+// ----- NO LA USAMOS ----
 void planificacionFIFO(t_tripulante* tripulante){
 
 	switch(esIO(tripulante->instruccionAejecutar->nombreTarea)){
@@ -401,11 +459,6 @@ void planificacionFIFO(t_tripulante* tripulante){
 			}
 }
 
-
-
-void planificacionRR(t_tripulante* tripulante){
-
-}
 
 /*-------------------------------------------------------------------------------
 //LO LLAMA SANTI DESDE LA CONSOLA
@@ -485,15 +538,11 @@ t_patota* asignarDatosAPatota(char* tareasString){
 	t_patota* patota = malloc(sizeof(t_patota));
 
 	patota->tamanioTareas = strlen(tareasString) + 1;
-
 	idPatota++;
-
-	log_info(logDiscordiador,"Se creo la patota numero %d\n",idPatota);
-
 	patota->ID = idPatota;
-
 	patota->tareas = tareasString;
 
+	log_info(logDiscordiador,"Se creo la patota numero %d\n",idPatota);
 	return patota;
 }
 
@@ -503,19 +552,15 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 
 	t_patota* patota = asignarDatosAPatota(tareasString);
-
 	t_paquete* paquete = armarPaqueteCon((void*) patota,PATOTA);
-
 	enviarPaquete(paquete,server_socket);
 
 	for (int i=0; i<cantidadTripulantes; i++){
-
 		iniciarTripulante(coordenadas[i], patota->ID);
 	}
 
 	//eliminarPatota(patota);
 	close(server_socket);
-
 }
 
 
@@ -534,6 +579,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	tripulante->estado = NEW;
 
 	sem_init(&tripulante->semaforo, 0, 0);
+//	el tripulante no necesita un semaforo
 
 	lock(mutexListaNew);
 	list_add(listaDeNew,(void*)tripulante);
@@ -545,6 +591,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripulante, (void*) tripulante);
 	pthread_join(_hiloTripulante, (void**) NULL);
+//	arriba no deberia ir un detach? no quiero q el programa se bloquee ahi
 }
 
 
@@ -567,35 +614,26 @@ int esIO(char* tarea){
 }
 
 
-void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
+void pasarDeEstado(t_tripulante* tripulante){
 
 
-	switch(siguienteEstado){
-
+	switch(tripulante->estado){
 		case READY:
-			//Ir a Hoja 10 del tp
-			tripulante->estado = READY;
-			lock(mutexColaReady);
-			queue_push(colaDeReady,(void*) tripulante);
-			unlock(mutexColaReady);
-			//¿Aca se mandaria el mensaje para actualiazar el tcb
+			queue_push(colaDeReady, &tripulante);
 			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
-			sem_post(&tripulante->semaforo);//le permitimos ir a ready
 			break;
 
 		case EXEC:
 
-			tripulante->estado = EXEC;
-			lock(mutexListaExec);
-			list_add(listaExec,(void*) tripulante);
-			unlock(mutexListaExec);
-			sem_post(&tripulante->semaforo);
-
-			//¿Aca se mandaria el mensaje para actualiazar el tcb?
+			queue_push(colaDeReady, &tripulante);
+			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
-
+			queue_push(colaDeReady, &tripulante);
+			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
+			break;
+		case END:
 			break;
 
 		default:
@@ -605,56 +643,6 @@ void pasarDeEstado(t_tripulante* tripulante, t_estado siguienteEstado){
 
 }
 
-/*
-void sacarDeNew(t_tripulante* tripulante) {
-
-	t_tripulante* tripulanteParaChequear;
-
-		bool idIgualA(t_tripulante* tripulanteAcomparar){
-
-			return tripulanteAcomparar->idTripulante == tripulante->idTripulante;
-		}
-
-	lock(mutexListaNew);
-	tripulanteParaChequear = list_remove_by_condition(listaDeNew, (void*) idIgualA);
-	unlock(mutexListaNew);
-
-
-}
-*/
-
-void hiloTripulante(t_tripulante* tripulante) {
-
-	recibirPrimerTareaDeMiRAM(tripulante);
-
-
-
-    if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") != 0){
-	    	log_info(logDiscordiador,"Soy el tripulante %d y recibi la tarea de: %s \n",
-	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
-	    	pasarDeEstado(tripulante, READY);
-
-	    	log_info(logDiscordiador,"La tarea %s del tripulante %d esta en Ready", tripulante->instruccionAejecutar->nombreTarea,tripulante->idTripulante);
-
-	    }
-	    else{
-	    	log_info(logDiscordiador,"Soy el tripulante %d y se me acabaron las tareas!\n",
-	    		    tripulante->idTripulante);
-
-	    }
-
-
-
-	//while(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") != 0){
-
-		//int iMongoSocket = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
-		//mandarTareaAejecutar(tripulante,iMongoSocket);
-		//close(iMongoSocket);
-
-		//recibirProximaTareaDeMiRAM(tripulante);
-	//}
-
-}
 
 void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
@@ -704,7 +692,8 @@ void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
 
 	enviarPaquete(paqueteConLaTarea,socketMongo);
 
-	recibirConfirmacionDeMongo(socketMongo,tripulante->instruccionAejecutar);
+//	recibirConfirmacionDeMongo(socketMongo,tripulante->instruccionAejecutar);
+//	no es necesaria la confirmacion
 }
 
 
