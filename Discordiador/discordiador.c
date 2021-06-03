@@ -12,6 +12,7 @@ int main() {
 	todasLasTareasIO[3] = strdup("DESCARTAR_BASURA");
 	todasLasTareasIO[4] = strdup("GENERAR_COMIDA");
 	todasLasTareasIO[5] = strdup("CONSUMIR_COMIDA");
+	todasLasTareasIO[5] = strdup(NULL);
 
 	idTripulante = 0;
 	idPatota = 0;
@@ -205,7 +206,7 @@ void hilitoTripu(t_tripulante* tripu){
 				break;
 			case READY:
 				if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
-					ciclosExec = calcularCiclosExec(tripu->instruccionAejecutar);
+					ciclosExec = calcularCiclosExec(tripu);
 				quantumPendiente = quantum;
 				tripu->estado = EXEC;
 				sem_post(semaforoPlanificadorInicio);
@@ -255,6 +256,13 @@ void hilitoTripu(t_tripulante* tripu){
 						desplazarse(tripu);
 					}
 					else{
+					/*
+					 *    FIN DE SABO
+					 * hay q pasar a todos en su respectivo orden a sus estados anteriores
+					 * y hacer q el tripu q se movio hasta para solucionar el sabo re calcule
+					 * sus cilos de ejecucion teniendo en cuenta q se tiene q volver a
+					 * desplazar y q puede ser q ya haya hecho parte de la tarea
+					 */
 					sem_post(semaforoSabo); //este semaforo le permite recuperar su "imagen"
 					//el wait se hace dentro del hiloSabotaje antes de q devolverle la imagen
 					//y el semaforo se inicializa en 0
@@ -264,13 +272,14 @@ void hilitoTripu(t_tripulante* tripu){
 				sem_post(semaforoPlanificadorInicio);
 				break;
 			case END:
-				totalTripus--;
+				totalTripus--; //aca se esta haciendo escritura, en el plani se hace lectura?
 				tripuVivo = 0;
 				// el unico caso donde no se hace un post al inicio del plani
 				// esta asi porq como arriba se hace un totalTripu --, el wait
 				// del planiInicio va a hacer una iteracion menos
 				break;
 		}
+		actualizarEstadoEnRAM(tripulante);
 	}
 }
 
@@ -280,7 +289,6 @@ void actualizar(t_estado estado, t_queue* cola){
 	t_tripulante* tripulante;
 	while(cola != NULL && queue_size(colaExec)=<gradoMultiprocesamiento){
 		tripulante = (t_tripulante*) queue_pop(cola);
-		actualizarEstadoEnRAM(tripulante);
 		if(tripulante->estado != estado){
 			pasarDeEstado(tripulante);
 		}
@@ -302,12 +310,52 @@ t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
 	 * colas deben quedar como estaban.
 	 */
 }
+
+
+int calculoCiclosExec(t_tripulante* tripulante){
+
+	int desplazamientoEnX = diferencia(tripulante->instruccionAejecutar->posX, tripulante->posX);
+	int desplazamientoEnY = diferencia(tripulante->instruccionAejecutar->posY, tripulante->posY);
+
+	if(esIO(tripulante->instruccionAejecutar)){
+		return  desplazamientoEnX + desplazamientoEnY + 1;
+	}
+
+	return desplazamientoEnX + desplazamientoEnY + tripulante->instruccionAejecutar->tiempo;
+}
+
+
+int diferencia(uint32_t numero1, uint32_t numero2){
+	return abs(numero1 -numero2);
+}
+
+int desplazarse(t_tripulante* tripulante){
+	int diferenciaEnX = diferencia(tripulante->posX, tripulante->instruccionAejecutar->posX);
+	int diferenciaEnY = diferencia(tripulante->posY, tripulante->instruccionAejecutar->posY);
+
+	if(diferenciaEnX && diferenciaEnY){
+		log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
+				tripulante->posX, tripulante->posY );
+
+		if(diferenciaEnX){
+			tripulante->posX = tripulante->posX -
+					tripulante->instruccionAejecutar->posX / diferenciaEnX;
+		}
+		if(diferenciaEnY){
+			tripulante->posY = tripulante->posY -
+					tripulante->instruccionAejecutar->posY / diferenciaEnY;
+		}
+
+		log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
+		return 1;
+	}
+
+	return 0;
+	// devuelve 1 si se desplaza y 0 si no se desplaza
+}
+
+
 //------ PLANIFICADOR SANTI FIN ------
-
-
-
-
-
 
 
 // ---- NO LA USAMOS ----
@@ -354,171 +402,6 @@ void planificador(char* string,t_coordenadas* coordenadas){
 	}
 }
 
-int calculoCiclosARealizar(t_tripulante* tripulante){
-
-	int movimientosEnX = fabs(tripulante->instruccionAejecutar->posX - tripulante->posX);
-	int movimientosEnY = fabs(tripulante->instruccionAejecutar->posY - tripulante->posY);
-
-	return movimientosEnX + movimientosEnY;
-}
-
-void tareasIO(t_tripulante* tripulante){
-
-	int ciclos = calculoCiclosARealizar(tripulante) + 1;
-
-	while(ciclos > 0){
-
-		//int socketMiRAM = iniciarConexionDesdeCliente(puertoEIPRAM);
-
-		if(tripulante->posX > tripulante->instruccionAejecutar->posX){
-			log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
-			tripulante->posX--;
-			log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
-			ciclos--;
-			sleep(1);
-			//t_paquete* paquete = armarPaqueteCon()
-
-		}
-
-		if(tripulante->posX < tripulante->instruccionAejecutar->posX){
-			log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
-			tripulante->posX++;
-			log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
-			ciclos--;
-			sleep(1);
-			//t_paquete* paquete = armarPaqueteCon()
-
-			}
-
-		if(tripulante->posY > tripulante->instruccionAejecutar->posY){
-			log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
-			tripulante->posY--;
-			log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
-			ciclos--;
-			sleep(1);
-			//t_paquete* paquete = armarPaqueteCon()
-
-			}
-
-		if(tripulante->posY < tripulante->instruccionAejecutar->posY){
-			log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
-			tripulante->posY++;
-			log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY );
-			ciclos--;
-			sleep(1);
-			//t_paquete* paquete = armarPaqueteCon()
-
-			}
-		if(tripulante->posX == tripulante->instruccionAejecutar->posX && tripulante->posY == tripulante->instruccionAejecutar->posY){
-			ciclos--;
-			sleep(1);
-			int socketMongo = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
-			t_paquete* tareaArealizar = armarPaqueteCon((void*) tripulante->instruccionAejecutar,TAREA);
-			enviarPaquete(tareaArealizar,socketMongo);
-			t_paquete* prueba = recibirPaquete(socketMongo);
-			char* respuesta = deserializarString(prueba);
-			log_info(logDiscordiador,"Recibi %s \n", respuesta);
-			//bool esIgualA(t_tripulante* tripulanteAcomparar){
-				//return tripulanteAcomparar == tripulante;
-			//}
-			//list_remove_by_condition(listaExec,(void*) esIgualA);
-			t_bloqueado* tripulanteBloqueado = malloc(sizeof(t_bloqueado));
-			tripulanteBloqueado->socket = socketMongo;
-			tripulanteBloqueado->tripulante = tripulante;
-			queue_push(colaES, tripulanteBloqueado);
-
-		}
-
-	}
-
-
-}
-
-
-void tareasNoIO(t_tripulante* tripulante){
-
-	//int cantidadAciclar = calculoCiclosARealizar(tripulante) + tripulante->instruccionAejecutar->tiempo;
-}
-
-// ----- NO LA USAMOS ----
-void planificacionFIFO(t_tripulante* tripulante){
-
-	switch(esIO(tripulante->instruccionAejecutar->nombreTarea)){
-
-			case 1:
-			{
-					log_info(logDiscordiador,"Recibi una accion IO del tripulante %d",tripulante->idTripulante);
-					tareasIO(tripulante);
-					break;
-			}
-			case 0:
-			{		log_info(logDiscordiador,"Recibi una accion que no es IO del tripulante %d",tripulante->idTripulante);
-					tareasNoIO(tripulante);
-					break;
-			}
-
-			default:
-			{
-					log_info(logDiscordiador,"Recibi cualquier cosa negro\n");
-					exit(1);
-			}
-			}
-}
-
-
-/*-------------------------------------------------------------------------------
-//LO LLAMA SANTI DESDE LA CONSOLA
-void cpuPlanificacion() {
-	char* algoritmo;
-	int grado_multiprocesamiento;
-	algoritmo = config_get_string_value(config,"ALGORITMO");
-	grado_multiprocesamiento = config_get_int_value(config,"GRADO_MULTITAREA");
-	log_info(logDiscordiador,"Empezando planificacion usando el algoritmo %s",algoritmo);
-
-	planificacion_pausada= 1;
-	//Iniciar_planificaion -> pausado=1;
-	//Pausar_planificacion -> pausado=0;
-
-	while(1){
-
-	while(planificacion_pausada);
-
-	if(planificacion_pausada){
-		sem_wait(&semPlanificacion);//lo hace consola
-	}
-
-	if(list_size(listaDeNew)>0){//independiente del algoritmo de planificacion
-		lock(mutexListaNew);
-		t_tripulante* tripulanteARedy =  list_remove(listaDeNew,0);
-		unlock(mutexListaNew);
-		pasarDeEstado(tripulanteARedy,READY);
-
-	}
-
-	if(list_size(listaExec) < grado_multiprocesamiento){//Cuando la planificacion esta activa
-
-		if(strcmp(algoritmo,"FIFO") == 0) {
-			lock(mutexColaReady);
-			t_tripulante* tripulanteAExec =  queue_pop(colaDeReady);
-			unlock(mutexColaReady);
-			pasarDeEstado(tripulanteAExec,EXEC);
-
-		}
-
-		if(strcmp(algoritmo,"RR") == 0) {
-			//Todo
-		}
-
-		else {
-			log_info(logDiscordiador,"No existe ese algoritmo de planificacion negro");
-		}
-	}
- }
-
-}
-
-------------------------------------------------------------------------------------------------
-*/
 
 
 void crearConfig(){
@@ -603,20 +486,12 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 int esIO(char* tarea){
 
-	int i = 0;
-
-	while(todasLasTareasIO[i] != NULL){
-
+	for(int i=0; todasLasTareasIO[i] != NULL; i++){
 		if(strcmp(todasLasTareasIO[i],tarea) == 0){
 			return 1;
 		}
-
-
-		i++;
 	}
-
 	return 0;
-
 }
 
 
@@ -708,7 +583,6 @@ void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
 char* deserializarString (t_paquete* paquete){
 
 	char* string = malloc(paquete->buffer->size);
-
 	memcpy(string,(paquete->buffer->stream),paquete->buffer->size);
 
 	return string;
