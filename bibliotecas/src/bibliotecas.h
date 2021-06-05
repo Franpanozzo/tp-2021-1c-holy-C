@@ -49,7 +49,9 @@
 		NEW,
 		READY,
 		EXEC,
-		BLOCKED
+		BLOCKED,
+		END,
+		SABOTAJE
 	}t_estado;
 
 	typedef struct {

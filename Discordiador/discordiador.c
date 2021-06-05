@@ -136,12 +136,13 @@ void hiloPlani(){
 				sem_wait(&semaforoPlanificadorInicio);
 			}
 
-				actualizar(EXEC, colaExec);
-				actualizar(BLOCKED, colaBlocked);
-				actualizar(NEW, colaNew);
-				actualizar(READY, colaReady);
+			actualizar(EXEC, colaExec);
+			actualizar(BLOCKED, colaBlocked);
+			actualizar(NEW, colaNew);
+			actualizar(READY, colaReady);
 
-			if(noHaySabotaje == 0){ // HAY SABOTAJE
+/*
+			if(haySabotaje){ // HAY SABOTAJE
 				tripulanteDesabotaje = elTripuMasCerca(sabotaje.coordenadas);
 				// el sabotaje es una variable global de tipo t_tarea y tripulanteDesabotaje tambien es global
 				t_estado estadoAnterior = imagenTripu->estado;
@@ -158,6 +159,7 @@ void hiloPlani(){
 				// q ya se termino. Mas q nada por si nos mandan dos sabos juntos
 			}
 
+*/
 
 			for(int i=0; i<totalTripus; i++){
 				sem_post(&semaforoPlanificadorFin);
@@ -177,13 +179,13 @@ void hilitoSabo(){
 		 * que si, se hace lo siguiente:
 		 */
 
-		noHaySabotaje = 0;
-		sem_wait(&semaforoSabotajeResuelto);
+		haySabotaje = 1;
+//		sem_wait(&semaforoSabotajeResuelto);
 	}
 }
 
 
-void hilitoTripu(t_tripulante* tripu){
+void hiloTripu(t_tripulante* tripu){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
 	int ciclosSabo = 0;
@@ -205,18 +207,18 @@ void hilitoTripu(t_tripulante* tripu){
 				sem_post(semaforoPlanificadorInicio);
 				break;
 			case READY:
-				if(ciclosExec == 0) // este if se pone porq si me desalojan por quantum no tengo que volver a calcular mis ciclos
+				if(ciclosExec == 0)
 					ciclosExec = calcularCiclosExec(tripu);
 				quantumPendiente = quantum;
 				tripu->estado = EXEC;
 				sem_post(semaforoPlanificadorInicio);
 				break;
 			case EXEC:
-				sleep(1);//correr un ciclo;
+				sleep(1);
 				ciclosExec --;
 				quantumPendiente--;
 				if(ciclosExec > 0 && quantumPendiente != 0){
-					desplazarse(tripu); //mueve al tripu hasta el lugar y si esta en el lugar no se mueve
+					desplazarse(tripu);
 				}
 				else{
 					if(quantumPendiente == 0){
@@ -239,7 +241,7 @@ void hilitoTripu(t_tripulante* tripu){
 				break;
 			case BLOCKED:
 				if(tripu->idTripulante == idTripulanteBlocked){
-					sleep(1);//correr un ciclo;
+					sleep(1);
 					ciclosBlocked --;
 					if(ciclosBlocked == 0){
 						idTripulanteBlocked = -1;
@@ -249,20 +251,20 @@ void hilitoTripu(t_tripulante* tripu){
 				sem_post(semaforoPlanificadorInicio);
 				break;
 			case SABOTAJE: // para algunos es como un bloqueo donde no se hace nada
-				if(tripu->idTripulante == tripulanteDesabotaje->idTripulante){
+/*				if(tripu->idTripulante == tripulanteDesabotaje->idTripulante){
 					sleep(1);
 					ciclosSabo --;
 					if(ciclosSabo > 0){
 						desplazarse(tripu);
 					}
 					else{
-					/*
+
 					 *    FIN DE SABO
 					 * hay q pasar a todos en su respectivo orden a sus estados anteriores
 					 * y hacer q el tripu q se movio hasta para solucionar el sabo re calcule
 					 * sus cilos de ejecucion teniendo en cuenta q se tiene q volver a
 					 * desplazar y q puede ser q ya haya hecho parte de la tarea
-					 */
+
 					sem_post(semaforoSabo); //este semaforo le permite recuperar su "imagen"
 					//el wait se hace dentro del hiloSabotaje antes de q devolverle la imagen
 					//y el semaforo se inicializa en 0
@@ -270,6 +272,7 @@ void hilitoTripu(t_tripulante* tripu){
 					}
 				}
 				sem_post(semaforoPlanificadorInicio);
+*/
 				break;
 			case END:
 				totalTripus--; //aca se esta haciendo escritura, en el plani se hace lectura?
@@ -279,7 +282,7 @@ void hilitoTripu(t_tripulante* tripu){
 				// del planiInicio va a hacer una iteracion menos
 				break;
 		}
-		actualizarEstadoEnRAM(tripulante);
+		actualizarEstadoEnRAM(tripu);
 	}
 }
 
@@ -329,29 +332,25 @@ int diferencia(uint32_t numero1, uint32_t numero2){
 	return abs(numero1 -numero2);
 }
 
-int desplazarse(t_tripulante* tripulante){
+
+void desplazarse(t_tripulante* tripulante){
 	int diferenciaEnX = diferencia(tripulante->posX, tripulante->instruccionAejecutar->posX);
 	int diferenciaEnY = diferencia(tripulante->posY, tripulante->instruccionAejecutar->posY);
 
-	if(diferenciaEnX && diferenciaEnY){
-		log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
-				tripulante->posX, tripulante->posY );
+	//FALTAN MUTEX
+	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
+			tripulante->posX, tripulante->posY );
 
-		if(diferenciaEnX){
-			tripulante->posX = tripulante->posX -
-					tripulante->instruccionAejecutar->posX / diferenciaEnX;
-		}
-		if(diferenciaEnY){
-			tripulante->posY = tripulante->posY -
-					tripulante->instruccionAejecutar->posY / diferenciaEnY;
-		}
-
-		log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
-		return 1;
+	if(diferenciaEnX){
+		tripulante->posX = tripulante->posX -
+				tripulante->instruccionAejecutar->posX / diferenciaEnX;
+	}
+	else if(diferenciaEnY){
+		tripulante->posY = tripulante->posY -
+				tripulante->instruccionAejecutar->posY / diferenciaEnY;
 	}
 
-	return 0;
-	// devuelve 1 si se desplaza y 0 si no se desplaza
+	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
 }
 
 
@@ -568,15 +567,12 @@ void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 }
 
 
-
+// SE PUEDE USAR
 void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
 
 	t_paquete* paqueteConLaTarea = armarPaqueteCon((void*) tripulante->instruccionAejecutar,TAREA);
 
 	enviarPaquete(paqueteConLaTarea,socketMongo);
-
-//	recibirConfirmacionDeMongo(socketMongo,tripulante->instruccionAejecutar);
-//	no es necesaria la confirmacion
 }
 
 

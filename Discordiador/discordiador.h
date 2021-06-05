@@ -25,30 +25,31 @@
 t_config* config;
 
 t_log* logDiscordiador;
- // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
 
 puertoEIP* puertoEIPRAM;
 puertoEIP* puertoEIPMongo;
 
 int idTripulante;
 int idPatota;
-int planificacion_pausada;
+int planificacion_play;
+int totalTripus;
+int haySabotaje;
+int quantum;
+int idTripulanteBlocked;
+int gradoMultiprocesamiento;
 
-t_list* listaDeNew;
-
+t_queue* colaExec;
+t_queue* colaBlocked;
+t_queue* colaDeNew;
 t_queue* colaDeReady;
-
-t_list* listaExec;
-
-t_queue* colaES;
-
-t_list* listaDeFinish;
 
 pthread_mutex_t mutexListaNew;
 pthread_mutex_t mutexColaReady;
 pthread_mutex_t mutexListaExec;
 
 sem_t semPlanificacion;
+sem_t semaforoPlanificadorInicio;
+sem_t semaforoPlanificadorFin;
 
 t_tripulante* tripulanteDesabotaje;
 
@@ -63,21 +64,23 @@ void crearConfig();
 void eliminarPatota(t_patota*);
 void iniciarTripulante(t_coordenadas, uint32_t);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
-void pasarDeEstado(t_tripulante*, t_estado);
+void pasarDeEstado(t_tripulante*);
 void hiloTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
 char* deserializarString (t_paquete*);
 void mandarTareaAejecutar(t_tripulante*,int);
-void recibirConfirmacionDeMongo(int,t_tarea*);
 void recibirPrimerTareaDeMiRAM(t_tripulante*);
 void recibirProximaTareaDeMiRAM(t_tripulante*);
-void cpuPlanificacion();
-void sacarDeNew(t_tripulante*);
 void recibirTareaDeMiRAM(int ,t_tripulante*);
-void tareasIO(t_tripulante*);
-void tareasNoIO(t_tripulante*);
 int esIO(char*);
-void planificacionFIFO(t_tripulante*);
-void planificacionRR(t_tripulante*);
-void planificador(char*,t_coordenadas*);
+void actualizar(t_estado, t_queue*);
+void hiloPlani();
+void hilitoSabo();
+void actualizar(t_estado, t_queue*);
+t_tripulante* elTripuMasCerca(t_coordenadas);
+int calculoCiclosExec(t_tripulante*);
+int diferencia(uint32_t, uint32_t);
+void desplazarse(t_tripulante*);
+
+
 #endif
