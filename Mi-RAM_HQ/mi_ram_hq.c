@@ -119,7 +119,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 						deserializarTripulante(paquete,tripulanteSock);
 						break;
-			case SIGUIENTETAREA:
+			case SIGUIENTE_TAREA:
 			{
 					deserializarSolicitudTarea(paquete,tripulanteSock);
 					break;
