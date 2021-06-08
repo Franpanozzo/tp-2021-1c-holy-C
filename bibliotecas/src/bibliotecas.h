@@ -34,7 +34,6 @@
 		SIGUIENTE_TAREA,
 		TAREA,
 		STRING,
-		ESTADO_TRIPULANTE
 	} tipoDeDato;
 
 	typedef struct {

@@ -125,7 +125,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 						actualizarTripulante(paquete);
 						break;
 
-			case SIGUIENTETAREA:
+			case SIGUIENTE_TAREA:
 			{
 					deserializarSolicitudTarea(paquete,tripulanteSock);
 					break;
@@ -329,7 +329,7 @@ tcb* buscarTripulante(int tcbAActualizar,pcb* patotaDeTripu) {
 
 			bool a;
 
-			a = tcbAComparar == tcbAActualizar && (tcbAComparar->patota == patotaDeTripu);
+			a = tcbAComparar->patota == patotaDeTripu ;
 
 			//log_info(logMiRAM,"Comparado con primer patota %d \n",a);
 

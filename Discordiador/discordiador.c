@@ -1,12 +1,14 @@
 #include "discordiador.h"
 
 char** todasLasTareasIO;
+int planificadorFin;
 
 int main() {
 
 	sem_init(&semPlanificacion,0,1);
 	sem_init(&semaforoPlanificadorInicio,0,1);
-	sem_init(&semaforoPlanificadorFin,0,1);
+	sem_init(&semaforoPlanificadorFin,0,0);
+	planificadorFin = 0;
 	planificacion_play = 1;
 	todasLasTareasIO = malloc(sizeof(char*) * 6);
 
@@ -133,7 +135,6 @@ int main() {
 void hiloPlani(){
 	while(1){
 		if(planificacion_play){
-
 			for(int i=0; i<totalTripus; i++){
 				log_info(logDiscordiador,"Planificacion semaforo inicio");
 				sem_wait(&semaforoPlanificadorInicio);
@@ -164,10 +165,11 @@ void hiloPlani(){
 
 */
 
-			for(int i=0; i<totalTripus; i++){
-				log_info(logDiscordiador,"Planificacion semaforo fin");
-				sem_post(&semaforoPlanificadorFin);
-			}
+			planificadorFin = 1;
+//			for(int i=0; i<totalTripus; i++){
+//				log_info(logDiscordiador,"Planificacion semaforo fin");
+//				sem_post(&semaforoPlanificadorFin);
+//			}
 		}
 	}
 }
@@ -194,17 +196,11 @@ void hiloTripu(t_tripulante* tripulante){
 	int ciclosBlocked = 0;
 	//int ciclosSabo = 0;
 	int quantumPendiente = quantum;
-	/*
-	 *	si es FIFO el quantum sera -1, si es RR sera lo q dice el config,
-	 *  esta opcion la posibilidad de cambiar el modo de ejecucion y
-	 *  dejar q unos hagan FIFO y otros RR, pero si el qpendiente se
-	 *  lo asigna al final de inicarTripu, se puede.
-	 *
-	 */
 	int tripuVivo = 1;
 	while(tripuVivo){
 		log_info(logDiscordiador,"tripulanteId %d: esperando semaforo", tripulante->idTripulante);
-		sem_wait(&semaforoPlanificadorFin);
+		while(planificadorFin);
+//		sem_wait(&semaforoPlanificadorFin);
 		switch(tripulante->estado){
 			log_info(logDiscordiador,"tripulanteId %d: etre al switch", tripulante->idTripulante);
 			case NEW:
@@ -435,6 +431,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 	log_info(logDiscordiador,"creando patota, con %d tripulantes", cantidadTripulantes);
 	for (int i=0; i<cantidadTripulantes; i++){
 		iniciarTripulante(coordenadas[i], patota->ID);
+		totalTripus ++;
 	}
 
 	//eliminarPatota(patota);
@@ -468,7 +465,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 
 	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripu, (void*) tripulante);
-	pthread_join(_hiloTripulante, (void**) NULL);
+	pthread_detach(_hiloTripulante);
 //	arriba no deberia ir un detach? no quiero q el programa se bloquee ahi
 }
 
