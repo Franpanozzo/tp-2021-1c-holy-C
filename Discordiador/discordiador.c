@@ -1,14 +1,12 @@
 #include "discordiador.h"
 
 char** todasLasTareasIO;
-int planificadorFin;
 
 int main() {
 
 	sem_init(&semPlanificacion,0,1);
-	sem_init(&semaforoPlanificadorInicio,0,1);
+	sem_init(&semaforoPlanificadorInicio,0,0);
 	sem_init(&semaforoPlanificadorFin,0,0);
-	planificadorFin = 0;
 	planificacion_play = 1;
 	todasLasTareasIO = malloc(sizeof(char*) * 6);
 
@@ -43,6 +41,7 @@ int main() {
 	pthread_mutex_init(&mutexColaNew, NULL);
 	pthread_mutex_init(&mutexColaReady, NULL);
 	pthread_mutex_init(&mutexColaExec, NULL);
+	pthread_mutex_init(&mutexPlanificadorFin, NULL);
 	//
 	int tripulantes = 4;
 	t_coordenadas coordenadas[tripulantes ];
@@ -68,82 +67,20 @@ int main() {
 
 
 
-
-//------ PLANIFICADOR SANTI INICIO -----
-/*
- * Cuando se inicia un tripu se lo agrega a una lista de tripus
- * Va haber siempre un hilo (hilitoSabo)que se va a fijar si mongo
- * le mando un sabotaje. Si le mando lo que hace es:
- * fijarse cual es el que mas cerca esta comparandolo con los demas,
- * osea agarro dos, los comparo, el q esta mas cerca me lo quedo para
- * compararlo con el q sigue y al otro lo bloqueo por sabotaje (BLOCKED_SABO).
- * Al que me queda (el mas cerca), le guarda su "imagen" (osea los ciclos a
- * ejecutar, ciclos a bloquear, su quantum restante y su estado) y le
- * cambio su tarea a la tarea que me mando el mongo y lo pongo en EXEC
- * para que la realice. Cuando finaliza le tiene que avisar al hilitoSabo
- * que ya termino (se sincroniza con un semaforo) y ahi el hilitoSabo los
- * vuelve a todos a su estado inicial (mediante un semaforo q esta en el switch
- * de BLOCKED_SABO).
- *
- * if(noHaySabotaje + tripu.arreglandoElSabotaje)
- * noHaySabotaje es una variable global que la maneja el hilitoSabo. Se inicializa
- * en 1 cosa de que todos los tripus puedan pasar el if mientras no haya un sabotaje.
- * tripu.arreglandoElSabotaje es una variable q tiene cada tripu. La idea es que
- * despues de recibir el sabotaje lo que haga el hilitoSabo es revisar uno por uno los
- * tripus y elegir a uno para que arregle el sabotaje. A ese tripu se le pone la
- * variable arreglandoElSabotaje en 1, cosa de que entre al if para poder arreglarlo.
- * Dentro del switch grande hay un case q seria el SABOTAJE: donde el tripu hace la
- * tarea, pero a diferencia del EXEC q se pide la tarea siguiente y te fijas si es
- * I/O, cuando termina lo q hace es cambiar la varibe noHaySabotaje y la pone en 0 para
- * q los otros tripus se liberen y puedan seguir con sus tareas. Tambien antes de
- * liberar a los otros tripus, quien resolvio el sabotaje tiene q recuperar su "imagen",
- * es decir, su estado, tarea, ciclos pendientes y otros datos q tenia antes de q
- * aparezca el sabotaje
- *
- * el semaforoEjecutor(un contador q se inicializa segun el grado de
- * multiprocesamiento) simula la cola de READY, por eso en READY se hace un
- * wait y el post se hace en el EXEC.
- *
- * el semaforoBlocked (un mutex) simula la cola de blocked, en la cual
- * solo se restan los ciclos de un tripu a la vez
- *
- *
- * Nosotros tenemos en el hiloPlani una lista para cada esta estado (es global)
- * entonces una vez q todos los tripus terminen su ciclo, lo q se hace es
- * revisar la lista de los exec, aquellos q ahora su estado no es EXEC
- * los paso a sus respectivas lista (se ponen al final de la lista), lo
- * libero para q haga sus cosas (un post al semaforo q lo paraba). Lo
- * mismo hago con BLOCK, NEW, READY (tambien tengo q tener en cuenta
- * el grado de multiprocesamiento), END(en ese orden).
- */
-/*
- * DUDAS:
- * 1. Si a un tripu le queda un ciclo de quantum y hay un sabotaje. Cuando
- * vuelve se reinicia el quantum?
- * 2. Si hay un sabotaje, cuando los tripus vuelven, hay que volverlos a
- * su estado que estaban antes del sabotaje o a ready?
- * 3. Puede llegar un sabotaje mientras la plani esta pausada? Si se puede
- * q debo hacer?
- * 4. Cuando hay un sabotaje, hay q ir hasta la posicion donde esta? En ese
- * caso si el tripu que lo resolvio estaba en exec, tiene q volver al lugar
- * donde estaba haciendo su tarea y recalcular su tiempo de exec? Con los
- * bloqueos pasa lo mismo?
- */
-
-// TODO eliminar el semaforo del tripu
-
 void hiloPlani(){
 	while(1){
 		if(planificacion_play){
+
 			for(int i=0; i<totalTripus; i++){
-				log_info(logDiscordiador,"Planificacion semaforo inicio");
 				sem_wait(&semaforoPlanificadorInicio);
+				log_info(logDiscordiador,"Planificacion semaforo inicio");
 			}
 
-			actualizar(EXEC, colaExec);
-			actualizar(BLOCKED, colaBlocked);
-			actualizar(NEW, colaNew);
-			actualizar(READY, colaReady);
+
+			//actualizar(EXEC, colaExec);
+			//actualizar(BLOCKED, colaBlocked);
+			//actualizar(NEW, colaNew);
+			//actualizar(READY, colaReady);
 
 /*
 			if(haySabotaje){ // HAY SABOTAJE
@@ -165,11 +102,12 @@ void hiloPlani(){
 
 */
 
-			planificadorFin = 1;
-//			for(int i=0; i<totalTripus; i++){
-//				log_info(logDiscordiador,"Planificacion semaforo fin");
-//				sem_post(&semaforoPlanificadorFin);
-//			}
+//			planificadorFin = 0;
+
+			for(int i=0; i<totalTripus; i++){
+				sem_post(&semaforoPlanificadorFin);
+				log_info(logDiscordiador,"Planificacion semaforo fin");
+			}
 		}
 	}
 }
@@ -198,11 +136,7 @@ void hiloTripu(t_tripulante* tripulante){
 	int quantumPendiente = quantum;
 	int tripuVivo = 1;
 	while(tripuVivo){
-		log_info(logDiscordiador,"tripulanteId %d: esperando semaforo", tripulante->idTripulante);
-		while(planificadorFin);
-//		sem_wait(&semaforoPlanificadorFin);
 		switch(tripulante->estado){
-			log_info(logDiscordiador,"tripulanteId %d: etre al switch", tripulante->idTripulante);
 			case NEW:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
 				recibirPrimerTareaDeMiRAM(tripulante);
@@ -290,6 +224,8 @@ void hiloTripu(t_tripulante* tripulante){
 				break;
 		}
 		actualizarEstadoEnRAM(tripulante);
+		log_info(logDiscordiador,"tripulanteId %d: esperando semaforo", tripulante->idTripulante);
+		sem_wait(&semaforoPlanificadorFin);
 	}
 }
 int calculoMovimiento(t_tripulante* tripulante){
@@ -466,7 +402,6 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripu, (void*) tripulante);
 	pthread_detach(_hiloTripulante);
-//	arriba no deberia ir un detach? no quiero q el programa se bloquee ahi
 }
 
 

@@ -46,6 +46,7 @@ t_queue* colaReady;
 pthread_mutex_t mutexColaNew;
 pthread_mutex_t mutexColaReady;
 pthread_mutex_t mutexColaExec;
+pthread_mutex_t mutexPlanificadorFin;
 
 sem_t semPlanificacion;
 sem_t semaforoPlanificadorInicio;
