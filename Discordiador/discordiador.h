@@ -40,8 +40,8 @@ int gradoMultiprocesamiento;
 
 t_queue* colaExec;
 t_queue* colaBlocked;
-t_queue* colaDeNew;
-t_queue* colaDeReady;
+t_queue* colaNew;
+t_queue* colaReady;
 
 pthread_mutex_t mutexListaNew;
 pthread_mutex_t mutexColaReady;

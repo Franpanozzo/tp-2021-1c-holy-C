@@ -31,7 +31,7 @@ int main() {
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE"); // Asignar puerto tomado desde el config (Mongo)
 
 	listaDeNew = list_create();
-	colaDeReady = queue_create();
+	colaReady = queue_create();
 	listaExec = list_create();
 	colaES = queue_create();
 
@@ -301,7 +301,6 @@ void actualizar(t_estado estado, t_queue* cola){
 	}
 	cola = aux;
 	aux = NULL;
-	free(aux); //esto no se si lo tengo q hacer, capaz no es necesario liberar a aux
 }
 
 t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
@@ -371,13 +370,13 @@ void planificador(char* string,t_coordenadas* coordenadas){
 
 	}
 
-	while(list_size(listaExec) <= grado_multiprocesamiento && queue_is_empty(colaDeReady) != 1){
+	while(list_size(listaExec) <= grado_multiprocesamiento && queue_is_empty(colaReady) != 1){
 
-		t_tripulante* tripulante = queue_peek(colaDeReady);
+		t_tripulante* tripulante = queue_peek(colaReady);
 
 		log_info(logDiscordiador,"Moviendo tripulante %d a EXEC", tripulante->idTripulante);
 
-		queue_pop(colaDeReady);
+		queue_pop(colaReady);
 
 		pasarDeEstado(tripulante, EXEC);
 	}
@@ -499,22 +498,21 @@ void pasarDeEstado(t_tripulante* tripulante){
 
 	switch(tripulante->estado){
 		case READY:
-			queue_push(colaDeReady, &tripulante);
+			queue_push(colaReady, &tripulante);
 			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
 			break;
 
 		case EXEC:
 
-			queue_push(colaDeReady, &tripulante);
+			queue_push(colaExec, &tripulante);
 			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
-			if(idTripulanteBlocked == -1)
-				idTripulanteBlocked = tripulante->idTripulante;
-			queue_push(colaDeReady, &tripulante);
+			queue_push(colaBlocked, &tripulante);
 			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
 			break;
+
 		case END:
 			break;
 
