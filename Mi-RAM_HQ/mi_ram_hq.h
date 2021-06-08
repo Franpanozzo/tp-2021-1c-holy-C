@@ -39,6 +39,7 @@ typedef struct {
 } tcb;
 
 
+void actualizarTripulante(t_paquete*);
 void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
@@ -53,16 +54,10 @@ void eliminarListaPCB(t_list*);
 void eliminarListaTCB(t_list*);
 void eliminarTCB(tcb* tcb);
 void liberarDoblesPunterosAChar(char**);
-
-
-/**
-	* @NAME: deserializarSegun
-	* @DESC: recibe un t_paquete* para deserializarlo al TAD que contiene el t_buffer*
-	* segun el tipoDeDato y operarlo como corresponda dentro del switch(nunca salir de ahi)
-	*/
+tcb* buscarTripulante(int tcbAActualizar,pcb* patotaDeTripu);
 void deserializarSegun(t_paquete*, int);
 void deserializarTripulante(t_paquete*,int);
-void asignarPatota(uint32_t, tcb*);
+pcb* buscarPatota(uint32_t);
 void asignarSiguienteTarea(tcb*);
 void mandarTarea(t_tarea* , int);
 

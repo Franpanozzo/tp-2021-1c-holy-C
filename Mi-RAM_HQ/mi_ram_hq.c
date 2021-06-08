@@ -119,12 +119,17 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 						deserializarTripulante(paquete,tripulanteSock);
 						break;
-			case SIGUIENTE_TAREA:
+
+			case ESTADO_TRIPULANTE:
+
+						actualizarTripulante(paquete);
+						break;
+
+			case SIGUIENTETAREA:
 			{
 					deserializarSolicitudTarea(paquete,tripulanteSock);
 					break;
 			}
-
 			default:
 
 					log_info(logMiRAM,"No se puede deserializar ese tipo de estructura negro \n");
@@ -133,6 +138,8 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		}
 	eliminarPaquete(paquete);
 }
+
+
 void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock){
 	uint32_t idPatota;
 	uint32_t idTripulante;
@@ -157,6 +164,7 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock){
 	enviarPaquete(paqueteTarea,tripulanteSock);
 
 }
+
 
 void setearSgteTarea(tcb *buscado){
 	t_list_iterator * iterator = list_iterator_create(buscado->patota->listaTareas);
@@ -248,8 +256,10 @@ void liberarDoblesPunterosAChar(char** arrayParametros) {
 	}
 
 	free(arrayParametros);
-
 }
+
+
+
 
 
 void deserializarInfoPCB(t_paquete* paquete) {
@@ -279,6 +289,75 @@ void deserializarInfoPCB(t_paquete* paquete) {
     unlock(mutexListaPCB);
 }
 
+
+void actualizarTripulante(t_paquete* paquete) {
+
+	uint32_t tcbAActualizar;
+
+	int offset=0;
+
+	uint32_t idPatota;
+
+	void* stream = paquete->buffer->stream;
+
+	memcpy(&(idPatota),stream,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	pcb* patotaDeTripu = buscarPatota(idPatota);
+
+	memcpy(&(tcbAActualizar),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	tcb* tcbEncontrado = buscarTripulante(tcbAActualizar,patotaDeTripu);
+
+	memcpy(&(tcbEncontrado->estado),stream + offset,sizeof(t_estado));
+	offset += sizeof(t_estado);
+
+	memcpy(&(tcbEncontrado->posX),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(tcbEncontrado->posY),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	log_info(logMiRAM,"Actualizado el tribulante de id %d de la  patota %d",tcbEncontrado->idTripulante, idPatota);
+
+}
+
+tcb* buscarTripulante(int tcbAActualizar,pcb* patotaDeTripu) {
+
+	bool idIgualA(tcb* tcbAComparar){
+
+			bool a;
+
+			a = tcbAComparar == tcbAActualizar && (tcbAComparar->patota == patotaDeTripu);
+
+			//log_info(logMiRAM,"Comparado con primer patota %d \n",a);
+
+			return a;
+		}
+
+		tcb* tripulanteCorrespondiente;
+
+		lock(mutexListaTCB);
+		tripulanteCorrespondiente = list_find(listaTCB,(void*) idIgualA);
+		unlock(mutexListaTCB);
+
+			if(tripulanteCorrespondiente == NULL){
+
+			log_error(logMiRAM,"No existe ese TCB negro\n");
+
+			exit(1);
+
+			}
+			else{
+
+			return tripulanteCorrespondiente;
+			// ASIGNAR TAREATRIPULANTE A LA PRIMERA POSICION DE LA LISTA DE LAS TAREAS DEL PCB
+
+			}
+}
+
+
 void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
@@ -306,7 +385,9 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d",nuevoTCB->idTripulante, idPatota);
 
-	asignarPatota(idPatota,nuevoTCB);
+	pcb* patotaCorrespondiente = buscarPatota(idPatota);
+
+	nuevoTCB->patota = patotaCorrespondiente;
 
 	log_info(logMiRAM,"Se le asigno la patota %d al tripulante %d",idPatota, nuevoTCB->idTripulante);
 
@@ -321,7 +402,8 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 	unlock(mutexListaTCB);
 }
 
-void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
+
+pcb* buscarPatota(uint32_t idPatotaBuscada) {
 
 	bool idIgualA(pcb* pcbAComparar){
 
@@ -342,14 +424,14 @@ void asignarPatota(uint32_t idPatotaBuscada,tcb* tripulante) {
 
 		if(patotaCorrespondiente == NULL){
 
-		log_info(logMiRAM,"No existe PCB para ese TCB negro\n");
+		log_error(logMiRAM,"No existe PCB para ese TCB negro\n");
 
 		exit(1);
 
 		}
 		else{
 
-		tripulante->patota = patotaCorrespondiente;
+		return patotaCorrespondiente;
 		// ASIGNAR TAREATRIPULANTE A LA PRIMERA POSICION DE LA LISTA DE LAS TAREAS DEL PCB
 
 		}
