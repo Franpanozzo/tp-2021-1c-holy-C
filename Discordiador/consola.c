@@ -32,13 +32,13 @@ void leerConsola(){
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
 			sem_post(&semPlanificacion);//le permites arrancar a planificar las listas/colas
-			planificacion_pausada=0;
+			//planificacion_pausada = 0;
 
 			log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
 					cursor ++;
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-				planificacion_pausada=1;
+				//planificacion_pausada = 1;
 				log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
 						cursor ++;
 			}
