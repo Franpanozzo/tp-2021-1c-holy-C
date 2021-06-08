@@ -43,9 +43,9 @@ t_queue* colaBlocked;
 t_queue* colaNew;
 t_queue* colaReady;
 
-pthread_mutex_t mutexListaNew;
+pthread_mutex_t mutexColaNew;
 pthread_mutex_t mutexColaReady;
-pthread_mutex_t mutexListaExec;
+pthread_mutex_t mutexColaExec;
 
 sem_t semPlanificacion;
 sem_t semaforoPlanificadorInicio;
@@ -77,10 +77,13 @@ void actualizar(t_estado, t_queue*);
 void hiloPlani();
 void hilitoSabo();
 void actualizar(t_estado, t_queue*);
-t_tripulante* elTripuMasCerca(t_coordenadas);
+//t_tripulante* elTripuMasCerca(t_coordenadas);
 int calculoCiclosExec(t_tripulante*);
 int diferencia(uint32_t, uint32_t);
 void desplazarse(t_tripulante*);
+void actualizarEstadoEnRAM(t_tripulante*);
+int calcularCiclosExec(t_tripulante*);
+int calculoMovimiento(t_tripulante*);
 
 
 #endif
