@@ -302,7 +302,6 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 	printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
 
 	free(a_enviar);
-	//hay que tener cuidado, definir donde hacer free's y que seamos consitente en el tp
 	eliminarPaquete(paquete);
 }
 

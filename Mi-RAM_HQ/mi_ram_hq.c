@@ -182,22 +182,16 @@ void setearSgteTarea(tcb *buscado){
 void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
     char* string = malloc(tamanio);
-
     memcpy(string,stream,tamanio);
 
     char** arrayDeTareas = string_split(string,"\n");
 
-    int i = 0;
     //strcmp(arrayDeTareas[i], "") != 0
-    while(arrayDeTareas[i] != NULL){
-
+    for(int i =0; arrayDeTareas[i] != NULL; i++){
     	log_info(logMiRAM,"Procesando... %s\n",arrayDeTareas[i]);
-
         armarTarea(arrayDeTareas[i],listaTareas);
-
-        i++;
-
     }
+
     t_tarea * tareaFinal = malloc(sizeof(t_tarea));
     tareaFinal->nombreTarea = strdup("TAREA_NULA");
 	list_add(listaTareas,tareaFinal);
@@ -265,16 +259,12 @@ void liberarDoblesPunterosAChar(char** arrayParametros) {
 void deserializarInfoPCB(t_paquete* paquete) {
 
 	pcb* nuevoPCB = malloc(sizeof(pcb));
-
 	void* stream = paquete->buffer->stream;
-
 	uint32_t tamanio;
-
 	int offset = 0;
 
 	memcpy(&(nuevoPCB->pid),stream,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-
 	memcpy(&(tamanio),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
@@ -283,9 +273,7 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	deserializarTareas(stream + offset, nuevoPCB->listaTareas, tamanio);
 
 	lock(mutexListaPCB);
-
 	list_add(listaPCB,nuevoPCB);
-
     unlock(mutexListaPCB);
 }
 
