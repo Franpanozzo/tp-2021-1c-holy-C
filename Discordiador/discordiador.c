@@ -43,9 +43,9 @@ int main() {
 	pthread_mutex_init(&mutexColaExec, NULL);
 	pthread_mutex_init(&mutexPlanificadorFin, NULL);
 	//
-	int tripulantes = 4;
+	int tripulantes = 3;
 	t_coordenadas coordenadas[tripulantes ];
-	for(int i=0; i<4;i++){
+	for(int i=0; i<tripulantes;i++){
 		coordenadas[i].posX = i;
 		coordenadas[i].posY = i + 1;
 	}
@@ -77,10 +77,10 @@ void hiloPlani(){
 			}
 
 
-			//actualizar(EXEC, colaExec);
-			//actualizar(BLOCKED, colaBlocked);
-			//actualizar(NEW, colaNew);
-			//actualizar(READY, colaReady);
+			actualizar(EXEC, colaExec);
+			actualizar(BLOCKED, colaBlocked);
+			actualizar(NEW, colaNew);
+			actualizar(READY, colaReady);
 
 /*
 			if(haySabotaje){ // HAY SABOTAJE
@@ -248,9 +248,11 @@ int calcularCiclosExec(t_tripulante* tripulante){
 
 void actualizarEstadoEnRAM(t_tripulante* tripulante){
 
+	log_info(logDiscordiador,"Se manda a actualizar el tripulante de ID: %d",tripulante->idTripulante);
 	int socketRam = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 	t_paquete* paqueteAenviar = armarPaqueteCon(tripulante,ESTADO_TRIPULANTE);
 	enviarPaquete(paqueteAenviar,socketRam);
+	close(socketRam);
 
 }
 

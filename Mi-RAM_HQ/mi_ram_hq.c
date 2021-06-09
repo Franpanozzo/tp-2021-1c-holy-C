@@ -25,7 +25,7 @@ int main(void) {
     //Abro un thread manejar las conexiones
     pthread_t manejo_tripulante;
     pthread_create(&manejo_tripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
-    pthread_join(manejo_tripulante, (void*) NULL);
+    pthread_join(manejo_tripulante, (void**) NULL);
 
     //falta hacer funcion para destruir las tareas de la lista de tareas del pcb
     //falta hacer funcion para destruir los pcb de las lista de pcbs
@@ -138,6 +138,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 		}
 	eliminarPaquete(paquete);
+	close(tripulanteSock);
 }
 
 
@@ -283,7 +284,7 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
 void actualizarTripulante(t_paquete* paquete) {
 
-	uint32_t tcbAActualizar;
+	uint32_t idTCBAActualizar;
 
 	int offset=0;
 
@@ -296,10 +297,10 @@ void actualizarTripulante(t_paquete* paquete) {
 
 	pcb* patotaDeTripu = buscarPatota(idPatota);
 
-	memcpy(&(tcbAActualizar),stream + offset,sizeof(uint32_t));
+	memcpy(&(idTCBAActualizar),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	tcb* tcbEncontrado = buscarTripulante(tcbAActualizar,patotaDeTripu);
+	tcb* tcbEncontrado = buscarTripulante(idTCBAActualizar,patotaDeTripu);
 
 	memcpy(&(tcbEncontrado->estado),stream + offset,sizeof(t_estado));
 	offset += sizeof(t_estado);
@@ -314,13 +315,14 @@ void actualizarTripulante(t_paquete* paquete) {
 
 }
 
-tcb* buscarTripulante(int tcbAActualizar,pcb* patotaDeTripu) {
+
+tcb* buscarTripulante(int idTCBAActualizar,pcb* patotaDeTripu) {
 
 	bool idIgualA(tcb* tcbAComparar){
 
 			bool a;
 
-			a = tcbAComparar->patota == patotaDeTripu ;
+			a = tcbAComparar->idTripulante == idTCBAActualizar && (tcbAComparar->patota == patotaDeTripu) ;
 
 			//log_info(logMiRAM,"Comparado con primer patota %d \n",a);
 
@@ -402,7 +404,7 @@ pcb* buscarPatota(uint32_t idPatotaBuscada) {
 
 		a = pcbAComparar->pid == idPatotaBuscada;
 
-		log_info(logMiRAM,"Comparado con primer patota %d \n",a);
+		log_info(logMiRAM,"Comparado patota %d con patota de lista %d \n",pcbAComparar->pid,idPatotaBuscada);
 
 		return a;
 	}
@@ -447,7 +449,6 @@ void mandarTarea(t_tarea* tarea, int socketTrip) {
 	log_info(logMiRAM,"Tarea enviada\n");
 
 	enviarPaquete(paqueteEnviado, socketTrip);
-
 
 }
 
