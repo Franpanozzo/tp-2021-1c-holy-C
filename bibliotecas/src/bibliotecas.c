@@ -125,6 +125,11 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			return sizeof(uint32_t) * 4 + sizeof(t_estado);
 		}
 
+		case EXPULSAR:
+		{
+			return sizeof(uint32_t) * 4 + sizeof(t_estado);
+		}
+
 		case ESTADO_TRIPULANTE:
 		{
 			return sizeof(uint32_t) * 4 + sizeof(t_estado);
@@ -136,10 +141,12 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			t_tarea* tarea = (t_tarea*) estructura;
 			return strlen(tarea->nombreTarea) + 1 + sizeof(uint32_t) * 5;
 		}
+
 		case SIGUIENTE_TAREA:
 		{
 			return sizeof(uint32_t) * 2;
 		}
+
 		case STRING:
 		{
 			char * string = (char *) estructura;
@@ -255,6 +262,10 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 				return serializarPatota(stream,estructura,offset);
 
 		case TRIPULANTE:
+
+				return serializarTripulante(stream,estructura,offset);
+
+		case EXPULSAR:
 
 				return serializarTripulante(stream,estructura,offset);
 
