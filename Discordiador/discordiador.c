@@ -469,13 +469,13 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 
 	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-	log_info(logDiscordiador, "tripulanteId: %d me conecte a MIRAM", tripulante->idPatota);
+	log_info(logDiscordiador, "tripulanteId: %d me conecte a MIRAM", tripulante->idTripulante);
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
 	enviarPaquete(paqueteEnviado, miRAMsocket);
-	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal", tripulante->idPatota);
+	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal", tripulante->idTripulante);
 
 	recibirTareaDeMiRAM(miRAMsocket, tripulante);
-	log_info(logDiscordiador, "tripulanteId: %d recibi tarea de MIRAM", tripulante->idPatota);
+	log_info(logDiscordiador, "tripulanteId: %d recibi tarea de MIRAM", tripulante->idTripulante);
 	close(miRAMsocket);
 }
 

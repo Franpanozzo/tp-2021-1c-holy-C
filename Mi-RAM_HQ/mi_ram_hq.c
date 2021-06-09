@@ -111,22 +111,23 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 	switch(paquete->codigo_operacion){
 
 			case PATOTA:
-
+						log_info(logMiRAM,"Voy a deserializar una patota");
 						deserializarInfoPCB(paquete);
 						break;
 
 			case TRIPULANTE:
-
+						log_info(logMiRAM,"Voy a deserializar un tripulante");
 						deserializarTripulante(paquete,tripulanteSock);
 						break;
 
 			case ESTADO_TRIPULANTE:
-
+						log_info(logMiRAM,"Voy a actualizar un tripulante");
 						actualizarTripulante(paquete);
 						break;
 
 			case SIGUIENTE_TAREA:
 			{
+					log_info(logMiRAM,"Voy a asignarle la prox tare a un tripulante");
 					deserializarSolicitudTarea(paquete,tripulanteSock);
 					break;
 			}
@@ -188,8 +189,10 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
     //strcmp(arrayDeTareas[i], "") != 0
     for(int i =0; arrayDeTareas[i] != NULL; i++){
+
     	log_info(logMiRAM,"Procesando... %s\n",arrayDeTareas[i]);
         armarTarea(arrayDeTareas[i],listaTareas);
+
     }
 
     t_tarea * tareaFinal = malloc(sizeof(t_tarea));
