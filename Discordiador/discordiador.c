@@ -228,6 +228,192 @@ void hiloTripu(t_tripulante* tripulante){
 		sem_wait(&semaforoPlanificadorFin);
 	}
 }
+
+char* traducirEstado(t_estado estado){
+
+	char* string;
+
+	switch(estado){
+
+		case NEW:
+
+				{
+				string = strdup("New");
+				break;
+				}
+
+		case READY:
+
+				{
+				string = strdup("Ready");
+				break;
+				}
+
+		case EXEC:
+
+				{
+				string = strdup("Exec");
+				break;
+				}
+
+		case BLOCKED:
+
+				{
+				string = strdup("Blocked");
+				break;
+				}
+
+		case END:
+
+				{
+				string = strdup("End");
+				break;
+				}
+
+		case SABOTAJE:
+
+				{
+				string = strdup("Sabotaje");
+				break;
+				}
+
+	}
+
+	return string;
+}
+
+
+void listarTripulante(){
+
+	printf("Estado de la nave: %d \n", system("date"));
+
+	iterarCola(colaNew);
+	iterarCola(colaReady);
+	iterarCola(colaExec);
+	iterarCola(colaBlocked);
+
+}
+
+void iterarCola(t_queue* cola){
+
+	t_list_iterator* list_iterator = list_iterator_create(cola->elements);
+
+	while(list_iterator_has_next(list_iterator)) {
+
+		t_tripulante* tripulante = list_iterator_next(list_iterator);
+
+		char* status = traducirEstado(tripulante->estado);
+
+		printf("Tripulante: %d    Patota: %d    Status:%s    \n", tripulante->idTripulante, tripulante->idPatota, status);
+
+		free(status);
+	}
+
+	list_iterator_destroy(list_iterator);
+
+}
+
+void pausarPlanificacion(){
+
+	if(planificacion_play == 1){
+
+		planificacion_play = 0;
+
+	}
+
+	if(planificacion_play == 0){
+
+		log_info(logDiscordiador,"PLANIFICACION PAUSADA");
+
+	}
+
+	else{
+
+		log_info(logDiscordiador,"La planificacion tiene cualquier valor negro");
+
+	}
+}
+
+
+t_eliminado* deleteTripulante(uint32_t id, t_queue* cola){
+
+	t_eliminado* eliminado = malloc(sizeof(t_eliminado));
+
+	t_list_iterator* list_iterator = list_iterator_create(cola->elements);
+
+		while(list_iterator_has_next(list_iterator)) {
+
+			eliminado->tripulante = list_iterator_next(list_iterator);
+
+			if(eliminado->tripulante->idTripulante == id){
+
+				eliminado->tripulante->estado = BLOCKED;
+
+				queue_push(colaBlocked,eliminado->tripulante);
+
+				eliminado->cantidad++;
+			}
+
+		}
+
+		list_iterator_destroy(list_iterator);
+
+		return eliminado;
+
+}
+
+
+void eliminarTripulante(uint32_t id){
+
+	pausarPlanificacion();
+
+	t_eliminado* vector[2];
+	int resultado = 0;
+	int flag = 0;
+
+	vector[0]= deleteTripulante(id,colaNew);
+	vector[1]= deleteTripulante(id,colaReady);
+	vector[2]= deleteTripulante(id,colaExec);
+
+	for(int i=0; i<3; i++){
+		resultado += vector[i]->cantidad;
+		if(vector[i]->cantidad == 1){
+			flag = i;
+		}
+	}
+
+	if(resultado == 0){
+
+		log_info(logDiscordiador,"No se ha encontrado un tripulante con el Id: %d \n",id);
+
+		planificacion_play = 1;
+
+	}
+	if(resultado == 1){
+
+		int socketMiRAM = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+
+		t_paquete* paquete = armarPaqueteCon(vector[flag],EXPULSAR);
+
+		enviarPaquete(paquete,socketMiRAM);
+
+		log_info(logDiscordiador,"Se ha eliminado el tripulante con el Id: %d \n",id);
+
+		planificacion_play = 1;
+
+	}
+
+	else{
+
+		log_info(logDiscordiador,"Esta funcionando mal eliminarTripulante negro \n");
+		exit(1);
+
+	}
+
+}
+
+
+
 int calculoMovimiento(t_tripulante* tripulante){
 
     int movimientosEnX = fabs(tripulante->instruccionAejecutar->posX - tripulante->posX);
@@ -246,6 +432,7 @@ int calcularCiclosExec(t_tripulante* tripulante){
 	}
 }
 
+
 void actualizarEstadoEnRAM(t_tripulante* tripulante){
 
 	log_info(logDiscordiador,"Se manda a actualizar el tripulante de ID: %d",tripulante->idTripulante);
@@ -255,6 +442,7 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 	close(socketRam);
 
 }
+
 
 void actualizar(t_estado estado, t_queue* cola){
 	t_queue* aux = queue_create();
@@ -430,12 +618,12 @@ void pasarDeEstado(t_tripulante* tripulante){
 		case EXEC:
 
 			queue_push(colaExec, &tripulante);
-			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
+			log_info(logDiscordiador,"El tripulante %d paso a EXEC \n", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
 			queue_push(colaBlocked, &tripulante);
-			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
+			log_info(logDiscordiador,"El tripulante %d paso a BLOCKED \n", tripulante->idTripulante);
 			break;
 
 		case END:

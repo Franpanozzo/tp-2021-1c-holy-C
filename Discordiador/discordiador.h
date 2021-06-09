@@ -60,6 +60,13 @@ typedef struct{
 
 }t_bloqueado;
 
+typedef struct{
+
+	int cantidad;
+	t_tripulante* tripulante;
+
+}t_eliminado;
+
 
 void crearConfig();
 void eliminarPatota(t_patota*);
@@ -85,6 +92,12 @@ void desplazarse(t_tripulante*);
 void actualizarEstadoEnRAM(t_tripulante*);
 int calcularCiclosExec(t_tripulante*);
 int calculoMovimiento(t_tripulante*);
+void listarTripulante();
+char* traducirEstado(t_estado);
+void iterarCola(t_queue*);
+void pausarPlanificacion();
+t_eliminado* deleteTripulante(uint32_t, t_queue*);
+void eliminarTripulante(uint32_t);
 
 
 #endif
