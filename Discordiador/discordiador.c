@@ -20,6 +20,7 @@ int main() {
 	idTripulante = 0;
 	idPatota = 0;
 	gradoMultiprocesamiento = 1;
+	quantum = -1;
 
 	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/logDiscordiador.log","Discordiador",1);
 
@@ -50,7 +51,8 @@ int main() {
 		coordenadas[i].posX = i;
 		coordenadas[i].posY = i + 1;
 	}
-	iniciarPatota(coordenadas, "GENERAR_OXIGENO 4;5;6;7\nCONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2", tripulantes );
+	//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
+	iniciarPatota(coordenadas, "GENERAR_OXIGENO 4;2;3;7", tripulantes );
 	pthread_t planificador;
 	pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
 	pthread_join(planificador, (void**) NULL);
@@ -64,7 +66,6 @@ int main() {
 
 
 
-
 void hiloPlani(){
 	while(1){
 		if(planificacion_play){
@@ -72,8 +73,8 @@ void hiloPlani(){
 			// hay q rodear al for con un mutex por la lectura de totalTripus?
 			for(int i=0; i <totalTripus; i++){
 				sem_wait(&semaforoPlanificadorInicio);
-				log_info(logDiscordiador,"Planificacion semaforo inicio");
 			}
+			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 
 
 			actualizar(EXEC, colaExec);
@@ -105,8 +106,8 @@ void hiloPlani(){
 
 			for(int i=0; i<totalTripus; i++){
 				sem_post(&semaforoPlanificadorFin);
-				log_info(logDiscordiador,"Planificacion semaforo fin");
 			}
+			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
 		}
 	}
 }
@@ -140,15 +141,15 @@ void hiloTripu(t_tripulante* tripulante){
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
 				recibirPrimerTareaDeMiRAM(tripulante);
 				tripulante->estado = READY;
-				sem_post(&semaforoPlanificadorInicio);
 				break;
 			case READY:
-				log_info(logDiscordiador,"tripulanteId %d: estoy en ready", tripulante->idTripulante);
-				if(ciclosExec == 0)
-				ciclosExec = calcularCiclosExec(tripulante);
+				if(ciclosExec == 0){
+					ciclosExec = calcularCiclosExec(tripulante);
+				}
 				quantumPendiente = quantum;
+				log_info(logDiscordiador,"tripulanteId %d: estoy en ready con %d ciclos exec",
+						tripulante->idTripulante, ciclosExec);
 				tripulante->estado = EXEC;
-				sem_post(&semaforoPlanificadorInicio);
 				break;
 			case EXEC:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en exec", tripulante->idTripulante);
@@ -176,11 +177,10 @@ void hiloTripu(t_tripulante* tripulante){
 						ciclosExec = calcularCiclosExec(tripulante);
 					}
 				}
-				sem_post(&semaforoPlanificadorInicio);
 				break;
 			case BLOCKED:
-				log_info(logDiscordiador,"tripulanteId %d: estoy en block", tripulante->idTripulante);
 				if(tripulante->idTripulante == idTripulanteBlocked){
+					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando", tripulante->idTripulante);
 					sleep(1);
 					ciclosBlocked --;
 					if(ciclosBlocked == 0){
@@ -188,7 +188,7 @@ void hiloTripu(t_tripulante* tripulante){
 						tripulante->estado = READY;
 					}
 				}
-				sem_post(&semaforoPlanificadorInicio);
+
 				break;
 			case SABOTAJE: // para algunos es como un bloqueo donde no se hace nada
 /*				if(tripu->idTripulante == tripulanteDesabotaje->idTripulante){
@@ -217,16 +217,21 @@ void hiloTripu(t_tripulante* tripulante){
 			case END:
 				totalTripus--; //aca se esta haciendo escritura, en el plani se hace lectura?
 				tripuVivo = 0;
+				log_info(logDiscordiador,"tripulanteId %d: estoy en end, YA TERMINE", tripulante->idTripulante);
 				// el unico caso donde no se hace un post al inicio del plani
 				// esta asi porq como arriba se hace un totalTripu --, el wait
 				// del planiInicio va a hacer una iteracion menos
+				//sem_post(&semaforoPlanificadorInicio);
 				break;
 		}
-		actualizarEstadoEnRAM(tripulante);
-		log_info(logDiscordiador,"tripulanteId %d: esperando semaforo", tripulante->idTripulante);
-		sem_wait(&semaforoPlanificadorFin);
-		log_info(logDiscordiador,"tripulanteId %d: termine de esperar el fin de la planificacion",
-				tripulante->idTripulante);
+		if(tripulante->estado != END){
+			sem_post(&semaforoPlanificadorInicio);
+			log_info(logDiscordiador,"tripulanteId %d: ESPERANDO QUE EL PLANI TERMINE",
+					tripulante->idTripulante);
+			sem_wait(&semaforoPlanificadorFin);
+			log_info(logDiscordiador,"tripulanteId %d: YA TERMINO EL PLANI, AHORA CONTINUO",
+					tripulante->idTripulante);
+		}
 	}
 }
 
@@ -254,11 +259,11 @@ int calcularCiclosExec(t_tripulante* tripulante){
 
 void actualizarEstadoEnRAM(t_tripulante* tripulante){
 
-	log_info(logDiscordiador,"Se manda a actualizar el tripulante de ID: %d",tripulante->idTripulante);
+//	log_info(logDiscordiador,"Se manda a actualizar el tripulante de ID: %d",tripulante->idTripulante);
 	int socketRam = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 	t_paquete* paqueteAenviar = armarPaqueteCon(tripulante,ESTADO_TRIPULANTE);
-	log_info(logDiscordiador,"El tripulante de ID %d, esta enviando paquete con cod_op %d",
-			tripulante->idTripulante, paqueteAenviar->codigo_operacion);
+//	log_info(logDiscordiador,"El tripulante de ID %d, esta enviando paquete con cod_op %d",
+//			tripulante->idTripulante, paqueteAenviar->codigo_operacion);
 	enviarPaquete(paqueteAenviar,socketRam);
 	close(socketRam);
 
@@ -268,20 +273,18 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 void actualizar(t_estado estado, t_queue* cola){
 	t_queue* aux = queue_create();
 	t_tripulante* tripulante;
-	int tamanioInicialCola = queue_size(cola);
-	log_info(logDiscordiador,"El tamanio inicial de la cola de %d es de %d", estado, tamanioInicialCola);
-//	for(int i=0; i<tamanioInicialCola && queue_size(colaExec) <= gradoMultiprocesamiento; i++){
-
-
-	while(queue_is_empty(cola) == 0 && queue_size(colaExec) <= gradoMultiprocesamiento){
+//	int tamanioInicialCola = queue_size(cola);
+//	log_info(logDiscordiador,"El tamanio inicial de la cola de %d es de %d", estado, tamanioInicialCola);
+	while(queue_is_empty(cola) == 0){
 		tripulante = (t_tripulante*) queue_pop(cola);
-		log_info(logDiscordiador,"El tripulante de ID %d (que deberia tener id) tiene estado %d",
-				tripulante->idTripulante, tripulante->estado);
-		if(tripulante == NULL){
-			log_info(logDiscordiador,"----------Hay un problema con el ultimo cosa de la cola-----------");
+//		log_info(logDiscordiador,"El tripulante de ID %d (que deberia tener id) tiene estado %d",
+//				tripulante->idTripulante, tripulante->estado);
+		if(queue_size(colaExec) == gradoMultiprocesamiento && tripulante->estado == EXEC){
+			tripulante->estado = estado;
 		}
-		if(tripulante->estado != estado && tripulante->estado >= NEW && tripulante->estado <= SABOTAJE){
-			pasarDeEstado(tripulante);
+		if(tripulante->estado != estado && tripulante->estado >= NEW &&
+				tripulante->estado <= SABOTAJE ){
+			pasarDeCola(tripulante);
 		}
 		else{
 			queue_push(aux, &tripulante);
@@ -604,11 +607,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	queue_push(colaNew,(void*)tripulante);
 	unlock(mutexColaNew);
 
-	log_info(logDiscordiador,"---- LAS COLAS EMPIEZAN CON UN TAMANIO DE %d", queue_size(colaNew));
-
 	log_info(logDiscordiador,"Se creo el tripulante numero %d\n",tripulante->idTripulante);
-
-
 
 	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripu, (void*) tripulante);
 	pthread_detach(_hiloTripulante);
@@ -626,24 +625,24 @@ int esIO(char* tarea){
 }
 
 
-void pasarDeEstado(t_tripulante* tripulante){
+void pasarDeCola(t_tripulante* tripulante){
 
 
 	switch(tripulante->estado){
 		case READY:
 			queue_push(colaReady, &tripulante);
-			log_info(logDiscordiador,"El tripulante %d paso a READY \n", tripulante->idTripulante);
+			log_info(logDiscordiador,"El tripulante %d paso a COLA READY \n", tripulante->idTripulante);
 			break;
 
 		case EXEC:
 
 			queue_push(colaExec, &tripulante);
-			log_info(logDiscordiador,"El tripulante %d paso a EXEC \n", tripulante->idTripulante);
+			log_info(logDiscordiador,"El tripulante %d paso a COLA EXEC \n", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
 			queue_push(colaBlocked, &tripulante);
-			log_info(logDiscordiador,"El tripulante %d paso a BLOCKED \n", tripulante->idTripulante);
+			log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED \n", tripulante->idTripulante);
 			break;
 
 		case END:
@@ -679,10 +678,10 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 
 	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-	log_info(logDiscordiador, "tripulanteId: %d me conecte a MIRAM", tripulante->idTripulante);
+//	log_info(logDiscordiador, "tripulanteId: %d me conecte a MIRAM", tripulante->idTripulante);
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
 	enviarPaquete(paqueteEnviado, miRAMsocket);
-	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal", tripulante->idTripulante);
+//	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal", tripulante->idTripulante);
 
 	recibirTareaDeMiRAM(miRAMsocket, tripulante);
 	log_info(logDiscordiador, "tripulanteId: %d recibi la tarea %s de MIRAM",

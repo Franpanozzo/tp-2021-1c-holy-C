@@ -72,7 +72,7 @@ void crearConfig();
 void eliminarPatota(t_patota*);
 void iniciarTripulante(t_coordenadas, uint32_t);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
-void pasarDeEstado(t_tripulante*);
+void pasarDeCola(t_tripulante*);
 void hiloTripulante(t_tripulante* );
 t_patota* asignarDatosAPatota(char*);
 char* deserializarString (t_paquete*);
