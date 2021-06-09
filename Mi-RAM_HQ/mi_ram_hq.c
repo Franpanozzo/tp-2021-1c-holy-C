@@ -106,35 +106,38 @@ void manejarTripulante(int *tripulanteSock) {
 
 void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
-	log_info(logMiRAM,"Deserializando...");
+	log_info(logMiRAM,"Deserializando el cod_op %d", paquete->codigo_operacion);
 
 	switch(paquete->codigo_operacion){
+		case PATOTA:
+			log_info(logMiRAM,"Voy a deserializar una patota");
+			deserializarInfoPCB(paquete);
+			break;
 
-			case PATOTA:
-						log_info(logMiRAM,"Voy a deserializar una patota");
-						deserializarInfoPCB(paquete);
-						break;
+		case TRIPULANTE:
+			log_info(logMiRAM,"Voy a deserializar un tripulante");
+			deserializarTripulante(paquete,tripulanteSock);
+			break;
 
-			case TRIPULANTE:
-						log_info(logMiRAM,"Voy a deserializar un tripulante");
-						deserializarTripulante(paquete,tripulanteSock);
-						break;
+		case EXPULSAR:
+			log_info(logMiRAM,"Voy a expulsar un tripulante, todavia no esta emplementada");
+//			deserializarTripulante(paquete,tripulanteSock);
+			break;
 
-			case ESTADO_TRIPULANTE:
-						log_info(logMiRAM,"Voy a actualizar un tripulante");
-						actualizarTripulante(paquete);
-						break;
+		case ESTADO_TRIPULANTE:
+			log_info(logMiRAM,"Voy a actualizar un tripulante");
+			actualizarTripulante(paquete);
+			break;
 
-			case SIGUIENTE_TAREA:
-			{
-					log_info(logMiRAM,"Voy a asignarle la prox tare a un tripulante");
-					deserializarSolicitudTarea(paquete,tripulanteSock);
-					break;
-			}
-			default:
-
-					log_info(logMiRAM,"No se puede deserializar ese tipo de estructura negro \n");
-					exit(1);
+		case SIGUIENTE_TAREA:
+		{
+			log_info(logMiRAM,"Voy a asignarle la prox tare a un tripulante");
+			deserializarSolicitudTarea(paquete,tripulanteSock);
+			break;
+		}
+		default:
+			log_info(logMiRAM,"No se puede deserializar ese tipo de estructura negro \n");
+			exit(1);
 
 		}
 	eliminarPaquete(paquete);
