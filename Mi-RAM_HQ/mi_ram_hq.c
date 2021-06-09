@@ -73,7 +73,7 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
 
-		pthread_detach(t);
+		pthread_join(t, (void**) NULL);
 
     }
 
