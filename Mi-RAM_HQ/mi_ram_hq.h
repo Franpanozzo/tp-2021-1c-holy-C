@@ -39,6 +39,7 @@ typedef struct {
 } tcb;
 
 
+void mandarConfirmacionDisc(char* , int);
 void actualizarTripulante(t_paquete*);
 void atenderTripulantes(int*);
 int esperarTripulante(int);

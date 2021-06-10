@@ -99,6 +99,7 @@ void iterarCola(t_queue*);
 void pausarPlanificacion();
 t_eliminado* deleteTripulante(uint32_t, t_queue*);
 void eliminarTripulante(uint32_t);
+void esperarConfirmacionDeRAM(int);
 
 
 #endif

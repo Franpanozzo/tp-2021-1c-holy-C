@@ -54,7 +54,7 @@ int main() {
 		coordenadas[i].posY = i + 1;
 	}
 	//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
-	iniciarPatota(coordenadas, "GENERAR_OXIGENO 4;2;3;7", tripulantes );
+	iniciarPatota(coordenadas, "GENERAR_OXIGENO 4;2;3;7\nGENERAR_COMIDA 2;2;3;7", tripulantes );
 	pthread_t planificador;
 	pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
 	pthread_join(planificador, (void**) NULL);
@@ -245,6 +245,7 @@ void hiloTripu(t_tripulante* tripulante){
 		}
 		if(tripulante->estado != END){
 			actualizarEstadoEnRAM(tripulante);
+
 			sem_post(&semaforoPlanificadorInicio);
 			lock(mutexLogDiscordiador);
 			log_info(logDiscordiador,"tripulanteId %d: ESPERANDO QUE EL PLANI TERMINE",
@@ -289,7 +290,12 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 //	log_info(logDiscordiador,"El tripulante de ID %d, esta enviando paquete con cod_op %d",
 //			tripulante->idTripulante, paqueteAenviar->codigo_operacion);
 	enviarPaquete(paqueteAenviar,socketRam);
+
+	esperarConfirmacionDeRAM(socketRam);
+
 	close(socketRam);
+
+
 
 }
 
@@ -606,7 +612,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 	t_paquete* paquete = armarPaqueteCon((void*) patota,PATOTA);
 	enviarPaquete(paquete,server_socket);
 
-
+	esperarConfirmacionDeRAM(server_socket);
 
 	log_info(logDiscordiador,"creando patota, con %d tripulantes", cantidadTripulantes);
 
@@ -617,6 +623,24 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 
 	//eliminarPatota(patota);
 	close(server_socket);
+}
+
+
+void esperarConfirmacionDeRAM(int server_socket) {
+
+	t_paquete* paqueteRecibido = recibirPaquete(server_socket);
+
+	char* mensajeConfirmacion = (char*) paqueteRecibido->buffer->stream;
+
+	if(paqueteRecibido->codigo_operacion == STRING && string_contains(mensajeConfirmacion,"OK")){
+		log_info(logDiscordiador, "Nos llego la confirmacion de MI-RAM de: %s", mensajeConfirmacion);
+	}
+	else {
+		log_error(logDiscordiador,"Nunca llego la confirmacion de RAM");
+		exit(1);
+	}
+
+	eliminarPaquete(paqueteRecibido);
 }
 
 
