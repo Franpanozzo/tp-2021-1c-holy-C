@@ -43,6 +43,7 @@ int main() {
 	pthread_mutex_init(&mutexColaNew, NULL);
 	pthread_mutex_init(&mutexColaReady, NULL);
 	pthread_mutex_init(&mutexColaExec, NULL);
+	pthread_mutex_init(&mutexColaBlocked, NULL);
 	pthread_mutex_init(&mutexPlanificadorFin, NULL);
 	//
 	int tripulantes = 3;
@@ -56,6 +57,7 @@ int main() {
 	pthread_t planificador;
 	pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
 	pthread_join(planificador, (void**) NULL);
+
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
@@ -77,10 +79,19 @@ void hiloPlani(){
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 
 
+			lock(mutexColaExec);
 			actualizar(EXEC, colaExec);
+			unlock(mutexColaExec);
+			lock(mutexColaBlocked);
 			actualizar(BLOCKED, colaBlocked);
+			unlock(mutexColaBlocked);
+			lock(mutexColaNew);
 			actualizar(NEW, colaNew);
+			unlock(mutexColaNew);
+			lock(mutexColaReady);
 			actualizar(READY, colaReady);
+			unlock(mutexColaReady);
+
 
 /*
 			if(haySabotaje){ // HAY SABOTAJE
@@ -152,8 +163,8 @@ void hiloTripu(t_tripulante* tripulante){
 				tripulante->estado = EXEC;
 				break;
 			case EXEC:
-				log_info(logDiscordiador,"tripulanteId %d: estoy en exec", tripulante->idTripulante);
 				sleep(1);
+				log_info(logDiscordiador,"tripulanteId %d: estoy en exec", tripulante->idTripulante);
 				ciclosExec --;
 				quantumPendiente--;
 				if(ciclosExec > 0 && quantumPendiente != 0){
@@ -221,7 +232,7 @@ void hiloTripu(t_tripulante* tripulante){
 				// el unico caso donde no se hace un post al inicio del plani
 				// esta asi porq como arriba se hace un totalTripu --, el wait
 				// del planiInicio va a hacer una iteracion menos
-				//sem_post(&semaforoPlanificadorInicio);
+				sem_post(&semaforoPlanificadorInicio);
 				break;
 		}
 		if(tripulante->estado != END){
@@ -272,27 +283,25 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 
 //actualizar(EXEC, colaExec);
 void actualizar(t_estado estado, t_queue* cola){
-	t_queue* aux = queue_create();
+
 	t_tripulante* tripulante;
 	int tamanioInicialCola = queue_size(cola);
 	log_info(logDiscordiador,"------El tamanio inicial de la cola de %d es de %d-----", estado, tamanioInicialCola);
-	while(queue_is_empty(cola) !=1){
+	for(int i=0; i<tamanioInicialCola; i++){
 		tripulante = (t_tripulante*) queue_pop(cola);
 //		log_info(logDiscordiador,"El tripulante de ID %d (que deberia tener id) tiene estado %d",
 //				tripulante->idTripulante, tripulante->estado);
-		if(queue_size(colaExec) >= gradoMultiprocesamiento && tripulante->estado == EXEC){
-			tripulante->estado = estado;
-		}
-		if(tripulante->estado != estado && tripulante->estado >= NEW &&
-				tripulante->estado <= SABOTAJE ){
+		//if(queue_size(colaExec) >= gradoMultiprocesamiento && tripulante->estado == EXEC){
+			//tripulante->estado = estado;
+		//}
+		if(tripulante->estado != estado){
 			pasarDeCola(tripulante);
 		}
 		else{
-			queue_push(aux, &tripulante);
+			queue_push(cola, &tripulante);
 		}
 	}
-	cola = aux;
-	aux = NULL;
+
 }
 
 //t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
