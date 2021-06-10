@@ -73,8 +73,8 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
 
-		//pthread_detach(t);
-		pthread_join(t, (void**) NULL);
+		pthread_detach(t);
+		//pthread_join(t, (void**) NULL);
     }
 
 }
@@ -110,12 +110,14 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 	switch(paquete->codigo_operacion){
 		case PATOTA:
-			log_info(logMiRAM,"Voy a deserializar una patota");
+			//log_info(logMiRAM,"Voy a deserializar una patota");
 			deserializarInfoPCB(paquete);
+			mandarConfirmacionDisc("PATOTA CREADA EN MEMORIA -- OK", tripulanteSock);
 			break;
 
 		case TRIPULANTE:
 			log_info(logMiRAM,"Voy a deserializar un tripulante");
+
 			deserializarTripulante(paquete,tripulanteSock);
 			break;
 
@@ -127,6 +129,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		case ESTADO_TRIPULANTE:
 			log_info(logMiRAM,"Voy a actualizar un tripulante");
 			actualizarTripulante(paquete);
+			mandarConfirmacionDisc("TCB ACTAULIZADO EN MEMORIA -- OK", tripulanteSock);
 			break;
 
 		case SIGUIENTE_TAREA:
@@ -145,7 +148,16 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 }
 
 
-void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock){
+void mandarConfirmacionDisc(char* aMandar, int socket) {
+
+	t_paquete* aEnviar = armarPaqueteCon((void*) aMandar, STRING);
+	log_info(logMiRAM,"Mandando confirmacion de %s a Discordiador",aMandar);
+	enviarPaquete(aEnviar,socket);
+}
+
+
+
+void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 	uint32_t idPatota;
 	uint32_t idTripulante;
 	void * stream = paquete->buffer->stream;
@@ -154,14 +166,18 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock){
 	offset += sizeof(uint32_t);
 	memcpy(&(idTripulante), stream + offset, sizeof(uint32_t));
 
+	/*
 	bool esIgualA(tcb* tcbAcomparar){
 
 		return tcbAcomparar->idTripulante == idTripulante
 				&& tcbAcomparar->patota->pid == idPatota;
-	}
+	}*/
 
+	pcb* supuestaPatotaTripu = buscarPatota(idPatota);
 
-	tcb* buscado = list_find(listaTCB, (void*) esIgualA);
+	tcb* buscado = buscarTripulante(idPatota, supuestaPatotaTripu);
+
+	log_info(logMiRAM,"LLENDO A BUSCAR TAREA DEL TRIPU %d",buscado->idTripulante);
 
 	setearSgteTarea(buscado);
 
@@ -178,9 +194,11 @@ void setearSgteTarea(tcb *buscado){
 		if(tarea == buscado->proximaAEjecutar){
 			tarea = list_iterator_next(iterator);
 			buscado->proximaAEjecutar = tarea;
+			log_info(logMiRAM,"TRIPU: %d - PROX. TAREA: %s",buscado->idTripulante,tarea->nombreTarea);
 			break;
 		}
 	}
+	list_iterator_destroy(iterator);
 }
 
 
@@ -203,8 +221,8 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
     tareaFinal->nombreTarea = strdup("TAREA_NULA");
 	list_add(listaTareas,tareaFinal);
 
+	liberarDoblesPunterosAChar(arrayDeTareas);
     free(string);
-    free(arrayDeTareas);
 
 }
 
