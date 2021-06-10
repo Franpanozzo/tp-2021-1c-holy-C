@@ -225,6 +225,7 @@ void hiloTripu(t_tripulante* tripulante){
 				break;
 		}
 		if(tripulante->estado != END){
+			actualizarEstadoEnRAM(tripulante);
 			sem_post(&semaforoPlanificadorInicio);
 			log_info(logDiscordiador,"tripulanteId %d: ESPERANDO QUE EL PLANI TERMINE",
 					tripulante->idTripulante);
@@ -273,13 +274,13 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 void actualizar(t_estado estado, t_queue* cola){
 	t_queue* aux = queue_create();
 	t_tripulante* tripulante;
-//	int tamanioInicialCola = queue_size(cola);
-//	log_info(logDiscordiador,"El tamanio inicial de la cola de %d es de %d", estado, tamanioInicialCola);
-	while(queue_is_empty(cola) == 0){
+	int tamanioInicialCola = queue_size(cola);
+	log_info(logDiscordiador,"------El tamanio inicial de la cola de %d es de %d-----", estado, tamanioInicialCola);
+	while(queue_is_empty(cola) !=1){
 		tripulante = (t_tripulante*) queue_pop(cola);
 //		log_info(logDiscordiador,"El tripulante de ID %d (que deberia tener id) tiene estado %d",
 //				tripulante->idTripulante, tripulante->estado);
-		if(queue_size(colaExec) == gradoMultiprocesamiento && tripulante->estado == EXEC){
+		if(queue_size(colaExec) >= gradoMultiprocesamiento && tripulante->estado == EXEC){
 			tripulante->estado = estado;
 		}
 		if(tripulante->estado != estado && tripulante->estado >= NEW &&
