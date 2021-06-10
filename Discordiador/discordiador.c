@@ -45,6 +45,7 @@ int main() {
 	pthread_mutex_init(&mutexColaExec, NULL);
 	pthread_mutex_init(&mutexColaBlocked, NULL);
 	pthread_mutex_init(&mutexPlanificadorFin, NULL);
+	pthread_mutex_init(&mutexLogDiscordiador, NULL);
 	//
 	int tripulantes = 3;
 	t_coordenadas coordenadas[tripulantes ];
@@ -67,7 +68,6 @@ int main() {
 }
 
 
-
 void hiloPlani(){
 	while(1){
 		if(planificacion_play){
@@ -76,22 +76,15 @@ void hiloPlani(){
 			for(int i=0; i <totalTripus; i++){
 				sem_wait(&semaforoPlanificadorInicio);
 			}
+
+			lock(mutexLogDiscordiador);
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
+			unlock(mutexLogDiscordiador);
 
-
-			lock(mutexColaExec);
-			actualizar(EXEC, colaExec);
-			unlock(mutexColaExec);
-			lock(mutexColaBlocked);
-			actualizar(BLOCKED, colaBlocked);
-			unlock(mutexColaBlocked);
-			lock(mutexColaNew);
-			actualizar(NEW, colaNew);
-			unlock(mutexColaNew);
-			lock(mutexColaReady);
-			actualizar(READY, colaReady);
-			unlock(mutexColaReady);
-
+			actualizar(EXEC, colaExec, mutexColaExec);
+			actualizar(BLOCKED, colaBlocked, mutexColaBlocked);
+			actualizar(NEW, colaNew, mutexColaReady);
+			actualizar(READY, colaReady, mutexColaReady);
 
 /*
 			if(haySabotaje){ // HAY SABOTAJE
@@ -118,7 +111,9 @@ void hiloPlani(){
 			for(int i=0; i<totalTripus; i++){
 				sem_post(&semaforoPlanificadorFin);
 			}
+			lock(mutexLogDiscordiador);
 			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
+			unlock(mutexLogDiscordiador);
 		}
 	}
 }
@@ -149,7 +144,9 @@ void hiloTripu(t_tripulante* tripulante){
 	while(tripuVivo){
 		switch(tripulante->estado){
 			case NEW:
+				lock(mutexLogDiscordiador);
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
+				unlock(mutexLogDiscordiador);
 				recibirPrimerTareaDeMiRAM(tripulante);
 				tripulante->estado = READY;
 				break;
@@ -158,13 +155,17 @@ void hiloTripu(t_tripulante* tripulante){
 					ciclosExec = calcularCiclosExec(tripulante);
 				}
 				quantumPendiente = quantum;
+				lock(mutexLogDiscordiador);
 				log_info(logDiscordiador,"tripulanteId %d: estoy en ready con %d ciclos exec",
 						tripulante->idTripulante, ciclosExec);
+				unlock(mutexLogDiscordiador);
 				tripulante->estado = EXEC;
 				break;
 			case EXEC:
 				sleep(1);
+				lock(mutexLogDiscordiador);
 				log_info(logDiscordiador,"tripulanteId %d: estoy en exec", tripulante->idTripulante);
+				unlock(mutexLogDiscordiador);
 				ciclosExec --;
 				quantumPendiente--;
 				if(ciclosExec > 0 && quantumPendiente != 0){
@@ -191,8 +192,11 @@ void hiloTripu(t_tripulante* tripulante){
 				break;
 			case BLOCKED:
 				if(tripulante->idTripulante == idTripulanteBlocked){
-					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando", tripulante->idTripulante);
+
 					sleep(1);
+					lock(mutexLogDiscordiador);
+					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando", tripulante->idTripulante);
+					unlock(mutexLogDiscordiador);
 					ciclosBlocked --;
 					if(ciclosBlocked == 0){
 						idTripulanteBlocked = -1;
@@ -226,9 +230,13 @@ void hiloTripu(t_tripulante* tripulante){
 */
 				break;
 			case END:
+				//caso end, sacar al tripulante y prevenir que se conecte a miram/imongo
+
 				totalTripus--; //aca se esta haciendo escritura, en el plani se hace lectura?
 				tripuVivo = 0;
+				lock(mutexLogDiscordiador);
 				log_info(logDiscordiador,"tripulanteId %d: estoy en end, YA TERMINE", tripulante->idTripulante);
+				unlock(mutexLogDiscordiador);
 				// el unico caso donde no se hace un post al inicio del plani
 				// esta asi porq como arriba se hace un totalTripu --, el wait
 				// del planiInicio va a hacer una iteracion menos
@@ -238,11 +246,15 @@ void hiloTripu(t_tripulante* tripulante){
 		if(tripulante->estado != END){
 			actualizarEstadoEnRAM(tripulante);
 			sem_post(&semaforoPlanificadorInicio);
+			lock(mutexLogDiscordiador);
 			log_info(logDiscordiador,"tripulanteId %d: ESPERANDO QUE EL PLANI TERMINE",
 					tripulante->idTripulante);
+			unlock(mutexLogDiscordiador);
 			sem_wait(&semaforoPlanificadorFin);
+			lock(mutexLogDiscordiador);
 			log_info(logDiscordiador,"tripulanteId %d: YA TERMINO EL PLANI, AHORA CONTINUO",
 					tripulante->idTripulante);
+			unlock(mutexLogDiscordiador);
 		}
 	}
 }
@@ -282,13 +294,17 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 }
 
 //actualizar(EXEC, colaExec);
-void actualizar(t_estado estado, t_queue* cola){
+void actualizar(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 
 	t_tripulante* tripulante;
 	int tamanioInicialCola = queue_size(cola);
+	lock(mutexLogDiscordiador);
 	log_info(logDiscordiador,"------El tamanio inicial de la cola de %d es de %d-----", estado, tamanioInicialCola);
+	unlock(mutexLogDiscordiador);
 	for(int i=0; i<tamanioInicialCola; i++){
+		lock(colaMutex);
 		tripulante = (t_tripulante*) queue_pop(cola);
+		unlock(colaMutex);
 //		log_info(logDiscordiador,"El tripulante de ID %d (que deberia tener id) tiene estado %d",
 //				tripulante->idTripulante, tripulante->estado);
 		//if(queue_size(colaExec) >= gradoMultiprocesamiento && tripulante->estado == EXEC){
@@ -298,7 +314,9 @@ void actualizar(t_estado estado, t_queue* cola){
 			pasarDeCola(tripulante);
 		}
 		else{
+			lock(colaMutex);
 			queue_push(cola, &tripulante);
+			unlock(colaMutex);
 		}
 	}
 
@@ -339,9 +357,10 @@ void desplazarse(t_tripulante* tripulante){
 	int diferenciaEnY = diferencia(tripulante->posY, tripulante->instruccionAejecutar->posY);
 
 	//FALTAN MUTEX
+	lock(mutexLogDiscordiador);
 	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
 			tripulante->posX, tripulante->posY );
-
+	unlock(mutexLogDiscordiador);
 	if(diferenciaEnX){
 		tripulante->posX = tripulante->posX -
 				tripulante->instruccionAejecutar->posX / diferenciaEnX;
@@ -350,8 +369,9 @@ void desplazarse(t_tripulante* tripulante){
 		tripulante->posY = tripulante->posY -
 				tripulante->instruccionAejecutar->posY / diferenciaEnY;
 	}
-
+	lock(mutexLogDiscordiador);
 	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
+	unlock(mutexLogDiscordiador);
 }
 
 
@@ -451,14 +471,16 @@ void pausarPlanificacion(){
 	}
 
 	if(planificacion_play == 0){
-
+		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"PLANIFICACION PAUSADA");
+		unlock(mutexLogDiscordiador);
 
 	}
 
 	else{
-
+		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"La planificacion tiene cualquier valor negro");
+		unlock(mutexLogDiscordiador);
 
 	}
 }
@@ -477,9 +499,9 @@ t_eliminado* deleteTripulante(uint32_t id, t_queue* cola){
 			if(eliminado->tripulante->idTripulante == id){
 
 				eliminado->tripulante->estado = BLOCKED;
-
+				lock(mutexColaBlocked);
 				queue_push(colaBlocked,eliminado->tripulante);
-
+				unlock(mutexColaBlocked);
 				eliminado->cantidad++;
 			}
 
@@ -512,9 +534,9 @@ void eliminarTripulante(uint32_t id){
 	}
 
 	if(resultado == 0){
-
+		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"No se ha encontrado un tripulante con el Id: %d \n",id);
-
+		unlock(mutexLogDiscordiador);
 		planificacion_play = 1;
 
 	}
@@ -525,16 +547,17 @@ void eliminarTripulante(uint32_t id){
 		t_paquete* paquete = armarPaqueteCon(vector[flag],EXPULSAR);
 
 		enviarPaquete(paquete,socketMiRAM);
-
+		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"Se ha eliminado el tripulante con el Id: %d \n",id);
-
+		unlock(mutexLogDiscordiador);
 		planificacion_play = 1;
 
 	}
 
 	else{
-
+		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"Esta funcionando mal eliminarTripulante negro \n");
+		unlock(mutexLogDiscordiador);
 		exit(1);
 
 	}
@@ -547,8 +570,9 @@ void crearConfig(){
 	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
 
 	if(config == NULL){
-
+		lock(mutexLogDiscordiador);
 		log_error(logDiscordiador, "\n La ruta es incorrecta \n");
+		unlock(mutexLogDiscordiador);
 		exit(1);
 		}
 }
@@ -640,18 +664,23 @@ void pasarDeCola(t_tripulante* tripulante){
 
 	switch(tripulante->estado){
 		case READY:
+			lock(mutexColaReady);
 			queue_push(colaReady, &tripulante);
+			unlock(mutexColaReady);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA READY \n", tripulante->idTripulante);
 			break;
 
 		case EXEC:
-
+			lock(mutexColaExec);
 			queue_push(colaExec, &tripulante);
+			unlock(mutexColaExec);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA EXEC \n", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
+			lock(mutexColaBlocked);
 			queue_push(colaBlocked, &tripulante);
+			unlock(mutexColaBlocked);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED \n", tripulante->idTripulante);
 			break;
 
@@ -677,7 +706,9 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 	}
 	else{
+		lock(mutexLogDiscordiador);
 	    log_error(logDiscordiador,"El paquete recibido no es una tarea\n");
+	    unlock(mutexLogDiscordiador);
 	    exit(1);
 	}
 
@@ -688,14 +719,19 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 
 	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+	lock(mutexLogDiscordiador);
 //	log_info(logDiscordiador, "tripulanteId: %d me conecte a MIRAM", tripulante->idTripulante);
+	unlock(mutexLogDiscordiador);
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
 	enviarPaquete(paqueteEnviado, miRAMsocket);
+	lock(mutexLogDiscordiador);
 //	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal", tripulante->idTripulante);
-
+	unlock(mutexLogDiscordiador);
 	recibirTareaDeMiRAM(miRAMsocket, tripulante);
+	lock(mutexLogDiscordiador);
 	log_info(logDiscordiador, "tripulanteId: %d recibi la tarea %s de MIRAM",
 			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	unlock(mutexLogDiscordiador);
 	close(miRAMsocket);
 }
 
@@ -733,21 +769,23 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 	t_paquete* paqueteRecibido = recibirPaquete(socketMongo);
 
 	char* mensajeRecibido = deserializarString(paqueteRecibido);
+	lock(mutexLogDiscordiador);
 	log_info(logDiscordiador,"Confirmacion %s\n",mensajeRecibido);
+	unlock(mutexLogDiscordiador);
 
 	if(strcmp(mensajeRecibido,"TAREA REALIZADA") == 0){
-
+		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"Se elimino la tarea %s\n",tarea->nombreTarea);
-
+		unlock(mutexLogDiscordiador);
 		free(tarea->nombreTarea);
 		free(tarea);
 		free(mensajeRecibido);
 	}
 
 	else{
-
+		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador, "No sabemos q hacer todavia =(\n");
-
+		unlock(mutexLogDiscordiador);
 		free(tarea->nombreTarea);
 		free(tarea);
 		free(mensajeRecibido);

@@ -48,6 +48,7 @@ pthread_mutex_t mutexColaReady;
 pthread_mutex_t mutexColaExec;
 pthread_mutex_t mutexColaBlocked;
 pthread_mutex_t mutexPlanificadorFin;
+pthread_mutex_t mutexLogDiscordiador;
 
 sem_t semPlanificacion;
 sem_t semaforoPlanificadorInicio;
@@ -68,7 +69,7 @@ typedef struct{
 
 }t_eliminado;
 
-
+void loginfo( char*);
 void crearConfig();
 void eliminarPatota(t_patota*);
 void iniciarTripulante(t_coordenadas, uint32_t);
@@ -82,10 +83,9 @@ void recibirPrimerTareaDeMiRAM(t_tripulante*);
 void recibirProximaTareaDeMiRAM(t_tripulante*);
 void recibirTareaDeMiRAM(int ,t_tripulante*);
 int esIO(char*);
-void actualizar(t_estado, t_queue*);
 void hiloPlani();
 void hilitoSabo();
-void actualizar(t_estado, t_queue*);
+void actualizar(t_estado, t_queue*, pthread_mutex_t);
 //t_tripulante* elTripuMasCerca(t_coordenadas);
 int calculoCiclosExec(t_tripulante*);
 int diferencia(uint32_t, uint32_t);
