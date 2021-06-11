@@ -83,7 +83,7 @@ void hiloPlani(){
 
 			actualizar(EXEC, colaExec, mutexColaExec);
 			actualizar(BLOCKED, colaBlocked, mutexColaBlocked);
-			actualizar(NEW, colaNew, mutexColaReady);
+			actualizar(NEW, colaNew, mutexColaNew);
 			actualizar(READY, colaReady, mutexColaReady);
 
 /*
@@ -321,7 +321,7 @@ void actualizar(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 		}
 		else{
 			lock(colaMutex);
-			queue_push(cola, &tripulante);
+			queue_push(cola, tripulante);
 			unlock(colaMutex);
 		}
 	}
@@ -689,21 +689,21 @@ void pasarDeCola(t_tripulante* tripulante){
 	switch(tripulante->estado){
 		case READY:
 			lock(mutexColaReady);
-			queue_push(colaReady, &tripulante);
+			queue_push(colaReady, tripulante);
 			unlock(mutexColaReady);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA READY \n", tripulante->idTripulante);
 			break;
 
 		case EXEC:
 			lock(mutexColaExec);
-			queue_push(colaExec, &tripulante);
+			queue_push(colaExec, tripulante);
 			unlock(mutexColaExec);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA EXEC \n", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
 			lock(mutexColaBlocked);
-			queue_push(colaBlocked, &tripulante);
+			queue_push(colaBlocked, tripulante);
 			unlock(mutexColaBlocked);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED \n", tripulante->idTripulante);
 			break;

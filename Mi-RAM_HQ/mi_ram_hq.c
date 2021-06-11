@@ -79,8 +79,8 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
 
-		pthread_detach(t);
-		//pthread_join(t, (void**) NULL);
+		//pthread_detach(t);
+		pthread_join(t, (void**) NULL);
     }
 
 }
@@ -425,9 +425,12 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	log_info(logMiRAM,"Se le asigno la patota %d al tripulante %d",idPatota, nuevoTCB->idTripulante);
 
+	lock(mutexListaTareas);
 	asignarSiguienteTarea(nuevoTCB);
 
 	mandarTarea(nuevoTCB->proximaAEjecutar, tripulanteSock);
+	unlock(mutexListaTareas);
+
 
 	lock(mutexListaTCB);
 	list_add(listaTCB,nuevoTCB);
@@ -472,12 +475,10 @@ void asignarSiguienteTarea(tcb* tripulante) {
 
 	//Hago que su proxima tarea a ejecutar sea la primera de las lista,
 	//despues hay que hablar bien como va a pedirle las tareas
-	lock(mutexListaTareas);
 	tripulante->proximaAEjecutar = list_get(tripulante->patota->listaTareas,0);
 
 
 	log_info(logMiRAM,"Asignando la tarea: %s\n", tripulante->proximaAEjecutar->nombreTarea);
-	unlock(mutexListaTareas);
 
 }
 
