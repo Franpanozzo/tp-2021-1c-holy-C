@@ -6,6 +6,9 @@ t_list* listaTCB;
 
 pthread_mutex_t mutexListaTCB;
 pthread_mutex_t mutexListaPCB;
+pthread_mutex_t mutexListaTareas;
+pthread_mutex_t mutexTripulante;
+
 
 
 int main(void) {
@@ -17,6 +20,9 @@ int main(void) {
 
     pthread_mutex_init(&mutexListaTCB, NULL);
     pthread_mutex_init(&mutexListaPCB, NULL);
+    pthread_mutex_init(&mutexListaTareas, NULL);
+    pthread_mutex_init(&mutexTripulante, NULL);
+
 
     logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);
 
@@ -173,16 +179,26 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 				&& tcbAcomparar->patota->pid == idPatota;
 	}*/
 
+	lock(mutexListaPCB);
 	pcb* supuestaPatotaTripu = buscarPatota(idPatota);
+    unlock(mutexListaPCB);
 
+	lock(mutexListaTCB);
 	tcb* buscado = buscarTripulante(idPatota, supuestaPatotaTripu);
+	unlock(mutexListaTCB);
 
+
+	lock(mutexTripulante);
 	log_info(logMiRAM,"LLENDO A BUSCAR TAREA DEL TRIPU %d",buscado->idTripulante);
 
+	lock(mutexListaTareas);
 	setearSgteTarea(buscado);
 
 	t_paquete *paqueteTarea  = armarPaqueteCon(buscado->proximaAEjecutar,TAREA);
 	enviarPaquete(paqueteTarea,tripulanteSock);
+
+	unlock(mutexListaTareas);
+	unlock(mutexTripulante);
 
 }
 
@@ -321,8 +337,11 @@ void actualizarTripulante(t_paquete* paquete) {
 	memcpy(&(idTCBAActualizar),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
+	lock(mutexListaTCB);
 	tcb* tcbEncontrado = buscarTripulante(idTCBAActualizar,patotaDeTripu);
+	unlock(mutexListaTCB);
 
+	lock(mutexTripulante);
 	memcpy(&(tcbEncontrado->estado),stream + offset,sizeof(t_estado));
 	offset += sizeof(t_estado);
 
@@ -333,6 +352,7 @@ void actualizarTripulante(t_paquete* paquete) {
 	offset += sizeof(uint32_t);
 
 	log_info(logMiRAM,"Actualizado el tribulante de id %d de la  patota %d",tcbEncontrado->idTripulante, idPatota);
+	unlock(mutexTripulante);
 
 }
 
@@ -352,9 +372,7 @@ tcb* buscarTripulante(int idTCBAActualizar,pcb* patotaDeTripu) {
 
 		tcb* tripulanteCorrespondiente;
 
-		lock(mutexListaTCB);
 		tripulanteCorrespondiente = list_find(listaTCB,(void*) idIgualA);
-		unlock(mutexListaTCB);
 
 			if(tripulanteCorrespondiente == NULL){
 
@@ -399,7 +417,9 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d",nuevoTCB->idTripulante, idPatota);
 
+	lock(mutexListaPCB);
 	pcb* patotaCorrespondiente = buscarPatota(idPatota);
+	unlock(mutexListaPCB);
 
 	nuevoTCB->patota = patotaCorrespondiente;
 
@@ -410,9 +430,7 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 	mandarTarea(nuevoTCB->proximaAEjecutar, tripulanteSock);
 
 	lock(mutexListaTCB);
-
 	list_add(listaTCB,nuevoTCB);
-
 	unlock(mutexListaTCB);
 }
 
@@ -432,9 +450,7 @@ pcb* buscarPatota(uint32_t idPatotaBuscada) {
 
 	pcb* patotaCorrespondiente;
 
-	lock(mutexListaPCB);
 	patotaCorrespondiente = list_find(listaPCB,(void*) idIgualA);
-	unlock(mutexListaPCB);
 
 		if(patotaCorrespondiente == NULL){
 
@@ -456,9 +472,12 @@ void asignarSiguienteTarea(tcb* tripulante) {
 
 	//Hago que su proxima tarea a ejecutar sea la primera de las lista,
 	//despues hay que hablar bien como va a pedirle las tareas
+	lock(mutexListaTareas);
 	tripulante->proximaAEjecutar = list_get(tripulante->patota->listaTareas,0);
 
+
 	log_info(logMiRAM,"Asignando la tarea: %s\n", tripulante->proximaAEjecutar->nombreTarea);
+	unlock(mutexListaTareas);
 
 }
 
