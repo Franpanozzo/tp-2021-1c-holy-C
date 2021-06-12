@@ -62,7 +62,7 @@
 	} t_buffer;
 
 	typedef struct {
-		tipoDeDato codigo_operacion;
+		tipoDeDato codigoOperacion;
 		t_buffer* buffer;
 	} t_paquete;
 

@@ -94,7 +94,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 	log_info(logImongo,"Deserializando...");
 
-	switch(paquete->codigo_operacion){
+	switch(paquete->codigoOperacion){
 
 		case TAREA:
 		{

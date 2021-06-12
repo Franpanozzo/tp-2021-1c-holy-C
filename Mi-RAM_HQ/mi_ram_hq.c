@@ -112,9 +112,9 @@ void manejarTripulante(int *tripulanteSock) {
 
 void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
-	log_info(logMiRAM,"Deserializando el cod_op %d", paquete->codigo_operacion);
+	log_info(logMiRAM,"Deserializando el cod_op %d", paquete->codigoOperacion);
 
-	switch(paquete->codigo_operacion){
+	switch(paquete->codigoOperacion){
 		case PATOTA:
 			//log_info(logMiRAM,"Voy a deserializar una patota");
 			deserializarInfoPCB(paquete);
@@ -353,7 +353,7 @@ void actualizarTripulante(t_paquete* paquete) {
 	memcpy(&(tcbEncontrado->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	log_info(logMiRAM,"Actualizado el tribulante de id %d de la  patota %d",tcbEncontrado->idTripulante, idPatota);
+	log_info(logMiRAM,"Actualizado el tripulante de id %d de la  patota %d",tcbEncontrado->idTripulante, idPatota);
 	unlock(mutexTripulante);
 
 }

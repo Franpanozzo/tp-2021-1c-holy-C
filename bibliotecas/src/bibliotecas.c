@@ -96,7 +96,7 @@ t_paquete* recibirPaquete(int server_socket){
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
 
-	recv(server_socket, &(paquete->codigo_operacion), sizeof(tipoDeDato), 0);
+	recv(server_socket, &(paquete->codigoOperacion), sizeof(tipoDeDato), 0);
 
 	recv(server_socket, &(paquete->buffer->size), sizeof(uint32_t), 0);
 
@@ -249,13 +249,13 @@ void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offs
 
 
 
-void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
+void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperacion){
 
 	void* stream = malloc(tamanio);
 
 	int offset = 0;
 
-	switch(cod_op){
+	switch(codigoOperacion){
 
 		case PATOTA:
 
@@ -293,10 +293,10 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato cod_op){
 t_paquete* armarPaqueteCon(void* estructura,tipoDeDato cod_op){
 
 	t_paquete* paquete = crearPaquete(cod_op);
-	paquete->buffer->size = tamanioEstructura(estructura,paquete->codigo_operacion);
-	paquete->buffer->stream = serializarEstructura(estructura,paquete->buffer->size,paquete->codigo_operacion);
+	paquete->buffer->size = tamanioEstructura(estructura,paquete->codigoOperacion);
+	paquete->buffer->stream = serializarEstructura(estructura,paquete->buffer->size,paquete->codigoOperacion);
 
-	printf("Paquete %d creado \n", paquete->codigo_operacion);
+	printf("Paquete %d creado \n", paquete->codigoOperacion);
 
 	return  paquete;
 
@@ -323,7 +323,7 @@ void* serializarPaquete(t_paquete* paquete, int bytes){
 
 	int desplazamiento = 0;
 
-	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(tipoDeDato));
+	memcpy(magic + desplazamiento, &(paquete->codigoOperacion), sizeof(tipoDeDato));
 	desplazamiento+= sizeof(tipoDeDato);
 	memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(uint32_t));
 	desplazamiento+= sizeof(uint32_t);
@@ -357,7 +357,7 @@ void crearBuffer(t_paquete* paquete)
 t_paquete* crearPaquete(tipoDeDato cod_op){
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = cod_op;
+	paquete->codigoOperacion = cod_op;
 	crearBuffer(paquete);
 	return paquete;
 }

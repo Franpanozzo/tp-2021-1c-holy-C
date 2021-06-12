@@ -7,7 +7,7 @@ int main() {
 	sem_init(&semPlanificacion,0,1);
 	sem_init(&semaforoPlanificadorInicio,0,0);
 	sem_init(&semaforoPlanificadorFin,0,0);
-	planificacion_play = 1;
+	planificacionPlay = 1;
 	todasLasTareasIO = malloc(sizeof(char*) * 7);
 
 	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
@@ -78,9 +78,9 @@ int leerTotalTripus(){
 
 void hiloPlani(){
 	while(1){
-		if(planificacion_play && totalTripus > 0){
+		if(planificacionPlay && leerTotalTripus() > 0){
 
-			for(int i=0; i <totalTripus; i++){
+			for(int i=0; i <leerTotalTripus(); i++){
 				sem_wait(&semaforoPlanificadorInicio);
 			}
 
@@ -89,10 +89,10 @@ void hiloPlani(){
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 			unlock(mutexLogDiscordiador);
 
-			actualizar(EXEC, colaExec, mutexColaExec);
-			actualizar(BLOCKED, colaBlocked, mutexColaBlocked);
-			actualizar(NEW, colaNew, mutexColaNew);
-			actualizar(READY, colaReady, mutexColaReady);
+			actualizarCola(EXEC, colaExec, mutexColaExec);
+			actualizarCola(BLOCKED, colaBlocked, mutexColaBlocked);
+			actualizarCola(NEW, colaNew, mutexColaNew);
+			actualizarCola(READY, colaReady, mutexColaReady);
 
 /*
 			if(haySabotaje){ // HAY SABOTAJE
@@ -116,7 +116,7 @@ void hiloPlani(){
 
 //			planificadorFin = 0;
 
-			for(int i=0; i<totalTripus; i++){
+			for(int i=0; i<leerTotalTripus(); i++){
 				sem_post(&semaforoPlanificadorFin);
 			}
 			lock(mutexLogDiscordiador);
@@ -274,46 +274,20 @@ void hiloTripu(t_tripulante* tripulante){
 }
 
 
-
-/*
-int calculoMovimiento(t_tripulante* tripulante){
-
-	uint32_t movimientosEnX = abs(tripulante->instruccionAejecutar->posX - tripulante->posX);
-	uint32_t movimientosEnY = abs(tripulante->instruccionAejecutar->posY - tripulante->posY);
-
-    return movimientosEnX + movimientosEnY;
-}
-
-
-uint32_t calcularCiclosExec(t_tripulante* tripulante){
-	if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
-		return calculoMovimiento(tripulante) + 1;
-	}
-	else{
-		return calculoMovimiento(tripulante) + tripulante->instruccionAejecutar->tiempo;
-	}
-}
-*/
-
 void actualizarEstadoEnRAM(t_tripulante* tripulante){
 
 //	log_info(logDiscordiador,"Se manda a actualizar el tripulante de ID: %d",tripulante->idTripulante);
-	int socketRam = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-	t_paquete* paqueteAenviar = armarPaqueteCon(tripulante,ESTADO_TRIPULANTE);
+	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE);
 //	log_info(logDiscordiador,"El tripulante de ID %d, esta enviando paquete con cod_op %d",
 //			tripulante->idTripulante, paqueteAenviar->codigo_operacion);
-	enviarPaquete(paqueteAenviar,socketRam);
 
-	esperarConfirmacionDeRAM(socketRam);
+	esperarConfirmacionDeRAM(miRAMsocket);
 
-	close(socketRam);
-
-
-
+	close(miRAMsocket);
 }
 
-//actualizar(EXEC, colaExec);
-void actualizar(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
+
+void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 
 	t_tripulante* tripulante;
 	int tamanioInicialCola = queue_size(cola);
@@ -324,8 +298,6 @@ void actualizar(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 		lock(colaMutex);
 		tripulante = (t_tripulante*) queue_pop(cola);
 		unlock(colaMutex);
-//		log_info(logDiscordiador,"El tripulante de ID %d (que deberia tener id) tiene estado %d",
-//				tripulante->idTripulante, tripulante->estado);
 		//if(queue_size(colaExec) >= gradoMultiprocesamiento && tripulante->estado == EXEC){
 			//tripulante->estado = estado;
 		//}
@@ -367,7 +339,7 @@ uint32_t calculoCiclosExec(t_tripulante* tripulante){
 
 
 uint32_t diferencia(uint32_t numero1, uint32_t numero2){
-	return abs(numero1 -numero2);
+	return abs(numero1-numero2);
 }
 
 
@@ -412,49 +384,24 @@ char* traducirEstado(t_estado estado){
 	char* string;
 
 	switch(estado){
-
 		case NEW:
-
-				{
-				string = strdup("New");
-				break;
-				}
-
+			string = strdup("New");
+			break;
 		case READY:
-
-				{
-				string = strdup("Ready");
-				break;
-				}
-
+			string = strdup("Ready");
+			break;
 		case EXEC:
-
-				{
-				string = strdup("Exec");
-				break;
-				}
-
+			string = strdup("Exec");
+			break;
 		case BLOCKED:
-
-				{
-				string = strdup("Blocked");
-				break;
-				}
-
+			string = strdup("Blocked");
+			break;
 		case END:
-
-				{
-				string = strdup("End");
-				break;
-				}
-
+			string = strdup("End");
+			break;
 		case SABOTAJE:
-
-				{
-				string = strdup("Sabotaje");
-				break;
-				}
-
+			string = strdup("Sabotaje");
+			break;
 	}
 
 	return string;
@@ -477,41 +424,14 @@ void iterarCola(t_queue* cola){
 	t_list_iterator* list_iterator = list_iterator_create(cola->elements);
 
 	while(list_iterator_has_next(list_iterator)) {
-
 		t_tripulante* tripulante = list_iterator_next(list_iterator);
-
 		char* status = traducirEstado(tripulante->estado);
-
 		printf("Tripulante: %d    Patota: %d    Status:%s    \n", tripulante->idTripulante, tripulante->idPatota, status);
-
 		free(status);
 	}
 
 	list_iterator_destroy(list_iterator);
 
-}
-
-void pausarPlanificacion(){
-
-	if(planificacion_play == 1){
-
-		planificacion_play = 0;
-
-	}
-
-	if(planificacion_play == 0){
-		lock(mutexLogDiscordiador);
-		log_info(logDiscordiador,"PLANIFICACION PAUSADA");
-		unlock(mutexLogDiscordiador);
-
-	}
-
-	else{
-		lock(mutexLogDiscordiador);
-		log_info(logDiscordiador,"La planificacion tiene cualquier valor negro");
-		unlock(mutexLogDiscordiador);
-
-	}
 }
 
 
@@ -545,7 +465,7 @@ t_eliminado* deleteTripulante(uint32_t id, t_queue* cola){
 
 void eliminarTripulante(uint32_t id){
 
-	pausarPlanificacion();
+	planificacionPlay = 0;
 
 	t_eliminado* vector[2];
 	int resultado = 0;
@@ -566,7 +486,7 @@ void eliminarTripulante(uint32_t id){
 		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"No se ha encontrado un tripulante con el Id: %d \n",id);
 		unlock(mutexLogDiscordiador);
-		planificacion_play = 1;
+		planificacionPlay = 1;
 
 	}
 	if(resultado == 1){
@@ -579,7 +499,7 @@ void eliminarTripulante(uint32_t id){
 		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"Se ha eliminado el tripulante con el Id: %d \n",id);
 		unlock(mutexLogDiscordiador);
-		planificacion_play = 1;
+		planificacionPlay = 1;
 
 	}
 
@@ -629,14 +549,9 @@ t_patota* asignarDatosAPatota(char* tareasString){
 
 void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cantidadTripulantes){
 
-	int server_socket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-
 	t_patota* patota = asignarDatosAPatota(tareasString);
-	t_paquete* paquete = armarPaqueteCon((void*) patota,PATOTA);
-	enviarPaquete(paquete,server_socket);
-
-	esperarConfirmacionDeRAM(server_socket);
-
+	int miRAMsocket = enviarA(puertoEIPRAM, patota, PATOTA);
+	esperarConfirmacionDeRAM(miRAMsocket);
 	log_info(logDiscordiador,"creando patota, con %d tripulantes", cantidadTripulantes);
 
 	for (int i=0; i<cantidadTripulantes; i++){
@@ -644,8 +559,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		iniciarTripulante(coordenadas[i], patota->ID);
 	}
 
-	//eliminarPatota(patota);
-	close(server_socket);
+	close(miRAMsocket);
 }
 
 
@@ -655,7 +569,7 @@ void esperarConfirmacionDeRAM(int server_socket) {
 
 	char* mensajeConfirmacion = (char*) paqueteRecibido->buffer->stream;
 
-	if(paqueteRecibido->codigo_operacion == STRING && string_contains(mensajeConfirmacion,"OK")){
+	if(paqueteRecibido->codigoOperacion == STRING && string_contains(mensajeConfirmacion,"OK")){
 		log_info(logDiscordiador, "Nos llego la confirmacion de MI-RAM de: %s", mensajeConfirmacion);
 	}
 	else {
@@ -670,7 +584,6 @@ void esperarConfirmacionDeRAM(int server_socket) {
 void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
-
 	pthread_t _hiloTripulante;
 
 	idTripulante++;
@@ -707,8 +620,6 @@ int esIO(char* tarea){
 
 
 void pasarDeCola(t_tripulante* tripulante){
-
-
 	switch(tripulante->estado){
 		case READY:
 			lock(mutexColaReady);
@@ -742,18 +653,26 @@ void pasarDeCola(t_tripulante* tripulante){
 }
 
 
+int enviarA(puertoEIP* puerto, void* informacion, tipoDeDato codigoOperacion){
+	int socket = iniciarConexionDesdeClienteHacia(puerto);
+	enviarPaquete(armarPaqueteCon(informacion, codigoOperacion), socket);
+	return socket;
+	//----ESTA FUNCION NO LLEVA EL CLOSE, PERO HAY Q AGREGARLO SIEMPRE
+}
+
+
 void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
 
-	if(paqueteRecibido->codigo_operacion == TAREA){
+	if(paqueteRecibido->codigoOperacion == TAREA){
 
 	    tripulante->instruccionAejecutar = deserializarTarea(paqueteRecibido->buffer->stream);
 
+	    lock(mutexLogDiscordiador);
 	    log_info(logDiscordiador, "TRIPULANTE: %d - recibi la tarea %s de MIRAM",
 	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
-	    	unlock(mutexLogDiscordiador);
-
+	    unlock(mutexLogDiscordiador);
 	}
 	else{
 		lock(mutexLogDiscordiador);
@@ -768,37 +687,38 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 
-	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, TRIPULANTE);
 	lock(mutexLogDiscordiador);
-//	log_info(logDiscordiador, "tripulanteId: %d me conecte a MIRAM", tripulante->idTripulante);
-	unlock(mutexLogDiscordiador);
-	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tripulante,TRIPULANTE);
-	enviarPaquete(paqueteEnviado, miRAMsocket);
-	lock(mutexLogDiscordiador);
-//	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal", tripulante->idTripulante);
+	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal",
+			tripulante->idTripulante);
 	unlock(mutexLogDiscordiador);
 	recibirTareaDeMiRAM(miRAMsocket, tripulante);
-	lock(mutexLogDiscordiador);
 	close(miRAMsocket);
 }
 
 
 void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 
+	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, SIGUIENTE_TAREA);
+	lock(mutexLogDiscordiador);
 	log_info(logDiscordiador, "TRIPULANTE: %d - VOY A BUSCAR PROX TAREA A MI RAM",
 		    			tripulante->idTripulante);
-		    	unlock(mutexLogDiscordiador);
-
-	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-	t_paquete * paquete = armarPaqueteCon((void*) tripulante,SIGUIENTE_TAREA);
-	enviarPaquete(paquete, miRAMsocket);
-
+	unlock(mutexLogDiscordiador);
 	recibirTareaDeMiRAM(miRAMsocket,tripulante);
 	close(miRAMsocket);
 }
 
 
-// SE PUEDE USAR
+
+
+
+
+
+
+
+
+
+
 void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
 
 	t_paquete* paqueteConLaTarea = armarPaqueteCon((void*) tripulante->instruccionAejecutar,TAREA);
@@ -829,20 +749,15 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador,"Se elimino la tarea %s\n",tarea->nombreTarea);
 		unlock(mutexLogDiscordiador);
-		free(tarea->nombreTarea);
-		free(tarea);
-		free(mensajeRecibido);
 	}
-
 	else{
 		lock(mutexLogDiscordiador);
 		log_info(logDiscordiador, "No sabemos q hacer todavia =(\n");
 		unlock(mutexLogDiscordiador);
-		free(tarea->nombreTarea);
-		free(tarea);
-		free(mensajeRecibido);
-
 	}
+	free(tarea->nombreTarea);
+	free(tarea);
+	free(mensajeRecibido);
 
 	eliminarPaquete(paqueteRecibido);
 

@@ -19,6 +19,7 @@
 #include <commons/string.h>
 #include <stdbool.h>
 #include "consola.h"
+//#include "utils.h"
 #include <math.h>
 
 
@@ -31,7 +32,7 @@ puertoEIP* puertoEIPMongo;
 
 int idTripulante;
 int idPatota;
-int planificacion_play;
+int planificacionPlay;
 int totalTripus;
 int haySabotaje;
 int quantum;
@@ -72,6 +73,7 @@ typedef struct{
 
 int leerTotalTripus();
 void loginfo( char*);
+int enviarA(puertoEIP* puerto, void* informacion, tipoDeDato codigoOperacion);
 void crearConfig();
 void eliminarPatota(t_patota*);
 void iniciarTripulante(t_coordenadas, uint32_t);
@@ -87,7 +89,7 @@ void recibirTareaDeMiRAM(int ,t_tripulante*);
 int esIO(char*);
 void hiloPlani();
 void hilitoSabo();
-void actualizar(t_estado, t_queue*, pthread_mutex_t);
+void actualizarCola(t_estado, t_queue*, pthread_mutex_t);
 //t_tripulante* elTripuMasCerca(t_coordenadas);
 uint32_t calculoCiclosExec(t_tripulante*);
 uint32_t diferencia(uint32_t, uint32_t);
