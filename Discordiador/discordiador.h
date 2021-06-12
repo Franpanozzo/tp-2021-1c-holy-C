@@ -49,6 +49,7 @@ pthread_mutex_t mutexColaExec;
 pthread_mutex_t mutexColaBlocked;
 pthread_mutex_t mutexPlanificadorFin;
 pthread_mutex_t mutexLogDiscordiador;
+pthread_mutex_t mutexTotalTripus;
 
 sem_t semPlanificacion;
 sem_t semaforoPlanificadorInicio;

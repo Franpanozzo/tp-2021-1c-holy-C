@@ -8,7 +8,7 @@ int main() {
 	sem_init(&semaforoPlanificadorInicio,0,0);
 	sem_init(&semaforoPlanificadorFin,0,0);
 	planificacion_play = 1;
-	todasLasTareasIO = malloc(sizeof(char*) * 6);
+	todasLasTareasIO = malloc(sizeof(char*) * 7);
 
 	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
 	todasLasTareasIO[1] = strdup("CONSUMIR_OXIGENO");
@@ -16,6 +16,7 @@ int main() {
 	todasLasTareasIO[3] = strdup("DESCARTAR_BASURA");
 	todasLasTareasIO[4] = strdup("GENERAR_COMIDA");
 	todasLasTareasIO[5] = strdup("CONSUMIR_COMIDA");
+	todasLasTareasIO[6] = NULL;
 
 	idTripulante = 0;
 	idPatota = 0;
@@ -46,6 +47,7 @@ int main() {
 	pthread_mutex_init(&mutexColaBlocked, NULL);
 	pthread_mutex_init(&mutexPlanificadorFin, NULL);
 	pthread_mutex_init(&mutexLogDiscordiador, NULL);
+	pthread_mutex_init(&mutexTotalTripus, NULL);
 	//
 	int tripulantes = 3;
 	t_coordenadas coordenadas[tripulantes ];
@@ -182,11 +184,14 @@ void hiloTripu(t_tripulante* tripulante){
 							ciclosBlocked = tripulante->instruccionAejecutar->tiempo;
 							tripulante->estado = BLOCKED;
 						}
+						//Esta mal esto
 						recibirProximaTareaDeMiRAM(tripulante);
 						if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
 							tripulante->estado = END;
 						}
-						ciclosExec = calcularCiclosExec(tripulante);
+						else{
+							ciclosExec = calcularCiclosExec(tripulante);
+						}
 					}
 				}
 				break;
@@ -231,8 +236,10 @@ void hiloTripu(t_tripulante* tripulante){
 				break;
 			case END:
 				//caso end, sacar al tripulante y prevenir que se conecte a miram/imongo
-
+				lock(mutexTotalTripus);
 				totalTripus--; //aca se esta haciendo escritura, en el plani se hace lectura?
+				unlock(mutexTotalTripus);
+
 				tripuVivo = 0;
 				lock(mutexLogDiscordiador);
 				log_info(logDiscordiador,"tripulanteId %d: estoy en end, YA TERMINE", tripulante->idTripulante);
@@ -727,6 +734,9 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 	    tripulante->instruccionAejecutar = deserializarTarea(paqueteRecibido->buffer->stream);
 
+	    log_info(logDiscordiador, "TRIPULANTE: %d - recibi la tarea %s de MIRAM",
+	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	    	unlock(mutexLogDiscordiador);
 
 	}
 	else{
@@ -753,14 +763,16 @@ void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 	unlock(mutexLogDiscordiador);
 	recibirTareaDeMiRAM(miRAMsocket, tripulante);
 	lock(mutexLogDiscordiador);
-	log_info(logDiscordiador, "tripulanteId: %d recibi la tarea %s de MIRAM",
-			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
-	unlock(mutexLogDiscordiador);
 	close(miRAMsocket);
 }
 
 
 void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
+
+	log_info(logDiscordiador, "TRIPULANTE: %d - VOY A BUSCAR PROX TAREA A MI RAM",
+		    			tripulante->idTripulante);
+		    	unlock(mutexLogDiscordiador);
+
 	int miRAMsocket = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
 	t_paquete * paquete = armarPaqueteCon((void*) tripulante,SIGUIENTE_TAREA);
 	enviarPaquete(paquete, miRAMsocket);

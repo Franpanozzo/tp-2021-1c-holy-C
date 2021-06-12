@@ -140,7 +140,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 		case SIGUIENTE_TAREA:
 		{
-			log_info(logMiRAM,"Voy a asignarle la prox tare a un tripulante");
+			log_info(logMiRAM,"VOY A ASIGNARLE LA PROX TAREA A UN TRIPU");
 			deserializarSolicitudTarea(paquete,tripulanteSock);
 			break;
 		}
@@ -181,10 +181,12 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 
 	lock(mutexListaPCB);
 	pcb* supuestaPatotaTripu = buscarPatota(idPatota);
+
+	log_info(logMiRAM,"SUPUESTA PATOTA  DEL TRIPU %d",idPatota,idTripulante);
     unlock(mutexListaPCB);
 
 	lock(mutexListaTCB);
-	tcb* buscado = buscarTripulante(idPatota, supuestaPatotaTripu);
+	tcb* buscado = buscarTripulante(idTripulante, supuestaPatotaTripu);
 	unlock(mutexListaTCB);
 
 
