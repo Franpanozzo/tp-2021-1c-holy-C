@@ -73,14 +73,15 @@ void atenderTripulantes(int* serverSock) {
 
     while(1){
 
-		int tripulanteSock = esperarTripulante(*serverSock);
+    	int * tripulanteSock = malloc(sizeof(int));
+		*tripulanteSock = esperarTripulante(*serverSock);
 
 		pthread_t t;
 
-		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
+		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		//pthread_detach(t);
-		pthread_join(t, (void**) NULL);
+		pthread_detach(t);
+		//pthread_join(t, (void**) NULL);
     }
 
 }
@@ -107,6 +108,10 @@ void manejarTripulante(int *tripulanteSock) {
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
     deserializarSegun(paquete,*tripulanteSock);
+    free(tripulanteSock);
+    //no estoy si close libera la memoria,
+    //porque no recibe el puntero si no la
+    //info que contiene la direccion de memoria
 }
 
 
