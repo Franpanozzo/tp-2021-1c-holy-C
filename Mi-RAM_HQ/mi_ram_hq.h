@@ -1,7 +1,7 @@
 #ifndef MI_RAM_HQH
 #define MI_RAM_HQH
 
-
+#include "memoria.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -17,6 +17,7 @@
 #include <commons/string.h>
 #include <commons/collections/list.h>
 #include <commons/log.h>
+
 
 t_log* logMiRAM;
 

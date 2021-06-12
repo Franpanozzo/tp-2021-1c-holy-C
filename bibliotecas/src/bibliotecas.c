@@ -33,7 +33,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 	}
 
 	free(serverAddress);
-	printf("Cliente conectado del puerto %d y IP %s \n",puertoEIPAConectar->puerto,puertoEIPAConectar->IP);
+	//printf("Cliente conectado del puerto %d y IP %s \n",puertoEIPAConectar->puerto,puertoEIPAConectar->IP);
 	return server_sock;
 
 }
@@ -296,7 +296,7 @@ t_paquete* armarPaqueteCon(void* estructura,tipoDeDato cod_op){
 	paquete->buffer->size = tamanioEstructura(estructura,paquete->codigoOperacion);
 	paquete->buffer->stream = serializarEstructura(estructura,paquete->buffer->size,paquete->codigoOperacion);
 
-	printf("Paquete %d creado \n", paquete->codigoOperacion);
+	//printf("Paquete %d creado \n", paquete->codigoOperacion);
 
 	return  paquete;
 
@@ -310,7 +310,7 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 	void* a_enviar = serializarPaquete(paquete,tamanioTotal);
 	send(socket, a_enviar, tamanioTotal,0);
 
-	printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
+	//printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
 
 	free(a_enviar);
 	eliminarPaquete(paquete);

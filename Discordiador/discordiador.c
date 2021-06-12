@@ -281,6 +281,8 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 //	log_info(logDiscordiador,"El tripulante de ID %d, esta enviando paquete con cod_op %d",
 //			tripulante->idTripulante, paqueteAenviar->codigo_operacion);
 
+	log_info(logDiscordiador,"TRIPULANTE %d -VOY A MANDAR ACTUALIZACION EN RAM", tripulante->idTripulante);
+
 	esperarConfirmacionDeRAM(miRAMsocket);
 
 	close(miRAMsocket);

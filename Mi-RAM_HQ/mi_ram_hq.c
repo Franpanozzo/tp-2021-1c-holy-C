@@ -13,7 +13,7 @@ pthread_mutex_t mutexTripulante;
 
 int main(void) {
 
-    int puerto = 3222;
+	cargar_configuracion();
 
     listaPCB = list_create();
     listaTCB = list_create();
@@ -23,10 +23,11 @@ int main(void) {
     pthread_mutex_init(&mutexListaTareas, NULL);
     pthread_mutex_init(&mutexTripulante, NULL);
 
-
     logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);
 
-    int serverSock = iniciarConexionDesdeServidor(puerto);
+    logMemoria = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMemoria.log","Memoria",1);
+
+    int serverSock = iniciarConexionDesdeServidor(configRam.puerto);
 
     //Abro un thread manejar las conexiones
     pthread_t manejo_tripulante;
@@ -73,17 +74,17 @@ void atenderTripulantes(int* serverSock) {
 
     while(1){
 
-    	int * tripulanteSock = malloc(sizeof(int));
+    	int* tripulanteSock = malloc(sizeof(int));
 		*tripulanteSock = esperarTripulante(*serverSock);
 
 		pthread_t t;
+		//pthread_t t = malloc(sizeof(pthread_t));
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
 		pthread_detach(t);
 		//pthread_join(t, (void**) NULL);
     }
-
 }
 
 
