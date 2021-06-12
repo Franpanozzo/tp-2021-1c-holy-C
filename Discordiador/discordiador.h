@@ -70,6 +70,7 @@ typedef struct{
 
 }t_eliminado;
 
+int leerTotalTripus();
 void loginfo( char*);
 void crearConfig();
 void eliminarPatota(t_patota*);
@@ -88,8 +89,8 @@ void hiloPlani();
 void hilitoSabo();
 void actualizar(t_estado, t_queue*, pthread_mutex_t);
 //t_tripulante* elTripuMasCerca(t_coordenadas);
-int calculoCiclosExec(t_tripulante*);
-int diferencia(uint32_t, uint32_t);
+uint32_t calculoCiclosExec(t_tripulante*);
+uint32_t diferencia(uint32_t, uint32_t);
 void desplazarse(t_tripulante*);
 void actualizarEstadoEnRAM(t_tripulante*);
 int calcularCiclosExec(t_tripulante*);

@@ -52,8 +52,8 @@ int main() {
 	int tripulantes = 3;
 	t_coordenadas coordenadas[tripulantes ];
 	for(int i=0; i<tripulantes;i++){
-		coordenadas[i].posX = i;
-		coordenadas[i].posY = i + 1;
+		coordenadas[i].posX = i +1;
+		coordenadas[i].posY = i + 2;
 	}
 	//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
 	iniciarPatota(coordenadas, "GENERAR_OXIGENO 4;2;3;7\nGENERAR_COMIDA 2;2;3;7", tripulantes );
@@ -69,17 +69,23 @@ int main() {
 	return EXIT_SUCCESS;
 }
 
+int leerTotalTripus(){
+	lock(mutexTotalTripus);
+	int total = totalTripus;
+	unlock(mutexTotalTripus);
+	return total;
+}
 
 void hiloPlani(){
 	while(1){
-		if(planificacion_play){
+		if(planificacion_play && totalTripus > 0){
 
-			// hay q rodear al for con un mutex por la lectura de totalTripus?
 			for(int i=0; i <totalTripus; i++){
 				sem_wait(&semaforoPlanificadorInicio);
 			}
 
 			lock(mutexLogDiscordiador);
+			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripus);
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 			unlock(mutexLogDiscordiador);
 
@@ -154,7 +160,7 @@ void hiloTripu(t_tripulante* tripulante){
 				break;
 			case READY:
 				if(ciclosExec == 0){
-					ciclosExec = calcularCiclosExec(tripulante);
+					ciclosExec = calculoCiclosExec(tripulante);
 				}
 				quantumPendiente = quantum;
 				lock(mutexLogDiscordiador);
@@ -164,14 +170,14 @@ void hiloTripu(t_tripulante* tripulante){
 				tripulante->estado = EXEC;
 				break;
 			case EXEC:
-				sleep(1);
 				lock(mutexLogDiscordiador);
 				log_info(logDiscordiador,"tripulanteId %d: estoy en exec", tripulante->idTripulante);
 				unlock(mutexLogDiscordiador);
+				desplazarse(tripulante);
 				ciclosExec --;
 				quantumPendiente--;
+				sleep(1);
 				if(ciclosExec > 0 && quantumPendiente != 0){
-					desplazarse(tripulante);
 				}
 				else{
 					if(quantumPendiente == 0){
@@ -190,24 +196,25 @@ void hiloTripu(t_tripulante* tripulante){
 							tripulante->estado = END;
 						}
 						else{
-							ciclosExec = calcularCiclosExec(tripulante);
+							ciclosExec = calculoCiclosExec(tripulante);
 						}
 					}
 				}
 				break;
 			case BLOCKED:
-				if(tripulante->idTripulante == idTripulanteBlocked){
+				//if(tripulante->idTripulante == idTripulanteBlocked){
 
 					sleep(1);
 					lock(mutexLogDiscordiador);
-					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando", tripulante->idTripulante);
+					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando, me quedan %d cilos",
+							tripulante->idTripulante, ciclosBlocked);
 					unlock(mutexLogDiscordiador);
 					ciclosBlocked --;
 					if(ciclosBlocked == 0){
 						idTripulanteBlocked = -1;
 						tripulante->estado = READY;
 					}
-				}
+				//}
 
 				break;
 			case SABOTAJE: // para algunos es como un bloqueo donde no se hace nada
@@ -235,14 +242,13 @@ void hiloTripu(t_tripulante* tripulante){
 */
 				break;
 			case END:
-				//caso end, sacar al tripulante y prevenir que se conecte a miram/imongo
 				lock(mutexTotalTripus);
-				totalTripus--; //aca se esta haciendo escritura, en el plani se hace lectura?
+				totalTripus--;
 				unlock(mutexTotalTripus);
-
 				tripuVivo = 0;
 				lock(mutexLogDiscordiador);
-				log_info(logDiscordiador,"tripulanteId %d: estoy en end, YA TERMINE", tripulante->idTripulante);
+				log_info(logDiscordiador,"tripulanteId %d: estoy en end, YA TERMINE. Ahora quedan %d tripus",
+						tripulante->idTripulante, totalTripus);
 				unlock(mutexLogDiscordiador);
 				// el unico caso donde no se hace un post al inicio del plani
 				// esta asi porq como arriba se hace un totalTripu --, el wait
@@ -269,17 +275,17 @@ void hiloTripu(t_tripulante* tripulante){
 
 
 
-
+/*
 int calculoMovimiento(t_tripulante* tripulante){
 
-    int movimientosEnX = fabs(tripulante->instruccionAejecutar->posX - tripulante->posX);
-    int movimientosEnY = fabs(tripulante->instruccionAejecutar->posY - tripulante->posY);
+	uint32_t movimientosEnX = abs(tripulante->instruccionAejecutar->posX - tripulante->posX);
+	uint32_t movimientosEnY = abs(tripulante->instruccionAejecutar->posY - tripulante->posY);
 
     return movimientosEnX + movimientosEnY;
 }
 
 
-int calcularCiclosExec(t_tripulante* tripulante){
+uint32_t calcularCiclosExec(t_tripulante* tripulante){
 	if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
 		return calculoMovimiento(tripulante) + 1;
 	}
@@ -287,7 +293,7 @@ int calcularCiclosExec(t_tripulante* tripulante){
 		return calculoMovimiento(tripulante) + tripulante->instruccionAejecutar->tiempo;
 	}
 }
-
+*/
 
 void actualizarEstadoEnRAM(t_tripulante* tripulante){
 
@@ -312,7 +318,7 @@ void actualizar(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 	t_tripulante* tripulante;
 	int tamanioInicialCola = queue_size(cola);
 	lock(mutexLogDiscordiador);
-	log_info(logDiscordiador,"------El tamanio inicial de la cola de %d es de %d-----", estado, tamanioInicialCola);
+	log_info(logDiscordiador,"------El tamanio inicial de la cola de %s es de %d-----", traducirEstado(estado), tamanioInicialCola);
 	unlock(mutexLogDiscordiador);
 	for(int i=0; i<tamanioInicialCola; i++){
 		lock(colaMutex);
@@ -347,10 +353,10 @@ void actualizar(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 //}
 
 
-int calculoCiclosExec(t_tripulante* tripulante){
+uint32_t calculoCiclosExec(t_tripulante* tripulante){
 
-	int desplazamientoEnX = diferencia(tripulante->instruccionAejecutar->posX, tripulante->posX);
-	int desplazamientoEnY = diferencia(tripulante->instruccionAejecutar->posY, tripulante->posY);
+	uint32_t desplazamientoEnX = diferencia(tripulante->instruccionAejecutar->posX, tripulante->posX);
+	uint32_t desplazamientoEnY = diferencia(tripulante->instruccionAejecutar->posY, tripulante->posY);
 
 	if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
 		return  desplazamientoEnX + desplazamientoEnY + 1;
@@ -360,27 +366,37 @@ int calculoCiclosExec(t_tripulante* tripulante){
 }
 
 
-int diferencia(uint32_t numero1, uint32_t numero2){
+uint32_t diferencia(uint32_t numero1, uint32_t numero2){
 	return abs(numero1 -numero2);
 }
 
 
 void desplazarse(t_tripulante* tripulante){
-	int diferenciaEnX = diferencia(tripulante->posX, tripulante->instruccionAejecutar->posX);
-	int diferenciaEnY = diferencia(tripulante->posY, tripulante->instruccionAejecutar->posY);
-
+	uint32_t diferenciaEnX = diferencia(tripulante->posX, tripulante->instruccionAejecutar->posX);
+	uint32_t restaEnX = tripulante->posX - tripulante->instruccionAejecutar->posX;
+	uint32_t restaEnY = tripulante->posY - tripulante->instruccionAejecutar->posY;
+	uint32_t diferenciaEnY = diferencia(tripulante->posY, tripulante->instruccionAejecutar->posY);
+	uint32_t desplazamiento = 0;
 	//FALTAN MUTEX
 	lock(mutexLogDiscordiador);
 	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
 			tripulante->posX, tripulante->posY );
 	unlock(mutexLogDiscordiador);
 	if(diferenciaEnX){
-		tripulante->posX = tripulante->posX -
-				tripulante->instruccionAejecutar->posX / diferenciaEnX;
+		lock(mutexLogDiscordiador);
+		desplazamiento = restaEnX / diferenciaEnX;
+		log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
+					tripulante->posX, tripulante->instruccionAejecutar->posX, restaEnX, diferenciaEnX, desplazamiento);
+		unlock(mutexLogDiscordiador);
+		tripulante->posX = tripulante->posX - desplazamiento;
 	}
 	else if(diferenciaEnY){
-		tripulante->posY = tripulante->posY -
-				tripulante->instruccionAejecutar->posY / diferenciaEnY;
+		lock(mutexLogDiscordiador);
+		desplazamiento = restaEnY / diferenciaEnY;
+		log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
+					tripulante->posY, tripulante->instruccionAejecutar->posY, restaEnY, diferenciaEnY, desplazamiento);
+		unlock(mutexLogDiscordiador);
+		tripulante->posY = tripulante->posY - desplazamiento;
 	}
 	lock(mutexLogDiscordiador);
 	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
