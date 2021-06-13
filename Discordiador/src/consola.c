@@ -6,6 +6,7 @@ void leerConsola(){
 	char* leido;
 	char** comandoYparametros;
 	int cursor;
+	int primeraVez = 1;
 
 	while(1){
 		leido = readline("Discordiador-->");
@@ -31,16 +32,23 @@ void leerConsola(){
 
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
-			sem_post(&semPlanificacion);//le permites arrancar a planificar las listas/colas
-			//planificacion_pausada = 0;
+			//sem_post(&semPlanificacion);//le permites arrancar a planificar las listas/colas
+			planificacionPlay = 1;
+			if(primeraVez){
+				//pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
+				//pthread_join(planificador, (void**) NULL);
+				//pthread_detach(planificador);
+				primeraVez =0;
+			}
+
 
 			log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
 					cursor ++;
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-				//planificacion_pausada = 1;
+				planificacionPlay = 0;
 				log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
-						cursor ++;
+				cursor ++;
 			}
 		else{
 			log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
@@ -88,8 +96,8 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 				log_info(logDiscordiador, "La coordenada numero %d esta incompleta \n", c);
 			}
 
-			coordenadasTripulantes[c].posX = atoi(coordenadasString[0]);
-			coordenadasTripulantes[c].posY = atoi(coordenadasString[1]);
+			coordenadasTripulantes[c].posX = (uint32_t) atoi(coordenadasString[0]);
+			coordenadasTripulantes[c].posY = (uint32_t) atoi(coordenadasString[1]);
 
 			*cursor = *cursor + 1;
 		}
