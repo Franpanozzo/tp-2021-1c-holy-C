@@ -15,20 +15,9 @@ int main() {
 	idPatota = 0;
 
 
-	//leerConsola();
+	leerConsola();
 
-	tripulantes = 2;
-	t_coordenadas coordenadas[tripulantes ];
-	for(int i=0; i<tripulantes;i++){
-		coordenadas[i].posX = i+ 2;
-		coordenadas[i].posY = i + 2;
-	}
 
-	//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
-	iniciarPatota(coordenadas, "COMER_YOGUR;2;3;7\nGENERAR_OXIGENO 4;2;3;7", tripulantes);
-	pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
-	pthread_join(planificador, (void**) NULL);
-	//pthread_detach(planificador);
 
 
 	free(puertoEIPRAM->IP);

@@ -77,10 +77,14 @@ void atenderTripulantes(int* serverSock) {
 		*tripulanteSock = esperarTripulante(*serverSock);
 
 		pthread_t t;
+		//pthread_t * t=malloc(sizeof(pthread_t));
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
 		pthread_detach(t);
+		//free(t);
+		//Para hacerle free hay que pasarlo por parametro en pthread_create
+
 		//pthread_join(t, (void**) NULL);
     }
 

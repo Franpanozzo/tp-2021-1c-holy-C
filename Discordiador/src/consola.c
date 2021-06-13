@@ -28,28 +28,40 @@ void leerConsola(){
 				log_info(logDiscordiador, "Las coordenadas son %d , %d \n",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
 			}
 
-			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
 
+			t_coordenadas coordenadas[cantidadTripulantes];
+			for(int i=0; i<cantidadTripulantes;i++){
+				coordenadas[i].posX = i+ 2;
+				coordenadas[i].posY = i + 2;
+			}
+
+			//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
+			//iniciarPatota(coordenadas, "COMER_YOGUR;2;3;7\nGENERAR_OXIGENO 4;2;3;7", tripulantes);
+			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
+			//LAS tareas procesadas andan, las coordenadas procesadas no
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
 			//sem_post(&semPlanificacion);//le permites arrancar a planificar las listas/colas
 			planificacionPlay = 1;
 			if(primeraVez){
-				//pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
+
+				pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
 				//pthread_join(planificador, (void**) NULL);
-				//pthread_detach(planificador);
+				pthread_detach(planificador);
 				primeraVez =0;
 			}
 
 
 			log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
+			sleep(1);
 					cursor ++;
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-				planificacionPlay = 0;
-				log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
-				cursor ++;
-			}
+			planificacionPlay = 0;
+			log_info(logDiscordiador, "\nSe ingreso el comando pausar planificacion");
+			sleep(1);
+			cursor ++;
+		}
 		else{
 			log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
 		}
@@ -96,9 +108,9 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 				log_info(logDiscordiador, "La coordenada numero %d esta incompleta \n", c);
 			}
 
-			coordenadasTripulantes[c].posX = (uint32_t) atoi(coordenadasString[0]);
-			coordenadasTripulantes[c].posY = (uint32_t) atoi(coordenadasString[1]);
-
+			coordenadasTripulantes[c].posX = (uint32_t) strtoul(coordenadasString[0], NULL,10);
+			coordenadasTripulantes[c].posY = (uint32_t) strtoul(coordenadasString[1], NULL,10);
+			log_info(logDiscordiador,"---------------posx:%d;posy:%d---------------",coordenadasTripulantes[c].posX,coordenadasTripulantes[c].posY);
 			*cursor = *cursor + 1;
 		}
 	}

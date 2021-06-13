@@ -97,7 +97,7 @@ void crearConfig(){
 //}
 
 void hiloPlani(){
-	while(1){
+	while(1 && leerTotalTripus() != 0){
 		if(planificacionPlay && leerTotalTripus() > 0){
 
 			for(int i=0; i <leerTotalTripus(); i++){
@@ -299,7 +299,8 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 
 	for (int i=0; i<cantidadTripulantes; i++){
 		totalTripus ++;
-		iniciarTripulante(coordenadas[i], patota->ID);
+		log_info(logDiscordiador,"---------------posx:%d;posy:%d---------------",coordenadas[i].posX,coordenadas[i].posY);
+		iniciarTripulante(*(coordenadas+i), patota->ID);
 	}
 	free(patota);
 	close(miRAMsocket);
@@ -572,11 +573,13 @@ uint32_t calculoCiclosExec(t_tripulante* tripulante){
 }
 
 void desplazarse(t_tripulante* tripulante){
-	uint32_t diferenciaEnX = diferencia(tripulante->posX, tripulante->instruccionAejecutar->posX);
-	uint32_t restaEnX = tripulante->posX - tripulante->instruccionAejecutar->posX;
-	uint32_t restaEnY = tripulante->posY - tripulante->instruccionAejecutar->posY;
-	uint32_t diferenciaEnY = diferencia(tripulante->posY, tripulante->instruccionAejecutar->posY);
-	uint32_t desplazamiento = 0;
+	//NO ENTIENDOOOOOOO
+	//LE SAQUE LOS UINT Y EMPEZO A ANDAR EL MOVIMIENTO CON COORDENADAS DE CONSOLA
+	int diferenciaEnX = diferencia(tripulante->posX, tripulante->instruccionAejecutar->posX);
+	int restaEnX = tripulante->posX - tripulante->instruccionAejecutar->posX;
+	int restaEnY = tripulante->posY - tripulante->instruccionAejecutar->posY;
+	int diferenciaEnY = diferencia(tripulante->posY, tripulante->instruccionAejecutar->posY);
+	int desplazamiento = 0;
 	//FALTAN MUTEX
 
 	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
@@ -596,7 +599,7 @@ void desplazarse(t_tripulante* tripulante){
 		log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
 					tripulante->posY, tripulante->instruccionAejecutar->posY, restaEnY, diferenciaEnY, desplazamiento);
 
-		tripulante->posY = tripulante->posY - desplazamiento;
+		tripulante->posY = (tripulante->posY - desplazamiento);
 	}
 
 	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
@@ -604,7 +607,7 @@ void desplazarse(t_tripulante* tripulante){
 }
 
 uint32_t diferencia(uint32_t numero1, uint32_t numero2){
-	return abs(numero1-numero2);
+	return (uint32_t) abs(numero1-numero2);
 }
 
 void listarTripulante(){
