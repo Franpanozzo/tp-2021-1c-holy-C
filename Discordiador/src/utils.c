@@ -192,25 +192,18 @@ void hiloTripu(t_tripulante* tripulante){
 				ciclosExec --;
 				quantumPendiente--;
 				sleep(1);
-				if(!(ciclosExec > 0 && quantumPendiente != 0)){
-					if(quantumPendiente == 0){
-						tripulante->estado = READY;
+				if(quantumPendiente == 0){
+					tripulante->estado = READY;
+				}
+				if(ciclosExec <= 0){
+					if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
+						int socketMongo = enviarA(puertoEIPMongo, tripulante->instruccionAejecutar, TAREA);
+						close(socketMongo);
+						ciclosBlocked = tripulante->instruccionAejecutar->tiempo;
+						tripulante->estado = BLOCKED;
 					}
 					else{
-						if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
-							int socketMongo = enviarA(puertoEIPMongo, tripulante->instruccionAejecutar, TAREA);
-							close(socketMongo);
-							ciclosBlocked = tripulante->instruccionAejecutar->tiempo;
-							tripulante->estado = BLOCKED;
-						}
-						//Esta mal esto
-						recibirProximaTareaDeMiRAM(tripulante);
-						if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
-							tripulante->estado = END;
-						}
-						else{
-							ciclosExec = calculoCiclosExec(tripulante);
-						}
+						siguienteTarea(tripulante, &ciclosExec);
 					}
 				}
 				break;
@@ -225,7 +218,9 @@ void hiloTripu(t_tripulante* tripulante){
 					if(ciclosBlocked == 0){
 						idTripulanteBlocked = -1;
 						tripulante->estado = READY;
-						log_info(logDiscordiador,"----tripulanteId %d: termine el bloqueo, voy a pasar a READY----");
+						siguienteTarea(tripulante, &ciclosExec);
+						log_info(logDiscordiador,"----tripulanteId %d: termine el bloqueo, voy a pasar a %s----",
+								traducirEstado(tripulante->estado));
 					}
 				}
 				break;
@@ -366,6 +361,16 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 			idTripulanteBlocked = tripulanteBlocked->idTripulante;
 			log_info(logDiscordiador,"------EL TRIPU BLOQUEADO ES %d-----", idTripulanteBlocked);
 		}
+	}
+}
+
+void siguienteTarea(t_tripulante* tripulante, int* ciclosExec){
+	recibirProximaTareaDeMiRAM(tripulante);
+	if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
+		tripulante->estado = END;
+	}
+	else{
+		ciclosExec = calculoCiclosExec(tripulante);
 	}
 }
 
