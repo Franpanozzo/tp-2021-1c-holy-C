@@ -24,7 +24,7 @@ void actualizarCola(t_estado, t_queue*, pthread_mutex_t);
 void iterarCola(t_queue*);
 void pasarDeCola(t_tripulante*);
 
-void siguienteTarea(t_tripulante* tripulante, int* ciclosExec);
+void siguienteTarea(t_tripulante* tripulante, int* ciclosExec, int* tripuVivo);
 char* deserializarString (t_paquete*);
 void mandarTareaAejecutar(t_tripulante*,int);
 void actualizarEstadoEnRAM(t_tripulante*);

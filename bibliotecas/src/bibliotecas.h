@@ -73,7 +73,8 @@
 		uint32_t posX;
 		uint32_t posY;
 		t_tarea* instruccionAejecutar;
-		sem_t semaforo;
+		sem_t semaforoInicio;
+		sem_t semaforoFin;
 	} t_tripulante;
 
 	typedef struct{
