@@ -162,6 +162,7 @@ void hilitoSabo(){
 	}
 }
 
+
 void hiloTripu(t_tripulante* tripulante){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
@@ -171,9 +172,7 @@ void hiloTripu(t_tripulante* tripulante){
 	while(tripuVivo){
 		switch(tripulante->estado){
 			case NEW:
-
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
-
 				recibirPrimerTareaDeMiRAM(tripulante);
 				tripulante->estado = READY;
 				break;
@@ -182,16 +181,13 @@ void hiloTripu(t_tripulante* tripulante){
 					ciclosExec = calculoCiclosExec(tripulante);
 				}
 				quantumPendiente = quantum;
-
 				log_info(logDiscordiador,"tripulanteId %d: estoy en ready con %d ciclos exec",
 						tripulante->idTripulante, ciclosExec);
-
 				tripulante->estado = EXEC;
 				break;
 			case EXEC:
-
-				log_info(logDiscordiador,"tripulanteId %d: estoy en exec con %d ciclos", tripulante->idTripulante, ciclosExec);
-
+				log_info(logDiscordiador,"tripulanteId %d: estoy en exec con %d ciclos y %d quantum",
+						tripulante->idTripulante, ciclosExec, quantumPendiente);
 				desplazarse(tripulante);
 				ciclosExec --;
 				quantumPendiente--;
@@ -202,8 +198,8 @@ void hiloTripu(t_tripulante* tripulante){
 					}
 					else{
 						if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
-							int socketMongo = iniciarConexionDesdeClienteHacia(puertoEIPMongo);
-							mandarTareaAejecutar(tripulante,socketMongo);
+							int socketMongo = enviarA(puertoEIPMongo, tripulante->instruccionAejecutar, TAREA);
+							close(socketMongo);
 							ciclosBlocked = tripulante->instruccionAejecutar->tiempo;
 							tripulante->estado = BLOCKED;
 						}
@@ -219,20 +215,19 @@ void hiloTripu(t_tripulante* tripulante){
 				}
 				break;
 			case BLOCKED:
-				//if(tripulante->idTripulante == idTripulanteBlocked){
-
+				if(tripulante->idTripulante == idTripulanteBlocked){
 					sleep(1);
-
+					lock(mutexLogDiscordiador);
 					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando, me quedan %d cilos",
 							tripulante->idTripulante, ciclosBlocked);
-
+					unlock(mutexLogDiscordiador);
 					ciclosBlocked --;
 					if(ciclosBlocked == 0){
 						idTripulanteBlocked = -1;
 						tripulante->estado = READY;
+						log_info(logDiscordiador,"----tripulanteId %d: termine el bloqueo, voy a pasar a READY----");
 					}
-				//}
-
+				}
 				break;
 			case SABOTAJE: // para algunos es como un bloqueo donde no se hace nada
 /*				if(tripu->idTripulante == tripulanteDesabotaje->idTripulante){
@@ -288,6 +283,7 @@ void hiloTripu(t_tripulante* tripulante){
 
 		}
 	}
+	// ACA VA EL FREE TRIPULANTE
 }
 
 void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cantidadTripulantes){
@@ -347,30 +343,30 @@ t_patota* asignarDatosAPatota(char* tareasString){
 }
 
 void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
-
 	t_tripulante* tripulante;
 	int tamanioInicialCola = queue_size(cola);
-	char * state = traducirEstado(estado);
-	log_info(logDiscordiador,"------El tamanio inicial de la cola de %s es de %d-----", state, tamanioInicialCola);
-	free(state);
-
+	lock(mutexLogDiscordiador);
+	log_info(logDiscordiador,"------El tamanio inicial de la cola de %s es de %d-----", traducirEstado(estado), tamanioInicialCola);
+	unlock(mutexLogDiscordiador);
 	for(int i=0; i<tamanioInicialCola; i++){
 		lock(colaMutex);
 		tripulante = (t_tripulante*) queue_pop(cola);
 		unlock(colaMutex);
-		//if(queue_size(colaExec) >= gradoMultiprocesamiento && tripulante->estado == EXEC){
-			//tripulante->estado = estado;
-		//}
-		if(tripulante->estado != estado){
+		if(tripulante->estado != estado && queue_size(colaExec) < gradoMultiprocesamiento){ // ACA
 			pasarDeCola(tripulante);
 		}
 		else{
+			tripulante->estado = estado; // ACA
 			lock(colaMutex);
 			queue_push(cola, tripulante);
 			unlock(colaMutex);
 		}
+		if(estado == BLOCKED && idTripulanteBlocked == -1 && queue_size(colaBlocked) > 0){
+			t_tripulante* tripulanteBlocked = (t_tripulante*) queue_peek(cola);
+			idTripulanteBlocked = tripulanteBlocked->idTripulante;
+			log_info(logDiscordiador,"------EL TRIPU BLOQUEADO ES %d-----", idTripulanteBlocked);
+		}
 	}
-
 }
 
 void iterarCola(t_queue* cola){
@@ -588,16 +584,16 @@ void desplazarse(t_tripulante* tripulante){
 	if(diferenciaEnX){
 
 		desplazamiento = restaEnX / diferenciaEnX;
-		log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
-					tripulante->posX, tripulante->instruccionAejecutar->posX, restaEnX, diferenciaEnX, desplazamiento);
+		//log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
+		//			tripulante->posX, tripulante->instruccionAejecutar->posX, restaEnX, diferenciaEnX, desplazamiento);
 
 		tripulante->posX = tripulante->posX - desplazamiento;
 	}
 	else if(diferenciaEnY){
 
 		desplazamiento = restaEnY / diferenciaEnY;
-		log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
-					tripulante->posY, tripulante->instruccionAejecutar->posY, restaEnY, diferenciaEnY, desplazamiento);
+		//log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
+		//			tripulante->posY, tripulante->instruccionAejecutar->posY, restaEnY, diferenciaEnY, desplazamiento);
 
 		tripulante->posY = (tripulante->posY - desplazamiento);
 	}

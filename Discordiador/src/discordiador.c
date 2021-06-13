@@ -13,7 +13,7 @@ int main() {
 
 	idTripulante = 0;
 	idPatota = 0;
-
+	idTripulanteBlocked = -1;
 
 	leerConsola();
 
