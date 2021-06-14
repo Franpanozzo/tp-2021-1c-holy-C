@@ -47,11 +47,10 @@ void cargar_configuracion(){
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE");
 	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE"));
 
-	gradoMultiprocesamiento = 1;
-	//gradoMultiprocesamiento = config_get_int_value(config,"GRADO_MULTITAREA");
+	gradoMultiprocesamiento = config_get_int_value(config,"GRADO_MULTITAREA");
 	char * algoritmo;
 	algoritmo = config_get_string_value(config,"ALGORITMO");
-	if(strcmp(algoritmo,"FIFO")){
+	if(strcmp(algoritmo,"FIFO")==0){
 		quantum = -1;
 	}
 	else{
@@ -87,6 +86,14 @@ void crearConfig(){
 	}
 }
 
+char * pahtLog(){
+	char *pathLog = string_new();
+	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Discordiador/logs/");
+	string_append(&pathLog, "log ");
+	string_append(&pathLog, temporal_get_string_time("%d-%m-%y %H:%M:%S"));
+
+	return pathLog;
+}
 
 //t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
 	/*
@@ -166,7 +173,7 @@ void hiloTripu(t_tripulante* tripulante){
 	while(tripuVivo){
 		sem_wait(&tripulante->semaforoInicio);
 		log_info(logDiscordiador,"tripulanteId %d: CORRIENDO", tripulante->idTripulante);
-		actualizarEstadoEnRAM(tripulante);	//LO PUSE ACA POR EL PROBLEMA DE Q SI LO PONGO ABAJO LE VA A
+		//actualizarEstadoEnRAM(tripulante);	//LO PUSE ACA POR EL PROBLEMA DE Q SI LO PONGO ABAJO LE VA A
 		//MANDAR UN ESTDO INCORRECTO EN EL CADO DE QUE NO PUEDA ENTRAR A EXEC
 		//EL OTRO PROBLEMA ES QUE LA PRIMERA VEZ LE VA ENVIAR UN TIPU SIN TAREA A RAM
 		switch(tripulante->estado){
@@ -224,6 +231,7 @@ void hiloTripu(t_tripulante* tripulante){
 				}
 				break;
 			case END:
+
 				log_error(logDiscordiador,"----tripulanteId %d: no deberia estar aca----",
 						tripulante->idTripulante);
 				break;
@@ -258,10 +266,10 @@ void hiloTripu(t_tripulante* tripulante){
 
 	}
 	//EL PLANI ES EL ENCARGADO DE SACARLO DE LA COLA. LO HACE CUANDO ACTUALIZA LA COLA
-	//TODO MANDAR A RAM Q LO TIENE Q EXPULSAR
+	enviarA(puertoEIPRAM, tripulante, EXPULSAR);
 	log_info(logDiscordiador,"tripulanteId %d: YA TERMINE. Ahora quedan %d tripus",
 							tripulante->idTripulante, totalTripus);
-	// ACA VA EL FREE TRIPULANTE
+	liberarTripulante(tripulante);
 }
 
 
@@ -341,14 +349,16 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 			pasarDeCola(tripulante);
 		}
 		else{
+
 			tripulante->estado = estado;
 			lock(colaMutex);
 			queue_push(cola, tripulante);
 			unlock(colaMutex);
+
 		}
 
 		//ACTUALIZA EL TRIPU BLOQUEADO DE SER NECESARIO
-		if(estado == BLOCKED && idTripulanteBlocked == -1){
+		if(estado == BLOCKED && idTripulanteBlocked == -1 && queue_size(colaBlocked) > 0){
 			lock(colaMutex);
 			t_tripulante* tripulanteBlocked = (t_tripulante*) queue_peek(cola);
 			unlock(colaMutex);
@@ -369,6 +379,7 @@ void siguienteTarea(t_tripulante* tripulante, int* ciclosExec, int* tripuVivo){
 		unlock(mutexTotalTripus);
 		*tripuVivo = 0;
 		tripulante->estado = END;
+		log_info(logDiscordiador,"Tripulante id: %d deberia terminar", tripulante->idTripulante);
 	}
 	else{
 		*ciclosExec = calculoCiclosExec(tripulante);
@@ -649,50 +660,46 @@ char* traducirEstado(t_estado estado){
 	return string;
 }
 
-t_eliminado* deleteTripulante(uint32_t id, t_queue* cola){
+int deleteTripulante(uint32_t id, t_queue* cola){
 
-	t_eliminado* eliminado = malloc(sizeof(t_eliminado));
+	int cantidad = 0;
+
+	t_tripulante * tripulante = malloc(sizeof(t_tripulante));
 
 	t_list_iterator* list_iterator = list_iterator_create(cola->elements);
 
 	while(list_iterator_has_next(list_iterator)) {
 
-		eliminado->tripulante = list_iterator_next(list_iterator);
+		tripulante = list_iterator_next(list_iterator);
 
-		if(eliminado->tripulante->idTripulante == id){
+		if(tripulante->idTripulante == id){
 
-			eliminado->tripulante->estado = END;
-			lock(mutexColaEnd);
-			queue_push(colaEnd,eliminado->tripulante);
-			unlock(mutexColaEnd);
-			eliminado->cantidad++;
+			tripulante->estado = END;
+
+			cantidad++;
 		}
 
 	}
 
 	list_iterator_destroy(list_iterator);
 
-	return eliminado;
+	return cantidad;
 
 }
 
 void eliminarTripulante(uint32_t id){
 
 	planificacionPlay = 0;
-
-	t_eliminado* vector[2];
+	int vector[3];
 	int resultado = 0;
-	int flag = 0;
 
 	vector[0]= deleteTripulante(id,colaNew);
 	vector[1]= deleteTripulante(id,colaReady);
 	vector[2]= deleteTripulante(id,colaExec);
 
 	for(int i=0; i<3; i++){
-		resultado += vector[i]->cantidad;
-		if(vector[i]->cantidad == 1){
-			flag = i;
-		}
+		resultado += vector[i];
+
 	}
 	if(resultado == 0){
 
@@ -703,13 +710,7 @@ void eliminarTripulante(uint32_t id){
 	}
 	if(resultado == 1){
 
-		int socketMiRAM = iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-
-		t_paquete* paquete = armarPaqueteCon(vector[flag],EXPULSAR);
-
-		enviarPaquete(paquete,socketMiRAM);
-
-		log_info(logDiscordiador,"Se ha eliminado el tripulante con el Id: %d \n",id);
+		log_info(logDiscordiador,"Se va a eliminar el tripulante con el Id: %d \n",id);
 
 		planificacionPlay = 1;
 
@@ -727,7 +728,7 @@ void eliminarPatota(t_patota* patota){
 }
 
 void liberarTripulante(t_tripulante* tripulante){
-	log_info(logDiscordiador, "Eliminando de la colaEnd el tripulante: %d, y su ultima tarea fue: %s",tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	log_info(logDiscordiador, "Eliminando el tripulante: %d, y su ultima tarea fue: %s",tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 	free(tripulante->instruccionAejecutar->nombreTarea);
 	free(tripulante->instruccionAejecutar);
 	free(tripulante);

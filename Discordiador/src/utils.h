@@ -44,7 +44,7 @@ uint32_t diferencia(uint32_t, uint32_t);
 void listarTripulante();
 char* traducirEstado(t_estado);
 
-t_eliminado* deleteTripulante(uint32_t, t_queue*);
+int deleteTripulante(uint32_t, t_queue*);
 void eliminarTripulante(uint32_t);
 void eliminarPatota(t_patota*);
 void liberarTripulante(t_tripulante*);

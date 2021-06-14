@@ -17,6 +17,7 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <commons/string.h>
+#include <commons/temporal.h>
 #include <stdbool.h>
 #include "consola.h"
 #include "utils.h"

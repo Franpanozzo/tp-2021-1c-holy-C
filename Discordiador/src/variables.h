@@ -40,17 +40,4 @@ sem_t semaforoPlanificadorFin;
 
 t_tripulante* tripulanteDesabotaje;
 
-typedef struct{
-	int socket;
-	t_tripulante* tripulante;
-
-}t_bloqueado;
-
-typedef struct{
-
-	int cantidad;
-	t_tripulante* tripulante;
-
-}t_eliminado;
-
 #endif

@@ -2,7 +2,8 @@
 
 int tripulantes;
 int main() {
-	logDiscordiador = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Discordiador/logDiscordiador.log","Discordiador",1);
+	char * path = pathLog();
+	logDiscordiador = iniciarLogger(path,"Discordiador",1);
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
 	iniciarSemaforos();
@@ -16,10 +17,7 @@ int main() {
 	idTripulanteBlocked = -1;
 
 	leerConsola();
-
-
-
-
+	free(path);
 	free(puertoEIPRAM->IP);
 	free(puertoEIPRAM);
 	free(puertoEIPMongo->IP);
