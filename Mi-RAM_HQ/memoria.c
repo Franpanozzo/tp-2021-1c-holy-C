@@ -51,3 +51,112 @@ void inciarMemoria() {
     frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
 
 }
+
+
+// LA MAYORIA DE LO COMENTADO ES PARA CUANDO IMPLEMENTEMOS LA MEMORIA VIRTUAL
+
+t_pagina* leer_memoria(int frame, int mem) {
+    //desplazamiento en memoria
+    int desp = frame * configRam.tamanioPagina;
+    // mostrar_memoria();
+    if(!get_frame(frame, mem))
+    {
+        return NULL; //frame vacio
+    }
+    else
+    {
+        t_pagina* pagina = malloc(sizeof(t_pagina));
+        if(mem == MEM_PPAL)
+        {
+            memcpy(pagina, memoria_principal+desp, configRam.tamanioPagina);
+        }
+
+        else if(mem == MEM_VIRT)
+        {
+            FILE * file = fopen(configRam.pathSwap, "r");
+            // printf("reading\n");
+            fseek(file, desp, SEEK_SET);
+            int sz = fread(pagina, 1, sizeof(t_pagina), file);
+            fclose(file);
+
+            // printf("bytes read %d\n",sz);
+        }
+
+        return pagina;
+    }
+}
+
+
+int insertar_en_memoria(int frame, t_pagina* pagina, int mem) {
+    // printf("frame %d -> %d\n",frame, get_frame(frame,mem));
+    if(!get_frame(frame,mem)) // no hay nada en el frame
+    {
+        // printf("empty frame, inserting\n");
+        set_frame(frame,mem); //marco el frame como en uso
+
+        int desp = frame * configRam.tamanioPagina;
+        if(mem == MEM_PPAL)
+        {
+            memcpy(memoria_principal+desp, pagina, configRam.tamanioPagina);
+        }
+        else if(mem == MEM_VIRT){
+            FILE * file = fopen(configRam.pathSwap, "r+");
+            fseek(file, desp, SEEK_SET);
+            int sz = fwrite(pagina, configRam.tamanioPagina , 1, file);
+            fclose(file);
+            // printf("bytes written %d\n",sz);
+        }
+        return 1;
+    }
+    else
+    {
+        // printf("frame in use\n");
+        return 0;
+    }
+}
+
+
+bool get_frame(int frame, int mem) {
+    if(mem == MEM_PPAL)
+        return bitarray_test_bit(frames_ocupados_ppal, frame);
+
+    /*else if(mem == MEM_VIRT)
+        return bitarray_test_bit(frames_ocupados_virtual, frame);*/
+    else
+        log_error(logMemoria, "El frame que se quiere acceder es invalido");
+    	exit(1);
+
+}
+
+
+uint32_t buscar_frame_disponible(int mem) {
+    int size = 0;
+    if(mem == MEM_PPAL)
+        size = cant_frames_ppal;
+    /*else if(mem == MEM_VIRT)
+        size = cant_frames_virtual;*/
+
+    for(uint32_t f = 0; f < size; f++)
+        if(!get_frame(f, mem))
+            return f;
+
+    return FRAME_INVALIDO;
+}
+
+
+t_pagina* buscar_pagina(t_info_pagina* info_pagina) {
+    t_pagina* pagina = NULL;
+    int frame_ppal = info_pagina->frame_m_ppal;
+    int frame_virtual = info_pagina->frame_m_virtual;
+    if(frame_ppal != FRAME_INVALIDO)
+        pagina = leer_memoria(frame_ppal, MEM_PPAL);
+
+        // log_info(logger, "pagina encontrada en memoria principal");
+    return pagina;
+}
+
+
+
+
+
+

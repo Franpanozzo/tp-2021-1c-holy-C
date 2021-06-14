@@ -27,6 +27,11 @@
 #include <commons/bitarray.h>
 #include <math.h>
 
+#define MEM_PPAL 0
+#define MEM_VIRT 1
+
+#define FRAME_INVALIDO 2147483646
+
 
 typedef struct {
 
@@ -45,7 +50,7 @@ typedef struct {
 t_log* logMemoria;
 t_configRam configRam;
 
-char* memoria_principal;
+void* memoria_principal;
 t_bitarray* frames_ocupados_ppal;
 int cant_frames_ppal;
 
