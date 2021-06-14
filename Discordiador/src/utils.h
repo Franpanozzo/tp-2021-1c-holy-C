@@ -20,6 +20,8 @@ void iniciarTripulante(t_coordenadas, uint32_t);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
 t_patota* asignarDatosAPatota(char*);
 
+void esperarTerminarTripulante(t_tripulante*);
+void avisarTerminoPlanificacion(t_tripulante*);
 void hiloPlani();
 void hilitoSabo();
 void hiloTripu(t_tripulante*);

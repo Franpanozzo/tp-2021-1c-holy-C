@@ -122,19 +122,23 @@ char * pathLog(){
 
 //}
 
-/*void esperarTerminarTripulante(t_tripulante* tripulante){
-
+void esperarTerminarTripulante(t_tripulante* tripulante){
+	sem_wait(&tripulante->semaforoFin);
 }
 
 
-void esperarTripulantes(){
-	list_iterate(colaExec->elements, sem_wait(&tripulante->semaforoFin));
+void avisarTerminoPlanificacion(t_tripulante* tripulante){
+	sem_post(&tripulante->semaforoInicio);
 }
-*/
 
 void hiloPlani(){
 	while(1){
 		if(planificacionPlay && leerTotalTripus() > 0){
+
+			list_iterate(colaExec->elements, (void*)esperarTerminarTripulante);
+			list_iterate(colaBlocked->elements, (void*)esperarTerminarTripulante);
+			list_iterate(colaNew->elements, (void*)esperarTerminarTripulante);
+			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
 
 			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripus);
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
@@ -143,6 +147,7 @@ void hiloPlani(){
 			actualizarCola(BLOCKED, colaBlocked, mutexColaBlocked);
 			actualizarCola(NEW, colaNew, mutexColaNew);
 			actualizarCola(READY, colaReady, mutexColaReady);
+
 /*
 			if(haySabotaje){ // HAY SABOTAJE
 				tripulanteDesabotaje = elTripuMasCerca(sabotaje.coordenadas);
@@ -166,6 +171,11 @@ void hiloPlani(){
 //			planificadorFin = 0;
 
 			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
+
+			list_iterate(colaExec->elements, (void*)avisarTerminoPlanificacion);
+			list_iterate(colaBlocked->elements, (void*)avisarTerminoPlanificacion);
+			list_iterate(colaNew->elements, (void*)avisarTerminoPlanificacion);
+			list_iterate(colaReady->elements, (void*)avisarTerminoPlanificacion);
 
 		}
 
@@ -376,10 +386,9 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 		unlock(colaMutex);
 		log_info(logDiscordiador,"tripulanteId %d: el planificador de la cola %s  y posicion %d",
 				tripulante->idTripulante, traducirEstado(estado), i);
-		sem_wait(&tripulante->semaforoFin);
+		//sem_wait(&tripulante->semaforoFin);
 		log_info(logDiscordiador,"tripulanteId %d: me estan planificando y tengo el estado %s",
 				tripulante->idTripulante, traducirEstado(tripulante->estado));
-
 
 		if(tripulante->estado != estado /*|| tripulante->estado == END*/){
 			if(estado == READY){
@@ -404,7 +413,7 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 			unlock(colaMutex);
 		}
 
-		sem_post(&tripulante->semaforoInicio);
+		//sem_post(&tripulante->semaforoInicio);
 	}
 }
 
