@@ -12,6 +12,8 @@ void cargar_configuracion();
 char * pathLog();
 
 int leerTotalTripus();
+void modificarTripulanteBlocked(int);
+int leerTripulanteBlocked();
 void crearConfig();
 
 void iniciarTripulante(t_coordenadas, uint32_t);

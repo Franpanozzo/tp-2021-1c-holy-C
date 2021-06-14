@@ -1,0 +1,593 @@
+[INFO] 17:00:23:552 Discordiador/(16196:16196): 
+Se ingreso el comando iniciar patota
+[INFO] 17:00:23:552 Discordiador/(16196:16196): La cantidad de tripulantes es: 5
+
+[INFO] 17:00:23:555 Discordiador/(16196:16196): Las tareas son: COMER_YOGUR;2;3;1
+GENERAR_OXIGENO 4;2;3;1
+
+[INFO] 17:00:23:555 Discordiador/(16196:16196): ---------------posx:3;posy:3---------------
+[INFO] 17:00:23:556 Discordiador/(16196:16196): ---------------posx:3;posy:2---------------
+[INFO] 17:00:23:556 Discordiador/(16196:16196): ---------------posx:2;posy:2---------------
+[INFO] 17:00:23:556 Discordiador/(16196:16196): ---------------posx:3;posy:5---------------
+[INFO] 17:00:23:556 Discordiador/(16196:16196): ---------------posx:1;posy:1---------------
+[INFO] 17:00:23:556 Discordiador/(16196:16196): Las coordenadas son 3 , 3 
+
+[INFO] 17:00:23:556 Discordiador/(16196:16196): Las coordenadas son 3 , 2 
+
+[INFO] 17:00:23:556 Discordiador/(16196:16196): Las coordenadas son 2 , 2 
+
+[INFO] 17:00:23:556 Discordiador/(16196:16196): Las coordenadas son 3 , 5 
+
+[INFO] 17:00:23:556 Discordiador/(16196:16196): Las coordenadas son 1 , 1 
+
+[INFO] 17:00:23:556 Discordiador/(16196:16196): Se creo la patota numero 1
+
+[INFO] 17:00:23:560 Discordiador/(16196:16196): Nos llego la confirmacion de MI-RAM de: PATOTA CREADA EN MEMORIA -- OK
+[INFO] 17:00:23:560 Discordiador/(16196:16196): creando patota, con 5 tripulantes
+[INFO] 17:00:23:560 Discordiador/(16196:16196): ---------------posx:3;posy:3---------------
+[INFO] 17:00:23:560 Discordiador/(16196:16196): Se creo el tripulante numero 1
+
+[INFO] 17:00:23:560 Discordiador/(16196:16196): ---------------posx:3;posy:2---------------
+[INFO] 17:00:23:561 Discordiador/(16196:16196): Se creo el tripulante numero 2
+
+[INFO] 17:00:23:561 Discordiador/(16196:16196): ---------------posx:2;posy:2---------------
+[INFO] 17:00:23:561 Discordiador/(16196:16196): Se creo el tripulante numero 3
+
+[INFO] 17:00:23:561 Discordiador/(16196:16196): ---------------posx:3;posy:5---------------
+[INFO] 17:00:23:561 Discordiador/(16196:16196): Se creo el tripulante numero 4
+
+[INFO] 17:00:23:561 Discordiador/(16196:16196): ---------------posx:1;posy:1---------------
+[INFO] 17:00:23:561 Discordiador/(16196:16196): Se creo el tripulante numero 5
+
+[INFO] 17:00:23:562 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:23:562 Discordiador/(16196:16202): tripulanteId 5: estoy en new
+[INFO] 17:00:23:562 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:23:565 Discordiador/(16196:16201): tripulanteId 4: estoy en new
+[INFO] 17:00:23:565 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:23:566 Discordiador/(16196:16200): tripulanteId 3: estoy en new
+[INFO] 17:00:23:567 Discordiador/(16196:16201): tripulanteId: 4 envie a MIRAM mi info principal
+[INFO] 17:00:23:567 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:23:568 Discordiador/(16196:16199): tripulanteId 2: estoy en new
+[INFO] 17:00:23:568 Discordiador/(16196:16202): tripulanteId: 5 envie a MIRAM mi info principal
+[INFO] 17:00:23:569 Discordiador/(16196:16200): tripulanteId: 3 envie a MIRAM mi info principal
+[INFO] 17:00:23:572 Discordiador/(16196:16199): tripulanteId: 2 envie a MIRAM mi info principal
+[INFO] 17:00:23:572 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:23:572 Discordiador/(16196:16198): tripulanteId 1: estoy en new
+[INFO] 17:00:23:573 Discordiador/(16196:16198): tripulanteId: 1 envie a MIRAM mi info principal
+[INFO] 17:00:23:575 Discordiador/(16196:16202): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:23:575 Discordiador/(16196:16202): TRIPULANTE: 5 - recibi la tarea COMER_YOGUR de MIRAM
+[INFO] 17:00:23:575 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:23:576 Discordiador/(16196:16201): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:23:576 Discordiador/(16196:16201): TRIPULANTE: 4 - recibi la tarea COMER_YOGUR de MIRAM
+[INFO] 17:00:23:576 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:23:578 Discordiador/(16196:16199): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:23:578 Discordiador/(16196:16199): TRIPULANTE: 2 - recibi la tarea COMER_YOGUR de MIRAM
+[INFO] 17:00:23:578 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:23:578 Discordiador/(16196:16200): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:23:578 Discordiador/(16196:16200): TRIPULANTE: 3 - recibi la tarea COMER_YOGUR de MIRAM
+[INFO] 17:00:23:578 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:23:581 Discordiador/(16196:16198): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:23:581 Discordiador/(16196:16198): TRIPULANTE: 1 - recibi la tarea COMER_YOGUR de MIRAM
+[INFO] 17:00:23:581 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:275 Discordiador/(16196:16196): 
+Se ingreso el comando iniciar planificacion
+[INFO] 17:00:35:276 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 5 ----
+[INFO] 17:00:35:276 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:35:276 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 0-----
+[INFO] 17:00:35:277 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 0-----
+[INFO] 17:00:35:277 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 5-----
+[INFO] 17:00:35:277 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola New  y posicion 0
+[INFO] 17:00:35:277 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado Ready
+[INFO] 17:00:35:277 Discordiador/(16196:16208): El tripulante 1 paso a COLA READY
+[INFO] 17:00:35:277 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:35:277 Discordiador/(16196:16198): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:35:278 Discordiador/(16196:16198): tripulanteId 1: estoy en ready con 2 ciclos exec
+[INFO] 17:00:35:278 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:278 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola New  y posicion 1
+[INFO] 17:00:35:278 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Ready
+[INFO] 17:00:35:278 Discordiador/(16196:16208): El tripulante 2 paso a COLA READY
+[INFO] 17:00:35:278 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:35:278 Discordiador/(16196:16199): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:35:278 Discordiador/(16196:16199): tripulanteId 2: estoy en ready con 3 ciclos exec
+[INFO] 17:00:35:278 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:278 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola New  y posicion 2
+[INFO] 17:00:35:279 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Ready
+[INFO] 17:00:35:279 Discordiador/(16196:16208): El tripulante 3 paso a COLA READY
+[INFO] 17:00:35:279 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:35:279 Discordiador/(16196:16200): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:35:279 Discordiador/(16196:16200): tripulanteId 3: estoy en ready con 2 ciclos exec
+[INFO] 17:00:35:279 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:279 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola New  y posicion 3
+[INFO] 17:00:35:279 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Ready
+[INFO] 17:00:35:279 Discordiador/(16196:16208): El tripulante 4 paso a COLA READY
+[INFO] 17:00:35:279 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:35:280 Discordiador/(16196:16201): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:35:280 Discordiador/(16196:16201): tripulanteId 4: estoy en ready con 4 ciclos exec
+[INFO] 17:00:35:280 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:280 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola New  y posicion 4
+[INFO] 17:00:35:280 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Ready
+[INFO] 17:00:35:280 Discordiador/(16196:16208): El tripulante 5 paso a COLA READY
+[INFO] 17:00:35:280 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:35:280 Discordiador/(16196:16202): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:35:280 Discordiador/(16196:16202): tripulanteId 5: estoy en ready con 4 ciclos exec
+[INFO] 17:00:35:280 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:280 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 5-----
+[INFO] 17:00:35:280 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:35:280 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado Exec
+[INFO] 17:00:35:281 Discordiador/(16196:16208): El tripulante 1 paso a COLA EXEC
+[INFO] 17:00:35:281 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:35:281 Discordiador/(16196:16198): tripulanteId 1: estoy en exec con 2 ciclos y 2 quantum
+[INFO] 17:00:35:281 Discordiador/(16196:16198): Moviendose de la posicion en X|Y ==> 3|3  
+[INFO] 17:00:35:281 Discordiador/(16196:16198): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:35:281 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:35:281 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Exec
+[INFO] 17:00:35:281 Discordiador/(16196:16208): El tripulante 2 paso a COLA EXEC
+[INFO] 17:00:35:281 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:35:281 Discordiador/(16196:16199): tripulanteId 2: estoy en exec con 3 ciclos y 2 quantum
+[INFO] 17:00:35:281 Discordiador/(16196:16199): Moviendose de la posicion en X|Y ==> 3|2  
+[INFO] 17:00:35:281 Discordiador/(16196:16199): A la posicion en X|Y ==> 2|2  
+[INFO] 17:00:35:281 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Ready  y posicion 2
+[INFO] 17:00:35:281 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Exec
+[INFO] 17:00:35:281 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:35:281 Discordiador/(16196:16200): tripulanteId 3: estoy en ready con 2 ciclos exec
+[INFO] 17:00:35:281 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:281 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Ready  y posicion 3
+[INFO] 17:00:35:281 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:35:281 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:35:281 Discordiador/(16196:16201): tripulanteId 4: estoy en ready con 4 ciclos exec
+[INFO] 17:00:35:281 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:281 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Ready  y posicion 4
+[INFO] 17:00:35:281 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:35:281 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:35:282 Discordiador/(16196:16202): tripulanteId 5: estoy en ready con 4 ciclos exec
+[INFO] 17:00:35:282 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:35:282 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:35:282 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 5 ----
+[INFO] 17:00:35:282 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:35:282 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:35:282 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:36:285 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:36:285 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:36:285 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado Exec
+[INFO] 17:00:36:286 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:36:286 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Exec
+[INFO] 17:00:36:286 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:36:288 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 0-----
+[INFO] 17:00:36:288 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:36:288 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 3-----
+[INFO] 17:00:36:288 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:36:288 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Exec
+[INFO] 17:00:36:288 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:36:292 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:36:292 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:36:292 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Ready  y posicion 2
+[INFO] 17:00:36:293 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:36:293 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:36:293 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:36:293 Discordiador/(16196:16202): tripulanteId 5: estoy en ready con 4 ciclos exec
+[INFO] 17:00:36:293 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:36:293 Discordiador/(16196:16200): tripulanteId 3: estoy en ready con 2 ciclos exec
+[INFO] 17:00:36:293 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:36:293 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:36:294 Discordiador/(16196:16199): tripulanteId 2: estoy en exec con 2 ciclos y 1 quantum
+[INFO] 17:00:36:294 Discordiador/(16196:16199): Moviendose de la posicion en X|Y ==> 2|2  
+[INFO] 17:00:36:294 Discordiador/(16196:16199): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:36:294 Discordiador/(16196:16198): tripulanteId 1: estoy en exec con 1 ciclos y 1 quantum
+[INFO] 17:00:36:294 Discordiador/(16196:16198): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:36:294 Discordiador/(16196:16198): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:36:294 Discordiador/(16196:16201): tripulanteId 4: estoy en ready con 4 ciclos exec
+[INFO] 17:00:36:294 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:36:294 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:36:294 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 5 ----
+[INFO] 17:00:36:294 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:36:295 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:36:295 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:37:294 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:37:295 Discordiador/(16196:16198): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:37:297 Discordiador/(16196:16198): TRIPULANTE: 1 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:37:301 Discordiador/(16196:16198): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:37:302 Discordiador/(16196:16198): TRIPULANTE: 1 - recibi la tarea GENERAR_OXIGENO de MIRAM
+[INFO] 17:00:37:302 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:37:303 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado Ready
+[INFO] 17:00:37:303 Discordiador/(16196:16208): El tripulante 1 paso a COLA READY
+[INFO] 17:00:37:303 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:37:304 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Ready
+[INFO] 17:00:37:304 Discordiador/(16196:16208): El tripulante 2 paso a COLA READY
+[INFO] 17:00:37:304 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 0-----
+[INFO] 17:00:37:304 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:37:304 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:37:304 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:37:304 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 5-----
+[INFO] 17:00:37:305 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:37:305 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Exec
+[INFO] 17:00:37:306 Discordiador/(16196:16199): tripulanteId 2: estoy en ready con 1 ciclos exec
+[INFO] 17:00:37:306 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:37:306 Discordiador/(16196:16198): tripulanteId 1: estoy en ready con 1 ciclos exec
+[INFO] 17:00:37:306 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:37:306 Discordiador/(16196:16208): El tripulante 3 paso a COLA EXEC
+[INFO] 17:00:37:306 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:37:306 Discordiador/(16196:16200): tripulanteId 3: estoy en exec con 2 ciclos y 2 quantum
+[INFO] 17:00:37:306 Discordiador/(16196:16200): Moviendose de la posicion en X|Y ==> 2|2  
+[INFO] 17:00:37:307 Discordiador/(16196:16200): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:37:307 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:37:307 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:37:308 Discordiador/(16196:16208): El tripulante 4 paso a COLA EXEC
+[INFO] 17:00:37:309 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:37:309 Discordiador/(16196:16201): tripulanteId 4: estoy en exec con 4 ciclos y 2 quantum
+[INFO] 17:00:37:309 Discordiador/(16196:16201): Moviendose de la posicion en X|Y ==> 3|5  
+[INFO] 17:00:37:309 Discordiador/(16196:16201): A la posicion en X|Y ==> 2|5  
+[INFO] 17:00:37:311 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Ready  y posicion 2
+[INFO] 17:00:37:312 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:37:312 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:37:312 Discordiador/(16196:16202): tripulanteId 5: estoy en ready con 4 ciclos exec
+[INFO] 17:00:37:312 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:37:312 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola Ready  y posicion 3
+[INFO] 17:00:37:312 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado Exec
+[INFO] 17:00:37:312 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:37:312 Discordiador/(16196:16198): tripulanteId 1: estoy en ready con 1 ciclos exec
+[INFO] 17:00:37:312 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:37:312 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Ready  y posicion 4
+[INFO] 17:00:37:312 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Exec
+[INFO] 17:00:37:312 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:37:312 Discordiador/(16196:16199): tripulanteId 2: estoy en ready con 1 ciclos exec
+[INFO] 17:00:37:312 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:37:312 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:37:313 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 5 ----
+[INFO] 17:00:37:313 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:37:313 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:37:313 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:38:309 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:38:309 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Exec
+[INFO] 17:00:38:310 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:38:310 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:38:310 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:38:310 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:38:310 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 0-----
+[INFO] 17:00:38:310 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:38:310 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 3-----
+[INFO] 17:00:38:310 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:38:310 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:38:311 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:38:311 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:38:311 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado Exec
+[INFO] 17:00:38:311 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Ready  y posicion 2
+[INFO] 17:00:38:311 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:38:311 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Exec
+[INFO] 17:00:38:311 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:38:311 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:38:311 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 5 ----
+[INFO] 17:00:38:311 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:38:312 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:38:312 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:38:312 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:38:312 Discordiador/(16196:16201): tripulanteId 4: estoy en exec con 3 ciclos y 1 quantum
+[INFO] 17:00:38:312 Discordiador/(16196:16201): Moviendose de la posicion en X|Y ==> 2|5  
+[INFO] 17:00:38:312 Discordiador/(16196:16201): A la posicion en X|Y ==> 2|4  
+[INFO] 17:00:38:312 Discordiador/(16196:16199): tripulanteId 2: estoy en ready con 1 ciclos exec
+[INFO] 17:00:38:312 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:38:312 Discordiador/(16196:16200): tripulanteId 3: estoy en exec con 1 ciclos y 1 quantum
+[INFO] 17:00:38:312 Discordiador/(16196:16200): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:38:312 Discordiador/(16196:16200): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:38:312 Discordiador/(16196:16202): tripulanteId 5: estoy en ready con 4 ciclos exec
+[INFO] 17:00:38:312 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:38:313 Discordiador/(16196:16198): tripulanteId 1: estoy en ready con 1 ciclos exec
+[INFO] 17:00:38:313 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:39:313 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:39:313 Discordiador/(16196:16200): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:39:316 Discordiador/(16196:16200): TRIPULANTE: 3 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:39:319 Discordiador/(16196:16200): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:39:320 Discordiador/(16196:16200): TRIPULANTE: 3 - recibi la tarea GENERAR_OXIGENO de MIRAM
+[INFO] 17:00:39:320 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:39:320 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Ready
+[INFO] 17:00:39:321 Discordiador/(16196:16208): El tripulante 3 paso a COLA READY
+[INFO] 17:00:39:321 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:39:321 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Ready
+[INFO] 17:00:39:321 Discordiador/(16196:16208): El tripulante 4 paso a COLA READY
+[INFO] 17:00:39:321 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 0-----
+[INFO] 17:00:39:321 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:39:321 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:39:321 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:39:322 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 5-----
+[INFO] 17:00:39:322 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:39:323 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:39:323 Discordiador/(16196:16201): tripulanteId 4: estoy en ready con 2 ciclos exec
+[INFO] 17:00:39:323 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:39:323 Discordiador/(16196:16200): tripulanteId 3: estoy en ready con 1 ciclos exec
+[INFO] 17:00:39:323 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:39:323 Discordiador/(16196:16208): El tripulante 5 paso a COLA EXEC
+[INFO] 17:00:39:324 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:39:324 Discordiador/(16196:16202): tripulanteId 5: estoy en exec con 4 ciclos y 2 quantum
+[INFO] 17:00:39:324 Discordiador/(16196:16202): Moviendose de la posicion en X|Y ==> 1|1  
+[INFO] 17:00:39:324 Discordiador/(16196:16202): A la posicion en X|Y ==> 2|1  
+[INFO] 17:00:39:324 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:39:324 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado Exec
+[INFO] 17:00:39:324 Discordiador/(16196:16208): El tripulante 1 paso a COLA EXEC
+[INFO] 17:00:39:325 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:39:325 Discordiador/(16196:16198): tripulanteId 1: estoy en exec con 1 ciclos y 2 quantum
+[INFO] 17:00:39:325 Discordiador/(16196:16198): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:39:326 Discordiador/(16196:16198): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:39:330 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Ready  y posicion 2
+[INFO] 17:00:39:330 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Exec
+[INFO] 17:00:39:331 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:39:331 Discordiador/(16196:16199): tripulanteId 2: estoy en ready con 1 ciclos exec
+[INFO] 17:00:39:331 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:39:331 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Ready  y posicion 3
+[INFO] 17:00:39:331 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Exec
+[INFO] 17:00:39:331 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:39:332 Discordiador/(16196:16200): tripulanteId 3: estoy en ready con 1 ciclos exec
+[INFO] 17:00:39:332 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:39:332 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Ready  y posicion 4
+[INFO] 17:00:39:332 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:39:334 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:39:334 Discordiador/(16196:16201): tripulanteId 4: estoy en ready con 2 ciclos exec
+[INFO] 17:00:39:334 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:39:334 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:39:334 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 5 ----
+[INFO] 17:00:39:334 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:39:334 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:39:335 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:40:324 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:40:324 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:40:325 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:40:325 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:40:325 Discordiador/(16196:16202): tripulanteId 5: estoy en exec con 3 ciclos y 1 quantum
+[INFO] 17:00:40:325 Discordiador/(16196:16202): Moviendose de la posicion en X|Y ==> 2|1  
+[INFO] 17:00:40:325 Discordiador/(16196:16202): A la posicion en X|Y ==> 2|2  
+[INFO] 17:00:40:327 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:40:327 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado Blocked
+[INFO] 17:00:40:328 Discordiador/(16196:16208): El tripulante 1 paso a COLA BLOCKED
+[INFO] 17:00:40:328 Discordiador/(16196:16208): ------EL TRIPU BLOQUEADO ES 1-----
+[INFO] 17:00:40:328 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 1-----
+[INFO] 17:00:40:328 Discordiador/(16196:16208): tripulanteId 1: el planificador de la cola Blocked  y posicion 0
+[INFO] 17:00:40:328 Discordiador/(16196:16198): tripulanteId 1: CORRIENDO
+[INFO] 17:00:41:325 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:41:330 Discordiador/(16196:16198): tripulanteId 1: estoy en block ejecutando, me quedan 1 ciclos
+[INFO] 17:00:41:331 Discordiador/(16196:16198): TRIPULANTE: 1 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:41:335 Discordiador/(16196:16198): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:41:335 Discordiador/(16196:16198): TRIPULANTE: 1 - recibi la tarea TAREA_NULA de MIRAM
+[INFO] 17:00:41:336 Discordiador/(16196:16198): Tripulante id: 1 deberia terminar
+[INFO] 17:00:41:337 Discordiador/(16196:16198): ----tripulanteId 1: termine el bloqueo, voy a pasar a End----
+[INFO] 17:00:41:337 Discordiador/(16196:16198): tripulanteId 1: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:41:337 Discordiador/(16196:16208): tripulanteId 1: me estan planificando y tengo el estado End
+[INFO] 17:00:41:338 Discordiador/(16196:16208): El tripulante 1 termino
+[INFO] 17:00:41:338 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:41:338 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 3-----
+[INFO] 17:00:41:338 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:41:338 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Exec
+[INFO] 17:00:41:339 Discordiador/(16196:16208): El tripulante 2 paso a COLA EXEC
+[INFO] 17:00:41:339 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:41:339 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:41:339 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Exec
+[INFO] 17:00:41:339 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Ready  y posicion 2
+[INFO] 17:00:41:339 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:41:340 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:41:340 Discordiador/(16196:16200): tripulanteId 3: estoy en ready con 1 ciclos exec
+[INFO] 17:00:41:340 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:41:340 Discordiador/(16196:16198): tripulanteId 1: YA TERMINE. Ahora quedan 4 tripus
+[INFO] 17:00:41:340 Discordiador/(16196:16199): tripulanteId 2: estoy en exec con 1 ciclos y 2 quantum
+[INFO] 17:00:41:340 Discordiador/(16196:16199): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:41:340 Discordiador/(16196:16199): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:41:340 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:41:340 Discordiador/(16196:16201): tripulanteId 4: estoy en ready con 2 ciclos exec
+[INFO] 17:00:41:341 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:41:341 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:41:342 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 4 ----
+[INFO] 17:00:41:342 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:41:342 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:41:342 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:41:342 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Ready
+[INFO] 17:00:41:346 Discordiador/(16196:16208): El tripulante 5 paso a COLA READY
+[INFO] 17:00:41:346 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:41:346 Discordiador/(16196:16202): tripulanteId 5: estoy en ready con 2 ciclos exec
+[INFO] 17:00:41:346 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:41:346 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:42:341 Discordiador/(16196:16199): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:42:345 Discordiador/(16196:16199): TRIPULANTE: 2 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:42:352 Discordiador/(16196:16199): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:42:353 Discordiador/(16196:16199): TRIPULANTE: 2 - recibi la tarea GENERAR_OXIGENO de MIRAM
+[INFO] 17:00:42:354 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:42:354 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Exec
+[INFO] 17:00:42:359 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 0-----
+[INFO] 17:00:42:359 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:42:359 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 3-----
+[INFO] 17:00:42:359 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:42:359 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Exec
+[INFO] 17:00:42:360 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:42:360 Discordiador/(16196:16208): El tripulante 3 paso a COLA EXEC
+[INFO] 17:00:42:360 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:42:360 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:42:363 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:42:363 Discordiador/(16196:16200): tripulanteId 3: estoy en exec con 1 ciclos y 2 quantum
+[INFO] 17:00:42:363 Discordiador/(16196:16200): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:42:363 Discordiador/(16196:16200): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:42:364 Discordiador/(16196:16199): tripulanteId 2: estoy en exec con 1 ciclos y 1 quantum
+[INFO] 17:00:42:364 Discordiador/(16196:16199): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:42:364 Discordiador/(16196:16199): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:42:364 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:42:364 Discordiador/(16196:16201): tripulanteId 4: estoy en ready con 2 ciclos exec
+[INFO] 17:00:42:365 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:42:365 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Ready  y posicion 2
+[INFO] 17:00:42:365 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:42:365 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:42:366 Discordiador/(16196:16202): tripulanteId 5: estoy en ready con 2 ciclos exec
+[INFO] 17:00:42:366 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:42:366 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:42:366 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 4 ----
+[INFO] 17:00:42:366 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:42:367 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:42:367 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:43:366 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:43:368 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:43:368 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado Blocked
+[INFO] 17:00:43:369 Discordiador/(16196:16208): El tripulante 2 paso a COLA BLOCKED
+[INFO] 17:00:43:369 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:43:369 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Blocked
+[INFO] 17:00:43:369 Discordiador/(16196:16208): El tripulante 3 paso a COLA BLOCKED
+[INFO] 17:00:43:369 Discordiador/(16196:16208): ------EL TRIPU BLOQUEADO ES 2-----
+[INFO] 17:00:43:370 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 2-----
+[INFO] 17:00:43:370 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:43:370 Discordiador/(16196:16208): tripulanteId 2: el planificador de la cola Blocked  y posicion 0
+[INFO] 17:00:43:370 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:43:370 Discordiador/(16196:16199): tripulanteId 2: CORRIENDO
+[INFO] 17:00:44:371 Discordiador/(16196:16199): tripulanteId 2: estoy en block ejecutando, me quedan 1 ciclos
+[INFO] 17:00:44:374 Discordiador/(16196:16199): TRIPULANTE: 2 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:44:378 Discordiador/(16196:16199): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:44:379 Discordiador/(16196:16199): TRIPULANTE: 2 - recibi la tarea TAREA_NULA de MIRAM
+[INFO] 17:00:44:379 Discordiador/(16196:16199): Tripulante id: 2 deberia terminar
+[INFO] 17:00:44:379 Discordiador/(16196:16199): ----tripulanteId 2: termine el bloqueo, voy a pasar a End----
+[INFO] 17:00:44:380 Discordiador/(16196:16199): tripulanteId 2: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:44:380 Discordiador/(16196:16208): tripulanteId 2: me estan planificando y tengo el estado End
+[INFO] 17:00:44:380 Discordiador/(16196:16208): El tripulante 2 termino
+[INFO] 17:00:44:381 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Blocked  y posicion 1
+[INFO] 17:00:44:381 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Blocked
+[INFO] 17:00:44:381 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:44:381 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:44:381 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 2-----
+[INFO] 17:00:44:381 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:44:381 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:44:381 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:44:382 Discordiador/(16196:16208): El tripulante 4 paso a COLA EXEC
+[INFO] 17:00:44:382 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:44:382 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:44:382 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:44:383 Discordiador/(16196:16201): tripulanteId 4: estoy en exec con 2 ciclos y 2 quantum
+[INFO] 17:00:44:383 Discordiador/(16196:16201): Moviendose de la posicion en X|Y ==> 2|4  
+[INFO] 17:00:44:383 Discordiador/(16196:16201): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:44:383 Discordiador/(16196:16208): El tripulante 5 paso a COLA EXEC
+[INFO] 17:00:44:383 Discordiador/(16196:16199): tripulanteId 2: YA TERMINE. Ahora quedan 3 tripus
+[INFO] 17:00:44:384 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:44:384 Discordiador/(16196:16202): tripulanteId 5: estoy en exec con 2 ciclos y 2 quantum
+[INFO] 17:00:44:384 Discordiador/(16196:16202): Moviendose de la posicion en X|Y ==> 2|2  
+[INFO] 17:00:44:384 Discordiador/(16196:16202): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:44:384 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:44:385 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 3 ----
+[INFO] 17:00:44:385 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:44:385 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:44:385 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:45:383 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:45:384 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:45:384 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:45:385 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:45:385 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:45:385 Discordiador/(16196:16208): ------EL TRIPU BLOQUEADO ES 3-----
+[INFO] 17:00:45:385 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:45:385 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:45:385 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 1-----
+[INFO] 17:00:45:386 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Blocked  y posicion 0
+[INFO] 17:00:45:386 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado Blocked
+[INFO] 17:00:45:386 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:45:386 Discordiador/(16196:16200): tripulanteId 3: CORRIENDO
+[INFO] 17:00:45:386 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 0-----
+[INFO] 17:00:45:387 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:45:387 Discordiador/(16196:16201): tripulanteId 4: estoy en exec con 1 ciclos y 1 quantum
+[INFO] 17:00:45:387 Discordiador/(16196:16201): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:45:387 Discordiador/(16196:16201): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:45:388 Discordiador/(16196:16202): tripulanteId 5: estoy en exec con 1 ciclos y 1 quantum
+[INFO] 17:00:45:388 Discordiador/(16196:16202): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:45:388 Discordiador/(16196:16202): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:45:388 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 3 ----
+[INFO] 17:00:45:388 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:45:388 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:45:388 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:46:388 Discordiador/(16196:16200): tripulanteId 3: estoy en block ejecutando, me quedan 1 ciclos
+[INFO] 17:00:46:388 Discordiador/(16196:16201): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:46:389 Discordiador/(16196:16202): La tarea COMER_YOGUR no es IO
+[INFO] 17:00:46:391 Discordiador/(16196:16201): TRIPULANTE: 4 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:46:392 Discordiador/(16196:16202): TRIPULANTE: 5 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:46:392 Discordiador/(16196:16200): TRIPULANTE: 3 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:46:396 Discordiador/(16196:16202): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:46:396 Discordiador/(16196:16202): TRIPULANTE: 5 - recibi la tarea GENERAR_OXIGENO de MIRAM
+[INFO] 17:00:46:396 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:46:412 Discordiador/(16196:16201): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:46:412 Discordiador/(16196:16201): TRIPULANTE: 4 - recibi la tarea GENERAR_OXIGENO de MIRAM
+[INFO] 17:00:46:412 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:46:412 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Ready
+[INFO] 17:00:46:412 Discordiador/(16196:16208): El tripulante 4 paso a COLA READY
+[INFO] 17:00:46:412 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:46:412 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Ready
+[INFO] 17:00:46:413 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:46:413 Discordiador/(16196:16208): El tripulante 5 paso a COLA READY
+[INFO] 17:00:46:413 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 1-----
+[INFO] 17:00:46:413 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:46:413 Discordiador/(16196:16208): tripulanteId 3: el planificador de la cola Blocked  y posicion 0
+[INFO] 17:00:46:413 Discordiador/(16196:16201): tripulanteId 4: estoy en ready con 1 ciclos exec
+[INFO] 17:00:46:413 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:46:413 Discordiador/(16196:16202): tripulanteId 5: estoy en ready con 1 ciclos exec
+[INFO] 17:00:46:414 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:46:415 Discordiador/(16196:16200): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:46:415 Discordiador/(16196:16200): TRIPULANTE: 3 - recibi la tarea TAREA_NULA de MIRAM
+[INFO] 17:00:46:415 Discordiador/(16196:16200): Tripulante id: 3 deberia terminar
+[INFO] 17:00:46:415 Discordiador/(16196:16200): ----tripulanteId 3: termine el bloqueo, voy a pasar a End----
+[INFO] 17:00:46:415 Discordiador/(16196:16200): tripulanteId 3: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:46:415 Discordiador/(16196:16208): tripulanteId 3: me estan planificando y tengo el estado End
+[INFO] 17:00:46:416 Discordiador/(16196:16208): El tripulante 3 termino
+[INFO] 17:00:46:416 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:46:416 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 2-----
+[INFO] 17:00:46:416 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Ready  y posicion 0
+[INFO] 17:00:46:416 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Exec
+[INFO] 17:00:46:416 Discordiador/(16196:16208): El tripulante 4 paso a COLA EXEC
+[INFO] 17:00:46:416 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Ready  y posicion 1
+[INFO] 17:00:46:416 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:46:417 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Exec
+[INFO] 17:00:46:417 Discordiador/(16196:16208): El tripulante 5 paso a COLA EXEC
+[INFO] 17:00:46:417 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:46:417 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:46:417 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 2 ----
+[INFO] 17:00:46:417 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:46:417 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 2-----
+[INFO] 17:00:46:417 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Exec  y posicion 0
+[INFO] 17:00:46:418 Discordiador/(16196:16201): tripulanteId 4: estoy en exec con 1 ciclos y 2 quantum
+[INFO] 17:00:46:418 Discordiador/(16196:16201): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:46:418 Discordiador/(16196:16201): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:46:418 Discordiador/(16196:16200): tripulanteId 3: YA TERMINE. Ahora quedan 2 tripus
+[INFO] 17:00:46:418 Discordiador/(16196:16202): tripulanteId 5: estoy en exec con 1 ciclos y 2 quantum
+[INFO] 17:00:46:418 Discordiador/(16196:16202): Moviendose de la posicion en X|Y ==> 2|3  
+[INFO] 17:00:46:418 Discordiador/(16196:16202): A la posicion en X|Y ==> 2|3  
+[INFO] 17:00:47:420 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:47:421 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:47:421 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado Blocked
+[INFO] 17:00:47:422 Discordiador/(16196:16208): El tripulante 4 paso a COLA BLOCKED
+[INFO] 17:00:47:422 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Exec  y posicion 1
+[INFO] 17:00:47:422 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Blocked
+[INFO] 17:00:47:422 Discordiador/(16196:16208): El tripulante 5 paso a COLA BLOCKED
+[INFO] 17:00:47:422 Discordiador/(16196:16208): ------EL TRIPU BLOQUEADO ES 4-----
+[INFO] 17:00:47:422 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 2-----
+[INFO] 17:00:47:422 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:47:422 Discordiador/(16196:16208): tripulanteId 4: el planificador de la cola Blocked  y posicion 0
+[INFO] 17:00:47:422 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:47:423 Discordiador/(16196:16201): tripulanteId 4: CORRIENDO
+[INFO] 17:00:48:423 Discordiador/(16196:16201): tripulanteId 4: estoy en block ejecutando, me quedan 1 ciclos
+[INFO] 17:00:48:425 Discordiador/(16196:16201): TRIPULANTE: 4 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:48:431 Discordiador/(16196:16201): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:48:431 Discordiador/(16196:16201): TRIPULANTE: 4 - recibi la tarea TAREA_NULA de MIRAM
+[INFO] 17:00:48:432 Discordiador/(16196:16201): Tripulante id: 4 deberia terminar
+[INFO] 17:00:48:432 Discordiador/(16196:16201): ----tripulanteId 4: termine el bloqueo, voy a pasar a End----
+[INFO] 17:00:48:432 Discordiador/(16196:16201): tripulanteId 4: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:48:432 Discordiador/(16196:16208): tripulanteId 4: me estan planificando y tengo el estado End
+[INFO] 17:00:48:433 Discordiador/(16196:16208): El tripulante 4 termino
+[INFO] 17:00:48:434 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Blocked  y posicion 1
+[INFO] 17:00:48:434 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado Blocked
+[INFO] 17:00:48:434 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:48:434 Discordiador/(16196:16202): tripulanteId 5: CORRIENDO
+[INFO] 17:00:48:434 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 0-----
+[INFO] 17:00:48:434 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----
+[INFO] 17:00:48:435 Discordiador/(16196:16208): ----- TOTAL TRIPUS: 1 ----
+[INFO] 17:00:48:435 Discordiador/(16196:16208): ----- COMIENZA LA PLANI ----
+[INFO] 17:00:48:435 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Exec es de 0-----
+[INFO] 17:00:48:435 Discordiador/(16196:16208): ------EL TRIPU BLOQUEADO ES 5-----
+[INFO] 17:00:48:435 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Blocked es de 1-----
+[INFO] 17:00:48:437 Discordiador/(16196:16208): tripulanteId 5: el planificador de la cola Blocked  y posicion 0
+[INFO] 17:00:48:439 Discordiador/(16196:16201): tripulanteId 4: YA TERMINE. Ahora quedan 1 tripus
+[INFO] 17:00:49:439 Discordiador/(16196:16202): tripulanteId 5: estoy en block ejecutando, me quedan 1 ciclos
+[INFO] 17:00:49:443 Discordiador/(16196:16202): TRIPULANTE: 5 - VOY A BUSCAR PROX TAREA A MI RAM
+[INFO] 17:00:49:460 Discordiador/(16196:16202): --------------------------codigoOp es: 5 -----------------------------
+[INFO] 17:00:49:460 Discordiador/(16196:16202): TRIPULANTE: 5 - recibi la tarea TAREA_NULA de MIRAM
+[INFO] 17:00:49:461 Discordiador/(16196:16202): Tripulante id: 5 deberia terminar
+[INFO] 17:00:49:461 Discordiador/(16196:16202): ----tripulanteId 5: termine el bloqueo, voy a pasar a End----
+[INFO] 17:00:49:461 Discordiador/(16196:16208): tripulanteId 5: me estan planificando y tengo el estado End
+[INFO] 17:00:49:463 Discordiador/(16196:16202): tripulanteId 5: ESPERANDO QUE EL PLANI TERMINE
+[INFO] 17:00:49:464 Discordiador/(16196:16202): tripulanteId 5: YA TERMINE. Ahora quedan 0 tripus
+[INFO] 17:00:49:464 Discordiador/(16196:16208): El tripulante 5 termino
+[INFO] 17:00:49:465 Discordiador/(16196:16208): ------El tamanio inicial de la cola de New es de 0-----
+[INFO] 17:00:49:465 Discordiador/(16196:16208): ------El tamanio inicial de la cola de Ready es de 0-----
+[INFO] 17:00:49:465 Discordiador/(16196:16208): ----- TERMINA LA PLANI -----

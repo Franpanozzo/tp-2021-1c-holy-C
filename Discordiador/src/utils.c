@@ -1,5 +1,19 @@
 #include "utils.h"
 
+void modificarTripulanteBlocked(int numero){
+	lock(mutexIdTripulanteBlocked);
+	idTripulanteBlocked = numero;
+	unlock(mutexIdTripulanteBlocked);
+}
+
+int leerTripulanteBlocked(){
+	lock(mutexIdTripulanteBlocked);
+	int id = idTripulanteBlocked;
+	unlock(mutexIdTripulanteBlocked);
+	return id;
+}
+
+
 void iniciarTareasIO(){
 	todasLasTareasIO = malloc(sizeof(char*) * 7);
 	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
@@ -34,6 +48,8 @@ void iniciarMutex(){
 	pthread_mutex_init(&mutexPlanificadorFin, NULL);
 	pthread_mutex_init(&mutexLogDiscordiador, NULL);
 	pthread_mutex_init(&mutexTotalTripus, NULL);
+	pthread_mutex_init(&mutexIdTripulanteBlocked, NULL);
+
 
 }
 
@@ -80,7 +96,7 @@ void crearConfig(){
 
 	if(config == NULL){
 
-		log_error(logDiscordiador, "\n La ruta es incorrecta \n");
+		log_error(logDiscordiador, "La ruta es incorrecta ");
 
 		exit(1);
 	}
@@ -106,6 +122,15 @@ char * pathLog(){
 
 //}
 
+/*void esperarTerminarTripulante(t_tripulante* tripulante){
+
+}
+
+
+void esperarTripulantes(){
+	list_iterate(colaExec->elements, sem_wait(&tripulante->semaforoFin));
+}
+*/
 
 void hiloPlani(){
 	while(1){
@@ -265,11 +290,6 @@ void hiloTripu(t_tripulante* tripulante){
 						tripulante->idTripulante);
 
 	}
-	//EL PLANI ES EL ENCARGADO DE SACARLO DE LA COLA. LO HACE CUANDO ACTUALIZA LA COLA
-	enviarA(puertoEIPRAM, tripulante, EXPULSAR);
-	log_info(logDiscordiador,"tripulanteId %d: YA TERMINE. Ahora quedan %d tripus",
-							tripulante->idTripulante, totalTripus);
-	liberarTripulante(tripulante);
 }
 
 
@@ -312,7 +332,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	queue_push(colaNew,(void*)tripulante);
 	unlock(mutexColaNew);
 
-	log_info(logDiscordiador,"Se creo el tripulante numero %d\n",tripulante->idTripulante);
+	log_info(logDiscordiador,"Se creo el tripulante numero %d",tripulante->idTripulante);
 
 	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripu, (void*) tripulante);
 	pthread_detach(_hiloTripulante);
@@ -328,11 +348,24 @@ t_patota* asignarDatosAPatota(char* tareasString){
 	patota->ID = idPatota;
 	patota->tareas = tareasString;
 
-	log_info(logDiscordiador,"Se creo la patota numero %d\n",idPatota);
+	log_info(logDiscordiador,"Se creo la patota numero %d",idPatota);
 	return patota;
 }
 
 void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
+
+	//TODO ACTUALIZA EL TRIPU BLOQUEADO pasarlo a una funcion y ponerlo antes de
+	//actualizar la cola blocked y sacarle la primera condicion
+	if(estado == BLOCKED && idTripulanteBlocked == -1 && queue_size(colaBlocked) > 0){
+		lock(colaMutex);
+		t_tripulante* tripulanteBlocked = (t_tripulante*) queue_peek(colaBlocked);
+		unlock(colaMutex);
+		if(tripulanteBlocked->estado == BLOCKED){
+			idTripulanteBlocked = tripulanteBlocked->idTripulante;
+			log_info(logDiscordiador,"------EL TRIPU BLOQUEADO ES %d-----", idTripulanteBlocked);
+		}
+	}
+
 	t_tripulante* tripulante;
 	int tamanioInicialCola = queue_size(cola);
 	log_info(logDiscordiador,"------El tamanio inicial de la cola de %s es de %d-----", traducirEstado(estado), tamanioInicialCola);
@@ -341,8 +374,8 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 		lock(colaMutex);
 		tripulante = (t_tripulante*) queue_pop(cola);
 		unlock(colaMutex);
-		log_info(logDiscordiador,"tripulanteId %d: el planificador de la cola %s esta esperando el post",
-				tripulante->idTripulante, traducirEstado(estado));
+		log_info(logDiscordiador,"tripulanteId %d: el planificador de la cola %s  y posicion %d",
+				tripulante->idTripulante, traducirEstado(estado), i);
 		sem_wait(&tripulante->semaforoFin);
 		log_info(logDiscordiador,"tripulanteId %d: me estan planificando y tengo el estado %s",
 				tripulante->idTripulante, traducirEstado(tripulante->estado));
@@ -369,15 +402,6 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 			lock(colaMutex);
 			queue_push(cola, tripulante);
 			unlock(colaMutex);
-		}
-
-		//ACTUALIZA EL TRIPU BLOQUEADO DE SER NECESARIO
-		if(estado == BLOCKED && idTripulanteBlocked == -1 && queue_size(colaBlocked) > 0){
-			lock(colaMutex);
-			t_tripulante* tripulanteBlocked = (t_tripulante*) queue_peek(cola);
-			unlock(colaMutex);
-			idTripulanteBlocked = tripulanteBlocked->idTripulante;
-			log_info(logDiscordiador,"------EL TRIPU BLOQUEADO ES %d-----", idTripulanteBlocked);
 		}
 
 		sem_post(&tripulante->semaforoInicio);
@@ -408,7 +432,8 @@ void iterarCola(t_queue* cola){
 	while(list_iterator_has_next(list_iterator)) {
 		t_tripulante* tripulante = list_iterator_next(list_iterator);
 		char* status = traducirEstado(tripulante->estado);
-		printf("Tripulante: %d    Patota: %d    Status:%s    \n", tripulante->idTripulante, tripulante->idPatota, status);
+		//TODO hacerlo log
+		printf("Tripulante: %d    Patota: %d    Status:%s    ", tripulante->idTripulante, tripulante->idPatota, status);
 		free(status);
 	}
 
@@ -440,8 +465,11 @@ void pasarDeCola(t_tripulante* tripulante){
 			break;
 
 		case END:
-			log_info(logDiscordiador,"El tripulante %d termino", tripulante->idTripulante);
-			break; //TODO aca va un break?
+			enviarA(puertoEIPRAM, tripulante, EXPULSAR);
+			log_info(logDiscordiador,"tripulanteId %d: YA TERMINE. Ahora quedan %d tripus",
+									tripulante->idTripulante, totalTripus);
+			liberarTripulante(tripulante);
+			break;
 
 		default:
 			log_error(logDiscordiador,"No se reconoce el estado", tripulante->idTripulante);
@@ -515,7 +543,7 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 	}
 	else{
 
-	    log_error(logDiscordiador,"El paquete recibido no es una tarea\n");
+	    log_error(logDiscordiador,"El paquete recibido no es una tarea");
 
 	    exit(1);
 	}
@@ -553,17 +581,17 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 
 	char* mensajeRecibido = deserializarString(paqueteRecibido);
 
-	log_info(logDiscordiador,"Confirmacion %s\n",mensajeRecibido);
+	log_info(logDiscordiador,"Confirmacion %s",mensajeRecibido);
 
 
 	if(strcmp(mensajeRecibido,"TAREA REALIZADA") == 0){
 
-		log_info(logDiscordiador,"Se elimino la tarea %s\n",tarea->nombreTarea);
+		log_info(logDiscordiador,"Se elimino la tarea %s",tarea->nombreTarea);
 
 	}
 	else{
 
-		log_info(logDiscordiador, "No sabemos q hacer todavia =(\n");
+		log_info(logDiscordiador, "No sabemos q hacer todavia =(");
 
 	}
 	free(tarea->nombreTarea);
@@ -636,8 +664,8 @@ uint32_t diferencia(uint32_t numero1, uint32_t numero2){
 }
 
 void listarTripulante(){
-
-	printf("Estado de la nave: %d \n", system("date"));
+	//TODO hacerlo log
+	printf("Estado de la nave: %d ", system("date"));
 
 	iterarCola(colaNew);
 	iterarCola(colaReady);
@@ -717,20 +745,20 @@ void eliminarTripulante(uint32_t id){
 	}
 	if(resultado == 0){
 
-		log_info(logDiscordiador,"No se ha encontrado un tripulante con el Id: %d \n",id);
+		log_info(logDiscordiador,"No se ha encontrado un tripulante con el Id: %d ",id);
 
 		planificacionPlay = 1;
 
 	}
 	if(resultado == 1){
 
-		log_info(logDiscordiador,"Se va a eliminar el tripulante con el Id: %d \n",id);
+		log_info(logDiscordiador,"Se va a eliminar el tripulante con el Id: %d ",id);
 
 		planificacionPlay = 1;
 
 	}
 	else{
-		log_info(logDiscordiador,"Esta funcionando mal eliminarTripulante negro \n");
+		log_info(logDiscordiador,"Esta funcionando mal eliminarTripulante negro ");
 		exit(1);
 	}
 
