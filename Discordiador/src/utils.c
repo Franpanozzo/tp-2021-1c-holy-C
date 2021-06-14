@@ -108,7 +108,7 @@ char * pathLog(){
 
 
 void hiloPlani(){
-	while(1 && leerTotalTripus() != 0){
+	while(1){
 		if(planificacionPlay && leerTotalTripus() > 0){
 
 			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripus);
@@ -217,7 +217,7 @@ void hiloTripu(t_tripulante* tripulante){
 				if(tripulante->idTripulante == idTripulanteBlocked){
 					sleep(1);
 					lock(mutexLogDiscordiador);
-					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando, me quedan %d cilos",
+					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando, me quedan %d ciclos",
 							tripulante->idTripulante, ciclosBlocked);
 					unlock(mutexLogDiscordiador);
 					ciclosBlocked --;
@@ -341,20 +341,34 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 		lock(colaMutex);
 		tripulante = (t_tripulante*) queue_pop(cola);
 		unlock(colaMutex);
+		log_info(logDiscordiador,"tripulanteId %d: el planificador de la cola %s esta esperando el post",
+				tripulante->idTripulante, traducirEstado(estado));
 		sem_wait(&tripulante->semaforoFin);
-		log_info(logDiscordiador,"tripulanteId %d: me estan planificando",
-								tripulante->idTripulante);
+		log_info(logDiscordiador,"tripulanteId %d: me estan planificando y tengo el estado %s",
+				tripulante->idTripulante, traducirEstado(tripulante->estado));
 
-		if(tripulante->estado != estado && queue_size(colaExec) < gradoMultiprocesamiento){
-			pasarDeCola(tripulante);
+
+		if(tripulante->estado != estado /*|| tripulante->estado == END*/){
+			if(estado == READY){
+				if(queue_size(colaExec) < gradoMultiprocesamiento){
+					pasarDeCola(tripulante);
+				}
+				else{
+					tripulante->estado = estado;
+					lock(colaMutex);
+					queue_push(cola, tripulante);
+					unlock(colaMutex);
+				}
+			}
+			else{
+				pasarDeCola(tripulante);
+			}
 		}
 		else{
-
 			tripulante->estado = estado;
 			lock(colaMutex);
 			queue_push(cola, tripulante);
 			unlock(colaMutex);
-
 		}
 
 		//ACTUALIZA EL TRIPU BLOQUEADO DE SER NECESARIO
