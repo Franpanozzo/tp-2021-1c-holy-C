@@ -86,7 +86,7 @@ void crearConfig(){
 	}
 }
 
-char * pahtLog(){
+char * pathLog(){
 	char *pathLog = string_new();
 	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Discordiador/logs/");
 	string_append(&pathLog, "log ");

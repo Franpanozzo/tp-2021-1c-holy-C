@@ -9,6 +9,7 @@ void iniciarColas();
 void iniciarSemaforos();
 void iniciarMutex();
 void cargar_configuracion();
+char * pathLog();
 
 int leerTotalTripus();
 void crearConfig();
