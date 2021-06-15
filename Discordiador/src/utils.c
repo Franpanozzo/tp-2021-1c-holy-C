@@ -144,6 +144,7 @@ void hiloPlani(){
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 
 			actualizarCola(EXEC, colaExec, mutexColaExec);
+
 			actualizarCola(BLOCKED, colaBlocked, mutexColaBlocked);
 			actualizarCola(NEW, colaNew, mutexColaNew);
 			actualizarCola(READY, colaReady, mutexColaReady);
@@ -208,7 +209,10 @@ void hiloTripu(t_tripulante* tripulante){
 	while(tripuVivo){
 		sem_wait(&tripulante->semaforoInicio);
 		log_info(logDiscordiador,"tripulanteId %d: CORRIENDO", tripulante->idTripulante);
-		//actualizarEstadoEnRAM(tripulante);	//LO PUSE ACA POR EL PROBLEMA DE Q SI LO PONGO ABAJO LE VA A
+		if(tripulante->estado != NEW){
+			actualizarEstadoEnRAM(tripulante);
+		}
+			//LO PUSE ACA POR EL PROBLEMA DE Q SI LO PONGO ABAJO LE VA A
 		//MANDAR UN ESTDO INCORRECTO EN EL CADO DE QUE NO PUEDA ENTRAR A EXEC
 		//EL OTRO PROBLEMA ES QUE LA PRIMERA VEZ LE VA ENVIAR UN TIPU SIN TAREA A RAM
 		switch(tripulante->estado){
