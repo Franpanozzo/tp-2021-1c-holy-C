@@ -6,7 +6,6 @@ void leerConsola(){
 	char* leido;
 	char** comandoYparametros;
 	int cursor;
-	int primeraVez = 1;
 
 	while(1){
 		leido = readline("Discordiador-->");
@@ -20,55 +19,71 @@ void leerConsola(){
 			cursor ++;
 
 			uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
-			log_info(logDiscordiador, "La cantidad de tripulantes es: %d\n",cantidadTripulantes);
+			log_info(logDiscordiador, "La cantidad de tripulantes es: %d",cantidadTripulantes);
 			char* tareas = procesarPathTareas(comandoYparametros, &cursor);
 			log_info(logDiscordiador, "Las tareas son: %s\n",tareas);
 			t_coordenadas* coordenadasTripulantes= procesarPosicionesTripulantes(comandoYparametros, cantidadTripulantes, &cursor);
+			log_info(logDiscordiador, "Las coordenadas son:");
 			for(int i=0; i<cantidadTripulantes; i++){
-				log_info(logDiscordiador, "Las coordenadas son %d , %d \n",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
+				log_info(logDiscordiador,"---posx:%d;posy:%d---",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
 			}
 
-
-			//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
-			//iniciarPatota(coordenadas, "COMER_YOGUR;2;3;7\nGENERAR_OXIGENO 4;2;3;7", tripulantes);
 			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
-			//LAS tareas procesadas andan, las coordenadas procesadas no
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
-			//sem_post(&semPlanificacion);//le permites arrancar a planificar las listas/colas
-			planificacionPlay = 1;
-			if(primeraVez){
 
+			if(planificacion == SIN_EMPEZAR){
+				planificacion = CORRIENDO;
 				pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
-				//pthread_join(planificador, (void**) NULL);
 				pthread_detach(planificador);
-				primeraVez =0;
+				log_info(logDiscordiador, "Se inicio la planificacion");
+				sleep(1);
+			}
+			else{
+				log_error(logDiscordiador, "La planificacion ya fue iniciada");
 			}
 
-
-			log_info(logDiscordiador, "\nSe ingreso el comando iniciar planificacion");
-			sleep(1);
-					cursor ++;
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-			planificacionPlay = 0;
-			log_info(logDiscordiador, "\nSe ingreso el comando pausar planificacion");
-			sleep(1);
-			cursor ++;
+			if(planificacion == CORRIENDO){
+				planificacion = PAUSADA;
+				log_info(logDiscordiador, "Se pauso la planificacion");
+				sleep(1);
+			}
+			else{
+				log_error(logDiscordiador, "La planificacion no esta corriendo");
+			}
+		}
+		else if (strcmp(comandoYparametros[cursor], "REANUDAR_PLANIFICACION") == 0){
+			if(planificacion == PAUSADA){
+				planificacion = CORRIENDO;
+				log_info(logDiscordiador, "Se reanudo la planificacion");
+				sleep(1);
+			}
+			else{
+				log_error(logDiscordiador, "La planificacion no esta pausada");
+			}
 		}
 		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){
-				log_info(logDiscordiador, "\nSe ingreso el comando pausar planificacion");
-				sleep(1);
-				cursor ++;
-
+				//log_info(logDiscordiador, "Se ingreso el comando listar tripulantes");
+				if(planificacion == CORRIENDO){
+					planificacion = PAUSADA;
+				}
 				listarTripulantes();
+				sleep(1);
+				if(planificacion == PAUSADA){
+					planificacion = CORRIENDO;
+				}
 		}
 		else if (strcmp(comandoYparametros[cursor], "ELIMINAR_TRIPULANTE") == 0){
-				log_info(logDiscordiador, "\nSe ingreso el comando ELIMINAR_TRIPULANTE");
-				sleep(1);
-				cursor ++;
-				uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
-				eliminarTripulante(idTripulante);
+				log_info(logDiscordiador, "Se ingreso el comando ELIMINAR_TRIPULANTE");
+				if(planificacion == CORRIENDO){
+					planificacion = PAUSADA;
+					cursor ++;
+					uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
+					eliminarTripulante(idTripulante);
+					planificacion = CORRIENDO;
+				}
 		}
 		else{
 			log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
@@ -118,7 +133,6 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 
 			coordenadasTripulantes[c].posX = (uint32_t) strtoul(coordenadasString[0], NULL,10);
 			coordenadasTripulantes[c].posY = (uint32_t) strtoul(coordenadasString[1], NULL,10);
-			log_info(logDiscordiador,"---------------posx:%d;posy:%d---------------",coordenadasTripulantes[c].posX,coordenadasTripulantes[c].posY);
 			*cursor = *cursor + 1;
 		}
 	}

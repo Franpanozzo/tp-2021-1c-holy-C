@@ -14,7 +14,8 @@ int main() {
 
 	idTripulante = 0;
 	idPatota = 0;
-	idTripulanteBlocked = -1;
+	idTripulanteBlocked = NO_HAY_TRIPULANTE_BLOQUEADO;
+	planificacion = SIN_EMPEZAR;
 
 	leerConsola();
 	free(path);

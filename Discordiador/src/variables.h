@@ -10,7 +10,7 @@ puertoEIP* puertoEIPMongo;
 
 int idTripulante;
 int idPatota;
-int planificacionPlay;
+int planificacion;
 int totalTripus;
 int haySabotaje;
 int quantum;

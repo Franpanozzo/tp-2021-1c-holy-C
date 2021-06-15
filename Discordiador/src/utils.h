@@ -4,6 +4,12 @@
 #include "discordiador.h"
 #include "variables.h"
 
+#define NO_HAY_TRIPULANTE_BLOQUEADO -1
+#define SIN_QUANTUM -1
+#define CORRIENDO 1
+#define PAUSADA 0
+#define SIN_EMPEZAR -1
+
 void iniciarTareasIO();
 void iniciarColas();
 void iniciarSemaforos();
@@ -31,7 +37,7 @@ void casoBlocked();
 void iterarCola(t_queue*);
 void pasarDeCola(t_tripulante*);
 
-void siguienteTarea(t_tripulante* tripulante, int* ciclosExec, int* tripuVivo);
+void siguienteTarea(t_tripulante* tripulante, int* ciclosExec);
 char* deserializarString (t_paquete*);
 void mandarTareaAejecutar(t_tripulante*,int);
 void actualizarEstadoEnRAM(t_tripulante*);
