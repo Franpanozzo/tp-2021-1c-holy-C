@@ -283,7 +283,7 @@ void hiloTripu(t_tripulante* tripulante){
 				desplazarse(tripulante);
 				ciclosExec --;
 				quantumPendiente--;
-				sleep(1);
+				sleep(3);
 				if(quantumPendiente == 0){
 					tripulante->estado = READY;
 				}
@@ -301,7 +301,7 @@ void hiloTripu(t_tripulante* tripulante){
 				break;
 			case BLOCKED:
 				if(tripulante->idTripulante == idTripulanteBlocked){
-					sleep(1);
+					sleep(3);
 					lock(mutexLogDiscordiador);
 					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando, me quedan %d ciclos",
 							tripulante->idTripulante, ciclosBlocked);
@@ -577,7 +577,7 @@ void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
-	log_info(logDiscordiador, "--------------------------codigoOp es: %d -----------------------------", paqueteRecibido->codigoOperacion);
+	//log_info(logDiscordiador, "--------------------------codigoOp es: %d -----------------------------", paqueteRecibido->codigoOperacion);
 	if(paqueteRecibido->codigoOperacion == TAREA){//revisar
 		free(tripulante->instruccionAejecutar->nombreTarea);
 		free(tripulante->instruccionAejecutar);
@@ -656,7 +656,7 @@ int esIO(char* tarea){
 			return 1;
 		}
 	}
-	log_info(logDiscordiador,"La tarea %s no es IO",tarea);
+//	log_info(logDiscordiador,"La tarea %s no es IO",tarea);
 	return 0;
 }
 
@@ -682,27 +682,19 @@ void desplazarse(t_tripulante* tripulante){
 	int desplazamiento = 0;
 	//FALTAN MUTEX
 
-	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
-			tripulante->posX, tripulante->posY );
+//	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
+//			tripulante->posX, tripulante->posY );
 
 	if(diferenciaEnX){
-
 		desplazamiento = restaEnX / diferenciaEnX;
-		//log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
-		//			tripulante->posX, tripulante->instruccionAejecutar->posX, restaEnX, diferenciaEnX, desplazamiento);
-
 		tripulante->posX = tripulante->posX - desplazamiento;
 	}
 	else if(diferenciaEnY){
-
 		desplazamiento = restaEnY / diferenciaEnY;
-		//log_info(logDiscordiador,"El valor que se le asigna es (%d - %d)(%d) / %d = %d",
-		//			tripulante->posY, tripulante->instruccionAejecutar->posY, restaEnY, diferenciaEnY, desplazamiento);
-
 		tripulante->posY = (tripulante->posY - desplazamiento);
 	}
 
-	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
+//	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
 
 }
 
