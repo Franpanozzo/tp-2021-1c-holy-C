@@ -29,12 +29,6 @@ void leerConsola(){
 			}
 
 
-			t_coordenadas coordenadas[cantidadTripulantes];
-			for(int i=0; i<cantidadTripulantes;i++){
-				coordenadas[i].posX = i+ 2;
-				coordenadas[i].posY = i + 2;
-			}
-
 			//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
 			//iniciarPatota(coordenadas, "COMER_YOGUR;2;3;7\nGENERAR_OXIGENO 4;2;3;7", tripulantes);
 			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
@@ -61,6 +55,20 @@ void leerConsola(){
 			log_info(logDiscordiador, "\nSe ingreso el comando pausar planificacion");
 			sleep(1);
 			cursor ++;
+		}
+		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){
+				log_info(logDiscordiador, "\nSe ingreso el comando pausar planificacion");
+				sleep(1);
+				cursor ++;
+
+				listarTripulantes();
+		}
+		else if (strcmp(comandoYparametros[cursor], "ELIMINAR_TRIPULANTE") == 0){
+				log_info(logDiscordiador, "\nSe ingreso el comando ELIMINAR_TRIPULANTE");
+				sleep(1);
+				cursor ++;
+				uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
+				eliminarTripulante(idTripulante);
 		}
 		else{
 			log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);

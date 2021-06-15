@@ -107,11 +107,11 @@ char * pathLog(){
 	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Discordiador/logs/");
 	string_append(&pathLog, "log ");
 	string_append(&pathLog, temporal_get_string_time("%d-%m-%y %H:%M:%S"));
-
+	string_append(&pathLog, ".log");
 	return pathLog;
 }
 
-//t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
+t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
 	/*
 	 * TODO devuelve el tripu mas cerca a una cierta posicion.
 	 * Hay q recorrer todas las colas e ir comparando las posiciones
@@ -119,9 +119,58 @@ char * pathLog(){
 	 * hay q sacar nada, solo estamos leyendo. Es decir q las
 	 * colas deben quedar como estaban.
 	 */
+	//planificacionPlay = 0;//alguien tiene que pausar antes de invocar esta funcion
+	int diferenciaX  = 0;
+	int diferenciaY = 0;
+	int diferenciaMasCerca = 0;
+	int diferenciaComparado = 0;
 
-//}
+	t_list * listaDeComparacion = list_create();
+	list_add_all(listaDeComparacion, colaReady->elements);
+	queue_size(colaReady);
+	list_add_all(listaDeComparacion, colaExec->elements);
+	queue_size(colaExec);
+	printf("\n tamaño lista: %d\n",list_size(listaDeComparacion));
+	t_list_iterator * iterator = list_iterator_create(listaDeComparacion);
+	t_tripulante * tripulante;
+	t_tripulante * tripulanteMasCerca;
 
+
+	tripulanteMasCerca = (t_tripulante *) list_iterator_next(iterator);
+	printf("\n %p \n",tripulanteMasCerca);
+	diferenciaX = diferencia(tripulanteMasCerca->posX, lugarSabotaje.posX);
+	diferenciaY = diferencia(tripulanteMasCerca->posY, lugarSabotaje.posY);
+
+	diferenciaMasCerca = diferenciaX + diferenciaY;
+	printf("\ndiferencia : %d de tripulanteid: %d\n", diferenciaMasCerca, tripulanteMasCerca->idTripulante);
+	while(list_iterator_has_next(iterator)){
+
+
+		tripulante = (t_tripulante *) list_iterator_next(iterator);
+		diferenciaX = diferencia(tripulante->posX, lugarSabotaje.posX);
+		diferenciaY = diferencia(tripulante->posY, lugarSabotaje.posY);
+
+		diferenciaComparado = diferenciaX + diferenciaY;
+		printf("\ndiferencia: %d de tripulanteid: %d\n", diferenciaComparado, tripulante->idTripulante);
+		//s: x=0,y=0
+		//t4: x=1,y=1
+		//t2: x=1,y=0
+		//t1: x=6,y=6
+
+		if(diferenciaComparado < diferenciaMasCerca || (diferenciaComparado == diferenciaMasCerca && tripulante->idTripulante < tripulanteMasCerca->idTripulante)){
+			printf("\nel tripulanteid: %d con posX: %d posY: %d desaloja al el tripulanteid: %d con posX: %d posY: %d\n"
+			, tripulante->idTripulante, tripulante->posX, tripulante->posY,
+			tripulanteMasCerca->idTripulante, tripulanteMasCerca->posX, tripulanteMasCerca->posY);
+
+			diferenciaMasCerca = diferenciaComparado;
+			tripulanteMasCerca =  tripulante;
+		}
+	}
+	list_iterator_destroy(iterator);
+	list_destroy(listaDeComparacion);
+	return tripulanteMasCerca;
+
+}
 void esperarTerminarTripulante(t_tripulante* tripulante){
 	sem_wait(&tripulante->semaforoFin);
 }
@@ -144,7 +193,7 @@ void hiloPlani(){
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 
 			actualizarCola(EXEC, colaExec, mutexColaExec);
-
+			casoBlocked();
 			actualizarCola(BLOCKED, colaBlocked, mutexColaBlocked);
 			actualizarCola(NEW, colaNew, mutexColaNew);
 			actualizarCola(READY, colaReady, mutexColaReady);
@@ -365,20 +414,18 @@ t_patota* asignarDatosAPatota(char* tareasString){
 	log_info(logDiscordiador,"Se creo la patota numero %d",idPatota);
 	return patota;
 }
-
-void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
-
-	//TODO ACTUALIZA EL TRIPU BLOQUEADO pasarlo a una funcion y ponerlo antes de
-	//actualizar la cola blocked y sacarle la primera condicion
-	if(estado == BLOCKED && idTripulanteBlocked == -1 && queue_size(colaBlocked) > 0){
-		lock(colaMutex);
+void casoBlocked(){
+	if(idTripulanteBlocked == -1 && queue_size(colaBlocked) > 0){
+		lock(mutexColaBlocked);
 		t_tripulante* tripulanteBlocked = (t_tripulante*) queue_peek(colaBlocked);
-		unlock(colaMutex);
+		unlock(mutexColaBlocked);
 		if(tripulanteBlocked->estado == BLOCKED){
 			idTripulanteBlocked = tripulanteBlocked->idTripulante;
 			log_info(logDiscordiador,"------EL TRIPU BLOQUEADO ES %d-----", idTripulanteBlocked);
 		}
 	}
+}
+void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 
 	t_tripulante* tripulante;
 	int tamanioInicialCola = queue_size(cola);
@@ -446,7 +493,7 @@ void iterarCola(t_queue* cola){
 		t_tripulante* tripulante = list_iterator_next(list_iterator);
 		char* status = traducirEstado(tripulante->estado);
 		//TODO hacerlo log
-		printf("Tripulante: %d    Patota: %d    Status:%s    ", tripulante->idTripulante, tripulante->idPatota, status);
+		log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Status:%s    ", tripulante->idTripulante, tripulante->idPatota, status);
 		free(status);
 	}
 
@@ -676,9 +723,10 @@ uint32_t diferencia(uint32_t numero1, uint32_t numero2){
 	return (uint32_t) abs(numero1-numero2);
 }
 
-void listarTripulante(){
+void listarTripulantes(){
 	//TODO hacerlo log
-	printf("Estado de la nave: %d ", system("date"));
+	//pausarPlanificacion = 0;
+	log_info(logDiscordiador,"Estado de la nave: %s ", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
 
 	iterarCola(colaNew);
 	iterarCola(colaReady);
@@ -766,8 +814,8 @@ void eliminarTripulante(uint32_t id){
 	if(resultado == 1){
 
 		log_info(logDiscordiador,"Se va a eliminar el tripulante con el Id: %d ",id);
-
 		planificacionPlay = 1;
+
 
 	}
 	else{
