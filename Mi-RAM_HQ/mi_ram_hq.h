@@ -35,7 +35,7 @@ typedef struct {
 	uint32_t posX;
 	uint32_t posY;
 	uint32_t proximaAEjecutar;
-	pcb* patota;
+	uint32_t dlPatota;
 
 } tcb;
 
