@@ -18,21 +18,17 @@ void cargar_configuracion();
 char * pathLog();
 
 int leerTotalTripus();
-void modificarTripulanteBlocked(int);
-int leerTripulanteBlocked();
+void modificarTripulanteBlocked(uint32_t);
+uint32_t leerTripulanteBlocked();
 void crearConfig();
 
-void iniciarTripulante(t_coordenadas, uint32_t);
-void iniciarPatota(t_coordenadas*, char*, uint32_t);
+
 t_patota* asignarDatosAPatota(char*);
 
 t_tripulante* elTripulanteMasCerca(t_coordenadas);
 void esperarTerminarTripulante(t_tripulante*);
 void avisarTerminoPlanificacion(t_tripulante*);
-void hiloPlani();
-void hilitoSabo();
-void hiloTripu(t_tripulante*);
-void actualizarCola(t_estado, t_queue*, pthread_mutex_t);
+
 void casoBlocked();
 void iterarCola(t_queue*);
 void pasarDeCola(t_tripulante*);
@@ -57,7 +53,6 @@ uint32_t diferencia(uint32_t, uint32_t);
 void listarTripulantes();
 char* traducirEstado(t_estado);
 
-int deleteTripulante(uint32_t, t_queue*);
 void eliminarTripulante(uint32_t);
 void eliminarPatota(t_patota*);
 void liberarTripulante(t_tripulante*);

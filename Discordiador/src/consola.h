@@ -12,6 +12,7 @@
 	t_coordenadas* procesarPosicionesTripulantes(char**, int, int*);
 	char* procesarPathTareas(char**, int*);
 	uint32_t procesarCantidadTripulantes(char**, int*);
+	void liberarStringSplit(char**);
 	void leerConsola();
 
 

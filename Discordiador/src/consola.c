@@ -32,63 +32,51 @@ void leerConsola(){
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
 
-			if(planificacion == SIN_EMPEZAR){
-				planificacion = CORRIENDO;
-				pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
+				pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
 				pthread_detach(planificador);
+				sem_post(&semPlanificacion);
 				log_info(logDiscordiador, "Se inicio la planificacion");
 				sleep(1);
-			}
-			else{
-				log_error(logDiscordiador, "La planificacion ya fue iniciada");
-			}
 
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-			if(planificacion == CORRIENDO){
-				planificacion = PAUSADA;
+
+				sem_wait(&semPlanificacion);
 				log_info(logDiscordiador, "Se pauso la planificacion");
 				sleep(1);
-			}
-			else{
-				log_error(logDiscordiador, "La planificacion no esta corriendo");
-			}
+
+
 		}
 		else if (strcmp(comandoYparametros[cursor], "REANUDAR_PLANIFICACION") == 0){
-			if(planificacion == PAUSADA){
-				planificacion = CORRIENDO;
+
+				sem_post(&semPlanificacion);
 				log_info(logDiscordiador, "Se reanudo la planificacion");
 				sleep(1);
-			}
-			else{
-				log_error(logDiscordiador, "La planificacion no esta pausada");
-			}
+
+
 		}
 		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){
 				//log_info(logDiscordiador, "Se ingreso el comando listar tripulantes");
-				if(planificacion == CORRIENDO){
-					planificacion = PAUSADA;
-				}
+				sem_wait(&semPlanificacion);
+
 				listarTripulantes();
 				sleep(1);
-				if(planificacion == PAUSADA){
-					planificacion = CORRIENDO;
-				}
+				sem_post(&semPlanificacion);
 		}
 		else if (strcmp(comandoYparametros[cursor], "ELIMINAR_TRIPULANTE") == 0){
 				log_info(logDiscordiador, "Se ingreso el comando ELIMINAR_TRIPULANTE");
-				if(planificacion == CORRIENDO){
-					planificacion = PAUSADA;
+
+					sem_wait(&semPlanificacion);
 					cursor ++;
 					uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
 					eliminarTripulante(idTripulante);
-					planificacion = CORRIENDO;
-				}
+					sem_post(&semPlanificacion);
+
 		}
 		else{
 			log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
 		}
-
+		liberarStringSplit(comandoYparametros);
 		free(leido);
 	}
 
@@ -134,6 +122,7 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 			coordenadasTripulantes[c].posX = (uint32_t) strtoul(coordenadasString[0], NULL,10);
 			coordenadasTripulantes[c].posY = (uint32_t) strtoul(coordenadasString[1], NULL,10);
 			*cursor = *cursor + 1;
+			liberarStringSplit(coordenadasString);
 		}
 	}
 
@@ -144,7 +133,20 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 
 	return coordenadasTripulantes;
 }
+void liberarStringSplit(char** arrayParametros) {
 
+	char** liberadorDeStrings = arrayParametros;
+
+	while((*liberadorDeStrings) != NULL) {
+
+		free(*liberadorDeStrings);
+		liberadorDeStrings++;
+		//if((*liberadorDeStrings) == NULL) free(arrayParametros);
+
+	}
+
+	free(arrayParametros);
+}
 
 char* procesarPathTareas(char** parametros, int* cursor){
 
