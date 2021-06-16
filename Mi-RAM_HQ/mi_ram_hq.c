@@ -238,7 +238,6 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
     	log_info(logMiRAM,"Procesando... %s\n",arrayDeTareas[i]);
         armarTarea(arrayDeTareas[i],listaTareas);
-
     }
 
     t_tarea * tareaFinal = malloc(sizeof(t_tarea));
@@ -317,13 +316,16 @@ void deserializarInfoPCB(t_paquete* paquete) {
 	memcpy(&(tamanio),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	nuevoPCB->listaTareas = list_create();
+	//nuevoPCB->listaTareas = list_create();
 
-	deserializarTareas(stream + offset, nuevoPCB->listaTareas, tamanio);
+	char* stringTareas = malloc(tamanio);
+	memcpy(stringTareas,stream + offset,tamanio);
 
-	lock(mutexListaPCB);
-	list_add(listaPCB,nuevoPCB);
-    unlock(mutexListaPCB);
+	delimitarTareas(stringTareas);
+
+	guardarPCB(nuevoPCB,stringTareas);;
+
+
 }
 
 

@@ -24,7 +24,7 @@ t_log* logMiRAM;
 typedef struct {
 
 	uint32_t pid;
-	t_list* listaTareas;
+	uint32_t dlTareas;
 
 } pcb;
 
@@ -34,7 +34,7 @@ typedef struct {
 	t_estado estado;
 	uint32_t posX;
 	uint32_t posY;
-	t_tarea* proximaAEjecutar;
+	uint32_t proximaAEjecutar;
 	pcb* patota;
 
 } tcb;

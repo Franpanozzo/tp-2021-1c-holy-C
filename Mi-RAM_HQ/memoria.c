@@ -40,6 +40,8 @@ char* asignar_bytes(int cant_frames)
 
 void inciarMemoria() {
 
+	t_list* tablasPaginasPatotas = list_creeate();
+
 	memoria_principal = malloc(configRam.tamanioMemoria);
 
 	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
@@ -55,7 +57,7 @@ void inciarMemoria() {
 
 // LA MAYORIA DE LO COMENTADO ES PARA CUANDO IMPLEMENTEMOS LA MEMORIA VIRTUAL
 
-t_pagina* leer_memoria(int frame, int mem) {
+void* leer_memoria(int frame, int mem) {
     //desplazamiento en memoria
     int desp = frame * configRam.tamanioPagina;
     // mostrar_memoria();
@@ -65,7 +67,7 @@ t_pagina* leer_memoria(int frame, int mem) {
     }
     else
     {
-        t_pagina* pagina = malloc(sizeof(t_pagina));
+    	void* pagina = malloc(sizeof(configRam.tamanioPagina));
         if(mem == MEM_PPAL)
         {
             memcpy(pagina, memoria_principal+desp, configRam.tamanioPagina);
@@ -76,7 +78,7 @@ t_pagina* leer_memoria(int frame, int mem) {
             FILE * file = fopen(configRam.pathSwap, "r");
             // printf("reading\n");
             fseek(file, desp, SEEK_SET);
-            int sz = fread(pagina, 1, sizeof(t_pagina), file);
+            int sz = fread(pagina, 1, sizeof(configRam.tamanioPagina), file);
             fclose(file);
 
             // printf("bytes read %d\n",sz);
@@ -87,22 +89,24 @@ t_pagina* leer_memoria(int frame, int mem) {
 }
 
 
-int insertar_en_memoria(int frame, t_pagina* pagina, int mem) {
+int insertar_en_memoria(int frame, void* aMeterEnPagina, int mem, int bytesDisponibles) {
     // printf("frame %d -> %d\n",frame, get_frame(frame,mem));
     if(!get_frame(frame,mem)) // no hay nada en el frame
     {
         // printf("empty frame, inserting\n");
         set_frame(frame,mem); //marco el frame como en uso
 
-        int desp = frame * configRam.tamanioPagina;
+        int despDesdePagina = configRam.tamanioPagina - bytesDisponibles;
+
+        int desp = frame * configRam.tamanioPagina + despDesdePagina;
         if(mem == MEM_PPAL)
         {
-            memcpy(memoria_principal+desp, pagina, configRam.tamanioPagina);
+            memcpy(memoria_principal+desp, aMeterEnPagina, bytesDisponibles);
         }
         else if(mem == MEM_VIRT){
             FILE * file = fopen(configRam.pathSwap, "r+");
             fseek(file, desp, SEEK_SET);
-            int sz = fwrite(pagina, configRam.tamanioPagina , 1, file);
+            int sz = fwrite(aMeterEnPagina, configRam.tamanioPagina , 1, file);
             fclose(file);
             // printf("bytes written %d\n",sz);
         }
@@ -144,16 +148,80 @@ uint32_t buscar_frame_disponible(int mem) {
 }
 
 
-t_pagina* buscar_pagina(t_info_pagina* info_pagina) {
-    t_pagina* pagina = NULL;
+void* buscar_pagina(t_info_pagina* info_pagina) {
+    void* pagina = NULL;
     int frame_ppal = info_pagina->frame_m_ppal;
-    int frame_virtual = info_pagina->frame_m_virtual;
+    //int frame_virtual = info_pagina->frame_m_virtual;
     if(frame_ppal != FRAME_INVALIDO)
         pagina = leer_memoria(frame_ppal, MEM_PPAL);
 
         // log_info(logger, "pagina encontrada en memoria principal");
     return pagina;
 }
+
+
+int guardarTareas(char* stringTareas) {
+
+	/*
+	t_info_pagina* info_pagina = crearPaginaEnTabla(stringTareas;
+
+	agregarTarea
+	*/
+}
+
+
+int guardarPCB(pcb* pcbAGuardar,char* stringTareas) {
+
+	t_tablaPaginasPatota* tablaPaginasPatotaActual = malloc(sizeof(t_tablaPaginasPatota));
+	tablaPaginasPatotaActual->idPatota = pcbAGuardar->pid;
+	tablaPaginasPatotaActual->tablaDePaginas = list_create();
+	list_add(tablasPaginasPatotas, tablaPaginasPatotaActual);
+
+	log_info(logMemoria, "Se creo la tabla de paginas para la patota: %d", pcbAGuardar->pid);
+
+	guardarTareas(stringTareas);
+
+
+	asignarPaginasEnTabla((void*) pcbAGuardar, tablaPaginasPatotaActual);
+
+	asignarPaginasEnTabla((void*) stringTareas, tablaPaginasPatotaActual);
+
+}
+
+
+
+t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* tablaPaginasPatotaActual,tipoEstructura tipo) {
+
+	t_info_pagina* info_pagina = malloc(sizeof(t_info_pagina));
+	info_pagina->indice = list_size(tablaPaginasPatotaActual); //Si hay 3 info_pagina el indice va de 0 a 2, el prox indice va a ser 3.  eso ya te lo da el size.
+	info_pagina->frame_m_ppal = FRAME_INVALIDO;
+	info_pagina->bytesDisponibles = configRam.tamanioPagina;
+	info_pagina->estructurasAlojadas = list_create();
+
+	log_info(logMemoria, "Se creo el t_info_pagina de tipo: %d", tipo);
+
+	list_add(tablaPaginasPatotaActual, info_pagina);
+
+	return info_pagina;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
