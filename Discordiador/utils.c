@@ -37,6 +37,8 @@ void iniciarMutex(){
 	pthread_mutex_init(&mutexLogDiscordiador, NULL);
 	pthread_mutex_init(&mutexTotalTripus, NULL);
 	pthread_mutex_init(&mutexIdTripulanteBlocked, NULL);
+	pthread_mutex_init(&mutexPlanificador, NULL);
+
 
 
 }
@@ -67,6 +69,20 @@ void cargar_configuracion(){
 
 	//planificacion = CORRIENDO;
 
+}
+
+int leerPlanificacion(){
+	lock(mutexPlanificador);
+	int _planificacion = planificacion;
+	unlock(mutexPlanificador);
+	return _planificacion;
+}
+
+
+void modificarPlanificacion(int estadoPlanificacion){
+	lock(mutexPlanificador);
+	planificacion = estadoPlanificacion;
+	unlock(mutexPlanificador);
 }
 
 
@@ -453,7 +469,7 @@ uint32_t diferencia(uint32_t numero1, uint32_t numero2){
 void listarTripulantes(){
 	//TODO hacerlo log
 	//pausarPlanificacion = 0;
-	log_info(logDiscordiador,"Estado de la nave: %s ", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
+	log_info(logDiscordiador,"Estado de la nave: %s", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
 
 	iterarCola(colaNew);
 	iterarCola(colaReady);
@@ -493,14 +509,15 @@ char* traducirEstado(t_estado estado){
 
 
 void eliminarTripulante(uint32_t id){
+
 	int cantidad = 0;
+
 	t_list * listaDeComparacion = list_create();
+
 	list_add_all(listaDeComparacion, colaReady->elements);
 	list_add_all(listaDeComparacion, colaExec->elements);
 	list_add_all(listaDeComparacion, colaNew->elements);
 	list_add_all(listaDeComparacion, colaBlocked->elements);
-
-	printf("\n tamaño lista: %d\n",list_size(listaDeComparacion));
 
 	t_list_iterator * iterator = list_iterator_create(listaDeComparacion);
 
@@ -528,6 +545,9 @@ void eliminarTripulante(uint32_t id){
 		log_info(logDiscordiador,"No se ha encontrado un tripulante con el Id: %d",id);
 	}
 	if(cantidad == 1){
+		lock(mutexTotalTripus);
+		totalTripus--;
+		unlock(mutexTotalTripus);
 		log_info(logDiscordiador,"Se va a eliminar el tripulante con el Id: %d",id);
 	}
 	else{

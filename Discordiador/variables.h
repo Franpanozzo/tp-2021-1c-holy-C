@@ -35,6 +35,7 @@ pthread_mutex_t mutexPlanificadorFin;
 pthread_mutex_t mutexLogDiscordiador;
 pthread_mutex_t mutexTotalTripus;
 pthread_mutex_t mutexIdTripulanteBlocked;
+pthread_mutex_t mutexPlanificador;
 
 
 sem_t semPlanificacion;

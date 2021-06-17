@@ -19,6 +19,8 @@ char * pathLog();
 
 int leerTotalTripus();
 void modificarTripulanteBlocked(uint32_t);
+int leerPlanificacion();
+void modificarPlanificacion(int);
 uint32_t leerTripulanteBlocked();
 void crearConfig();
 

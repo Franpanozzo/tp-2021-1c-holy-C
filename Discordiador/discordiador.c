@@ -15,8 +15,9 @@ int main() {
 	idTripulante = 0;
 	idPatota = 0;
 	idTripulanteBlocked = NO_HAY_TRIPULANTE_BLOQUEADO;
-	planificacion = SIN_EMPEZAR;
-
+	modificarPlanificacion(PAUSADA);
+	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
+	pthread_detach(planificador);
 	leerConsola();
 	free(path);
 	free(puertoEIPRAM->IP);
@@ -29,9 +30,10 @@ int main() {
 
 
 void hiloPlanificador(){
-	while(1 && leerTotalTripus() > 0){
-		sem_wait(&semPlanificacion);
-		if(leerTotalTripus() > 0){
+
+	while(1){
+
+		if(leerPlanificacion() == CORRIENDO && leerTotalTripus() > 0){
 
 			list_iterate(colaExec->elements, (void*)esperarTerminarTripulante);
 			list_iterate(colaBlocked->elements, (void*)esperarTerminarTripulante);
@@ -77,7 +79,7 @@ void hiloPlanificador(){
 			list_iterate(colaReady->elements, (void*)avisarTerminoPlanificacion);
 
 		}
-		sem_post(&semPlanificacion);
+
 	}
 
 
@@ -165,10 +167,9 @@ void hiloTripulante(t_tripulante* tripulante){
 				}
 				break;
 			case END:
-				//POlque?
-				log_error(logDiscordiador,"----tripulanteId %d: no deberia estar aca----",
-						tripulante->idTripulante);
+				//No va nada acá porque sobreloguea mucho
 				break;
+
 			case SABOTAJE: // para algunos es como un bloqueo donde no se hace nada
 /*				if(tripu->idTripulante == tripulanteDesabotaje->idTripulante){
 					sleep(1);
@@ -196,7 +197,8 @@ void hiloTripulante(t_tripulante* tripulante){
 		}
 		sem_post(&tripulante->semaforoFin);
 		sem_wait(&tripulante->semaforoInicio);
-	}
+		}
+
 }
 
 
@@ -259,7 +261,7 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 
 		if(tripulante->estado != estado /*|| tripulante->estado == END*/){
 			if(estado == READY){
-				if(queue_size(colaExec) < gradoMultiprocesamiento){
+				if(queue_size(colaExec) < gradoMultiprocesamiento || tripulante->estado == END){
 					pasarDeCola(tripulante);
 				}
 				else{

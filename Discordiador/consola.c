@@ -32,45 +32,42 @@ void leerConsola(){
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
 
-				pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
-				pthread_detach(planificador);
-				sem_post(&semPlanificacion);
-				log_info(logDiscordiador, "Se inicio la planificacion");
-				sleep(1);
-
+			if(leerPlanificacion() == PAUSADA){
+							modificarPlanificacion(CORRIENDO);
+							log_info(logDiscordiador, "Se inicio la planificacion");
+							sleep(1);
+						}
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
 
-				sem_wait(&semPlanificacion);
-				log_info(logDiscordiador, "Se pauso la planificacion");
-				sleep(1);
+			if(leerPlanificacion() == CORRIENDO){
+							modificarPlanificacion(PAUSADA);
+							log_info(logDiscordiador, "Se pauso la planificacion");
+							sleep(1);
+						}
+						else{
+							log_error(logDiscordiador, "La planificacion no esta corriendo");
+						}
 
 
 		}
-		else if (strcmp(comandoYparametros[cursor], "REANUDAR_PLANIFICACION") == 0){
 
-				sem_post(&semPlanificacion);
-				log_info(logDiscordiador, "Se reanudo la planificacion");
-				sleep(1);
-
-
-		}
 		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){
-				//log_info(logDiscordiador, "Se ingreso el comando listar tripulantes");
-				sem_wait(&semPlanificacion);
 
-				listarTripulantes();
-				sleep(1);
-				sem_post(&semPlanificacion);
+			if(leerPlanificacion() == CORRIENDO){
+					modificarPlanificacion(PAUSADA);
+				}
+							listarTripulantes();
+							sleep(1);
 		}
 		else if (strcmp(comandoYparametros[cursor], "ELIMINAR_TRIPULANTE") == 0){
-				log_info(logDiscordiador, "Se ingreso el comando ELIMINAR_TRIPULANTE");
-
-					sem_wait(&semPlanificacion);
-					cursor ++;
-					uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
-					eliminarTripulante(idTripulante);
-					sem_post(&semPlanificacion);
+			log_info(logDiscordiador, "Se ingreso el comando ELIMINAR_TRIPULANTE");
+							if(leerPlanificacion() == CORRIENDO){
+								modificarPlanificacion(PAUSADA);
+							}
+								cursor ++;
+								uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
+								eliminarTripulante(idTripulante);
 
 		}
 		else{
