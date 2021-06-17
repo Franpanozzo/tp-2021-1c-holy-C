@@ -13,19 +13,20 @@ pthread_mutex_t mutexTripulante;
 
 int main(void) {
 
-	cargar_configuracion();
+	logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);
 
-    listaPCB = list_create();
-    listaTCB = list_create();
+	logMemoria = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMemoria.log","Memoria",1);
+
+	cargar_configuracion();
+	iniciarMemoria();
+
+    tablasPaginasPatotas = list_create();
 
     pthread_mutex_init(&mutexListaTCB, NULL);
     pthread_mutex_init(&mutexListaPCB, NULL);
     pthread_mutex_init(&mutexListaTareas, NULL);
     pthread_mutex_init(&mutexTripulante, NULL);
 
-    logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);
-
-    logMemoria = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMemoria.log","Memoria",1);
 
     int serverSock = iniciarConexionDesdeServidor(configRam.puerto);
 
@@ -45,28 +46,6 @@ int main(void) {
 
 }
 
-
-void eliminarTarea(t_tarea* tarea) {
- 	free(tarea->nombreTarea);
-    free(tarea);
-}
-
-void eliminarPCB(pcb* pcb) {
-    list_destroy_and_destroy_elements(pcb->listaTareas, (void*) eliminarTarea);
-    free(pcb);
-}
-
-void eliminarListaPCB(t_list* listaPCB) {
-    list_destroy_and_destroy_elements( listaPCB, (void*) eliminarPCB);
-}
-
-void eliminarListaTCB(t_list* listaTCB){
-	list_destroy_and_destroy_elements( listaTCB, (void*) eliminarTCB);
-}
-
-void eliminarTCB(tcb* tcb){
-	free(tcb);
-}
 
 
 
@@ -150,6 +129,8 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			break;
 
 		case ESTADO_TRIPULANTE:
+
+			log_info(logMiRAM,"ROMPO");
 			log_info(logMiRAM,"Voy a actualizar un tripulante");
 			actualizarTripulante(paquete);
 			mandarConfirmacionDisc("TCB ACTAULIZADO EN MEMORIA -- OK", tripulanteSock);
@@ -158,7 +139,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		case SIGUIENTE_TAREA:
 		{
 			log_info(logMiRAM,"VOY A ASIGNARLE LA PROX TAREA A UN TRIPU");
-			deserializarSolicitudTarea(paquete,tripulanteSock);
+			//deserializarSolicitudTarea(paquete,tripulanteSock);
 			break;
 		}
 		default:
@@ -178,7 +159,7 @@ void mandarConfirmacionDisc(char* aMandar, int socket) {
 	enviarPaquete(aEnviar,socket);
 }
 
-
+/*
 
 void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 	uint32_t idPatota;
@@ -189,12 +170,12 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 	offset += sizeof(uint32_t);
 	memcpy(&(idTripulante), stream + offset, sizeof(uint32_t));
 
-	/*
+
 	bool esIgualA(tcb* tcbAcomparar){
 
 		return tcbAcomparar->idTripulante == idTripulante
 				&& tcbAcomparar->patota->pid == idPatota;
-	}*/
+	}
 
 	lock(mutexListaPCB);
 	pcb* supuestaPatotaTripu = buscarPatota(idPatota);
@@ -220,6 +201,8 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 	unlock(mutexTripulante);
 
 }
+
+*/
 
 /*
 
@@ -317,7 +300,7 @@ void liberarDoblesPunterosAChar(char** arrayParametros) {
 
 
 
-void deserializarInfoPCB(t_paquete* paquete) {
+int deserializarInfoPCB(t_paquete* paquete) {
 
 	pcb* nuevoPCB = malloc(sizeof(pcb));
 	void* stream = paquete->buffer->stream;
@@ -336,9 +319,30 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
 	delimitarTareas(stringTareas);
 
-	guardarPCB(nuevoPCB,stringTareas);
+	return guardarPCB(nuevoPCB,stringTareas);
+}
 
 
+char* delimitarTareas(char* stringTareas) {
+
+    char* tareasDelimitadas = string_new();
+
+    char** arrayDeTareas = string_split(stringTareas,"\n");
+
+    for(int i =0; arrayDeTareas[i] != NULL; i++){
+
+        string_trim(&arrayDeTareas[i]);
+        string_append(&arrayDeTareas[i],"|");
+        string_append(&tareasDelimitadas, arrayDeTareas[i]);
+    }
+
+    tareasDelimitadas = string_substring_until(tareasDelimitadas, strlen(tareasDelimitadas) - 1);
+
+    liberarDoblesPunterosAChar(arrayDeTareas);
+
+    log_info(logMiRAM, "Tareas delimitadas: %s", tareasDelimitadas);
+
+    return tareasDelimitadas;
 }
 
 
@@ -355,11 +359,12 @@ void actualizarTripulante(t_paquete* paquete) {
 	memcpy(&(idPatota),stream,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	pcb* patotaDeTripu = buscarPatota(idPatota);
+	//pcb* patotaDeTripu = buscarPatota(idPatota);
 
 	memcpy(&(idTCBAActualizar),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
+	/*
 	lock(mutexListaTCB);
 	tcb* tcbEncontrado = buscarTripulante(idTCBAActualizar,patotaDeTripu);
 	unlock(mutexListaTCB);
@@ -376,10 +381,10 @@ void actualizarTripulante(t_paquete* paquete) {
 
 	log_info(logMiRAM,"Actualizado el tripulante de id %d de la  patota %d",tcbEncontrado->idTripulante, idPatota);
 	unlock(mutexTripulante);
-
+*/
 }
 
-
+/*
 tcb* buscarTripulante(int idTCBAActualizar,pcb* patotaDeTripu) {
 
 	bool idIgualA(tcb* tcbAComparar){
@@ -410,10 +415,10 @@ tcb* buscarTripulante(int idTCBAActualizar,pcb* patotaDeTripu) {
 			// ASIGNAR TAREATRIPULANTE A LA PRIMERA POSICION DE LA LISTA DE LAS TAREAS DEL PCB
 
 			}
-}
+}*/
 
 
-void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
+int deserializarTripulante(t_paquete* paquete) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
 
@@ -441,7 +446,10 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d",nuevoTCB->idTripulante, idPatota);
 
 
-	guardarTCB(nuevoTCB,idPatota);
+	return guardarTCB(nuevoTCB,idPatota);
+
+	//NOS QUEDAMOS ACA
+	//BUSCAR EN RAM LA TAREA A DARLE, YA ENTRA EN JUEGO EL TEMA DE IR A BUSCAR A LAS PAGINAS SEGUN DESPLAZ ETC.
 
 }
 

@@ -23,7 +23,7 @@ void cargar_configuracion() {
 char* asignar_bytes(int cant_frames)
 {
     char* buf;
-    double bytes;
+    int bytes;
     if(cant_frames < 8)
         bytes = 1;
     else
@@ -38,17 +38,17 @@ char* asignar_bytes(int cant_frames)
 }
 
 
-void inciarMemoria() {
+void iniciarMemoria() {
 
 	tablasPaginasPatotas = list_create();
 
-	log_info(logMemoria, "TAMANIO RAM: %s", configRam.tamanioMemoria);
+	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
 
 	memoria_principal = malloc(configRam.tamanioMemoria);
 
 	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
 
-    log_info(logMemoria, "RAM FRAMES: %s", cant_frames_ppal);
+    log_info(logMemoria, "RAM FRAMES: %d", cant_frames_ppal);
 
     char* data = asignar_bytes(cant_frames_ppal);
 
@@ -95,8 +95,6 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
     // printf("frame %d -> %d\n",frame, get_frame(frame,mem));
     if(!get_frame(info_pagina->frame_m_ppal,mem)) // no hay nada en el frame
     {
-        // printf("empty frame, inserting\n");
-        set_frame(info_pagina->frame_m_ppal,mem); //marco el frame como en uso
 
         int despDesdePagina = configRam.tamanioPagina - info_pagina->bytesDisponibles;
 
@@ -107,6 +105,7 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
         if(bytesAEscribir < 0) {
 			bytesAEscribir = info_pagina->bytesDisponibles;
 			info_pagina->bytesDisponibles = 0;
+	        set_frame(info_pagina->frame_m_ppal,mem); //marco el frame como en uso porque se escribio toda
 								}
         	else {
 				 bytesAEscribir = *aMeter;
@@ -131,6 +130,7 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
         		despDesdePagina, despDesdePagina + bytesAEscribir, tipo);
 
         *aMeter -= bytesAEscribir;
+		log_info(logMemoria, "Quedan por meter %d", *aMeter);
         return 1;
     }
     else
@@ -153,7 +153,10 @@ void agregarEstructAdminTipo(t_info_pagina* info_pagina,int despDesdePagina,int 
 
 bool get_frame(int frame, int mem) {
     if(mem == MEM_PPAL)
-        return bitarray_test_bit(frames_ocupados_ppal, frame);
+    {
+    	bool a = bitarray_test_bit(frames_ocupados_ppal, frame);
+        return a;
+    }
 
     /*else if(mem == MEM_VIRT)
         return bitarray_test_bit(frames_ocupados_virtual, frame);*/
@@ -164,14 +167,18 @@ bool get_frame(int frame, int mem) {
 
 
 void set_frame(int frame, int mem) {
-    if(mem == MEM_PPAL)
+    if(mem == MEM_PPAL) {
         bitarray_set_bit(frames_ocupados_ppal, frame);
+    }
+
 
     /*else if (mem == MEM_VIRT)
         bitarray_set_bit(frames_ocupados_virtual, frame);*/
     else
+    {
     	log_error(logMemoria, "El frame que se quiere acceder es invalido");
     	exit(1);
+    }
 }
 
 
@@ -205,6 +212,7 @@ void* buscar_pagina(t_info_pagina* info_pagina) {
 int guardarTCB(tcb* tcbAGuardar,int idPatota) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
+	tcbAGuardar->dlPatota = 0;
 	if(tablaPaginasPatotaActual != NULL)
 	{
 		log_info(logMemoria,"Se encontro la tabla de paginas de la patota corresp");
@@ -216,7 +224,6 @@ int guardarTCB(tcb* tcbAGuardar,int idPatota) {
 	}
 
 	return asignarPaginasEnTabla((void*) tcbAGuardar, tablaPaginasPatotaActual,TCB);
-
 }
 
 
@@ -230,11 +237,14 @@ int guardarPCB(pcb* pcbAGuardar,char* stringTareas) {
 
 	log_info(logMemoria, "Se creo la tabla de paginas para la patota: %d", pcbAGuardar->pid);
 
+	pcbAGuardar->dlTareas = estimarDLTareas();
+
+	log_info(logMemoria, "La direccion logica de las tareas es: %d", pcbAGuardar->dlTareas);
+
 	pcbGuardado = asignarPaginasEnTabla((void*) pcbAGuardar, tablaPaginasPatotaActual,PCB);
 	tareasGuardadas = asignarPaginasEnTabla((void*) stringTareas, tablaPaginasPatotaActual,TAREAS);
 
 	return pcbGuardado && tareasGuardadas;
-
 }
 
 
@@ -258,9 +268,8 @@ t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* tablaPaginasPatotaActual
 
 int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPatotaActual, tipoEstructura tipo){
 
-	int* aMeter;
-	*aMeter = 0;
-	void* bufferAMeter= meterEnBuffer(aGuardar, tipo, aMeter);
+	int aMeter = 0;
+	void* bufferAMeter = meterEnBuffer(aGuardar, tipo, &aMeter);
 
 	t_info_pagina* info_pagina;
 
@@ -268,6 +277,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 
 	while(aMeter > 0)
 	{
+		log_info(logMemoria, "HAY QUE METER %d BYTES",aMeter);
 
 	if( primeraVez &&  tipo != PCB )
 		{
@@ -275,11 +285,10 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 
 			if(info_pagina != NULL)
 			{
-				log_info(logMemoria, "La pagina en el frame %d tiene lugar y se va a aprovechar");
-				insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, aMeter, tipo);
-			}
-
-			log_info(logMemoria, "No se encontro una paginar con espacio restante");
+				log_info(logMemoria, "La pagina en el frame %d tiene lugar y se va a aprovechar", info_pagina->frame_m_ppal);
+				insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter, tipo);
+			} else
+				log_info(logMemoria, "No se encontro una pagina con espacio restante");
 		}
 				else
 				{
@@ -289,15 +298,19 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 
 					if(info_pagina->frame_m_ppal != FRAME_INVALIDO)
 					{
-						insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, aMeter, tipo);
+						log_info(logMemoria,"Hay un frame disponible, el %d", info_pagina->frame_m_ppal);
+						insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter, tipo);
 					}
 						else
+						{
 							log_info(logMemoria, "Memoria principal llena");
 							return 0;
+						}
 				}
 
 	if(primeraVez) primeraVez = 0;
 	}
+	log_info(logMemoria,"Se insertaron todos los bytes en ram");
 	return 1;
  }
 
@@ -339,27 +352,68 @@ t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* tablaPaginasPa
 }
 
 
+uint32_t estimarDLTareas(){
+	if(configRam.tamanioPagina > 8)
+	{
+	    return 0;
+	}
+	else
+	{
+	    return (int) (floor(8/configRam.tamanioPagina) + 1);
+	}
+}
+
+
+/* mas generica
+int buscarInicioDLTareas(t_tablaPaginasPatota* tablaPaginasPatota) {
+
+
+    bool buscarDLTarea(t_info_pagina* info_pagina){
+
+    	return tieneEstructuraAlojada(info_pagina->estructurasAlojadas,TAREAS);
+
+    }
+
+    t_info_pagina* paginaConTarea = list_find(tablaPaginasPatota->tablaDePaginas, (void*) buscarDLTarea);
+
+    return paginaConTarea->indice;
+}*/
+
+
+bool tieneEstructuraAlojada(t_list* listaAlojados, tipoEstructura tipo) {
+
+	bool contieneTipo(t_alojado* estructuraAlojada){
+	    	return estructuraAlojada->tipo == tipo;
+	    }
+
+	t_alojado* alojadoConTarea = list_find(listaAlojados, (void*) contieneTipo);
+
+	return alojadoConTarea != NULL;
+
+}
+
+
+
 void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter) {
 
 	void* buffer;
 	int offset = 0;
-	pcb* pcbAGuardar;
-	tcb* tcbAGuardar;
-	char* tareas;
-
 
 	switch(tipo)
 	{
 		case PCB:
-			pcbAGuardar = (pcb*) aGuardar;
+		{
+			pcb* pcbAGuardar = (pcb*) aGuardar;
 			*aMeter = 8;
 			buffer = malloc(*aMeter);
 			memcpy(buffer, &(pcbAGuardar->pid), sizeof(uint32_t));
 			offset += sizeof(uint32_t);
 			memcpy(buffer + offset, &(pcbAGuardar->dlTareas), sizeof(uint32_t));
 			break;
+		}
 		case TCB:
-			tcbAGuardar = (tcb*) aGuardar;
+		{
+			tcb* tcbAGuardar = (tcb*) aGuardar;
 			*aMeter = 21;
 			buffer = malloc(*aMeter);
 			memcpy(buffer + offset, &(tcbAGuardar->idTripulante),sizeof(uint32_t));
@@ -373,12 +427,15 @@ void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter) {
 			memcpy(buffer + offset, &(tcbAGuardar->posY),sizeof(uint32_t));
 			offset += sizeof(uint32_t);
 			break;
+		}
 		case TAREAS:
-			tareas = (char*) aGuardar;
+		{
+			char* tareas = (char*) aGuardar;
 			*aMeter = strlen(tareas) + 1;
 			buffer = malloc(*aMeter);
 			memcpy(buffer, tareas, strlen(tareas) + 1);
 			break;
+		}
 		default:
 			log_error(logMemoria,"No puedo guardar eso en una pagina negro");
 			exit(1);

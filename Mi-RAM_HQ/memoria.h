@@ -8,26 +8,6 @@
 #ifndef MEMORIA_H_
 #define MEMORIA_H_
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <semaphore.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <sys/select.h>
-#include <string.h>
-#include <commons/config.h>
-#include <bibliotecas.h>
-#include <commons/string.h>
-#include <commons/collections/list.h>
-#include <commons/log.h>
-#include <commons/bitarray.h>
-#include <math.h>
-#include "mi_ram_hq.h"
-
 #define MEM_PPAL 0
 #define MEM_VIRT 1
 
@@ -35,6 +15,8 @@
 
 #define TAM_TCB 21
 #define TAM_PCB 8
+
+#include "estructuras.h"
 
 
 typedef struct {
@@ -72,7 +54,6 @@ typedef struct {
 
 } t_info_pagina;
 
-
 typedef struct {
 	int desplazamientoInicial;
 	int bytesAlojados;
@@ -89,33 +70,27 @@ int cant_frames_ppal;
 
 t_list* tablasPaginasPatotas;
 
+pcb cabron;
+
 
 void cargar_configuracion();
 bool get_frame(int , int);
 void set_frame(int , int);
 char* asignar_bytes(int );
-void inciarMemoria();
+void iniciarMemoria();
 void* leer_memoria(int,int);
 int insertar_en_memoria(t_info_pagina*, void*, int, int*, tipoEstructura);
 void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura);
 uint32_t buscar_frame_disponible(int );
 void* buscar_pagina(t_info_pagina* );
-int guardarTCB(tcb* ,int);
-int guardarPCB(pcb* ,char*);
 t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
 int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
 t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* );
 void* meterEnBuffer(void* , tipoEstructura , int* );
-
-
-
-
-
-
-
-
-
+int guardarTCB(tcb* , int);
+int guardarPCB(pcb*  ,char*);
+uint32_t estimarDLTareas();
 
 
 #endif /* MEMORIA_H_ */
