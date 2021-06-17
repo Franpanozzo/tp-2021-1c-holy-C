@@ -120,17 +120,28 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 	log_info(logMiRAM,"Deserializando el cod_op %d", paquete->codigoOperacion);
 
+	int res;
+
 	switch(paquete->codigoOperacion){
 		case PATOTA:
-			//log_info(logMiRAM,"Voy a deserializar una patota");
-			deserializarInfoPCB(paquete);
-			mandarConfirmacionDisc("PATOTA CREADA EN MEMORIA -- OK", tripulanteSock);
+			log_info(logMiRAM,"Voy a deserializar una patota");
+			res = deserializarInfoPCB(paquete);
+			log_info(logMiRAM,"El resultado de la operacion es: %d",res);
+			if(res)
+				mandarConfirmacionDisc("OK", tripulanteSock);
+			else
+				mandarConfirmacionDisc("ERROR", tripulanteSock);
+
 			break;
 
 		case TRIPULANTE:
 			log_info(logMiRAM,"Voy a deserializar un tripulante");
-
-			deserializarTripulante(paquete,tripulanteSock);
+			res = deserializarTripulante(paquete);
+			log_info(logMiRAM,"El resultado de la operacion es: %d",res);
+			if(res)
+				mandarConfirmacionDisc("OK", tripulanteSock);
+			else
+				mandarConfirmacionDisc("ERROR", tripulanteSock);
 			break;
 
 		case EXPULSAR:
@@ -210,6 +221,7 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 
 }
 
+/*
 
 void setearSgteTarea(tcb *buscado){
 	t_list_iterator * iterator = list_iterator_create(buscado->patota->listaTareas);
@@ -225,6 +237,7 @@ void setearSgteTarea(tcb *buscado){
 	list_iterator_destroy(iterator);
 }
 
+*/
 
 void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
@@ -323,7 +336,7 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
 	delimitarTareas(stringTareas);
 
-	guardarPCB(nuevoPCB,stringTareas);;
+	guardarPCB(nuevoPCB,stringTareas);
 
 
 }
@@ -427,24 +440,9 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d",nuevoTCB->idTripulante, idPatota);
 
-	lock(mutexListaPCB);
-	pcb* patotaCorrespondiente = buscarPatota(idPatota);
-	unlock(mutexListaPCB);
 
-	nuevoTCB->patota = patotaCorrespondiente;
+	guardarTCB(nuevoTCB,idPatota);
 
-	log_info(logMiRAM,"Se le asigno la patota %d al tripulante %d",idPatota, nuevoTCB->idTripulante);
-
-	lock(mutexListaTareas);
-	asignarSiguienteTarea(nuevoTCB);
-
-	mandarTarea(nuevoTCB->proximaAEjecutar, tripulanteSock);
-	unlock(mutexListaTareas);
-
-
-	lock(mutexListaTCB);
-	list_add(listaTCB,nuevoTCB);
-	unlock(mutexListaTCB);
 }
 
 
@@ -480,7 +478,7 @@ pcb* buscarPatota(uint32_t idPatotaBuscada) {
 		}
 }
 
-
+/*
 void asignarSiguienteTarea(tcb* tripulante) {
 
 	//Hago que su proxima tarea a ejecutar sea la primera de las lista,
@@ -491,6 +489,7 @@ void asignarSiguienteTarea(tcb* tripulante) {
 	log_info(logMiRAM,"Asignando la tarea: %s\n", tripulante->proximaAEjecutar->nombreTarea);
 
 }
+*/
 
 
 void mandarTarea(t_tarea* tarea, int socketTrip) {

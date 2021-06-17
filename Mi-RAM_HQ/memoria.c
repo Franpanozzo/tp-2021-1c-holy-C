@@ -40,7 +40,9 @@ char* asignar_bytes(int cant_frames)
 
 void inciarMemoria() {
 
-	t_list* tablasPaginasPatotas = list_creeate();
+	tablasPaginasPatotas = list_create();
+
+	log_info(logMemoria, "TAMANIO RAM: %s", configRam.tamanioMemoria);
 
 	memoria_principal = malloc(configRam.tamanioMemoria);
 
@@ -89,7 +91,7 @@ void* leer_memoria(int frame, int mem) {
 }
 
 
-int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* aMeter) {
+int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* aMeter, tipoEstructura tipo) {
     // printf("frame %d -> %d\n",frame, get_frame(frame,mem));
     if(!get_frame(info_pagina->frame_m_ppal,mem)) // no hay nada en el frame
     {
@@ -100,16 +102,18 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
 
         int desp = info_pagina->frame_m_ppal * configRam.tamanioPagina + despDesdePagina;
 
-        int bytesAEscribir =  info_pagina->bytesDisponibles - aMeter;
+        int bytesAEscribir =  info_pagina->bytesDisponibles - *aMeter;
 
         if(bytesAEscribir < 0) {
 			bytesAEscribir = info_pagina->bytesDisponibles;
 			info_pagina->bytesDisponibles = 0;
 								}
         	else {
-				 bytesAEscribir = aMeter;
-				 info_pagina->bytesDisponibles = info_pagina->bytesDisponibles - aMeter;
+				 bytesAEscribir = *aMeter;
+				 info_pagina->bytesDisponibles = info_pagina->bytesDisponibles - *aMeter;
 				 }
+
+        agregarEstructAdminTipo(info_pagina, despDesdePagina, despDesdePagina + bytesAEscribir, tipo);
 
         if(mem == MEM_PPAL)
         {
@@ -123,6 +127,9 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
             // printf("bytes written %d\n",sz);
         }
 
+        log_info(logMemoria, "Se inserto en RAM: FRAME: %d | DESDE: %d | HASTA: %d | TIPO: %d", info_pagina->frame_m_ppal,
+        		despDesdePagina, despDesdePagina + bytesAEscribir, tipo);
+
         *aMeter -= bytesAEscribir;
         return 1;
     }
@@ -131,6 +138,16 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
         // printf("frame in use\n");
         return 0;
     }
+}
+
+
+void agregarEstructAdminTipo(t_info_pagina* info_pagina,int despDesdePagina,int bytesAlojados, tipoEstructura tipo){
+
+	t_alojado* nuevo_alojado = malloc(sizeof(t_alojado));
+	nuevo_alojado->desplazamientoInicial = despDesdePagina;
+	nuevo_alojado->bytesAlojados = bytesAlojados;
+	nuevo_alojado->tipo = tipo;
+	list_add(info_pagina->estructurasAlojadas, nuevo_alojado);
 }
 
 
@@ -143,7 +160,18 @@ bool get_frame(int frame, int mem) {
     else
         log_error(logMemoria, "El frame que se quiere acceder es invalido");
     	exit(1);
+}
 
+
+void set_frame(int frame, int mem) {
+    if(mem == MEM_PPAL)
+        bitarray_set_bit(frames_ocupados_ppal, frame);
+
+    /*else if (mem == MEM_VIRT)
+        bitarray_set_bit(frames_ocupados_virtual, frame);*/
+    else
+    	log_error(logMemoria, "El frame que se quiere acceder es invalido");
+    	exit(1);
 }
 
 
@@ -174,29 +202,27 @@ void* buscar_pagina(t_info_pagina* info_pagina) {
 }
 
 
-int guardarTareas(char* stringTareas) {
+int guardarTCB(tcb* tcbAGuardar,int idPatota) {
 
-	/*
-	t_info_pagina* info_pagina = crearPaginaEnTabla(stringTareas;
+	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
+	if(tablaPaginasPatotaActual != NULL)
+	{
+		log_info(logMemoria,"Se encontro la tabla de paginas de la patota corresp");
+	}
+	else
+	{
+		log_error(logMemoria,"No existe PCB para ese TCB negro");
+		exit(1);
+	}
 
-	agregarTarea
-	*/
-}
-
-
-int guardarTCB(tcb* tcbAGuardar) {
-
-	pcb* pcbDeTripu = buscarEnMemoria(tcbAGuardar->dlPatota);
-
-	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(pcbDeTripu->pid);
-
-	asignarPaginasEnTabla((void*) tcbAGuardar, tablaPaginasPatotaActual,TCB);
+	return asignarPaginasEnTabla((void*) tcbAGuardar, tablaPaginasPatotaActual,TCB);
 
 }
 
 
 int guardarPCB(pcb* pcbAGuardar,char* stringTareas) {
 
+	int pcbGuardado, tareasGuardadas;
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = malloc(sizeof(t_tablaPaginasPatota));
 	tablaPaginasPatotaActual->idPatota = pcbAGuardar->pid;
 	tablaPaginasPatotaActual->tablaDePaginas = list_create();
@@ -204,39 +230,37 @@ int guardarPCB(pcb* pcbAGuardar,char* stringTareas) {
 
 	log_info(logMemoria, "Se creo la tabla de paginas para la patota: %d", pcbAGuardar->pid);
 
-	guardarTareas(stringTareas);
+	pcbGuardado = asignarPaginasEnTabla((void*) pcbAGuardar, tablaPaginasPatotaActual,PCB);
+	tareasGuardadas = asignarPaginasEnTabla((void*) stringTareas, tablaPaginasPatotaActual,TAREAS);
 
-
-	asignarPaginasEnTabla((void*) pcbAGuardar, tablaPaginasPatotaActual,PCB);
-
-	asignarPaginasEnTabla((void*) stringTareas, tablaPaginasPatotaActual,TAREAS);
+	return pcbGuardado && tareasGuardadas;
 
 }
 
 
-
 t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* tablaPaginasPatotaActual,tipoEstructura tipo) {
 
+	log_info(logMemoria, "Ceando pagina en la tabla de la patota: %d", tablaPaginasPatotaActual->idPatota);
+
 	t_info_pagina* info_pagina = malloc(sizeof(t_info_pagina));
-	info_pagina->indice = list_size(tablaPaginasPatotaActual); //Si hay 3 info_pagina el indice va de 0 a 2, el prox indice va a ser 3.  eso ya te lo da el size.
+	info_pagina->indice = list_size(tablaPaginasPatotaActual->tablaDePaginas); //Si hay 3 info_pagina el indice va de 0 a 2, el prox indice va a ser 3.  eso ya te lo da el size.
 	info_pagina->frame_m_ppal = FRAME_INVALIDO;
 	info_pagina->bytesDisponibles = configRam.tamanioPagina;
 	info_pagina->estructurasAlojadas = list_create();
 
 	log_info(logMemoria, "Se creo el t_info_pagina de tipo: %d", tipo);
 
-	list_add(tablaPaginasPatotaActual, info_pagina);
+	list_add(tablaPaginasPatotaActual->tablaDePaginas, info_pagina);
 
 	return info_pagina;
-
 }
 
 
-
-void asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPatotaActual, tipoEstructura tipo){
+int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPatotaActual, tipoEstructura tipo){
 
 	int* aMeter;
-	void* bufferAMeter= meterEnPagina(aGuardar, tipo, aMeter);
+	*aMeter = 0;
+	void* bufferAMeter= meterEnBuffer(aGuardar, tipo, aMeter);
 
 	t_info_pagina* info_pagina;
 
@@ -251,33 +275,30 @@ void asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPat
 
 			if(info_pagina != NULL)
 			{
-				// Falta crear la estructura del tipo t_alojado y meterlo en la lissta de estructuras aljoadas en t_info_pagina
-
-				insertarEnMemoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter);
+				log_info(logMemoria, "La pagina en el frame %d tiene lugar y se va a aprovechar");
+				insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, aMeter, tipo);
 			}
 
-			log_info(logMemoria, "No se encontro una bufferAMeter con espacio restante");
+			log_info(logMemoria, "No se encontro una paginar con espacio restante");
 		}
 				else
 				{
-
 					info_pagina = crearPaginaEnTabla(tablaPaginasPatotaActual,tipo);
-
-					// Falta crear la estructura del tipo t_alojado y meterlo en la lissta de estructuras aljoadas en t_info_pagina
 
 					info_pagina->frame_m_ppal = buscar_frame_disponible(MEM_PPAL);
 
 					if(info_pagina->frame_m_ppal != FRAME_INVALIDO)
 					{
-						insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter);
+						insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, aMeter, tipo);
 					}
 						else
 							log_info(logMemoria, "Memoria principal llena");
+							return 0;
 				}
 
 	if(primeraVez) primeraVez = 0;
-
 	}
+	return 1;
  }
 
 
@@ -292,7 +313,7 @@ t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int idPatotaABuscar) {
 	        return a;
 	    }
 
-	    t_tablaPaginasPatota* tablaPaginasBuscada = list_find(tablasPaginasPatotas, idIgualA);
+	    t_tablaPaginasPatota* tablaPaginasBuscada = list_find(tablasPaginasPatotas, (void*)idIgualA);
 
 	    if(tablaPaginasBuscada == NULL)
 	    {
@@ -318,48 +339,52 @@ t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* tablaPaginasPa
 }
 
 
-void* meterEnPagina(void* aGuardar, tipoEstructura tipo, int* aMeter) {
+void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter) {
 
-	void* pagina
+	void* buffer;
 	int offset = 0;
+	pcb* pcbAGuardar;
+	tcb* tcbAGuardar;
+	char* tareas;
+
 
 	switch(tipo)
 	{
 		case PCB:
-			pcb* pcbAGuardar = (pcb*) aGuardar;
+			pcbAGuardar = (pcb*) aGuardar;
 			*aMeter = 8;
-			pagina = malloc(*aMeter);
-			memcpy(pagina, &(pcbAGuardar->pid), sizeof(uint32_t));
+			buffer = malloc(*aMeter);
+			memcpy(buffer, &(pcbAGuardar->pid), sizeof(uint32_t));
 			offset += sizeof(uint32_t);
-			memcpy(pagina + offset, &(pcbAGuardar->dlTareas), sizeof(uint32_t));
+			memcpy(buffer + offset, &(pcbAGuardar->dlTareas), sizeof(uint32_t));
 			break;
 		case TCB:
-			tcb* tcbAGuardar = (tcb*) aGuardar;
+			tcbAGuardar = (tcb*) aGuardar;
 			*aMeter = 21;
-			pagina = malloc(*aMeter);
-			memcpy(pagina + offset, &(tcbAGuardar->idTripulante),sizeof(uint32_t));
+			buffer = malloc(*aMeter);
+			memcpy(buffer + offset, &(tcbAGuardar->idTripulante),sizeof(uint32_t));
 			offset += sizeof(uint32_t);
-			memcpy(pagina + offset, &(tcbAGuardar->dlPatota),sizeof(uint32_t));
+			memcpy(buffer + offset, &(tcbAGuardar->dlPatota),sizeof(uint32_t));
 			offset += sizeof(uint32_t);
-			memcpy(pagina + offset, &(tcbAGuardar->estado),sizeof(t_estado));
+			memcpy(buffer + offset, &(tcbAGuardar->estado),sizeof(t_estado));
 			offset += sizeof(t_estado);
-			memcpy(pagina + offset, &(tcbAGuardar->posX),sizeof(uint32_t));
+			memcpy(buffer + offset, &(tcbAGuardar->posX),sizeof(uint32_t));
 			offset += sizeof(uint32_t);
-			memcpy(pagina + offset, &(tcbAGuardar->posY),sizeof(uint32_t));
+			memcpy(buffer + offset, &(tcbAGuardar->posY),sizeof(uint32_t));
 			offset += sizeof(uint32_t);
 			break;
 		case TAREAS:
-			char* tareas = (char*) aGuardar;
+			tareas = (char*) aGuardar;
 			*aMeter = strlen(tareas) + 1;
-			pagina = malloc(*aMeter);
-			memcpy(pagina, tareas, strlen(tareas) + 1);
+			buffer = malloc(*aMeter);
+			memcpy(buffer, tareas, strlen(tareas) + 1);
 			break;
 		default:
 			log_error(logMemoria,"No puedo guardar eso en una pagina negro");
 			exit(1);
 	}
 
-	return pagina;
+	return buffer;
 
 }
 

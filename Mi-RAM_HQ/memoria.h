@@ -26,6 +26,7 @@
 #include <commons/log.h>
 #include <commons/bitarray.h>
 #include <math.h>
+#include "mi_ram_hq.h"
 
 #define MEM_PPAL 0
 #define MEM_VIRT 1
@@ -90,6 +91,31 @@ t_list* tablasPaginasPatotas;
 
 
 void cargar_configuracion();
+bool get_frame(int , int);
+void set_frame(int , int);
+char* asignar_bytes(int );
+void inciarMemoria();
+void* leer_memoria(int,int);
+int insertar_en_memoria(t_info_pagina*, void*, int, int*, tipoEstructura);
+void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura);
+uint32_t buscar_frame_disponible(int );
+void* buscar_pagina(t_info_pagina* );
+int guardarTCB(tcb* ,int);
+int guardarPCB(pcb* ,char*);
+t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
+int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
+t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
+t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* );
+void* meterEnBuffer(void* , tipoEstructura , int* );
+
+
+
+
+
+
+
+
+
 
 
 #endif /* MEMORIA_H_ */
