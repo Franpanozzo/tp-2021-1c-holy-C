@@ -22,9 +22,14 @@
 
 
 typedef struct {
+	int nroPagina;
+	int desplazamiento;
+} t_DL;
+
+typedef struct {
 
 	uint32_t pid;
-	uint32_t dlTareas;
+	t_DL dlTareas;
 
 } pcb;
 
@@ -34,8 +39,8 @@ typedef struct {
 	t_estado estado;
 	uint32_t posX;
 	uint32_t posY;
-	uint32_t proximaAEjecutar;
-	uint32_t dlPatota;
+	t_DL proximaAEjecutar;
+	t_DL dlPatota;
 
 } tcb;
 

@@ -27,6 +27,7 @@ int main(void) {
     pthread_mutex_init(&mutexTripulante, NULL);
 
 
+
     int serverSock = iniciarConexionDesdeServidor(configRam.puerto);
 
     //Abro un thread manejar las conexiones
@@ -109,17 +110,16 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 				mandarConfirmacionDisc("OK", tripulanteSock);
 			else
 				mandarConfirmacionDisc("ERROR", tripulanteSock);
-
 			break;
-
 		case TRIPULANTE:
 			log_info(logMiRAM,"Voy a deserializar un tripulante");
-			res = deserializarTripulante(paquete);
+			t_tarea* tarea = deserializarTripulante(paquete);
 			log_info(logMiRAM,"El resultado de la operacion es: %d",res);
-			if(res)
-				mandarConfirmacionDisc("OK", tripulanteSock);
+			if(tarea)
+				mandarTarea(tarea, tripulanteSock);
 			else
-				mandarConfirmacionDisc("ERROR", tripulanteSock);
+				t_tarea* tareaError = tarea_error();
+				mandarTarea(tareaError, tripulanteSock);
 			break;
 
 		case EXPULSAR:
@@ -203,7 +203,7 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 
 */
 
-/*
+
 
 void setearSgteTarea(tcb *buscado){
 	t_list_iterator * iterator = list_iterator_create(buscado->patota->listaTareas);
@@ -219,7 +219,7 @@ void setearSgteTarea(tcb *buscado){
 	list_iterator_destroy(iterator);
 }
 
-*/
+
 
 void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
@@ -245,7 +245,7 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 }
 
 
-void armarTarea(char* string,t_list* lista){
+t_tarea* armarTarea(char* string){
 
 
 	t_tarea* tarea = malloc(sizeof(t_tarea));
@@ -274,9 +274,9 @@ void armarTarea(char* string,t_list* lista){
 
 	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 
-	    list_add(lista,tarea);
-
 	    liberarDoblesPunterosAChar(arrayParametros);
+
+	    return tarea;
 
 }
 
@@ -335,7 +335,7 @@ char* delimitarTareas(char* stringTareas) {
         string_append(&tareasDelimitadas, arrayDeTareas[i]);
     }
 
-    tareasDelimitadas = string_substring_until(tareasDelimitadas, strlen(tareasDelimitadas) - 1);
+    string_append(&tareasDelimitadas,"TAREA_NULA 0;0;0;0");
 
     liberarDoblesPunterosAChar(arrayDeTareas);
 
@@ -506,7 +506,18 @@ void mandarTarea(t_tarea* tarea, int socketTrip) {
 	log_info(logMiRAM,"Tarea enviada\n");
 
 	enviarPaquete(paqueteEnviado, socketTrip);
+}
 
+
+t_tarea* tarea_error() {
+	t_tarea* tareaError = malloc(sizeof(t_tarea));
+	tareaError->nombreTarea = "TAREA_ERROR";
+	tareaError->parametro = 0;
+	tareaError->posX = 0;
+	tareaError->posY = 0;
+	tareaError->tiempo = 0;
+
+	return tareaError;
 }
 
 

@@ -52,7 +52,6 @@ typedef struct {
     int bytesDisponibles; // COMO IDENTIFICAMOS SI ES UN PCB, TCB O TAREAS ??
     t_list* estructurasAlojadas;
     //double tiempo_uso;
-    //int idTripu  //ESTE EN LAS DEMAS VARIABLES -1
     //otros datos..
 } t_info_pagina;
 
@@ -60,6 +59,7 @@ typedef struct {
 	int desplazamientoInicial;
 	int bytesAlojados;
 	tipoEstructura tipo;
+	int datoAdicional;  //PARA LOS TRIPULANTES ES EL ID, PARA LAS TAREAS SI LA PAGINA ES LA ULTIMA QUE CONTIENE TAREAS, PARA PCB -1
 } t_alojado;
 
 

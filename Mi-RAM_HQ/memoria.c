@@ -146,6 +146,27 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
 }
 
 
+void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicial, int bytesAEscribir) {
+
+
+	int desp = frame * configRam.tamanioPagina + desplInicial;
+
+	if(mem == MEM_PPAL)
+	{
+		memcpy(memoria_principal+desp, buffer, bytesAEscribir);
+	}
+	/*
+	else if(mem == MEM_VIRT){
+		FILE * file = fopen(configRam.pathSwap, "r+");
+		fseek(file, desp, SEEK_SET);
+		int sz = fwrite(pagina, configRam.tamanioPagina , 1, file);
+		fclose(file);
+		// printf("bytes written %d\n",sz);
+	} */
+
+}
+
+
 void agregarEstructAdminTipo(t_info_pagina* info_pagina,int despDesdePagina,int bytesAlojados, tipoEstructura tipo){
 
 	t_alojado* nuevo_alojado = malloc(sizeof(t_alojado));
@@ -214,10 +235,14 @@ void* buscar_pagina(t_info_pagina* info_pagina) {
 }
 
 
-int guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
+t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
-	tcbAGuardar->dlPatota = 0;
+	t_DL* dlPatota;
+	dlPatota->nroPagina = 0;
+	dlPatota->desplazamiento = 0;
+	tcbAGuardar->dlPatota = dlPatota;
+	tcbAGuardar->proximaAEjecutar = buscarInicioDLTareas(tablaPaginasPatotaActual);
 	if(tablaPaginasPatotaActual != NULL)
 	{
 		log_info(logMemoria,"Se encontro la tabla de paginas de la patota correspondiente");
@@ -228,7 +253,89 @@ int guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 		exit(1);
 	}
 
-	return asignarPaginasEnTabla((void*) tcbAGuardar, tablaPaginasPatotaActual,TCB);
+	int res = asignarPaginasEnTabla((void*) tcbAGuardar, tablaPaginasPatotaActual,TCB);
+	if(res == 0) return NULL;
+
+	t_tarea* tarea = irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcbAGuardar);
+
+	return tarea;
+}
+
+
+t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
+
+	char* tarea;
+	char* proximoALeer;
+	char* aux = malloc(sizeof(1)) + 1;
+	*(aux+1) = '/0';
+	int noPrimeraVez = 0;
+	void* pagina;
+	int indicePagina = tcbAGuardar->proximaAEjecutar->nroPagina;
+	int desplazamiento = tcbAGuardar->proximaAEjecutar->desplazamiento;
+
+
+	t_info_pagina* info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
+
+	while(tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TAREAS)) {
+
+		pagina = leerMemoria(info_pagina->frame_m_ppal,MEM_PPAL);
+		pagina += desplazamiento;
+
+		while(pagina != NULL && *proximoALeer != '|'  && *proximoALeer != '/0') {
+			memcpy(aux,pagina,1);
+			string_append(&tarea,aux);
+			pagina++;
+			proximoALeer = (char*) pagina;
+		    desplazamiento++;
+		}
+
+		tcbAGuardar->proximaAEjecutar->nroPagina = indicePagina;
+		tcbAGuardar->proximaAEjecutar->desplazamiento = desplazamiento;
+		indicePagina++;
+		desplazamiento = 0;
+
+		if(noPrimeraVez)
+		{
+			t_info_pagina* info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
+		}
+
+		if(!noPrimeraVez) noPrimeraVez =1;
+
+	}
+
+	actualizarTripulante(tablaPaginasPatotaActual, tcbAGuardar);
+
+	t_tarea* tareaAMandar = armarTarea(tarea);
+
+	return tareaAMandar;
+}
+
+
+void actualizarTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
+
+	bool tieneTripu(t_info_pagina* info_pagina)
+	{
+	  return tieneTripulanteAlojado(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
+	}
+
+	int aMeter, offset = 0;
+	t_list* tablaPaginasConTripu = list_filter(tablaPaginasPatotaActual->tablaDePaginas, (void*) tieneTripu);
+
+	void* bufferAMeter = meterEnBuffer(tcbAGuardar, TCB, aMeter);
+
+
+	int cantPaginasConTripu = list_size(tablaPaginasConTripu);
+	int i = 0;
+
+	while(i < cantPaginasConTripu)
+	{
+		t_info_pagina* info_pagina = list_get(tablaPaginasConTripu,i);
+		t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
+
+		sobreescribir_memoria(info_pagina->frame_m_ppal, bufferAMeter + offset, MEM_PPAL, alojado->desplazamientoInicial, alojado->bytesAlojados);
+		offset += alojado->bytesAlojados;
+		i++;
+	}
 }
 
 
@@ -385,23 +492,28 @@ uint32_t estimarDLTareas(){
 }
 
 
-int buscarInicioDLTareas(t_tablaPaginasPatota* tablaPaginasPatota) {
+t_DL* buscarInicioDLTareas(t_tablaPaginasPatota* tablaPaginasPatota) {
 
-    bool buscarDLTarea(t_info_pagina* info_pagina){
+    bool buscarDLTarea(t_info_pagina* info_pagina) {
 
     	return tieneEstructuraAlojada(info_pagina->estructurasAlojadas,TAREAS);
     }
 
     t_info_pagina* paginaConTarea = list_find(tablaPaginasPatota->tablaDePaginas, (void*) buscarDLTarea);
 
+    bool tieneTarea(t_alojado* estructuraAlojada) {
+    	return estructuraAlojada->tipo == TAREA;
+    }
 
+    t_alojado* alojadoConTarea = list_find(paginaConTarea->estructurasAlojadas, (void*) tieneTarea);
 
+    t_DL* direccionLogica;
+    direccionLogica->nroPagina = paginaConTarea->indice;
+    direccionLogica->desplazamiento = alojadoConTarea->desplazamientoInicial;
     //Retornar un struct DL de las tareas que tiene el indice de la pagina y el desplazamiento en esta
     //Se guarda en algun lado cuanto pesa el string
 
-
-
-    return paginaConTarea->indice;
+    return direccionLogica;
 }
 
 
@@ -414,7 +526,26 @@ bool tieneEstructuraAlojada(t_list* listaAlojados, tipoEstructura tipo) {
 	t_alojado* alojadoConTarea = list_find(listaAlojados, (void*) contieneTipo);
 
 	return alojadoConTarea != NULL;
+}
 
+
+bool tieneTripulanteAlojado(t_list* listaAlojados, int idTCB) {
+
+	t_alojado* alojadoConTarea = obtenerAlojadoPagina(listaAlojados, idTCB);
+
+	return alojadoConTarea != NULL;
+}
+
+
+t_alojado* obtenerAlojadoPagina(t_list* listaAlojados, int idTCB) {
+
+	bool contieneTipo(t_alojado* estructuraAlojada){
+	    	return estructuraAlojada->tipo == TCB && estructuraAlojada->datoAdicional == idTCB;
+	    }
+
+	t_alojado* alojadoConTarea = list_find(listaAlojados, (void*) contieneTipo);
+
+	return alojadoConTarea;
 }
 
 

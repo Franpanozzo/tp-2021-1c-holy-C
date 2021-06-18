@@ -17,7 +17,7 @@ void deserializarTareas(void*,t_list*,uint32_t);
 int deserializarInfoPCB(t_paquete*);
 void deserializarSolicitudTarea(t_paquete*,int);
 void setearSgteTarea(tcb*);
-void armarTarea(char*,t_list*);
+t_tarea* armarTarea(char*);
 void eliminarTarea(t_tarea*);
 void eliminarPCB(pcb*);
 void eliminarListaPCB(t_list*);
@@ -30,6 +30,7 @@ int deserializarTripulante(t_paquete*);
 pcb* buscarPatota(uint32_t);
 void asignarSiguienteTarea(tcb*);
 void mandarTarea(t_tarea* , int);
+t_tarea* tarea_error();
 
 
 #endif
