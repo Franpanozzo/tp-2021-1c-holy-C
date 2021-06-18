@@ -167,9 +167,9 @@ void* serializarTarea(void* stream, void* estructura, int offset){
 	uint32_t tamanioNombreTarea = strlen(tarea->nombreTarea) + 1;
 	memcpy(stream + offset, &(tarea->parametro),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(tarea->posX),sizeof(uint32_t));
+	memcpy(stream + offset, &(tarea->coordenadas.posX),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(tarea->posY),sizeof(uint32_t));
+	memcpy(stream + offset, &(tarea->coordenadas.posY),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, &(tarea->tiempo),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
@@ -189,9 +189,9 @@ t_tarea* deserializarTarea(void* stream){
 
     memcpy(&(tarea->parametro),stream + offset ,sizeof(uint32_t));
     offset += sizeof(uint32_t);
-    memcpy(&(tarea->posX),stream + offset,sizeof(uint32_t));
+    memcpy(&(tarea->coordenadas.posX),stream + offset,sizeof(uint32_t));
     offset += sizeof(uint32_t);
-    memcpy(&(tarea->posY),stream + offset,sizeof(uint32_t));
+    memcpy(&(tarea->coordenadas.posY),stream + offset,sizeof(uint32_t));
     offset += sizeof(uint32_t);
     memcpy(&(tarea->tiempo),stream + offset, sizeof(uint32_t));
     offset += sizeof(uint32_t);
@@ -225,9 +225,9 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, &(tripulante->estado),sizeof(t_estado));
 	offset += sizeof(t_estado);
-	memcpy(stream + offset, &(tripulante->posX),sizeof(uint32_t));
+	memcpy(stream + offset, &(tripulante->coordenadas.posX),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(tripulante->posY),sizeof(uint32_t));
+	memcpy(stream + offset, &(tripulante->coordenadas.posY),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
 	return stream;

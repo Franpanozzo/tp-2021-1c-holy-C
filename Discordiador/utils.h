@@ -40,6 +40,8 @@ char* deserializarString (t_paquete*);
 void mandarTareaAejecutar(t_tripulante*,int);
 void actualizarEstadoEnRAM(t_tripulante*);
 int enviarA(puertoEIP* puerto, void* informacion, tipoDeDato codigoOperacion);
+bool tripulanteDeMenorId(void*, void*);
+t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje);
 
 void recibirPrimerTareaDeMiRAM(t_tripulante*);
 void recibirProximaTareaDeMiRAM(t_tripulante*);

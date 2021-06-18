@@ -1,7 +1,5 @@
 #include "utils.h"
 
-
-
 void iniciarTareasIO(){
 	todasLasTareasIO = malloc(sizeof(char*) * 7);
 	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
@@ -18,13 +16,10 @@ void iniciarColas(){
 	colaReady = queue_create();
 	colaExec = queue_create();
 	colaBlocked = queue_create();
-	colaEnd = queue_create();
 }
 
 void iniciarSemaforos(){
 	sem_init(&semPlanificacion,0,0);
-	sem_init(&semaforoPlanificadorInicio,0,0);
-	sem_init(&semaforoPlanificadorFin,0,0);
 }
 
 void iniciarMutex(){
@@ -32,7 +27,6 @@ void iniciarMutex(){
 	pthread_mutex_init(&mutexColaReady, NULL);
 	pthread_mutex_init(&mutexColaExec, NULL);
 	pthread_mutex_init(&mutexColaBlocked, NULL);
-	pthread_mutex_init(&mutexColaEnd, NULL);
 	pthread_mutex_init(&mutexPlanificadorFin, NULL);
 	pthread_mutex_init(&mutexLogDiscordiador, NULL);
 	pthread_mutex_init(&mutexTotalTripus, NULL);
@@ -118,6 +112,7 @@ void crearConfig(){
 	}
 }
 
+
 char * pathLog(){
 	char *pathLog = string_new();
 	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
@@ -129,15 +124,9 @@ char * pathLog(){
 	return pathLog;
 }
 
+
 t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
-	/*
-	 * TODO devuelve el tripu mas cerca a una cierta posicion.
-	 * Hay q recorrer todas las colas e ir comparando las posiciones
-	 * de los tripus hasta q quede un solo tripu. De las colas no
-	 * hay q sacar nada, solo estamos leyendo. Es decir q las
-	 * colas deben quedar como estaban.
-	 */
-	//planificacionPlay = 0;//alguien tiene que pausar antes de invocar esta funcion
+
 	int diferenciaX  = 0;
 	int diferenciaY = 0;
 	int diferenciaMasCerca = 0;
@@ -151,32 +140,30 @@ t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
 	t_tripulante * tripulante;
 	t_tripulante * tripulanteMasCerca;
 
-
 	tripulanteMasCerca = (t_tripulante *) list_iterator_next(iterator);
-	printf("\n %p \n",tripulanteMasCerca);
-	diferenciaX = diferencia(tripulanteMasCerca->posX, lugarSabotaje.posX);
-	diferenciaY = diferencia(tripulanteMasCerca->posY, lugarSabotaje.posY);
+	//log_info(logDiscordiador, "\n %p \n",tripulanteMasCerca);
+	diferenciaX = diferencia(tripulanteMasCerca->coordenadas.posX, lugarSabotaje.posX);
+	diferenciaY = diferencia(tripulanteMasCerca->coordenadas.posY, lugarSabotaje.posY);
 
 	diferenciaMasCerca = diferenciaX + diferenciaY;
-	printf("\ndiferencia : %d de tripulanteid: %d\n", diferenciaMasCerca, tripulanteMasCerca->idTripulante);
+	log_info(logDiscordiador,"diferencia : %d de tripulanteid: %d", diferenciaMasCerca, tripulanteMasCerca->idTripulante);
 	while(list_iterator_has_next(iterator)){
 
-
 		tripulante = (t_tripulante *) list_iterator_next(iterator);
-		diferenciaX = diferencia(tripulante->posX, lugarSabotaje.posX);
-		diferenciaY = diferencia(tripulante->posY, lugarSabotaje.posY);
+		diferenciaX = diferencia(tripulante->coordenadas.posX, lugarSabotaje.posX);
+		diferenciaY = diferencia(tripulante->coordenadas.posY, lugarSabotaje.posY);
 
 		diferenciaComparado = diferenciaX + diferenciaY;
-		printf("\ndiferencia: %d de tripulanteid: %d\n", diferenciaComparado, tripulante->idTripulante);
+		log_info(logDiscordiador, "diferencia: %d de tripulanteid: %d", diferenciaComparado, tripulante->idTripulante);
 		//s: x=0,y=0
 		//t4: x=1,y=1
 		//t2: x=1,y=0-1
 		//t1: x=6,y=6
 
 		if(diferenciaComparado < diferenciaMasCerca || (diferenciaComparado == diferenciaMasCerca && tripulante->idTripulante < tripulanteMasCerca->idTripulante)){
-			printf("\nel tripulanteid: %d con posX: %d posY: %d desaloja al el tripulanteid: %d con posX: %d posY: %d\n"
-			, tripulante->idTripulante, tripulante->posX, tripulante->posY,
-			tripulanteMasCerca->idTripulante, tripulanteMasCerca->posX, tripulanteMasCerca->posY);
+			log_info(logDiscordiador,"el tripulanteid: %d con posX: %d posY: %d desaloja al el tripulanteid: %d con posX: %d posY: %d"
+			, tripulante->idTripulante, tripulante->coordenadas.posX, tripulante->coordenadas.posY,
+			tripulanteMasCerca->idTripulante, tripulanteMasCerca->coordenadas.posX, tripulanteMasCerca->coordenadas.posY);
 
 			diferenciaMasCerca = diferenciaComparado;
 			tripulanteMasCerca =  tripulante;
@@ -230,8 +217,6 @@ void casoBlocked(){
 		log_info(logDiscordiador,"------EL TRIPU BLOQUEADO ES %d-----", idTripulanteBlocked);
 	}
 }
-
-
 
 
 void siguienteTarea(t_tripulante* tripulante, int* ciclosExec){
@@ -300,8 +285,16 @@ void pasarDeCola(t_tripulante* tripulante){
 			log_error(logDiscordiador,"No se reconoce el estado", tripulante->idTripulante);
 			exit(1);
 	}
-
 }
+
+
+bool tripulanteDeMenorId(void* tripulante1, void* tripulante2){
+	t_tripulante* tripulanteMenorId = (t_tripulante*) tripulante1;
+	t_tripulante* tripulanteMayorId = (t_tripulante*) tripulante2;
+
+	return tripulanteMenorId->idTripulante < tripulanteMayorId->idTripulante;
+}
+
 
 char* deserializarString (t_paquete* paquete){
 
@@ -311,12 +304,14 @@ char* deserializarString (t_paquete* paquete){
 	return string;
 }
 
+
 void mandarTareaAejecutar(t_tripulante* tripulante, int socketMongo){
 
 	t_paquete* paqueteConLaTarea = armarPaqueteCon((void*) tripulante->instruccionAejecutar,TAREA);
 
 	enviarPaquete(paqueteConLaTarea,socketMongo);
 }
+
 
 void actualizarEstadoEnRAM(t_tripulante* tripulante){
 
@@ -330,6 +325,7 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 	close(miRAMsocket);
 }
 
+
 void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, TRIPULANTE);
@@ -340,6 +336,7 @@ void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 	recibirTareaDeMiRAM(miRAMsocket, tripulante);
 	close(miRAMsocket);
 }
+
 
 void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 
@@ -352,6 +349,7 @@ void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 
 	close(miRAMsocket);
 }
+
 
 void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
@@ -377,12 +375,14 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 	eliminarPaquete(paqueteRecibido);
 }
 
+
 int enviarA(puertoEIP* puerto, void* informacion, tipoDeDato codigoOperacion){
 	int socket = iniciarConexionDesdeClienteHacia(puerto);
 	enviarPaquete(armarPaqueteCon(informacion, codigoOperacion), socket);
 	return socket;
 	//----ESTA FUNCION NO LLEVA EL CLOSE, PERO HAY Q AGREGARLO SIEMPRE
 }
+
 
 void esperarConfirmacionDeRAM(int server_socket) {
 
@@ -406,9 +406,11 @@ char* esperarConfirmacionDePatotaEnRAM(int server_socket) {
 
 	t_paquete* paqueteRecibido = recibirPaquete(server_socket);
 
-	char* mensajeConfirmacion = (char*) paqueteRecibido->buffer->stream;
+	char* mensajeConfirmacion = deserializarString(paqueteRecibido);
 
 	eliminarPaquete(paqueteRecibido);
+	log_info(logDiscordiador,"La confirmacion es %s",mensajeConfirmacion);
+
 
 	return mensajeConfirmacion;
 }
@@ -441,6 +443,7 @@ void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 
 }
 
+
 int esIO(char* tarea){
 
 	for(int i=0; todasLasTareasIO[i] != NULL; i++){
@@ -452,10 +455,11 @@ int esIO(char* tarea){
 	return 0;
 }
 
+
 uint32_t calculoCiclosExec(t_tripulante* tripulante){
 
-	uint32_t desplazamientoEnX = diferencia(tripulante->instruccionAejecutar->posX, tripulante->posX);
-	uint32_t desplazamientoEnY = diferencia(tripulante->instruccionAejecutar->posY, tripulante->posY);
+	uint32_t desplazamientoEnX = diferencia(tripulante->instruccionAejecutar->coordenadas.posX, tripulante->coordenadas.posX);
+	uint32_t desplazamientoEnY = diferencia(tripulante->instruccionAejecutar->coordenadas.posY, tripulante->coordenadas.posY);
 
 	if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
 		return  desplazamientoEnX + desplazamientoEnY + 1;
@@ -464,12 +468,13 @@ uint32_t calculoCiclosExec(t_tripulante* tripulante){
 	return desplazamientoEnX + desplazamientoEnY + tripulante->instruccionAejecutar->tiempo;
 }
 
+
 void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 
-	int diferenciaEnX = diferencia(tripulante->posX, destino->posX);
-	int diferenciaEnY = diferencia(tripulante->posY, destino->posY);
-	int restaEnX = tripulante->posX - destino->posX;
-	int restaEnY = tripulante->posY - destino->posY;
+	int diferenciaEnX = diferencia(tripulante->coordenadas.posX, destino.posX);
+	int diferenciaEnY = diferencia(tripulante->coordenadas.posY, destino.posY);
+	int restaEnX = tripulante->coordenadas.posX - destino.posX;
+	int restaEnY = tripulante->coordenadas.posY - destino.posY;
 	int desplazamiento = 0;
 
 //	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
@@ -477,20 +482,22 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 
 	if(diferenciaEnX){
 		desplazamiento = restaEnX / diferenciaEnX;
-		tripulante->posX = tripulante->posX - desplazamiento;
+		tripulante->coordenadas.posX = tripulante->coordenadas.posX - desplazamiento;
 	}
 	else if(diferenciaEnY){
 		desplazamiento = restaEnY / diferenciaEnY;
-		tripulante->posY = (tripulante->posY - desplazamiento);
+		tripulante->coordenadas.posY = (tripulante->coordenadas.posY - desplazamiento);
 	}
 
 //	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
 
 }
 
+
 uint32_t diferencia(uint32_t numero1, uint32_t numero2){
 	return (uint32_t) abs(numero1-numero2);
 }
+
 
 void listarTripulantes(){
 	log_info(logDiscordiador,"Estado de la nave: %s", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
@@ -501,6 +508,7 @@ void listarTripulantes(){
 	iterarCola(colaBlocked, BLOCKED);
 
 }
+
 
 char* traducirEstado(t_estado estado){
 
@@ -529,7 +537,6 @@ char* traducirEstado(t_estado estado){
 
 	return string;
 }
-
 
 
 void eliminarTripulante(uint32_t id){
@@ -586,6 +593,7 @@ void eliminarPatota(t_patota* patota){
 	free(patota->tareas);
 	free(patota);
 }
+
 
 void liberarTripulante(t_tripulante* tripulante){
 	log_info(logDiscordiador, "Eliminando el tripulante: %d, y su ultima tarea fue: %s",tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);

@@ -1,18 +1,6 @@
 #ifndef VARIABLES_H_
 #define VARIABLES_H_
 
-typedef struct{
-	t_tripulante* tripulanteSabotaje;
-	t_coordenadas coordenadas;
-	int haySabotaje;
-	int tiempo;
-	sem_t semaforoIniciarSabotaje;
-	sem_t semaforoCorrerSabotaje;
-	sem_t semaforoTerminoTripulante;
-	sem_t semaforoTerminoSabotaje;
-} t_sabotaje;
-
-
 t_config* config;
 
 t_log* logDiscordiador;

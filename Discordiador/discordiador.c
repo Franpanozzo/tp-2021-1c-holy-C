@@ -16,6 +16,17 @@ int main() {
 	idPatota = 0;
 	idTripulanteBlocked = NO_HAY_TRIPULANTE_BLOQUEADO;
 	modificarPlanificacion(PAUSADA);
+
+	sabotaje = malloc(sizeof(t_sabotaje));
+	sabotaje->tripulanteSabotaje = NULL;
+	sabotaje->haySabotaje = 0;
+
+	sem_init(&sabotaje->semaforoIniciarSabotaje,0,0);
+	sem_init(&sabotaje->semaforoCorrerSabotaje,0,0);
+	sem_init(&sabotaje->semaforoTerminoTripulante,0,0);
+	sem_init(&sabotaje->semaforoTerminoSabotaje,0,0);
+
+
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
 	pthread_detach(planificador);
 	leerConsola();
@@ -39,7 +50,7 @@ void hiloPlanificador(){
 			list_iterate(colaNew->elements, (void*)esperarTerminarTripulante);
 			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
 
-			if(sabotaje->tripulanteSabotaje->estado == SABOTAJE){
+			if(sabotaje->tripulanteSabotaje != NULL){
 				esperarTerminarTripulante(sabotaje->tripulanteSabotaje);
 			}
 
@@ -53,8 +64,8 @@ void hiloPlanificador(){
 			actualizarCola(READY, colaReady, mutexColaReady);
 
 			if(sabotaje->haySabotaje){ //HAY SABOTAJE
-				sem_post(sabotaje->semaforoIniciarSabotaje);
-				sem_wait(sabotaje->semaforoCorrerSabotaje);//se traba esperando a q se bloqueen a los tripus por el sabotaje
+				sem_post(&sabotaje->semaforoIniciarSabotaje);
+				sem_wait(&sabotaje->semaforoCorrerSabotaje);//se traba esperando a q se bloqueen a los tripus por el sabotaje
 			}
 
 			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
@@ -64,7 +75,7 @@ void hiloPlanificador(){
 			list_iterate(colaNew->elements, (void*)avisarTerminoPlanificacion);
 			list_iterate(colaReady->elements, (void*)avisarTerminoPlanificacion);
 
-			if(sabotaje->tripulanteSabotaje->estado == SABOTAJE){
+			if(sabotaje->tripulanteSabotaje != NULL){
 				avisarTerminoPlanificacion(sabotaje->tripulanteSabotaje);
 			}
 		}
@@ -81,28 +92,28 @@ void hiloSabotaje(){
 		 * que si, se hace lo siguiente:
 		 */
 
-		sem_wait(sabotaje->semaforoIniciarSabotaje);//esperar a que el plani termine de actualizar las colas
-
 		sabotaje->haySabotaje = 1;
+		sem_wait(&sabotaje->semaforoIniciarSabotaje);//esperar a que el plani termine de actualizar las colas
+
 		sabotaje->tripulanteSabotaje = elTripuMasCerca(sabotaje->coordenadas);
 		t_estado estadoAnterior = sabotaje->tripulanteSabotaje->estado;
 		sabotaje->tripulanteSabotaje->estado = SABOTAJE;
 
-		ordenarPorId(colaExec->elements);
-		ordenarPorId(colaReady->elements);
+		list_sort(colaExec->elements, tripulanteDeMenorId);
+		list_sort(colaReady->elements, tripulanteDeMenorId);
 		list_add_all(colaSabotaje->elements, colaExec->elements);
 		list_add_all(colaSabotaje->elements, colaReady->elements);
 		list_clean(colaExec->elements);
 		list_clean(colaReady->elements);
 
-		sem_post(sabotaje->semaforoCorrerSabotaje);//destrabar el plani
+		sem_post(&sabotaje->semaforoCorrerSabotaje);//destrabar el plani
 
-		sem_wait(sabotaje->semaforoTerminoTripulante);//esperar q el tripu termine el sabotaje
+		sem_wait(&sabotaje->semaforoTerminoTripulante);//esperar q el tripu termine el sabotaje
 
 		//reestablecer todo_ como estaba antes
 		sabotaje->haySabotaje = 0;
 
-		sem_post(sabotaje->semaforoTerminoSabotaje);//avisarle al tripu
+		sem_post(&sabotaje->semaforoTerminoSabotaje);//avisarle al tripu
 	}
 }
 
@@ -187,15 +198,15 @@ void hiloTripulante(t_tripulante* tripulante){
 				desplazarse(tripulante, sabotaje->coordenadas);
 				sabotaje->tiempo --;
 				if(sabotaje->tiempo <= 0){
-					sem_post(sabotaje->semaforoTerminoTripulante);
-					sem_wait(sabotaje->semaforoTerminoSabotaje);
+					sem_post(&sabotaje->semaforoTerminoTripulante);
+					sem_wait(&sabotaje->semaforoTerminoSabotaje);
 				}
 
 				break;
 		}
 		sem_post(&tripulante->semaforoFin);
 		sem_wait(&tripulante->semaforoInicio);
-		}
+	}
 
 }
 
@@ -204,15 +215,15 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 
 	t_patota* patota = asignarDatosAPatota(tareasString);
 	int miRAMsocket = enviarA(puertoEIPRAM, patota, PATOTA);
-	char* confirmacion = esperarConfirmacionDePatotaRAM(miRAMsocket);
+	char* confirmacion = esperarConfirmacionDePatotaEnRAM(miRAMsocket);
 	if(strcmp(confirmacion,"OK") == 0){
-	log_info(logDiscordiador,"creando patota, con %d tripulantes", cantidadTripulantes);
+		log_info(logDiscordiador,"creando patota, con %d tripulantes", cantidadTripulantes);
 
-	for (int i=0; i<cantidadTripulantes; i++){
-		totalTripus ++;
-		log_info(logDiscordiador,"---------posx:%d;posy:%d---------",coordenadas[i].posX,coordenadas[i].posY);
-		iniciarTripulante(*(coordenadas+i), patota->ID);
-	}
+		for (int i=0; i<cantidadTripulantes; i++){
+			totalTripus ++;
+			log_info(logDiscordiador,"---------posx:%d;posy:%d---------",coordenadas[i].posX,coordenadas[i].posY);
+			iniciarTripulante(*(coordenadas+i), patota->ID);
+		}
 	}
 	else{
 		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota ID: %d",patota->ID);
@@ -231,8 +242,8 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 	idTripulante++;
 
-	tripulante->posX = coordenada.posX;
-	tripulante->posY = coordenada.posY;
+	tripulante->coordenadas.posX = coordenada.posX;
+	tripulante->coordenadas.posY = coordenada.posY;
 	tripulante->idTripulante = idTripulante;
 	tripulante->idPatota = idPatota;
 	tripulante->estado = NEW;

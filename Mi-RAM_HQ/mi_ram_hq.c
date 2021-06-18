@@ -127,7 +127,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		case PATOTA:
 			//log_info(logMiRAM,"Voy a deserializar una patota");
 			deserializarInfoPCB(paquete);
-			mandarConfirmacionDisc("PATOTA CREADA EN MEMORIA -- OK", tripulanteSock);
+			mandarConfirmacionDisc("OK", tripulanteSock);
 			break;
 
 		case TRIPULANTE:
@@ -144,7 +144,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		case ESTADO_TRIPULANTE:
 			log_info(logMiRAM,"Voy a actualizar un tripulante");
 			actualizarTripulante(paquete);
-			mandarConfirmacionDisc("TCB ACTAULIZADO EN MEMORIA -- OK", tripulanteSock);
+			mandarConfirmacionDisc("OK", tripulanteSock);
 			break;
 
 		case SIGUIENTE_TAREA:
@@ -277,9 +277,9 @@ void armarTarea(char* string,t_list* lista){
 
 	    }
 
-	    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
+	    tarea->coordenadas.posX = (uint32_t) atoi(arrayParametros[1]);
 
-	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
+	    tarea->coordenadas.posY = (uint32_t) atoi(arrayParametros[2]);
 
 	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 

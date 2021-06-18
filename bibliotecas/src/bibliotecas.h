@@ -41,8 +41,7 @@
 
 	    char* nombreTarea;
 	    uint32_t parametro;
-	    uint32_t posX;
-	    uint32_t posY;
+	    t_coordenadas coordenadas;
 	    uint32_t tiempo;
 
 	} t_tarea;
@@ -70,8 +69,7 @@
 		uint32_t idPatota;
 		uint32_t idTripulante;
 		t_estado estado;
-		uint32_t posX;
-		uint32_t posY;
+		t_coordenadas coordenadas;
 		t_tarea* instruccionAejecutar;
 		sem_t semaforoInicio;
 		sem_t semaforoFin;
@@ -83,6 +81,16 @@
 		char* tareas;
 	}t_patota;
 
+	typedef struct{
+		t_tripulante* tripulanteSabotaje;
+		t_coordenadas coordenadas;
+		int haySabotaje;
+		int tiempo;
+		sem_t semaforoIniciarSabotaje;
+		sem_t semaforoCorrerSabotaje;
+		sem_t semaforoTerminoTripulante;
+		sem_t semaforoTerminoSabotaje;
+	} t_sabotaje;
 
 	void lock(pthread_mutex_t);
 
