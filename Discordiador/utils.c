@@ -196,6 +196,17 @@ void avisarTerminoPlanificacion(t_tripulante* tripulante){
 	sem_post(&tripulante->semaforoInicio);
 }
 
+
+void avisarHaySabotaje(t_tripulante* tripulante){
+	sem_wait(&tripulante->semaforoInicio);
+}
+
+
+void avisarTerminoSabotaje(t_tripulante* tripulante){
+	sem_post(&tripulante->semaforoInicio);
+}
+
+
 t_patota* asignarDatosAPatota(char* tareasString){
 
 	t_patota* patota = malloc(sizeof(t_patota));
@@ -238,20 +249,17 @@ void siguienteTarea(t_tripulante* tripulante, int* ciclosExec){
 }
 
 
-void iterarCola(t_queue* cola){
+void iterarCola(t_queue* cola, t_estado estado){
 
 	t_list_iterator* list_iterator = list_iterator_create(cola->elements);
 
 	while(list_iterator_has_next(list_iterator)) {
 		t_tripulante* tripulante = list_iterator_next(list_iterator);
-		char* status = traducirEstado(tripulante->estado);
-		//TODO hacerlo log
-		log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Status:%s    ", tripulante->idTripulante, tripulante->idPatota, status);
-		free(status);
+		log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Status:%s    ",
+				tripulante->idTripulante, tripulante->idPatota, traducirEstado(estado));
 	}
 
 	list_iterator_destroy(list_iterator);
-
 }
 
 void pasarDeCola(t_tripulante* tripulante){
@@ -271,10 +279,16 @@ void pasarDeCola(t_tripulante* tripulante){
 			break;
 
 		case BLOCKED:
-			lock(mutexColaBlocked);
-			queue_push(colaBlocked, tripulante);
-			unlock(mutexColaBlocked);
-			log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
+			if(sabotaje->haySabotaje){
+				queue_push(colaSabotaje, tripulante);
+				log_info(logDiscordiador,"El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
+			}
+			else{
+				lock(mutexColaBlocked);
+				queue_push(colaBlocked, tripulante);
+				unlock(mutexColaBlocked);
+				log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
+			}
 			break;
 
 		case END:
@@ -436,15 +450,13 @@ uint32_t calculoCiclosExec(t_tripulante* tripulante){
 	return desplazamientoEnX + desplazamientoEnY + tripulante->instruccionAejecutar->tiempo;
 }
 
-void desplazarse(t_tripulante* tripulante){
-	//NO ENTIENDOOOOOOO
-	//LE SAQUE LOS UINT Y EMPEZO A ANDAR EL MOVIMIENTO CON COORDENADAS DE CONSOLA
-	int diferenciaEnX = diferencia(tripulante->posX, tripulante->instruccionAejecutar->posX);
-	int restaEnX = tripulante->posX - tripulante->instruccionAejecutar->posX;
-	int restaEnY = tripulante->posY - tripulante->instruccionAejecutar->posY;
-	int diferenciaEnY = diferencia(tripulante->posY, tripulante->instruccionAejecutar->posY);
+void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
+
+	int diferenciaEnX = diferencia(tripulante->posX, destino->posX);
+	int diferenciaEnY = diferencia(tripulante->posY, destino->posY);
+	int restaEnX = tripulante->posX - destino->posX;
+	int restaEnY = tripulante->posY - destino->posY;
 	int desplazamiento = 0;
-	//FALTAN MUTEX
 
 //	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
 //			tripulante->posX, tripulante->posY );
@@ -467,14 +479,12 @@ uint32_t diferencia(uint32_t numero1, uint32_t numero2){
 }
 
 void listarTripulantes(){
-	//TODO hacerlo log
-	//pausarPlanificacion = 0;
 	log_info(logDiscordiador,"Estado de la nave: %s", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
 
-	iterarCola(colaNew);
-	iterarCola(colaReady);
-	iterarCola(colaExec);
-	iterarCola(colaBlocked);
+	iterarCola(colaNew, NEW);
+	iterarCola(colaReady, READY);
+	iterarCola(colaExec, EXEC);
+	iterarCola(colaBlocked, BLOCKED);
 
 }
 

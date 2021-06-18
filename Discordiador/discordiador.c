@@ -32,13 +32,16 @@ int main() {
 void hiloPlanificador(){
 
 	while(1){
-
 		if(leerPlanificacion() == CORRIENDO && leerTotalTripus() > 0){
 
 			list_iterate(colaExec->elements, (void*)esperarTerminarTripulante);
 			list_iterate(colaBlocked->elements, (void*)esperarTerminarTripulante);
 			list_iterate(colaNew->elements, (void*)esperarTerminarTripulante);
 			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
+
+			if(sabotaje->tripulanteSabotaje->estado == SABOTAJE){
+				esperarTerminarTripulante(sabotaje->tripulanteSabotaje);
+			}
 
 			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripus);
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
@@ -49,27 +52,10 @@ void hiloPlanificador(){
 			actualizarCola(NEW, colaNew, mutexColaNew);
 			actualizarCola(READY, colaReady, mutexColaReady);
 
-/*
-			if(haySabotaje){ // HAY SABOTAJE
-				tripulanteDesabotaje = elTripuMasCerca(sabotaje.coordenadas);
-				// el sabotaje es una variable global de tipo t_tarea y tripulanteDesabotaje tambien es global
-				t_estado estadoAnterior = imagenTripu->estado;
-				t_estado tareaAnterior = imagenTripu->instruccionAejecutar;
-				tripulanteDesabotaje->estado = SABOTAJE;
-				tripulanteDesabotaje->instruccionAejecutar = sabotaje;
-				sem_wait(&semaforoSabo);
-				tripulanteDesabotaje->estado = estadoAnterior;
-				tripulanteDesabotaje->instruccionAejecutar = tareaAnterior;
-//				tripulanteDesabotaje tiene q ponerse como en un null, un tripu null
-				noHaySabotaje = 1;
-				sem_post(semaforoImagen); // se inicializa en 0
-				sem_post(&semaforoSabotajeResuelto); //se usa para indicar al hiloSabotaje
-				// q ya se termino. Mas q nada por si nos mandan dos sabos juntos
+			if(sabotaje->haySabotaje){ //HAY SABOTAJE
+				sem_post(sabotaje->semaforoIniciarSabotaje);
+				sem_wait(sabotaje->semaforoCorrerSabotaje);//se traba esperando a q se bloqueen a los tripus por el sabotaje
 			}
-
-*/
-
-//			planificadorFin = 0;
 
 			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
 
@@ -78,11 +64,11 @@ void hiloPlanificador(){
 			list_iterate(colaNew->elements, (void*)avisarTerminoPlanificacion);
 			list_iterate(colaReady->elements, (void*)avisarTerminoPlanificacion);
 
+			if(sabotaje->tripulanteSabotaje->estado == SABOTAJE){
+				avisarTerminoPlanificacion(sabotaje->tripulanteSabotaje);
+			}
 		}
-
 	}
-
-
 }
 
 
@@ -95,8 +81,28 @@ void hiloSabotaje(){
 		 * que si, se hace lo siguiente:
 		 */
 
-		haySabotaje = 1;
-//		sem_wait(&semaforoSabotajeResuelto);
+		sem_wait(sabotaje->semaforoIniciarSabotaje);//esperar a que el plani termine de actualizar las colas
+
+		sabotaje->haySabotaje = 1;
+		sabotaje->tripulanteSabotaje = elTripuMasCerca(sabotaje->coordenadas);
+		t_estado estadoAnterior = sabotaje->tripulanteSabotaje->estado;
+		sabotaje->tripulanteSabotaje->estado = SABOTAJE;
+
+		ordenarPorId(colaExec->elements);
+		ordenarPorId(colaReady->elements);
+		list_add_all(colaSabotaje->elements, colaExec->elements);
+		list_add_all(colaSabotaje->elements, colaReady->elements);
+		list_clean(colaExec->elements);
+		list_clean(colaReady->elements);
+
+		sem_post(sabotaje->semaforoCorrerSabotaje);//destrabar el plani
+
+		sem_wait(sabotaje->semaforoTerminoTripulante);//esperar q el tripu termine el sabotaje
+
+		//reestablecer todo_ como estaba antes
+		sabotaje->haySabotaje = 0;
+
+		sem_post(sabotaje->semaforoTerminoSabotaje);//avisarle al tripu
 	}
 }
 
@@ -132,7 +138,7 @@ void hiloTripulante(t_tripulante* tripulante){
 			case EXEC:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en exec con %d ciclos y %d quantum",
 						tripulante->idTripulante, ciclosExec, quantumPendiente);
-				desplazarse(tripulante);
+				desplazarse(tripulante, tripulante->instruccionAejecutar->coordenadas);
 				ciclosExec --;
 				quantumPendiente--;
 				sleep(3);
@@ -170,29 +176,14 @@ void hiloTripulante(t_tripulante* tripulante){
 				//No va nada acá porque sobreloguea mucho
 				break;
 
-			case SABOTAJE: // para algunos es como un bloqueo donde no se hace nada
-/*				if(tripu->idTripulante == tripulanteDesabotaje->idTripulante){
-					sleep(1);
-					ciclosSabo --;
-					if(ciclosSabo > 0){
-						desplazarse(tripu);
-					}
-					else{
-
-					 *    FIN DE SABO
-					 * hay q pasar a todos en su respectivo orden a sus estados anteriores
-					 * y hacer q el tripu q se movio hasta para solucionar el sabo re calcule
-					 * sus cilos de ejecucion teniendo en cuenta q se tiene q volver a
-					 * desplazar y q puede ser q ya haya hecho parte de la tarea
-
-					sem_post(semaforoSabo); //este semaforo le permite recuperar su "imagen"
-					//el wait se hace dentro del hiloSabotaje antes de q devolverle la imagen
-					//y el semaforo se inicializa en 0
-					sem_wait(semaforoImagen); //lo hago para asegurarme q le devuelva la imagen
-					}
+			case SABOTAJE:
+				desplazarse(tripulante, sabotaje->coordenadas);
+				sabotaje->tiempo --;
+				if(sabotaje->tiempo <= 0){
+					sem_post(sabotaje->semaforoTerminoTripulante);
+					sem_wait(sabotaje->semaforoTerminoSabotaje);
 				}
-				sem_post(semaforoPlanificadorInicio);
-*/
+
 				break;
 		}
 		sem_post(&tripulante->semaforoFin);
@@ -247,19 +238,17 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	pthread_detach(_hiloTripulante);
 }
 
+
 void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 
 	t_tripulante* tripulante;
 	int tamanioInicialCola = queue_size(cola);
-	char * _estado = traducirEstado(estado);
-	log_info(logDiscordiador,"------Planficando cola de %s con %d tripulantes-----", _estado, tamanioInicialCola);
+	log_info(logDiscordiador,"------Planficando cola de %s con %d tripulantes-----", traducirEstado(estado), tamanioInicialCola);
 
 	for(int i=0; i<tamanioInicialCola; i++){
-		lock(colaMutex);
 		tripulante = (t_tripulante*) queue_pop(cola);
-		unlock(colaMutex);
 
-		if(tripulante->estado != estado /*|| tripulante->estado == END*/){
+		if(tripulante->estado != estado){
 			if(estado == READY){
 				if(queue_size(colaExec) < gradoMultiprocesamiento || tripulante->estado == END){
 					pasarDeCola(tripulante);
@@ -276,15 +265,11 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 			}
 		}
 		else{
-			tripulante->estado = estado;
 			lock(colaMutex);
 			queue_push(cola, tripulante);
 			unlock(colaMutex);
 		}
-
-		//sem_post(&tripulante->semaforoInicio);
 	}
-	free(_estado);
 }
 
 

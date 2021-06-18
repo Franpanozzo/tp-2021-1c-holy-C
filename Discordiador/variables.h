@@ -1,5 +1,18 @@
 #ifndef VARIABLES_H_
 #define VARIABLES_H_
+
+typedef struct{
+	t_tripulante* tripulanteSabotaje;
+	t_coordenadas coordenadas;
+	int haySabotaje;
+	int tiempo;
+	sem_t semaforoIniciarSabotaje;
+	sem_t semaforoCorrerSabotaje;
+	sem_t semaforoTerminoTripulante;
+	sem_t semaforoTerminoSabotaje;
+} t_sabotaje;
+
+
 t_config* config;
 
 t_log* logDiscordiador;
@@ -17,6 +30,7 @@ int quantum;
 int idTripulanteBlocked;
 int gradoMultiprocesamiento;
 
+t_sabotaje* sabotaje;
 
 char** todasLasTareasIO;
 
@@ -24,7 +38,7 @@ t_queue* colaExec;
 t_queue* colaBlocked;
 t_queue* colaNew;
 t_queue* colaReady;
-t_queue* colaEnd;
+t_queue* colaSabotaje;
 
 pthread_mutex_t mutexColaNew;
 pthread_mutex_t mutexColaReady;
@@ -42,6 +56,5 @@ sem_t semPlanificacion;
 sem_t semaforoPlanificadorInicio;
 sem_t semaforoPlanificadorFin;
 
-t_tripulante* tripulanteDesabotaje;
 
 #endif

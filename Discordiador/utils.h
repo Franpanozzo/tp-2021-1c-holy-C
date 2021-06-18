@@ -32,7 +32,7 @@ void esperarTerminarTripulante(t_tripulante*);
 void avisarTerminoPlanificacion(t_tripulante*);
 
 void casoBlocked();
-void iterarCola(t_queue*);
+void iterarCola(t_queue*, t_estado);
 void pasarDeCola(t_tripulante*);
 
 void siguienteTarea(t_tripulante* tripulante, int* ciclosExec);
@@ -49,7 +49,7 @@ void esperarConfirmacionDeRAM(int);
 
 int esIO(char*);
 uint32_t calculoCiclosExec(t_tripulante*);
-void desplazarse(t_tripulante*);
+void desplazarse(t_tripulante*, t_coordenadas);
 uint32_t diferencia(uint32_t, uint32_t);
 
 void listarTripulantes();
