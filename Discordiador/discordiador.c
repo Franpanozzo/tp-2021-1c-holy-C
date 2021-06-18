@@ -124,7 +124,14 @@ void hiloTripulante(t_tripulante* tripulante){
 			case NEW:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
 				recibirPrimerTareaDeMiRAM(tripulante);
-				tripulante->estado = READY;
+				if(strcmp(tripulante->instruccionAejecutar->nombreTarea, "TAREA_ERROR") == 0){
+					tripulante->estado = END;
+					log_info(logDiscordiador,"El tripulante ID: %d de la patota ID: %d no ha sido alocado en memoria por estar sin espacio",tripulante->idTripulante,tripulante->idPatota);
+				}
+				else{
+					tripulante->estado = READY;
+				}
+
 				break;
 			case READY:
 				if(ciclosExec == 0){
@@ -197,7 +204,8 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 
 	t_patota* patota = asignarDatosAPatota(tareasString);
 	int miRAMsocket = enviarA(puertoEIPRAM, patota, PATOTA);
-	esperarConfirmacionDeRAM(miRAMsocket);
+	char* confirmacion = esperarConfirmacionDePatotaRAM(miRAMsocket);
+	if(strcmp(confirmacion,"OK") == 0){
 	log_info(logDiscordiador,"creando patota, con %d tripulantes", cantidadTripulantes);
 
 	for (int i=0; i<cantidadTripulantes; i++){
@@ -205,8 +213,14 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		log_info(logDiscordiador,"---------posx:%d;posy:%d---------",coordenadas[i].posX,coordenadas[i].posY);
 		iniciarTripulante(*(coordenadas+i), patota->ID);
 	}
+	}
+	else{
+		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota ID: %d",patota->ID);
+	}
 	free(patota);
+	free(confirmacion);
 	close(miRAMsocket);
+
 }
 
 

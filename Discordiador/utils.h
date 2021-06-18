@@ -46,6 +46,7 @@ void recibirProximaTareaDeMiRAM(t_tripulante*);
 void recibirTareaDeMiRAM(int ,t_tripulante*);
 void recibirConfirmacionDeMongo(int, t_tarea*);
 void esperarConfirmacionDeRAM(int);
+char* esperarConfirmacionDePatotaEnRAM(int);
 
 int esIO(char*);
 uint32_t calculoCiclosExec(t_tripulante*);

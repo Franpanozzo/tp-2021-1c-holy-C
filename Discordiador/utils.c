@@ -349,6 +349,7 @@ void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 		    			tripulante->idTripulante);
 
 	recibirTareaDeMiRAM(miRAMsocket,tripulante);
+
 	close(miRAMsocket);
 }
 
@@ -399,6 +400,19 @@ void esperarConfirmacionDeRAM(int server_socket) {
 
 	eliminarPaquete(paqueteRecibido);
 }
+
+
+char* esperarConfirmacionDePatotaEnRAM(int server_socket) {
+
+	t_paquete* paqueteRecibido = recibirPaquete(server_socket);
+
+	char* mensajeConfirmacion = (char*) paqueteRecibido->buffer->stream;
+
+	eliminarPaquete(paqueteRecibido);
+
+	return mensajeConfirmacion;
+}
+
 
 void recibirConfirmacionDeMongo(int socketMongo, t_tarea* tarea){
 
