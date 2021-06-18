@@ -43,10 +43,14 @@ void iniciarMemoria() {
 	tablasPaginasPatotas = list_create();
 
     pthread_mutex_init(&mutexMemoria, NULL);
+    pthread_mutex_init(&mutexEscribirMemoria, NULL);
+
 
 	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
 
 	memoria_principal = malloc(configRam.tamanioMemoria);
+
+	memset(memoria_principal,0,configRam.tamanioMemoria);
 
 	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
 
@@ -73,9 +77,10 @@ void* leer_memoria(int frame, int mem) {
     }
     else
     {
-    	void* pagina = malloc(sizeof(configRam.tamanioPagina));
+    	void* pagina = malloc(configRam.tamanioPagina);
         if(mem == MEM_PPAL)
         {
+        	log_info(logMemoria,"Se va a leer la pagina que arranca en %d", desp);
             memcpy(pagina, memoria_principal+desp, configRam.tamanioPagina);
 
         }
@@ -96,7 +101,7 @@ void* leer_memoria(int frame, int mem) {
 }
 
 
-int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* aMeter, tipoEstructura tipo) {
+int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* aMeter, tipoEstructura tipo, int datoAdicional) {
     // printf("frame %d -> %d\n",frame, get_frame(frame,mem));
     if(!get_frame(info_pagina->frame_m_ppal,mem)) // no hay nada en el frame
     {
@@ -117,11 +122,13 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
 				 info_pagina->bytesDisponibles = info_pagina->bytesDisponibles - *aMeter;
 				 }
 
-        agregarEstructAdminTipo(info_pagina, despDesdePagina, despDesdePagina + bytesAEscribir, tipo);
+        agregarEstructAdminTipo(info_pagina, despDesdePagina, despDesdePagina + bytesAEscribir, tipo, datoAdicional);
 
         if(mem == MEM_PPAL)
         {
+        	lock(mutexEscribirMemoria);
             memcpy(memoria_principal+desp, pagina, bytesAEscribir);
+            unlock(mutexEscribirMemoria);
         }
         else if(mem == MEM_VIRT){
             FILE * file = fopen(configRam.pathSwap, "r+");
@@ -153,7 +160,12 @@ void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicial, i
 
 	if(mem == MEM_PPAL)
 	{
+		lock(mutexEscribirMemoria);
 		memcpy(memoria_principal+desp, buffer, bytesAEscribir);
+		unlock(mutexEscribirMemoria);
+
+		log_info(logMemoria, "Se sobreescribio en RAM: FRAME: %d | DESDE: %d | HASTA: %d ", frame,
+		        		desplInicial, desplInicial + bytesAEscribir);
 	}
 	/*
 	else if(mem == MEM_VIRT){
@@ -164,15 +176,18 @@ void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicial, i
 		// printf("bytes written %d\n",sz);
 	} */
 
+
+
 }
 
 
-void agregarEstructAdminTipo(t_info_pagina* info_pagina,int despDesdePagina,int bytesAlojados, tipoEstructura tipo){
+void agregarEstructAdminTipo(t_info_pagina* info_pagina,int despDesdePagina,int bytesAlojados, tipoEstructura tipo, int datoAdicional){
 
 	t_alojado* nuevo_alojado = malloc(sizeof(t_alojado));
 	nuevo_alojado->desplazamientoInicial = despDesdePagina;
 	nuevo_alojado->bytesAlojados = bytesAlojados;
 	nuevo_alojado->tipo = tipo;
+	nuevo_alojado->datoAdicional = datoAdicional;
 	list_add(info_pagina->estructurasAlojadas, nuevo_alojado);
 }
 
@@ -238,10 +253,7 @@ void* buscar_pagina(t_info_pagina* info_pagina) {
 t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
-	t_DL* dlPatota;
-	dlPatota->nroPagina = 0;
-	dlPatota->desplazamiento = 0;
-	tcbAGuardar->dlPatota = dlPatota;
+	tcbAGuardar->dlPatota = 00;
 	tcbAGuardar->proximaAEjecutar = buscarInicioDLTareas(tablaPaginasPatotaActual);
 	if(tablaPaginasPatotaActual != NULL)
 	{
@@ -264,48 +276,54 @@ t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 
 t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
 
-	char* tarea;
-	char* proximoALeer;
-	char* aux = malloc(sizeof(1)) + 1;
-	*(aux+1) = '/0';
-	int noPrimeraVez = 0;
+	char* tarea = string_new();
+	char* aux = malloc(2);
+	*(aux+1) = '\0';
+	char* proximoALeer = malloc(2);
+	*(proximoALeer+1) = '\0';
 	void* pagina;
-	int indicePagina = tcbAGuardar->proximaAEjecutar->nroPagina;
-	int desplazamiento = tcbAGuardar->proximaAEjecutar->desplazamiento;
+	int indicePagina = (int) floor((double) tcbAGuardar->proximaAEjecutar / 100.0);
+	int desplazamiento = tcbAGuardar->proximaAEjecutar % 100;
 
 
 	t_info_pagina* info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
+	*proximoALeer = '0';
+
+	t_list_iterator* iteradorTablaPaginas = list_iterator_create(tablaPaginasPatotaActual->tablaDePaginas);
+
+
+	log_info(logMemoria,"Se procede a sacar tareas");
 
 	while(tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TAREAS)) {
 
-		pagina = leerMemoria(info_pagina->frame_m_ppal,MEM_PPAL);
+		pagina = leer_memoria(info_pagina->frame_m_ppal,MEM_PPAL);
 		pagina += desplazamiento;
 
-		while(pagina != NULL && *proximoALeer != '|'  && *proximoALeer != '/0') {
+		while(pagina != NULL && *proximoALeer != '|'  && *proximoALeer != '\0') {
 			memcpy(aux,pagina,1);
 			string_append(&tarea,aux);
 			pagina++;
-			proximoALeer = (char*) pagina;
+			memcpy(proximoALeer,pagina,1);
 		    desplazamiento++;
+
+		    log_info(logMemoria,"Sacando tarea: %s",tarea);
 		}
 
-		tcbAGuardar->proximaAEjecutar->nroPagina = indicePagina;
-		tcbAGuardar->proximaAEjecutar->desplazamiento = desplazamiento;
+		tcbAGuardar->proximaAEjecutar = indicePagina * 100 + desplazamiento;
+
 		indicePagina++;
 		desplazamiento = 0;
 
-		if(noPrimeraVez)
-		{
-			t_info_pagina* info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
-		}
-
-		if(!noPrimeraVez) noPrimeraVez =1;
+		if()
+		info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
 
 	}
 
 	actualizarTripulante(tablaPaginasPatotaActual, tcbAGuardar);
 
 	t_tarea* tareaAMandar = armarTarea(tarea);
+	free(aux);
+	free(proximoALeer);
 
 	return tareaAMandar;
 }
@@ -318,10 +336,10 @@ void actualizarTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* t
 	  return tieneTripulanteAlojado(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
 	}
 
-	int aMeter, offset = 0;
+	int aMeter, relleno, offset = 0;
 	t_list* tablaPaginasConTripu = list_filter(tablaPaginasPatotaActual->tablaDePaginas, (void*) tieneTripu);
 
-	void* bufferAMeter = meterEnBuffer(tcbAGuardar, TCB, aMeter);
+	void* bufferAMeter = meterEnBuffer(tcbAGuardar, TCB, &aMeter, &relleno);
 
 
 	int cantPaginasConTripu = list_size(tablaPaginasConTripu);
@@ -332,11 +350,38 @@ void actualizarTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* t
 		t_info_pagina* info_pagina = list_get(tablaPaginasConTripu,i);
 		t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
 
+		log_info(logMemoria, "Se va a actualizar el frame %d donde hay parte del tripulante %d", tcbAGuardar->idTripulante);
 		sobreescribir_memoria(info_pagina->frame_m_ppal, bufferAMeter + offset, MEM_PPAL, alojado->desplazamientoInicial, alojado->bytesAlojados);
 		offset += alojado->bytesAlojados;
 		i++;
 	}
 }
+
+
+t_tarea* armarTarea(char* string){
+
+	t_tarea* tarea = malloc(sizeof(t_tarea));
+
+	    char** arrayParametros = string_split(string,";");
+
+	    if(string_contains(arrayParametros[0]," ")){
+
+	    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
+	    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
+	    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
+			liberarDoblesPunterosAChar(arrayPrimerElemento);
+
+	    } else {
+	        tarea->nombreTarea = strdup(arrayParametros[0]);
+	    }
+	    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
+	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
+	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
+	    liberarDoblesPunterosAChar(arrayParametros);
+
+	    return tarea;
+}
+
 
 
 int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
@@ -349,10 +394,9 @@ int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
 
 	log_info(logMemoria, "Se creo la tabla de paginas para la patota: %d", pcbAGuardar->pid);
 
-	log_info(logMemoria, "La direccion logica de las tareas es: %d", pcbAGuardar->dlTareas);
-
-
 	pcbGuardado = asignarPaginasEnTabla((void*) pcbAGuardar, tablaPaginasPatotaActual,PCB);
+
+	log_info(logMemoria, "La direccion logica de las tareas es: %d", pcbAGuardar->dlTareas);
 
 	tareasGuardadas = asignarPaginasEnTabla((void*) stringTareas, tablaPaginasPatotaActual,TAREAS);
 
@@ -381,7 +425,8 @@ t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* tablaPaginasPatotaActual
 int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPatotaActual, tipoEstructura tipo){
 
 	int aMeter = 0;
-	void* bufferAMeter = meterEnBuffer(aGuardar, tipo, &aMeter);
+	int datoAdicional;
+	void* bufferAMeter = meterEnBuffer(aGuardar, tipo, &aMeter, &datoAdicional);
 
 	t_info_pagina* info_pagina;
 
@@ -397,7 +442,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 			if(info_pagina != NULL)
 			{
 				log_info(logMemoria, "La pagina en el frame %d tiene lugar y se va a aprovechar", info_pagina->frame_m_ppal);
-				insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter, tipo);
+				insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter, tipo, datoAdicional);
 			} else
 			{
 				log_info(logMemoria, "No se encontro una pagina con espacio restante");
@@ -409,7 +454,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 				if(info_pagina->frame_m_ppal != FRAME_INVALIDO)
 				{
 					log_info(logMemoria,"Hay un frame disponible, el %d", info_pagina->frame_m_ppal);
-					insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter, tipo);
+					insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter, tipo, datoAdicional);
 				}
 					else
 					{
@@ -427,7 +472,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 					if(info_pagina->frame_m_ppal != FRAME_INVALIDO)
 					{
 						log_info(logMemoria,"Hay un frame disponible, el %d", info_pagina->frame_m_ppal);
-						insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter, tipo);
+						insertar_en_memoria(info_pagina, bufferAMeter, MEM_PPAL, &aMeter, tipo, datoAdicional);
 					}
 						else
 						{
@@ -439,6 +484,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 	unlock(mutexMemoria);
 	}
 	log_info(logMemoria,"Se insertaron todos los bytes en ram");
+	free(bufferAMeter);
 	return 1;
  }
 
@@ -481,18 +527,29 @@ t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* tablaPaginasPa
 
 
 uint32_t estimarDLTareas(){
+
+	int nroPagina;
+    //HAY QUE HACER OTRA CUENTA
+	int desplazamiento = 0;
+
 	if(configRam.tamanioPagina > 8)
 	{
-	    return 0;
+	    nroPagina = 0;
 	}
 	else
 	{
-	    return (int) (floor(8/configRam.tamanioPagina) + 1);
+	    nroPagina = (int) (floor(8/configRam.tamanioPagina) + 1);
 	}
+
+	log_info(logMemoria,"DL TAREA: %d \n", nroPagina * 100 + desplazamiento);
+
+	return nroPagina * 100 + desplazamiento;
+
 }
 
 
-t_DL* buscarInicioDLTareas(t_tablaPaginasPatota* tablaPaginasPatota) {
+uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* tablaPaginasPatota) {
+
 
     bool buscarDLTarea(t_info_pagina* info_pagina) {
 
@@ -502,18 +559,15 @@ t_DL* buscarInicioDLTareas(t_tablaPaginasPatota* tablaPaginasPatota) {
     t_info_pagina* paginaConTarea = list_find(tablaPaginasPatota->tablaDePaginas, (void*) buscarDLTarea);
 
     bool tieneTarea(t_alojado* estructuraAlojada) {
-    	return estructuraAlojada->tipo == TAREA;
+    	return estructuraAlojada->tipo == TAREAS;
     }
 
     t_alojado* alojadoConTarea = list_find(paginaConTarea->estructurasAlojadas, (void*) tieneTarea);
 
-    t_DL* direccionLogica;
-    direccionLogica->nroPagina = paginaConTarea->indice;
-    direccionLogica->desplazamiento = alojadoConTarea->desplazamientoInicial;
     //Retornar un struct DL de las tareas que tiene el indice de la pagina y el desplazamiento en esta
     //Se guarda en algun lado cuanto pesa el string
 
-    return direccionLogica;
+    return paginaConTarea->indice * 100 + alojadoConTarea->desplazamientoInicial;
 }
 
 
@@ -550,7 +604,7 @@ t_alojado* obtenerAlojadoPagina(t_list* listaAlojados, int idTCB) {
 
 
 
-void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter) {
+void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter, int *datoAdicional) {
 
 	void* buffer;
 	int offset = 0;
@@ -562,7 +616,10 @@ void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter) {
 			pcb* pcbAGuardar = (pcb*) aGuardar;
 			*aMeter = 8;
 			buffer = malloc(*aMeter);
+			*datoAdicional = -1;
 			pcbAGuardar->dlTareas = estimarDLTareas();
+			log_info(logMemoria,"DL TAREA: %d \n", pcbAGuardar->dlTareas);
+
 			memcpy(buffer, &(pcbAGuardar->pid), sizeof(uint32_t));
 			offset += sizeof(uint32_t);
 			memcpy(buffer + offset, &(pcbAGuardar->dlTareas), sizeof(uint32_t));
@@ -573,15 +630,18 @@ void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter) {
 			tcb* tcbAGuardar = (tcb*) aGuardar;
 			*aMeter = 21;
 			buffer = malloc(*aMeter);
+			*datoAdicional = tcbAGuardar->idTripulante;
 			memcpy(buffer + offset, &(tcbAGuardar->idTripulante),sizeof(uint32_t));
 			offset += sizeof(uint32_t);
-			memcpy(buffer + offset, &(tcbAGuardar->dlPatota),sizeof(uint32_t));
-			offset += sizeof(uint32_t);
-			memcpy(buffer + offset, &(tcbAGuardar->estado),sizeof(t_estado));
-			offset += sizeof(t_estado);
+			memcpy(buffer + offset, &(tcbAGuardar->estado),sizeof(char));
+			offset += sizeof(char);
 			memcpy(buffer + offset, &(tcbAGuardar->posX),sizeof(uint32_t));
 			offset += sizeof(uint32_t);
 			memcpy(buffer + offset, &(tcbAGuardar->posY),sizeof(uint32_t));
+			offset += sizeof(uint32_t);
+			memcpy(buffer + offset, &(tcbAGuardar->proximaAEjecutar),sizeof(uint32_t));
+			offset += sizeof(uint32_t);
+			memcpy(buffer + offset, &(tcbAGuardar->dlPatota),sizeof(uint32_t));
 			offset += sizeof(uint32_t);
 			break;
 		}
@@ -590,6 +650,7 @@ void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter) {
 			char* tareas = (char*) aGuardar;
 			*aMeter = strlen(tareas) + 1;
 			buffer = malloc(*aMeter);
+			*datoAdicional = -1;
 			memcpy(buffer, tareas, strlen(tareas) + 1);
 			break;
 		}
@@ -616,7 +677,7 @@ int guardarPCB(pcb* pcbAGuardar, char* stringTareas) {
 	exit(1);
 }
 
-int guardarTCB(tcb* tcbAGuardar, int idPatota) {
+t_tarea* guardarTCB(tcb* tcbAGuardar, int idPatota) {
 	if(strcmp(configRam.esquemaMemoria,"PAGINADO") == 0)
 	{
 		return guardarTCBPag(tcbAGuardar, idPatota);
@@ -635,8 +696,8 @@ int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas){
 }
 
 
-int guardarTCBSeg(tcb* tcbAGuardar, int idPatota){
-	return 0;
+t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota){
+	return NULL;
 }
 
 

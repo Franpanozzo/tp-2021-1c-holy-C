@@ -20,6 +20,7 @@
 #define TAM_PCB 8
 
 #include "estructuras.h"
+//#include "mi_ram_hq.h"
 
 
 typedef struct {
@@ -86,6 +87,7 @@ int cant_frames_ppal;
 t_list* tablasPaginasPatotas;
 
 pthread_mutex_t mutexMemoria;
+pthread_mutex_t mutexEscribirMemoria;
 
 
 void cargar_configuracion();
@@ -94,22 +96,32 @@ void set_frame(int , int);
 char* asignar_bytes(int );
 void iniciarMemoria();
 void* leer_memoria(int,int);
-int insertar_en_memoria(t_info_pagina*, void*, int, int*, tipoEstructura);
-void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura);
+int insertar_en_memoria(t_info_pagina*, void*, int, int*, tipoEstructura, int);
+void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura,int);
 uint32_t buscar_frame_disponible(int );
 void* buscar_pagina(t_info_pagina* );
 t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
 int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
 t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* );
-void* meterEnBuffer(void* , tipoEstructura , int* );
+void* meterEnBuffer(void* , tipoEstructura , int*, int*);
 int guardarPCB(pcb*, char*);
-int guardarTCB(tcb*, int);
-int guardarTCBPag(tcb*, int);
+t_tarea* guardarTCB(tcb*, int);
+t_tarea* guardarTCBPag(tcb*, int);
 int guardarPCBPag(pcb*, char*);
 uint32_t estimarDLTareas();
 int guardarPCBSeg(pcb*, char*);
-int guardarTCBSeg(tcb*, int);
+t_tarea* guardarTCBSeg(tcb*, int);
+uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* );
+t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* , tcb* );
+bool tieneEstructuraAlojada(t_list* , tipoEstructura);
+bool tieneTripulanteAlojado(t_list* , int);
+t_alojado* obtenerAlojadoPagina(t_list* , int);
+void actualizarTripulante(t_tablaPaginasPatota* , tcb*);
+t_tarea* armarTarea(char* string);
+
+
+
 
 
 

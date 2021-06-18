@@ -22,25 +22,20 @@
 
 
 typedef struct {
-	int nroPagina;
-	int desplazamiento;
-} t_DL;
-
-typedef struct {
 
 	uint32_t pid;
-	t_DL dlTareas;
+	uint32_t dlTareas;
 
 } pcb;
 
 typedef struct {
 
 	uint32_t idTripulante;
-	t_estado estado;
+	char estado;
 	uint32_t posX;
 	uint32_t posY;
-	t_DL proximaAEjecutar;
-	t_DL dlPatota;
+	uint32_t proximaAEjecutar;
+	uint32_t dlPatota;
 
 } tcb;
 

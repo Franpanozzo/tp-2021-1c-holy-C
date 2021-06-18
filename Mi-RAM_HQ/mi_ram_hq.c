@@ -61,8 +61,8 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		pthread_detach(t);
-		//pthread_join(t, (void**) NULL);
+		//pthread_detach(t);
+		pthread_join(t, (void**) NULL);
     }
 }
 
@@ -112,16 +112,19 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 				mandarConfirmacionDisc("ERROR", tripulanteSock);
 			break;
 		case TRIPULANTE:
+		{
 			log_info(logMiRAM,"Voy a deserializar un tripulante");
 			t_tarea* tarea = deserializarTripulante(paquete);
-			log_info(logMiRAM,"El resultado de la operacion es: %d",res);
+			log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
 			if(tarea)
 				mandarTarea(tarea, tripulanteSock);
 			else
+			{
 				t_tarea* tareaError = tarea_error();
 				mandarTarea(tareaError, tripulanteSock);
+			}
 			break;
-
+		}
 		case EXPULSAR:
 			log_info(logMiRAM,"Voy a expulsar un tripulante, todavia no esta emplementada");
 //			deserializarTripulante(paquete,tripulanteSock);
@@ -131,8 +134,10 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 			log_info(logMiRAM,"ROMPO");
 			log_info(logMiRAM,"Voy a actualizar un tripulante");
+			/*
 			actualizarTripulante(paquete);
 			mandarConfirmacionDisc("TCB ACTAULIZADO EN MEMORIA -- OK", tripulanteSock);
+			*/
 			break;
 
 		case SIGUIENTE_TAREA:
@@ -203,7 +208,7 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 
 */
 
-
+/*
 
 void setearSgteTarea(tcb *buscado){
 	t_list_iterator * iterator = list_iterator_create(buscado->patota->listaTareas);
@@ -218,9 +223,9 @@ void setearSgteTarea(tcb *buscado){
 	}
 	list_iterator_destroy(iterator);
 }
+*/
 
-
-
+/*
 void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 
     char* string = malloc(tamanio);
@@ -242,61 +247,7 @@ void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
 	liberarDoblesPunterosAChar(arrayDeTareas);
     free(string);
 
-}
-
-
-t_tarea* armarTarea(char* string){
-
-
-	t_tarea* tarea = malloc(sizeof(t_tarea));
-
-	    char** arrayParametros = string_split(string,";");
-
-	    if(string_contains(arrayParametros[0]," ")){
-
-	    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
-
-	    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
-
-	    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
-
-			liberarDoblesPunterosAChar(arrayPrimerElemento);
-
-	    } else {
-
-	        tarea->nombreTarea = strdup(arrayParametros[0]);
-
-	    }
-
-	    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
-
-	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
-
-	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
-
-	    liberarDoblesPunterosAChar(arrayParametros);
-
-	    return tarea;
-
-}
-
-void liberarDoblesPunterosAChar(char** arrayParametros) {
-
-	char** liberadorDeStrings = arrayParametros;
-
-	while((*liberadorDeStrings) != NULL) {
-
-		free(*liberadorDeStrings);
-		liberadorDeStrings++;
-		//if((*liberadorDeStrings) == NULL) free(arrayParametros);
-
-	}
-
-	free(arrayParametros);
-}
-
-
-
+}*/
 
 
 int deserializarInfoPCB(t_paquete* paquete) {
@@ -316,9 +267,12 @@ int deserializarInfoPCB(t_paquete* paquete) {
 	char* stringTareas = malloc(tamanio);
 	memcpy(stringTareas,stream + offset,tamanio);
 
-	delimitarTareas(stringTareas);
+	char* tareasDelimitadas = delimitarTareas(stringTareas);
 
-	return guardarPCB(nuevoPCB,stringTareas);
+	free(stringTareas);
+
+	return guardarPCB(nuevoPCB,tareasDelimitadas);
+
 }
 
 
@@ -344,44 +298,6 @@ char* delimitarTareas(char* stringTareas) {
     return tareasDelimitadas;
 }
 
-
-void actualizarTripulante(t_paquete* paquete) {
-
-	uint32_t idTCBAActualizar;
-
-	int offset=0;
-
-	uint32_t idPatota;
-
-	void* stream = paquete->buffer->stream;
-
-	memcpy(&(idPatota),stream,sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-
-	//pcb* patotaDeTripu = buscarPatota(idPatota);
-
-	memcpy(&(idTCBAActualizar),stream + offset,sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-
-	/*
-	lock(mutexListaTCB);
-	tcb* tcbEncontrado = buscarTripulante(idTCBAActualizar,patotaDeTripu);
-	unlock(mutexListaTCB);
-
-	lock(mutexTripulante);
-	memcpy(&(tcbEncontrado->estado),stream + offset,sizeof(t_estado));
-	offset += sizeof(t_estado);
-
-	memcpy(&(tcbEncontrado->posX),stream + offset,sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-
-	memcpy(&(tcbEncontrado->posY),stream + offset,sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-
-	log_info(logMiRAM,"Actualizado el tripulante de id %d de la  patota %d",tcbEncontrado->idTripulante, idPatota);
-	unlock(mutexTripulante);
-*/
-}
 
 /*
 tcb* buscarTripulante(int idTCBAActualizar,pcb* patotaDeTripu) {
@@ -417,11 +333,12 @@ tcb* buscarTripulante(int idTCBAActualizar,pcb* patotaDeTripu) {
 }*/
 
 
-int deserializarTripulante(t_paquete* paquete) {
+t_tarea* deserializarTripulante(t_paquete* paquete) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
 
 	uint32_t idPatota;
+	t_estado estado;
 
 	void* stream = paquete->buffer->stream;
 
@@ -433,8 +350,9 @@ int deserializarTripulante(t_paquete* paquete) {
 	memcpy(&(nuevoTCB->idTripulante),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	memcpy(&(nuevoTCB->estado),stream + offset,sizeof(t_estado));
+	memcpy(&(estado),stream + offset,sizeof(t_estado));
 	offset += sizeof(t_estado);
+	nuevoTCB->estado = asignarEstadoTripu(estado);
 
 	memcpy(&(nuevoTCB->posX),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
@@ -442,15 +360,29 @@ int deserializarTripulante(t_paquete* paquete) {
 	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d",nuevoTCB->idTripulante, idPatota);
+	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d en estado %c",nuevoTCB->idTripulante, idPatota, nuevoTCB->estado);
 
 
 	return guardarTCB(nuevoTCB,idPatota);
 
 	//NOS QUEDAMOS ACA
 	//BUSCAR EN RAM LA TAREA A DARLE, YA ENTRA EN JUEGO EL TEMA DE IR A BUSCAR A LAS PAGINAS SEGUN DESPLAZ ETC.
+}
+
+
+char asignarEstadoTripu(t_estado estado) {
+
+	if(estado == NEW) return 'N';
+	if(estado == READY) return 'R';
+	if(estado == EXEC) return 'E';
+	if(estado == BLOCKED) return 'B';
+	else{
+		log_error(logMiRAM, "El estado recibido del tripulante es invalido");
+		exit(1);
+	}
 
 }
+
 
 
 pcb* buscarPatota(uint32_t idPatotaBuscada) {
