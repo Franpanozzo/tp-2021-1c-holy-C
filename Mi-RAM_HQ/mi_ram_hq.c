@@ -10,7 +10,6 @@ pthread_mutex_t mutexListaTareas;
 pthread_mutex_t mutexTripulante;
 
 
-
 int main(void) {
 
 	logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);

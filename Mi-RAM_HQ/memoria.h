@@ -11,6 +11,9 @@
 #define MEM_PPAL 0
 #define MEM_VIRT 1
 
+#define PAGINACION 0;
+#define SEGMENTACION 1;
+
 #define FRAME_INVALIDO 2147483646
 
 #define TAM_TCB 21
@@ -49,9 +52,8 @@ typedef struct {
     int bytesDisponibles; // COMO IDENTIFICAMOS SI ES UN PCB, TCB O TAREAS ??
     t_list* estructurasAlojadas;
     //double tiempo_uso;
-
+    //int idTripu  //ESTE EN LAS DEMAS VARIABLES -1
     //otros datos..
-
 } t_info_pagina;
 
 typedef struct {
@@ -59,6 +61,19 @@ typedef struct {
 	int bytesAlojados;
 	tipoEstructura tipo;
 } t_alojado;
+
+
+typedef struct {
+	int idPatota;
+	t_list* tablaDeSegmentos;
+} t_tablaSegmentosPatota;
+
+typedef struct {
+	tipoEstructura tipo;
+	int deslazamientoInicial;
+	int bytesAlojados;
+	//int idTripu  //ESTE EN LAS DEMAS VARIABLES -1
+} t_info_segmento;
 
 
 t_log* logMemoria;
@@ -70,7 +85,7 @@ int cant_frames_ppal;
 
 t_list* tablasPaginasPatotas;
 
-pcb cabron;
+pthread_mutex_t mutexMemoria;
 
 
 void cargar_configuracion();
@@ -88,9 +103,14 @@ int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
 t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* );
 void* meterEnBuffer(void* , tipoEstructura , int* );
-int guardarTCB(tcb* , int);
-int guardarPCB(pcb*  ,char*);
+int guardarPCB(pcb*, char*);
+int guardarTCB(tcb*, int);
+int guardarTCBPag(tcb*, int);
+int guardarPCBPag(pcb*, char*);
 uint32_t estimarDLTareas();
+int guardarPCBSeg(pcb*, char*);
+int guardarTCBSeg(tcb*, int);
+
 
 
 #endif /* MEMORIA_H_ */
