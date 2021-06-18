@@ -17,6 +17,7 @@ void cargar_configuracion() {
 	configRam.algoritmoReemplazo = config_get_string_value(config, "ALGORITMO_REEMPLAZO");
 	configRam.criterioSeeleccion = config_get_string_value(config, "CRITERIO_SELECCION");
 	configRam.puerto = config_get_int_value(config, "PUERTO");
+
 }
 
 
@@ -122,7 +123,7 @@ int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* 
 				 info_pagina->bytesDisponibles = info_pagina->bytesDisponibles - *aMeter;
 				 }
 
-        agregarEstructAdminTipo(info_pagina, despDesdePagina, despDesdePagina + bytesAEscribir, tipo, datoAdicional);
+        agregarEstructAdminTipo(info_pagina, despDesdePagina, bytesAEscribir, tipo, datoAdicional);
 
         if(mem == MEM_PPAL)
         {
@@ -165,7 +166,7 @@ void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicial, i
 		unlock(mutexEscribirMemoria);
 
 		log_info(logMemoria, "Se sobreescribio en RAM: FRAME: %d | DESDE: %d | HASTA: %d ", frame,
-		        		desplInicial, desplInicial + bytesAEscribir);
+		        		desplInicial, bytesAEscribir + desplInicial);
 	}
 	/*
 	else if(mem == MEM_VIRT){
@@ -184,6 +185,8 @@ void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicial, i
 void agregarEstructAdminTipo(t_info_pagina* info_pagina,int despDesdePagina,int bytesAlojados, tipoEstructura tipo, int datoAdicional){
 
 	t_alojado* nuevo_alojado = malloc(sizeof(t_alojado));
+	log_info(logMemoria, "Se va a agregar a la pagina %d , la carga de %d desde %d , y son %d", info_pagina->indice,
+			tipo,despDesdePagina,bytesAlojados);
 	nuevo_alojado->desplazamientoInicial = despDesdePagina;
 	nuevo_alojado->bytesAlojados = bytesAlojados;
 	nuevo_alojado->tipo = tipo;
@@ -284,38 +287,43 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 	void* pagina;
 	int indicePagina = (int) floor((double) tcbAGuardar->proximaAEjecutar / 100.0);
 	int desplazamiento = tcbAGuardar->proximaAEjecutar % 100;
+	t_info_pagina* info_pagina;
 
+	t_list* recorredorTabla = tablaPaginasPatotaActual->tablaDePaginas;
+	recorredorTabla += indicePagina;
 
-	t_info_pagina* info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
+	// info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
 	*proximoALeer = '0';
 
-	t_list_iterator* iteradorTablaPaginas = list_iterator_create(tablaPaginasPatotaActual->tablaDePaginas);
+	t_list_iterator* iteradorTablaPaginas = list_iterator_create(recorredorTabla);
 
 
 	log_info(logMemoria,"Se procede a sacar tareas");
 
-	while(tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TAREAS)) {
-
+	while(list_iterator_has_next(iteradorTablaPaginas))
+	{
+		info_pagina = list_iterator_next(iteradorTablaPaginas);
+		if(tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TAREAS))
+		{
 		pagina = leer_memoria(info_pagina->frame_m_ppal,MEM_PPAL);
 		pagina += desplazamiento;
 
-		while(pagina != NULL && *proximoALeer != '|'  && *proximoALeer != '\0') {
-			memcpy(aux,pagina,1);
-			string_append(&tarea,aux);
-			pagina++;
-			memcpy(proximoALeer,pagina,1);
-		    desplazamiento++;
+			while(pagina != NULL && *proximoALeer != '|'  && *proximoALeer != '\0')
+				{
+					memcpy(aux,pagina,1);
+					string_append(&tarea,aux);
+					pagina++;
+					memcpy(proximoALeer,pagina,1);
+					desplazamiento++;
 
-		    log_info(logMemoria,"Sacando tarea: %s",tarea);
-		}
+					log_info(logMemoria,"Sacando tarea: %s",tarea);
+				}
 
-		tcbAGuardar->proximaAEjecutar = indicePagina * 100 + desplazamiento;
+		tcbAGuardar->proximaAEjecutar = info_pagina->indice * 100 + desplazamiento;
 
-		indicePagina++;
 		desplazamiento = 0;
 
-		if()
-		info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
+		}
 
 	}
 
@@ -324,6 +332,8 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 	t_tarea* tareaAMandar = armarTarea(tarea);
 	free(aux);
 	free(proximoALeer);
+	list_iterator_destroy(iteradorTablaPaginas);
+	free(tarea);
 
 	return tareaAMandar;
 }
@@ -343,6 +353,7 @@ void actualizarTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* t
 
 
 	int cantPaginasConTripu = list_size(tablaPaginasConTripu);
+	log_info(logMemoria, "La cantidad de paginas que contienen al tripulante %d son %d", tcbAGuardar->idTripulante, cantPaginasConTripu);
 	int i = 0;
 
 	while(i < cantPaginasConTripu)
@@ -350,7 +361,8 @@ void actualizarTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* t
 		t_info_pagina* info_pagina = list_get(tablaPaginasConTripu,i);
 		t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
 
-		log_info(logMemoria, "Se va a actualizar el frame %d donde hay parte del tripulante %d", tcbAGuardar->idTripulante);
+		log_info(logMemoria, "Se va a actualizar el frame %d donde hay parte del tripulante %d", info_pagina->frame_m_ppal, tcbAGuardar->idTripulante);
+
 		sobreescribir_memoria(info_pagina->frame_m_ppal, bufferAMeter + offset, MEM_PPAL, alojado->desplazamientoInicial, alojado->bytesAlojados);
 		offset += alojado->bytesAlojados;
 		i++;
