@@ -7,6 +7,8 @@ int main() {
 	sem_init(&semPlanificacion,0,1);
 	sem_init(&semaforoPlanificadorInicio,0,0);
 	sem_init(&semaforoPlanificadorFin,0,0);
+	sem_init(&semaforoPlanificadorFin,0,0);
+
 	planificacionPlay = 1;
 	todasLasTareasIO = malloc(sizeof(char*) * 7);
 
@@ -57,6 +59,19 @@ int main() {
 	}
 	//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
 	iniciarPatota(coordenadas, "GENERAR_OXIGENO 4;2;3;7\nGENERAR_COMIDA 2;2;3;7", tripulantes );
+
+/*
+	int tripulantes2 = 2;
+	t_coordenadas coordenadas2[tripulantes2 ];
+	for(int i=0; i<tripulantes;i++){
+		coordenadas2[i].posX = i +1;
+		coordenadas2[i].posY = i + 2;
+	}
+	//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
+	iniciarPatota(coordenadas2, "GENERAR_OXIGENO 4;2;3;7\nGENERAR_COMIDA 2;2;3;7", tripulantes2 );
+
+*/
+
 	pthread_t planificador;
 	pthread_create(&planificador, NULL, (void*) hiloPlani, NULL);
 	pthread_join(planificador, (void**) NULL);
@@ -156,6 +171,7 @@ void hiloTripu(t_tripulante* tripulante){
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
 				unlock(mutexLogDiscordiador);
 				recibirPrimerTareaDeMiRAM(tripulante);
+				sem_post(&semUltimoTripu);
 				tripulante->estado = READY;
 				break;
 			case READY:
@@ -561,7 +577,31 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		iniciarTripulante(coordenadas[i], patota->ID);
 	}
 
+	for(int i=0;i<cantidadTripulantes;i++){
+		sem_wait(&semUltimoTripu);
+	}
+
+	mandarTripulanteNulo();
+
 	close(miRAMsocket);
+}
+
+
+void mandarTripulanteNulo() {
+	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+
+	tripulante->posX = 0;
+	tripulante->posY = 0;
+	tripulante->idTripulante = -1;
+	tripulante->idPatota = 0;
+	tripulante->estado = NEW;
+
+	int socket =iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+	enviarPaquete(armarPaqueteCon((void*) tripulante, TRIPULANTE), socket);
+
+	recibirTareaDeMiRAM(socket, tripulante);
+
+	close(socket);
 }
 
 

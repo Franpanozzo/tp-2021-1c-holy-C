@@ -55,6 +55,8 @@ pthread_mutex_t mutexTotalTripus;
 sem_t semPlanificacion;
 sem_t semaforoPlanificadorInicio;
 sem_t semaforoPlanificadorFin;
+sem_t semUltimoTripu;
+
 
 t_tripulante* tripulanteDesabotaje;
 
@@ -104,6 +106,8 @@ void pausarPlanificacion();
 t_eliminado* deleteTripulante(uint32_t, t_queue*);
 void eliminarTripulante(uint32_t);
 void esperarConfirmacionDeRAM(int);
+void mandarTripulanteNulo();
+
 
 
 #endif

@@ -51,7 +51,7 @@ void iniciarMemoria() {
 
 	memoria_principal = malloc(configRam.tamanioMemoria);
 
-	memset(memoria_principal,0,configRam.tamanioMemoria);
+	memset(memoria_principal,'$',configRam.tamanioMemoria);
 
 	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
 
@@ -234,10 +234,33 @@ uint32_t buscar_frame_disponible(int mem) {
         size = cant_frames_virtual;*/
 
     for(uint32_t f = 0; f < size; f++)
-        if(!get_frame(f, mem))
+    {
+        //if(!get_frame(f, mem) && frameTotalmenteLibre(f))
+    	if(!get_frame(f, mem))
             return f;
+    }
 
     return FRAME_INVALIDO;
+}
+
+
+
+int frameTotalmenteLibre(int frame) {
+
+	void* pagina = leer_memoria(frame, MEM_PPAL);
+	char* chequeador = malloc(2);
+	*(chequeador + 1) = '\0';
+
+	for(int i = 0; i<configRam.tamanioPagina; i++) {
+		memcpy(chequeador,pagina,1);
+		if(*chequeador != '$') return 0;
+		pagina++;
+	}
+
+	free(chequeador);
+	free(pagina);
+
+	return 1;
 }
 
 
@@ -252,6 +275,15 @@ void* buscar_pagina(t_info_pagina* info_pagina) {
     return pagina;
 }
 
+
+t_tarea* asignarProxTarea(int idPatota,int idTripulante) {
+
+	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
+
+	tcb* tcb = obtenerTripulante(tablaPaginasPatotaActual, idTripulante);
+
+	return irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcb);
+}
 
 t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 
@@ -327,7 +359,7 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 
 	}
 
-	actualizarTripulante(tablaPaginasPatotaActual, tcbAGuardar);
+	actualizarTripulanteEnMem(tablaPaginasPatotaActual, tcbAGuardar);
 
 	t_tarea* tareaAMandar = armarTarea(tarea);
 	free(aux);
@@ -339,26 +371,33 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 }
 
 
-void actualizarTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
+int actualizarTripulanteEnMem(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
 
-	bool tieneTripu(t_info_pagina* info_pagina)
-	{
-	  return tieneTripulanteAlojado(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
-	}
+
+	t_list* tablaPaginasConTripu = paginasConTripu(tablaPaginasPatotaActual->tablaDePaginas, tcbAGuardar->idTripulante);
+
+	return sobreescribirTripu(tablaPaginasConTripu, tcbAGuardar);
+}
+
+
+int sobreescribirTripu(t_list* paginasConTripu, tcb* tcbAGuardar) {
 
 	int aMeter, relleno, offset = 0;
-	t_list* tablaPaginasConTripu = list_filter(tablaPaginasPatotaActual->tablaDePaginas, (void*) tieneTripu);
-
 	void* bufferAMeter = meterEnBuffer(tcbAGuardar, TCB, &aMeter, &relleno);
 
+	int cantPaginasConTripu = list_size(paginasConTripu);
 
-	int cantPaginasConTripu = list_size(tablaPaginasConTripu);
+	if(cantPaginasConTripu == 0) {
+		log_error(logMemoria, "No hay paginas que contengan al tripulante %d en memoria" , tcbAGuardar->idTripulante);
+		return 0;
+	}
+
 	log_info(logMemoria, "La cantidad de paginas que contienen al tripulante %d son %d", tcbAGuardar->idTripulante, cantPaginasConTripu);
 	int i = 0;
 
 	while(i < cantPaginasConTripu)
 	{
-		t_info_pagina* info_pagina = list_get(tablaPaginasConTripu,i);
+		t_info_pagina* info_pagina = list_get(paginasConTripu,i);
 		t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
 
 		log_info(logMemoria, "Se va a actualizar el frame %d donde hay parte del tripulante %d", info_pagina->frame_m_ppal, tcbAGuardar->idTripulante);
@@ -367,7 +406,139 @@ void actualizarTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* t
 		offset += alojado->bytesAlojados;
 		i++;
 	}
+
+	return 1;
 }
+
+
+
+t_list* paginasConTripu(t_list* tablaDePaginas, uint32_t idTripu) {
+
+	bool tieneTripu(t_info_pagina* info_pagina)
+	{
+	  return tieneTripulanteAlojado(info_pagina->estructurasAlojadas, idTripu);
+	}
+
+	t_list* tablaPaginasConTripu = list_filter(tablaDePaginas, (void*) tieneTripu);
+
+	return tablaPaginasConTripu;
+}
+
+
+int actualizarTripulante(tcb* tcbAGuardar, int idPatota) {
+
+	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
+
+	t_list* paginasConTripulante = paginasConTripu(tablaPaginasPatotaActual->tablaDePaginas, tcbAGuardar->idTripulante);
+
+	int cantPaginasConTripu = list_size(paginasConTripulante);
+
+		if(cantPaginasConTripu == 0) {
+			log_error(logMemoria, "No hay paginas que contengan al tripulante %d en memoria" , tcbAGuardar->idTripulante);
+			return 0;
+		}
+
+		log_info(logMemoria, "La cantidad de paginas que contienen al tripulante %d son %d", tcbAGuardar->idTripulante, cantPaginasConTripu);
+		int i = 0;
+
+		void* bufferTripu = malloc(21);
+
+		while(i < cantPaginasConTripu)
+		{
+			t_info_pagina* info_pagina = list_get(paginasConTripulante,i);
+			t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
+
+			void* pagina = leer_memoria(info_pagina->frame_m_ppal, MEM_PPAL);
+
+			log_info(logMemoria, "SE LEE DEL TRIPU: %d - FRAME: %d | D_INCIAL: %d | BYTES_ALOJ: %d", tcbAGuardar->idTripulante,
+					info_pagina->frame_m_ppal, alojado->desplazamientoInicial, alojado->bytesAlojados);
+
+			memcpy(bufferTripu,pagina + alojado->desplazamientoInicial, alojado->bytesAlojados);
+			i++;
+			free(pagina);
+		}
+
+		cargarDLTripulante(bufferTripu, tcbAGuardar);
+
+		log_info(logMemoria, "Se va a actualizar el tripulante: ID: %d | ESTADO: %c | POS_X: %d | POS_Y: %d | DL_TAREA: %d | DL_PATOTA: %d",
+		tcbAGuardar->idTripulante, tcbAGuardar->estado, tcbAGuardar->posX, tcbAGuardar->posY, tcbAGuardar->proximaAEjecutar, tcbAGuardar->dlPatota);
+
+		free(bufferTripu);
+		return actualizarTripulanteEnMem(tablaPaginasPatotaActual, tcbAGuardar);
+}
+
+
+tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTripulante) {
+
+	t_list* paginasConTripulante = paginasConTripu(tablaPaginasPatotaActual->tablaDePaginas, idTripulante);
+
+		int cantPaginasConTripu = list_size(paginasConTripulante);
+
+			if(cantPaginasConTripu == 0) {
+				log_error(logMemoria, "No hay paginas que contengan al tripulante %d en memoria" , idTripulante);
+				return 0;
+			}
+
+			log_info(logMemoria, "La cantidad de paginas que contienen al tripulante %d son %d", idTripulante, cantPaginasConTripu);
+			int i = 0;
+
+			void* bufferTripu = malloc(21);
+
+			while(i < cantPaginasConTripu)
+			{
+				t_info_pagina* info_pagina = list_get(paginasConTripulante,i);
+				t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, idTripulante);
+
+				void* pagina = leer_memoria(info_pagina->frame_m_ppal, MEM_PPAL);
+
+				log_info(logMemoria, "SE LEE DEL TRIPU: %d - FRAME: %d | D_INCIAL: %d | BYTES_ALOJ: %d", idTripulante,
+						info_pagina->frame_m_ppal, alojado->desplazamientoInicial, alojado->bytesAlojados);
+
+				memcpy(bufferTripu,pagina + alojado->desplazamientoInicial, alojado->bytesAlojados);
+				i++;
+				free(pagina);
+			}
+
+			return cargarEnTripulante(bufferTripu);
+}
+
+
+tcb* cargarEnTripulante(void* bufferTripu) {
+	tcb* nuevoTCB = malloc(sizeof(tcb));
+	int offset = 0;
+
+	memcpy(&(nuevoTCB->idTripulante),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->estado),bufferTripu + offset,sizeof(char));
+	offset += sizeof(t_estado);
+
+	memcpy(&(nuevoTCB->posX),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->posY),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->proximaAEjecutar),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->dlPatota),bufferTripu + offset,sizeof(uint32_t));
+
+	return nuevoTCB;
+
+}
+
+
+void cargarDLTripulante(void* bufferTripu, tcb* tcbAGuardar) {
+	int offset=13;
+
+	memcpy(&(tcbAGuardar->proximaAEjecutar),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(tcbAGuardar->dlPatota),bufferTripu + offset,sizeof(uint32_t));
+
+}
+
 
 
 t_tarea* armarTarea(char* string){
@@ -544,6 +715,8 @@ uint32_t estimarDLTareas(){
     //HAY QUE HACER OTRA CUENTA
 	int desplazamiento = 0;
 
+
+	//Y SI ES LA SEGUNDA PAGINA QUE SE METIO???
 	if(configRam.tamanioPagina > 8)
 	{
 	    nroPagina = 0;

@@ -9,6 +9,7 @@ pthread_mutex_t mutexListaPCB;
 pthread_mutex_t mutexListaTareas;
 pthread_mutex_t mutexTripulante;
 
+sem_t habilitarPatotaEnRam;
 
 int main(void) {
 
@@ -26,7 +27,7 @@ int main(void) {
     pthread_mutex_init(&mutexListaTareas, NULL);
     pthread_mutex_init(&mutexTripulante, NULL);
 
-
+	sem_init(&habilitarPatotaEnRam,0,1);
 
     int serverSock = iniciarConexionDesdeServidor(configRam.puerto);
 
@@ -120,8 +121,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 				mandarTarea(tarea, tripulanteSock);
 			else
 			{
-				t_tarea* tareaError = tarea_error();
-				mandarTarea(tareaError, tripulanteSock);
+				mandarTarea(tarea_error(), tripulanteSock);
 			}
 			break;
 		}
@@ -132,18 +132,27 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 		case ESTADO_TRIPULANTE:
 
-			log_info(logMiRAM,"ROMPO");
 			log_info(logMiRAM,"Voy a actualizar un tripulante");
-			/*
-			actualizarTripulante(paquete);
-			mandarConfirmacionDisc("TCB ACTAULIZADO EN MEMORIA -- OK", tripulanteSock);
-			*/
+
+			res = recibirActualizarTripulante(paquete);
+			log_info(logMiRAM,"El resultado de la operacion es: %d",res);
+			if(res)
+				mandarConfirmacionDisc("OK", tripulanteSock);
+			else
+				mandarConfirmacionDisc("ERROR", tripulanteSock);
 			break;
 
 		case SIGUIENTE_TAREA:
 		{
-			log_info(logMiRAM,"VOY A ASIGNARLE LA PROX TAREA A UN TRIPU");
-			//deserializarSolicitudTarea(paquete,tripulanteSock);
+			log_info(logMiRAM, "Se le asigna la prox tarea a un tripulante");
+			t_tarea* tarea = deserializarSolicitudTarea(paquete);
+			log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
+			if(tarea)
+				mandarTarea(tarea, tripulanteSock);
+			else
+			{
+				mandarTarea(tarea_error(), tripulanteSock);
+			}
 			break;
 		}
 		default:
@@ -163,9 +172,42 @@ void mandarConfirmacionDisc(char* aMandar, int socket) {
 	enviarPaquete(aEnviar,socket);
 }
 
-/*
 
-void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
+int recibirActualizarTripulante(t_paquete* paquete) {
+	tcb* nuevoTCB = malloc(sizeof(tcb));
+
+	uint32_t idPatota;
+	t_estado estado;
+
+	void* stream = paquete->buffer->stream;
+
+	int offset=0;
+
+	memcpy(&(idPatota),stream,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->idTripulante),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(estado),stream + offset,sizeof(t_estado));
+	offset += sizeof(t_estado);
+	nuevoTCB->estado = asignarEstadoTripu(estado);
+
+	memcpy(&(nuevoTCB->posX),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d en estado %c",nuevoTCB->idTripulante, idPatota, nuevoTCB->estado);
+
+	return actualizarTripulante(nuevoTCB,idPatota);
+
+}
+
+
+t_tarea* deserializarSolicitudTarea(t_paquete* paquete) {
+
 	uint32_t idPatota;
 	uint32_t idTripulante;
 	void * stream = paquete->buffer->stream;
@@ -174,39 +216,10 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 	offset += sizeof(uint32_t);
 	memcpy(&(idTripulante), stream + offset, sizeof(uint32_t));
 
-
-	bool esIgualA(tcb* tcbAcomparar){
-
-		return tcbAcomparar->idTripulante == idTripulante
-				&& tcbAcomparar->patota->pid == idPatota;
-	}
-
-	lock(mutexListaPCB);
-	pcb* supuestaPatotaTripu = buscarPatota(idPatota);
-
-	log_info(logMiRAM,"SUPUESTA PATOTA  DEL TRIPU %d",idPatota,idTripulante);
-    unlock(mutexListaPCB);
-
-	lock(mutexListaTCB);
-	tcb* buscado = buscarTripulante(idTripulante, supuestaPatotaTripu);
-	unlock(mutexListaTCB);
-
-
-	lock(mutexTripulante);
-	log_info(logMiRAM,"LLENDO A BUSCAR TAREA DEL TRIPU %d",buscado->idTripulante);
-
-	lock(mutexListaTareas);
-	setearSgteTarea(buscado);
-
-	t_paquete *paqueteTarea  = armarPaqueteCon(buscado->proximaAEjecutar,TAREA);
-	enviarPaquete(paqueteTarea,tripulanteSock);
-
-	unlock(mutexListaTareas);
-	unlock(mutexTripulante);
-
+	return asignarProxTarea(idPatota, idTripulante);
 }
 
-*/
+
 
 /*
 
@@ -259,6 +272,7 @@ int deserializarInfoPCB(t_paquete* paquete) {
 
 	memcpy(&(nuevoPCB->pid),stream,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
+
 	memcpy(&(tamanio),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
@@ -271,6 +285,7 @@ int deserializarInfoPCB(t_paquete* paquete) {
 
 	free(stringTareas);
 
+	sem_wait(&habilitarPatotaEnRam);
 	return guardarPCB(nuevoPCB,tareasDelimitadas);
 
 }
@@ -362,6 +377,10 @@ t_tarea* deserializarTripulante(t_paquete* paquete) {
 
 	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d en estado %c",nuevoTCB->idTripulante, idPatota, nuevoTCB->estado);
 
+	if(nuevoTCB->idTripulante == -1){
+		sem_post(&habilitarPatotaEnRam);
+		return tarea_error();
+	}
 
 	return guardarTCB(nuevoTCB,idPatota);
 

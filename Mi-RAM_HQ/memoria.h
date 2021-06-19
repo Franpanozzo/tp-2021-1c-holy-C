@@ -117,8 +117,21 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* , tcb* );
 bool tieneEstructuraAlojada(t_list* , tipoEstructura);
 bool tieneTripulanteAlojado(t_list* , int);
 t_alojado* obtenerAlojadoPagina(t_list* , int);
-void actualizarTripulante(t_tablaPaginasPatota* , tcb*);
-t_tarea* armarTarea(char* string);
+int actualizarTripulanteEnMem(t_tablaPaginasPatota* , tcb*);
+t_tarea* armarTarea(char* );
+int frameTotalmenteLibre(int );
+t_list* paginasConTripu(t_list*, uint32_t );
+int sobreescribirTripu(t_list* , tcb* );
+void cargarDLTripulante(void* , tcb* );
+int actualizarTripulante(tcb* , int);
+tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
+tcb* cargarEnTripulante(void* );
+t_tarea* asignarProxTarea(int , int);
+
+
+
+
+
 
 
 

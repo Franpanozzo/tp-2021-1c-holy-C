@@ -14,7 +14,7 @@ int esperarTripulante(int);
 void manejarTripulante(int*);
 void deserializarTareas(void*,t_list*,uint32_t);
 int deserializarInfoPCB(t_paquete*);
-void deserializarSolicitudTarea(t_paquete*,int);
+t_tarea* deserializarSolicitudTarea(t_paquete*);
 void setearSgteTarea(tcb*);
 void eliminarTarea(t_tarea*);
 void eliminarPCB(pcb*);
@@ -29,6 +29,9 @@ void asignarSiguienteTarea(tcb*);
 void mandarTarea(t_tarea* , int);
 t_tarea* tarea_error();
 char asignarEstadoTripu(t_estado);
+int recibirActualizarTripulante(t_paquete* );
+
+
 
 
 #endif
