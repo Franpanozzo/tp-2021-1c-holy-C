@@ -44,10 +44,7 @@ int main(void) {
      //eliminarListaPCB(listaPCB);
 
      return EXIT_SUCCESS;
-
 }
-
-
 
 
 void atenderTripulantes(int* serverSock) {
@@ -79,7 +76,6 @@ int esperarTripulante(int serverSock) {
     log_info(logMiRAM, "Se conecto un cliente!\n");
 
     return socket_tripulante;
-
 }
 
 //CUANDO CREAS UN HILO HAY QUE PASAR SI O SI UN PUNTERO
@@ -199,7 +195,8 @@ int recibirActualizarTripulante(t_paquete* paquete) {
 	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d en estado %c",nuevoTCB->idTripulante, idPatota, nuevoTCB->estado);
+	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d en estado %c, en pos X: %d | pos Y: %d",
+			nuevoTCB->idTripulante, idPatota, nuevoTCB->estado, nuevoTCB->posX, nuevoTCB->posY);
 
 	return actualizarTripulante(nuevoTCB,idPatota);
 
