@@ -9,14 +9,19 @@
 #include <sys/types.h>
 #include <semaphore.h>
 #include <arpa/inet.h>
+#include <bibliotecas.h>
 #include <unistd.h>
 #include <sys/select.h>
-#include <string.h>
+#include <memory.h>
 #include <commons/config.h>
-#include <bibliotecas.h>
-#include <commons/string.h>
 #include <commons/collections/list.h>
-#include <commons/log.h>
+#include <commons/collections/queue.h>
+#include <commons/string.h>
+#include <commons/temporal.h>
+#include <stdbool.h>
+#include "utils.h"
+#include "variables.h"
+#include <math.h>
 
 
 t_log* logImongo;
