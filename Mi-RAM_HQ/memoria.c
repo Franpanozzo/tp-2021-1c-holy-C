@@ -329,12 +329,15 @@ t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 
 t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
 
+	log_info(logMemoria,"Soy el tripu %d voy a buscar tarea a %d", tcbAGuardar->idTripulante, tcbAGuardar->proximaAEjecutar);
+
 	char* tarea = string_new();
 	char* aux = malloc(2);
 	*(aux+1) = '\0';
 	char* proximoALeer = malloc(2);
 	*(proximoALeer+1) = '\0';
 	void* pagina;
+	void* recorredorPagina;
 	int indicePagina = (int) floor((double) tcbAGuardar->proximaAEjecutar / 100.0);
 	int desplazamiento = tcbAGuardar->proximaAEjecutar % 100;
 	t_info_pagina* info_pagina;
@@ -356,25 +359,38 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 		if(tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TAREAS))
 		{
 		pagina = leer_memoria(info_pagina->frame_m_ppal,MEM_PPAL);
-		pagina += desplazamiento;
+		recorredorPagina = pagina;
+		recorredorPagina += desplazamiento;
 
-			while(pagina != NULL && *proximoALeer != '|'  && *proximoALeer != '\0')
+			while(desplazamiento != 32 && *proximoALeer != '|'  && *proximoALeer != '\0')
 				{
-					memcpy(aux,pagina,1);
+					memcpy(aux,recorredorPagina,1);
 					string_append(&tarea,aux);
-					pagina++;
-					memcpy(proximoALeer,pagina,1);
+					recorredorPagina++;
 					desplazamiento++;
 
+					if(desplazamiento != 32)
+					{
+						memcpy(proximoALeer,recorredorPagina,1);
+					}
+
+					/*
+					if(recorredorPagina != NULL)
+					{
+						memcpy(proximoALeer,recorredorPagina,1);
+					}*/
+
 					log_info(logMemoria,"Sacando tarea: %s",tarea);
+					log_info(logMemoria,"Proximo a leer: %s",proximoALeer);
 				}
 
 
 		log_info(logMemoria,"Asignando al TCB prox a ejecutar - indice: %d - desplazamiento: %d ", info_pagina->indice, desplazamiento);
-		tcbAGuardar->proximaAEjecutar = info_pagina->indice * 100 + desplazamiento + 1;
+
+		tcbAGuardar->proximaAEjecutar = info_pagina->indice * 100 + desplazamiento;
 
 		desplazamiento = 0;
-
+		free(pagina);
 		}
 
 		if(*proximoALeer == '|' || *proximoALeer == '\0') break;
@@ -382,6 +398,9 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 	}
 
 	actualizarTripulanteEnMem(tablaPaginasPatotaActual, tcbAGuardar);
+
+
+	if(*tarea == '|') tarea = string_substring_from(tarea,1);
 
 	t_tarea* tareaAMandar = armarTarea(tarea);
 	free(aux);
@@ -515,6 +534,7 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 			int i = 0;
 
 			void* bufferTripu = malloc(21);
+			int offset = 0;
 
 			while(i < cantPaginasConTripu)
 			{
@@ -526,7 +546,9 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 				log_info(logMemoria, "SE LEE DEL TRIPU: %d - FRAME: %d | D_INCIAL: %d | BYTES_ALOJ: %d", idTripulante,
 						info_pagina->frame_m_ppal, alojado->desplazamientoInicial, alojado->bytesAlojados);
 
-				memcpy(bufferTripu,pagina + alojado->desplazamientoInicial, alojado->bytesAlojados);
+				memcpy(bufferTripu + offset,pagina + alojado->desplazamientoInicial, alojado->bytesAlojados);
+				offset += alojado->bytesAlojados;
+
 				i++;
 				free(pagina);
 			}
@@ -543,7 +565,7 @@ tcb* cargarEnTripulante(void* bufferTripu) {
 	offset += sizeof(uint32_t);
 
 	memcpy(&(nuevoTCB->estado),bufferTripu + offset,sizeof(char));
-	offset += sizeof(t_estado);
+	offset += sizeof(char);
 
 	memcpy(&(nuevoTCB->posX),bufferTripu + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
@@ -746,17 +768,17 @@ uint32_t estimarDLTareas(){
 
 	int nroPagina;
     //HAY QUE HACER OTRA CUENTA
-	int desplazamiento = 0;
+	int desplazamiento;
 
-
-	//Y SI ES LA SEGUNDA PAGINA QUE SE METIO???
 	if(configRam.tamanioPagina > 8)
 	{
 	    nroPagina = 0;
+	    desplazamiento = 8;
 	}
 	else
 	{
-	    nroPagina = (int) (floor(8/configRam.tamanioPagina) + 1);
+	    nroPagina = (int) (floor(8/configRam.tamanioPagina));
+	    desplazamiento = 8 % configRam.tamanioPagina;
 	}
 
 	log_info(logMemoria,"DL TAREA: %d \n", nroPagina * 100 + desplazamiento);
