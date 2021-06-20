@@ -11,15 +11,14 @@ int main(void) {
 
 	crearTareasIO();
 
-	int puerto = 5001;
+	int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
-	int serverSock = iniciarConexionDesdeServidor(puerto);
-
-	pthread_t manejo_tripulante2;
-	pthread_create(&manejo_tripulante2, NULL, (void*) atenderTripulantes, (void*) &serverSock);
-	pthread_join(manejo_tripulante2, (void*) NULL);
+	pthread_t manejoTripulante;
+	pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
+	pthread_join(manejoTripulante, (void*) NULL);
 
 	liberarConfiguracion();
+	free(path);
 
 	return EXIT_SUCCESS;
 
