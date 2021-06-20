@@ -117,7 +117,9 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 				mandarTarea(tarea, tripulanteSock);
 			else
 			{
-				mandarTarea(tarea_error(), tripulanteSock);
+				t_tarea* tareaError = tarea_error();
+				mandarTarea(tareaError, tripulanteSock);
+				free(tareaError);
 			}
 			break;
 		}
@@ -272,8 +274,6 @@ int deserializarInfoPCB(t_paquete* paquete) {
 
 	memcpy(&(tamanio),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-
-	//nuevoPCB->listaTareas = list_create();
 
 	char* stringTareas = malloc(tamanio);
 	memcpy(stringTareas,stream + offset,tamanio);

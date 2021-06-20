@@ -231,15 +231,16 @@ uint32_t buscar_frame_disponible(int mem) {
 
     for(uint32_t f = 0; f < size; f++)
     {
-        //if(!get_frame(f, mem) && frameTotalmenteLibre(f))
-    	if(!get_frame(f, mem))
+        if(!get_frame(f, mem) && frameTotalmenteLibre(f)) {
+    	//if(!get_frame(f, mem))
             return f;
+        }
     }
 
     return FRAME_INVALIDO;
 }
 
-
+/*
 int frameTotalmenteLibre(int frame) {
 
 	void* pagina = leer_memoria(frame, MEM_PPAL);
@@ -257,13 +258,29 @@ int frameTotalmenteLibre(int frame) {
 
 	return 1;
 }
-
-/*
-int frameTotalmenteLibre2(int frame) {
-
-	return 1;
-}
 */
+
+
+int frameTotalmenteLibre(int frame) {
+
+	bool frameEnUso(t_tablaPaginasPatota* tablaPaginas) {
+
+		t_list_iterator* iteradorTablaPaginas = list_iterator_create(tablaPaginas->tablaDePaginas);
+
+		while(list_iterator_has_next(iteradorTablaPaginas))
+		{
+			t_info_pagina* infoPagina = list_iterator_next(iteradorTablaPaginas);
+			if(infoPagina->frame_m_ppal == frame) return 1;
+		}
+
+		list_iterator_destroy(iteradorTablaPaginas);
+
+		return 0;
+	}
+
+	return !list_any_satisfy(tablasPaginasPatotas,(void*) frameEnUso);
+}
+
 
 void* buscar_pagina(t_info_pagina* info_pagina) {
     void* pagina = NULL;
@@ -596,6 +613,8 @@ int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
 	log_info(logMemoria, "La direccion logica de las tareas es: %d", pcbAGuardar->dlTareas);
 
 	tareasGuardadas = asignarPaginasEnTabla((void*) stringTareas, tablaPaginasPatotaActual,TAREAS);
+
+	free(pcbAGuardar);
 
 	return pcbGuardado && tareasGuardadas;
 }
