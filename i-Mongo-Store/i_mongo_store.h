@@ -17,6 +17,7 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <commons/string.h>
+#include <commons/bitarray.h>
 #include <commons/temporal.h>
 #include <stdbool.h>
 #include "utils.h"

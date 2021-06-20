@@ -6,7 +6,8 @@
 
 void crearConfig();
 char * pathLog();
-
 void crearTareasIO();
+void cargarConfiguracion();
+void liberarConfiguracion();
 
 #endif

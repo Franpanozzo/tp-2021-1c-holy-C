@@ -5,6 +5,8 @@ int main(void) {
 
 	logImongo = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/logs/i-mongo-store.log", "i-mongo-store",1);
 
+	cargarConfiguracion();
+
 	crearTareasIO();
 
 	int puerto = 5001;
@@ -15,6 +17,7 @@ int main(void) {
 	pthread_create(&manejo_tripulante2, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	pthread_join(manejo_tripulante2, (void*) NULL);
 
+	liberarConfiguracion();
 
 	return EXIT_SUCCESS;
 

@@ -10,7 +10,7 @@ int main() {
 	iniciarMutex();
 	iniciarColas();
 	iniciarTareasIO();
-	cargar_configuracion();
+	cargarConfiguracion();
 
 	idTripulante = 0;
 	idPatota = 0;

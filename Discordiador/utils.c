@@ -38,7 +38,7 @@ void iniciarMutex(){
 
 }
 
-void cargar_configuracion(){
+void cargarConfiguracion(){
 
 	puertoEIPRAM = malloc(sizeof(puertoEIP));
 	puertoEIPRAM->puerto = config_get_int_value(config,"PUERTO_MI_RAM_HQ");

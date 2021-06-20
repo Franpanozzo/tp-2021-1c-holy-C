@@ -36,3 +36,25 @@ void crearTareasIO(){
 	todasLasTareasIO[4] = strdup("GENERAR_COMIDA");
 	todasLasTareasIO[5] = strdup("CONSUMIR_COMIDA");
 }
+
+void cargarConfiguracion(){
+
+	datosConfig = malloc(sizeof(t_datosConfig));
+	superBloque = malloc(sizeof(t_superBloque));
+
+	superBloque->block_size = config_get_int_value(config,"BLOCK_SIZE");
+	superBloque->blocks = config_get_int_value(config,"BLOCKS");
+	datosConfig->puntoMontaje = strdup(config_get_string_value(config,"PUNTO_MONTAJE"));
+	datosConfig->puerto = config_get_int_value(config,"PUERTO");
+	datosConfig->tiempoSincronizacion = config_get_int_value(config,"TIEMPO_SINCRONIZACION");
+	datosConfig->posicionesSabotaje = strdup(config_get_string_value(config,"POSICIONES_SABOTAJE"));
+
+}
+
+void liberarConfiguracion(){
+
+	free(datosConfig->puntoMontaje);
+	free(datosConfig->posicionesSabotaje);
+	free(datosConfig);
+
+}

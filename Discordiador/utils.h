@@ -14,7 +14,7 @@ void iniciarTareasIO();
 void iniciarColas();
 void iniciarSemaforos();
 void iniciarMutex();
-void cargar_configuracion();
+void cargarConfiguracion();
 char * pathLog();
 
 int leerTotalTripus();
