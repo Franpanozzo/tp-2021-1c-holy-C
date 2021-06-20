@@ -1,27 +1,15 @@
 #include "i_mongo_store.h"
 
 
-char** todasLasTareasIO;
-
-
 int main(void) {
 
-	todasLasTareasIO = malloc(sizeof(char*) * 6);
+	logImongo = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/logs/i-mongo-store.log", "i-mongo-store",1);
 
-	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
-	todasLasTareasIO[1] = strdup("CONSUMIR_OXIGENO");
-	todasLasTareasIO[2] = strdup("GENERAR_BASURA");
-	todasLasTareasIO[3] = strdup("DESCARTAR_BASURA");
-	todasLasTareasIO[4] = strdup("GENERAR_COMIDA");
-	todasLasTareasIO[5] = strdup("CONSUMIR_COMIDA");
+	crearTareasIO();
 
 	int puerto = 5001;
 
 	int serverSock = iniciarConexionDesdeServidor(puerto);
-
-	logImongo = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i-mongo-store.log", "i-mongo-store",1);
-
-
 
 	pthread_t manejo_tripulante2;
 	pthread_create(&manejo_tripulante2, NULL, (void*) atenderTripulantes, (void*) &serverSock);

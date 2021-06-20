@@ -1,6 +1,7 @@
 #include "utils.h"
 
 void iniciarTareasIO(){
+
 	todasLasTareasIO = malloc(sizeof(char*) * 7);
 	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
 	todasLasTareasIO[1] = strdup("CONSUMIR_OXIGENO");

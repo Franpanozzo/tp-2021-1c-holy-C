@@ -24,7 +24,7 @@
 #include <math.h>
 
 
-t_log* logImongo;
+
 
 
 void atenderTripulantes(int*);
