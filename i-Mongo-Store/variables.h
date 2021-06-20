@@ -39,6 +39,7 @@ char** todasLasTareasIO;
 t_datosConfig* datosConfig;
 t_superBloque* superBloque;
 
+
 #endif
 
 

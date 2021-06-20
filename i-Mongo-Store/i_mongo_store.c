@@ -67,23 +67,6 @@ void manejarTripulante(int *tripulanteSock) {
 }
 
 
-int indiceTarea(t_tarea* tarea){
-
-	int i = 0;
-
-	while(todasLasTareasIO[i] != NULL){
-
-		if(strcmp(todasLasTareasIO[i],tarea->nombreTarea) == 0){
-			return i;
-		}
-
-		i++;
-	}
-
-	return -1;
-}
-
-
 void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 	log_info(logImongo,"Deserializando...");

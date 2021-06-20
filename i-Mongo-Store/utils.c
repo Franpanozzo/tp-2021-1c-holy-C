@@ -27,6 +27,23 @@ char * pathLog(){
 }
 
 
+int indiceTarea(t_tarea* tarea){
+
+	int i = 0;
+
+	while(todasLasTareasIO[i] != NULL){
+
+		if(strcmp(todasLasTareasIO[i],tarea->nombreTarea) == 0){
+			return i;
+		}
+
+		i++;
+	}
+
+	return -1;
+}
+
+
 void crearTareasIO(){
 	todasLasTareasIO = malloc(sizeof(char*) * 6);
 

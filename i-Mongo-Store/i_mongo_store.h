@@ -25,14 +25,10 @@
 #include <math.h>
 
 
-
-
-
 void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
 void deserializarSegun(t_paquete*, int);
-int indiceTarea(t_tarea*);
 
 
 #endif
