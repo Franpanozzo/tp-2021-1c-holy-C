@@ -15,6 +15,7 @@ void crearConfig(){
 
 
 char * pathLog(){
+
 	char *pathLog = string_new();
 	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
 	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/logs/");

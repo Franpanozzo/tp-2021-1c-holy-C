@@ -3,7 +3,9 @@
 
 int main(void) {
 
-	logImongo = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/logs/i-mongo-store.log", "i-mongo-store",1);
+	char* path = pathLog();
+
+	logImongo = iniciarLogger(path, "i-mongo-store",1);
 
 	cargarConfiguracion();
 
