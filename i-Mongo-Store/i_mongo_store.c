@@ -29,11 +29,13 @@ void atenderTripulantes(int* serverSock) {
 
     while(1){
 
-		int tripulanteSock = esperarTripulante(*serverSock);
+		int* tripulanteSock = malloc(sizeof(int));
+
+		*tripulanteSock = esperarTripulante(*serverSock);
 
 		pthread_t t;
 
-		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) &tripulanteSock);
+		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
 		pthread_detach(t);
 
