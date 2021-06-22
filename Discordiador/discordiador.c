@@ -45,10 +45,11 @@ void hiloPlanificador(){
 	while(1){
 		if(leerPlanificacion() == CORRIENDO && leerTotalTripus() > 0){
 
+
 			list_iterate(colaExec->elements, (void*)esperarTerminarTripulante);
 			list_iterate(colaBlocked->elements, (void*)esperarTerminarTripulante);
 			list_iterate(colaNew->elements, (void*)esperarTerminarTripulante);
-			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
+//			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
 
 			if(sabotaje->tripulanteSabotaje != NULL){
 				esperarTerminarTripulante(sabotaje->tripulanteSabotaje);
@@ -57,10 +58,12 @@ void hiloPlanificador(){
 			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripus);
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 
+
 			actualizarCola(EXEC, colaExec, mutexColaExec);
 			actualizarCola(BLOCKED, colaBlocked, mutexColaBlocked);
 			casoBlocked();
 			actualizarCola(NEW, colaNew, mutexColaNew);
+			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
 			actualizarCola(READY, colaReady, mutexColaReady);
 
 			if(sabotaje->haySabotaje){ //HAY SABOTAJE
@@ -128,9 +131,6 @@ void hiloTripulante(t_tripulante* tripulante){
 		if(tripulante->estado != NEW){
 			actualizarEstadoEnRAM(tripulante);
 		}
-			//LO PUSE ACA POR EL PROBLEMA DE Q SI LO PONGO ABAJO LE VA A
-		//MANDAR UN ESTDO INCORRECTO EN EL CADO DE QUE NO PUEDA ENTRAR A EXEC
-		//EL OTRO PROBLEMA ES QUE LA PRIMERA VEZ LE VA ENVIAR UN TIPU SIN TAREA A RAM
 		switch(tripulante->estado){
 			case NEW:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
@@ -142,7 +142,6 @@ void hiloTripulante(t_tripulante* tripulante){
 				else{
 					tripulante->estado = READY;
 				}
-
 				break;
 			case READY:
 				if(ciclosExec == 0){
@@ -159,7 +158,7 @@ void hiloTripulante(t_tripulante* tripulante){
 				desplazarse(tripulante, tripulante->instruccionAejecutar->coordenadas);
 				ciclosExec --;
 				quantumPendiente--;
-				sleep(3);
+				sleep(1);
 				if(quantumPendiente == 0){
 					tripulante->estado = READY;
 				}
@@ -177,7 +176,7 @@ void hiloTripulante(t_tripulante* tripulante){
 				break;
 			case BLOCKED:
 				if(tripulante->idTripulante == leerTripulanteBlocked()){
-					sleep(3);
+					sleep(1);
 					lock(mutexLogDiscordiador);
 					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando, me quedan %d ciclos",
 							tripulante->idTripulante, ciclosBlocked);
@@ -191,7 +190,8 @@ void hiloTripulante(t_tripulante* tripulante){
 				}
 				break;
 			case END:
-				//No va nada acá porque sobreloguea mucho
+				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case SABOTAJE:
@@ -201,7 +201,6 @@ void hiloTripulante(t_tripulante* tripulante){
 					sem_post(&sabotaje->semaforoTerminoTripulante);
 					sem_wait(&sabotaje->semaforoTerminoSabotaje);
 				}
-
 				break;
 		}
 		sem_post(&tripulante->semaforoFin);

@@ -254,6 +254,7 @@ void pasarDeCola(t_tripulante* tripulante){
 			queue_push(colaReady, tripulante);
 			unlock(mutexColaReady);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA READY", tripulante->idTripulante);
+			sem_post(&tripulante->semaforoInicio);
 			break;
 
 		case EXEC:
