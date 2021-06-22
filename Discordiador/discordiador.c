@@ -16,6 +16,7 @@ int main() {
 	idPatota = 0;
 	idTripulanteBlocked = NO_HAY_TRIPULANTE_BLOQUEADO;
 	modificarPlanificacion(PAUSADA);
+	idBuscado = -1;
 
 	sabotaje = malloc(sizeof(t_sabotaje));
 	sabotaje->tripulanteSabotaje = NULL;
@@ -43,28 +44,28 @@ int main() {
 void hiloPlanificador(){
 
 	while(1){
-		if(leerPlanificacion() == CORRIENDO && leerTotalTripus() > 0){
+		if(leerPlanificacion() == CORRIENDO && totalTripulantes() > 0){
 
 
-			list_iterate(colaExec->elements, (void*)esperarTerminarTripulante);
-			list_iterate(colaBlocked->elements, (void*)esperarTerminarTripulante);
-			list_iterate(colaNew->elements, (void*)esperarTerminarTripulante);
+			list_iterate(listaExec->elementos, (void*)esperarTerminarTripulante);
+			list_iterate(listaBlocked->elementos, (void*)esperarTerminarTripulante);
+			list_iterate(listaNew->elementos, (void*)esperarTerminarTripulante);
 //			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
 
 			if(sabotaje->tripulanteSabotaje != NULL){
 				esperarTerminarTripulante(sabotaje->tripulanteSabotaje);
 			}
 
-			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripus);
+			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripulantes());
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 
 
-			actualizarCola(EXEC, colaExec, mutexColaExec);
-			actualizarCola(BLOCKED, colaBlocked, mutexColaBlocked);
+			actualizarLista(listaExec, EXEC);
+			actualizarLista(listaBlocked, BLOCKED);
 			casoBlocked();
-			actualizarCola(NEW, colaNew, mutexColaNew);
-			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
-			actualizarCola(READY, colaReady, mutexColaReady);
+			actualizarLista(listaNew, NEW);
+			list_iterate(listaReady->elementos, (void*)esperarTerminarTripulante);
+			actualizarLista(listaReady, READY);
 
 			if(sabotaje->haySabotaje){ //HAY SABOTAJE
 				sem_post(&sabotaje->semaforoIniciarSabotaje);
@@ -73,10 +74,10 @@ void hiloPlanificador(){
 
 			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
 
-			list_iterate(colaExec->elements, (void*)avisarTerminoPlanificacion);
-			list_iterate(colaBlocked->elements, (void*)avisarTerminoPlanificacion);
-			list_iterate(colaNew->elements, (void*)avisarTerminoPlanificacion);
-			list_iterate(colaReady->elements, (void*)avisarTerminoPlanificacion);
+			list_iterate(listaExec->elementos, (void*)avisarTerminoPlanificacion);
+			list_iterate(listaBlocked->elementos, (void*)avisarTerminoPlanificacion);
+			list_iterate(listaNew->elementos, (void*)avisarTerminoPlanificacion);
+			list_iterate(listaReady->elementos, (void*)avisarTerminoPlanificacion);
 
 			if(sabotaje->tripulanteSabotaje != NULL){
 				avisarTerminoPlanificacion(sabotaje->tripulanteSabotaje);
@@ -102,12 +103,8 @@ void hiloSabotaje(){
 		t_estado estadoAnterior = sabotaje->tripulanteSabotaje->estado;
 		sabotaje->tripulanteSabotaje->estado = SABOTAJE;
 
-		list_sort(colaExec->elements, tripulanteDeMenorId);
-		list_sort(colaReady->elements, tripulanteDeMenorId);
-		list_add_all(colaSabotaje->elements, colaExec->elements);
-		list_add_all(colaSabotaje->elements, colaReady->elements);
-		list_clean(colaExec->elements);
-		list_clean(colaReady->elements);
+		pasarAcolaSabotaje(listaExec);
+		pasarAcolaSabotaje(listaReady);
 
 		sem_post(&sabotaje->semaforoCorrerSabotaje);//destrabar el plani
 
@@ -126,7 +123,7 @@ void hiloTripulante(t_tripulante* tripulante){
 	int ciclosBlocked = 0;
 	//int ciclosSabo = 0;
 	int quantumPendiente = quantum;
-	while(tripulante->estado != END){
+	while(tripulante->estaVivo){
 
 		if(tripulante->estado != NEW){
 			actualizarEstadoEnRAM(tripulante);
@@ -134,14 +131,8 @@ void hiloTripulante(t_tripulante* tripulante){
 		switch(tripulante->estado){
 			case NEW:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
+				tripulante->estado = READY;
 				recibirPrimerTareaDeMiRAM(tripulante);
-				if(strcmp(tripulante->instruccionAejecutar->nombreTarea, "TAREA_ERROR") == 0){
-					tripulante->estado = END;
-					log_info(logDiscordiador,"El tripulante ID: %d de la patota ID: %d no ha sido alocado en memoria por estar sin espacio",tripulante->idTripulante,tripulante->idPatota);
-				}
-				else{
-					tripulante->estado = READY;
-				}
 				break;
 			case READY:
 				if(ciclosExec == 0){
@@ -170,7 +161,8 @@ void hiloTripulante(t_tripulante* tripulante){
 						tripulante->estado = BLOCKED;
 					}
 					else{
-						siguienteTarea(tripulante, &ciclosExec);
+						recibirProximaTareaDeMiRAM(tripulante);
+						ciclosExec = calculoCiclosExec(tripulante);
 					}
 				}
 				break;
@@ -185,15 +177,11 @@ void hiloTripulante(t_tripulante* tripulante){
 					if(ciclosBlocked == 0){
 						modificarTripulanteBlocked(NO_HAY_TRIPULANTE_BLOQUEADO);
 						tripulante->estado = READY;
-						siguienteTarea(tripulante, &ciclosExec);
+						recibirProximaTareaDeMiRAM(tripulante);
+						ciclosExec = calculoCiclosExec(tripulante);
 					}
 				}
 				break;
-			case END:
-				sem_post(&tripulante->semaforoFin);
-				sem_wait(&tripulante->semaforoInicio);
-				break;
-
 			case SABOTAJE:
 				desplazarse(tripulante, sabotaje->coordenadas);
 				sabotaje->tiempo --;
@@ -206,7 +194,7 @@ void hiloTripulante(t_tripulante* tripulante){
 		sem_post(&tripulante->semaforoFin);
 		sem_wait(&tripulante->semaforoInicio);
 	}
-
+	liberarTripulante(tripulante);
 }
 
 
@@ -246,15 +234,14 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	tripulante->idTripulante = idTripulante;
 	tripulante->idPatota = idPatota;
 	tripulante->estado = NEW;
+	//TODO es necesario el malloc?
 	tripulante->instruccionAejecutar = malloc(sizeof(t_tarea*));
 	tripulante->instruccionAejecutar->nombreTarea = malloc(sizeof(char*));
 	sem_init(&tripulante->semaforoInicio, 0, 0);
 	sem_init(&tripulante->semaforoFin, 0, 0);
+	tripulante->estaVivo = 1;
 
-
-	lock(mutexColaNew);
-	queue_push(colaNew,(void*)tripulante);
-	unlock(mutexColaNew);
+	meterEnLista(tripulante, listaNew);
 
 	log_info(logDiscordiador,"Se creo el tripulante numero %d",tripulante->idTripulante);
 
@@ -263,25 +250,24 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 }
 
 
-void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
+/*
+void actualizarCola(t_lista* lista){
 
-	t_tripulante* tripulante;
-	int tamanioInicialCola = queue_size(cola);
-	log_info(logDiscordiador,"------Planficando cola de %s con %d tripulantes-----", traducirEstado(estado), tamanioInicialCola);
+	int tamanioInicialCola = queue_size(cola.cola);
+	log_info(logDiscordiador,"------Planficando cola de %s con %d tripulantes-----",
+			traducirEstado(estado), tamanioInicialCola);
 
 	for(int i=0; i<tamanioInicialCola; i++){
-		tripulante = (t_tripulante*) queue_pop(cola);
+		tripulante = (t_tripulante*) sacarDeLista(cola);
 
 		if(tripulante->estado != estado){
 			if(estado == READY){
-				if(queue_size(colaExec) < gradoMultiprocesamiento || tripulante->estado == END){
+				if(queue_size(listaExec) < gradoMultiprocesamiento){
 					pasarDeCola(tripulante);
 				}
 				else{
 					tripulante->estado = estado;
-					lock(colaMutex);
-					queue_push(cola, tripulante);
-					unlock(colaMutex);
+					pasarAlista(tripulante, cola);
 				}
 			}
 			else{
@@ -289,13 +275,41 @@ void actualizarCola(t_estado estado, t_queue* cola, pthread_mutex_t colaMutex){
 			}
 		}
 		else{
-			lock(colaMutex);
-			queue_push(cola, tripulante);
-			unlock(colaMutex);
+			pasarAlista(tripulante, cola);
 		}
 	}
 }
+*/
 
+
+void actualizarLista(t_lista* lista, t_estado estado){
+
+	estadoAcomparar = estado;
+
+	lock(lista->mutex);
+
+	log_info(logDiscordiador,"------Planficando cola de %s con %d tripulantes-----",
+				traducirEstado(estado), list_size(lista->elementos));
+
+	t_list* listaAux = list_filter(lista->elementos, tieneDistintoEstado);
+	if(estado == READY){
+		int cantidadApasar = gradoMultiprocesamiento - list_size(listaExec->elementos);
+
+		for(int i=cantidadApasar; i<list_size(listaAux); i++){
+			t_tripulante* tripulante = (t_tripulante*) list_get(listaAux, i);
+			tripulante->estado = READY;
+		}
+		listaAux = list_take(listaAux, cantidadApasar);
+	}
+
+	lista->elementos = list_filter(lista->elementos, tieneIgualEstado);
+	list_iterate(listaAux, (void*)pasarDeLista);
+
+	log_info(logDiscordiador,"------FIN Planficando cola de %s con %d tripulantes-----",
+					traducirEstado(estado), list_size(lista->elementos));
+
+	unlock(lista->mutex);
+}
 
 
 

@@ -67,7 +67,8 @@ void leerConsola(){
 							}
 								cursor ++;
 								uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
-								eliminarTripulante(idTripulante);
+								idBuscado = idTripulante;
+								eliminarTripulante();
 
 		}
 		else{

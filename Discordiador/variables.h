@@ -17,16 +17,18 @@ int haySabotaje;
 int quantum;
 int idTripulanteBlocked;
 int gradoMultiprocesamiento;
+int idBuscado;
+t_estado estadoAcomparar;
 
 t_sabotaje* sabotaje;
 
 char** todasLasTareasIO;
 
-t_queue* colaExec;
-t_queue* colaBlocked;
-t_queue* colaNew;
-t_queue* colaReady;
-t_queue* colaSabotaje;
+t_lista* listaExec;
+t_lista* listaBlocked;
+t_lista* listaNew;
+t_lista* listaReady;
+t_lista* listaSabotaje;
 
 pthread_mutex_t mutexColaNew;
 pthread_mutex_t mutexColaReady;

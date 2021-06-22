@@ -14,6 +14,7 @@
 #include <string.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/collections/list.h>
 #include <stdbool.h>
 
 
@@ -51,7 +52,6 @@
 		READY,
 		EXEC,
 		BLOCKED,
-		END,
 		SABOTAJE
 	}t_estado;
 
@@ -73,6 +73,7 @@
 		t_tarea* instruccionAejecutar;
 		sem_t semaforoInicio;
 		sem_t semaforoFin;
+		bool estaVivo;
 	} t_tripulante;
 
 	typedef struct{
@@ -91,6 +92,11 @@
 		sem_t semaforoTerminoTripulante;
 		sem_t semaforoTerminoSabotaje;
 	} t_sabotaje;
+
+	typedef struct{
+		pthread_mutex_t mutex;
+		t_list* elementos;
+	}t_lista;
 
 	void lock(pthread_mutex_t);
 

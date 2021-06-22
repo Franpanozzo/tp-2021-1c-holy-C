@@ -32,20 +32,22 @@ void esperarTerminarTripulante(t_tripulante*);
 void avisarTerminoPlanificacion(t_tripulante*);
 
 void casoBlocked();
-void iterarCola(t_queue*, t_estado);
-void pasarDeCola(t_tripulante*);
+void iterarCola(t_lista*, t_estado);
+void pasarDeLista(t_tripulante*);
+void meterEnLista(void* , t_lista*);
+void* sacarDeLista(t_lista*);
 
-void siguienteTarea(t_tripulante* tripulante, int* ciclosExec);
 char* deserializarString (t_paquete*);
 void mandarTareaAejecutar(t_tripulante*,int);
 void actualizarEstadoEnRAM(t_tripulante*);
-int enviarA(puertoEIP* puerto, void* informacion, tipoDeDato codigoOperacion);
+void pasarAcolaSabotaje(t_lista*);
+int enviarA(puertoEIP*, void*, tipoDeDato);
 bool tripulanteDeMenorId(void*, void*);
-t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje);
+t_tripulante* elTripuMasCerca(t_coordenadas);
 
 void recibirPrimerTareaDeMiRAM(t_tripulante*);
 void recibirProximaTareaDeMiRAM(t_tripulante*);
-void recibirTareaDeMiRAM(int ,t_tripulante*);
+void recibirTareaDeMiRAM(int, t_tripulante*);
 void recibirConfirmacionDeMongo(int, t_tarea*);
 void esperarConfirmacionDeRAM(int);
 char* esperarConfirmacionDePatotaEnRAM(int);
@@ -58,9 +60,13 @@ uint32_t diferencia(uint32_t, uint32_t);
 void listarTripulantes();
 char* traducirEstado(t_estado);
 
-void eliminarTripulante(uint32_t);
+bool esElBuscado(void*);
+bool tieneDistintoEstado(void*);
+bool tieneIgualEstado(void*);
+int totalTripulantes();
+
+void eliminarTripulante();
 void eliminarPatota(t_patota*);
 void liberarTripulante(t_tripulante*);
-void liberarColaEnd();
 
 #endif
