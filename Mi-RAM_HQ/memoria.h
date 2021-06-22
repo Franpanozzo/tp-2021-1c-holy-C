@@ -20,6 +20,7 @@
 #define TAM_PCB 8
 
 #include "estructuras.h"
+#include "segmentacion.h"
 //#include "mi_ram_hq.h"
 
 
@@ -64,19 +65,6 @@ typedef struct {
 } t_alojado;
 
 
-typedef struct {
-	int idPatota;
-	t_list* tablaDeSegmentos;
-} t_tablaSegmentosPatota;
-
-typedef struct {
-	tipoEstructura tipo;
-	int deslazamientoInicial;
-	int bytesAlojados;
-	//int idTripu  //ESTE EN LAS DEMAS VARIABLES -1
-} t_info_segmento;
-
-
 t_log* logMemoria;
 t_configRam configRam;
 
@@ -96,7 +84,7 @@ void set_frame(int , int);
 char* asignar_bytes(int );
 void iniciarMemoria();
 void* leer_memoria(int,int);
-int insertar_en_memoria(t_info_pagina*, void*, int, int*, tipoEstructura, int, int*);
+int insertar_en_memoria_pag(t_info_pagina*, void*, int, int*, tipoEstructura, int, int*);
 void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura,int);
 uint32_t buscar_frame_disponible(int );
 void* buscar_pagina(t_info_pagina* );
@@ -110,8 +98,6 @@ t_tarea* guardarTCB(tcb*, int);
 t_tarea* guardarTCBPag(tcb*, int);
 int guardarPCBPag(pcb*, char*);
 uint32_t estimarDLTareas();
-int guardarPCBSeg(pcb*, char*);
-t_tarea* guardarTCBSeg(tcb*, int);
 uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* );
 t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* , tcb* );
 bool tieneEstructuraAlojada(t_list* , tipoEstructura);
@@ -127,7 +113,6 @@ int actualizarTripulante(tcb* , int);
 tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
 tcb* cargarEnTripulante(void* );
 t_tarea* asignarProxTarea(int , int);
-void existenciaDeTablaParaPatota(t_tablaPaginasPatota* tablaPaginasPatotaActual);
 t_list_iterator* iterarHastaIndice(t_list*, int);
 
 

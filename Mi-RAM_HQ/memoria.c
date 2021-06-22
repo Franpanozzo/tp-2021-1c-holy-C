@@ -98,7 +98,7 @@ void* leer_memoria(int frame, int mem) {
 }
 
 
-int insertar_en_memoria(t_info_pagina* info_pagina, void* pagina, int mem, int* aMeter, tipoEstructura tipo, int datoAdicional, int* bytesEscribidos) {
+int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, int* aMeter, tipoEstructura tipo, int datoAdicional, int* bytesEscribidos) {
     // printf("frame %d -> %d\n",frame, get_frame(frame,mem));
     if(!get_frame(info_pagina->frame_m_ppal,mem)) // no hay nada en el frame
     {
@@ -304,7 +304,8 @@ t_tarea* asignarProxTarea(int idPatota,int idTripulante) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
 
-	existenciaDeTablaParaPatota(tablaPaginasPatotaActual);
+	log_info(logMemoria,"Se encontro la tabla de paginas_ PATOTA: %d - CANT PAGINAS: %d",
+					tablaPaginasPatotaActual->idPatota, list_size(tablaPaginasPatotaActual->tablaDePaginas));
 
 	tcb* tcb = obtenerTripulante(tablaPaginasPatotaActual, idTripulante);
 
@@ -315,23 +316,6 @@ t_tarea* asignarProxTarea(int idPatota,int idTripulante) {
 	log_info(logMemoria, "Toma %d",list_size(tablaPaginasPatotaActual->tablaDePaginas));
 
 	return irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcb);
-}
-
-
-void existenciaDeTablaParaPatota(t_tablaPaginasPatota* tablaPaginasPatotaActual) {
-
-	if(tablaPaginasPatotaActual != NULL)
-	{
-		log_info(logMemoria,"Se encontro la tabla de paginas_ PATOTA: %d - CANT PAGINAS: %d",
-				tablaPaginasPatotaActual->idPatota, list_size(tablaPaginasPatotaActual->tablaDePaginas));
-	}
-	else
-	{
-		log_error(logMemoria,"No existe PCB para ese TCB negro");
-		exit(1);
-	}
-
-
 }
 
 
@@ -721,7 +705,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 			if(info_pagina != NULL)
 			{
 				log_info(logMemoria, "La pagina en el frame %d tiene lugar y se va a aprovechar", info_pagina->frame_m_ppal);
-				insertar_en_memoria(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
+				insertar_en_memoria_seg(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
 			} else
 			{
 				log_info(logMemoria, "No se encontro una pagina con espacio restante");
@@ -733,7 +717,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 				if(info_pagina->frame_m_ppal != FRAME_INVALIDO)
 				{
 					log_info(logMemoria,"Hay un frame disponible, el %d", info_pagina->frame_m_ppal);
-					insertar_en_memoria(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
+					insertar_en_memoria_seg(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
 				}
 					else
 					{
@@ -751,7 +735,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 					if(info_pagina->frame_m_ppal != FRAME_INVALIDO)
 					{
 						log_info(logMemoria,"Hay un frame disponible, el %d", info_pagina->frame_m_ppal);
-						insertar_en_memoria(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
+						insertar_en_memoria_seg(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
 					}
 						else
 						{
@@ -784,7 +768,8 @@ t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int idPatotaABuscar) {
 
 	    if(tablaPaginasBuscada == NULL)
 	    {
-	        log_error(logMemoria,"Tabla de pagina de patota %d no encontrada!! \n", idPatotaABuscar);
+	        log_error(logMemoria,"Tabla de pagina de patota %d no encontrada!! - No existe PCB para ese TCB negro", idPatotaABuscar);
+	        exit(1);
 	    }
 
 	    return tablaPaginasBuscada;
@@ -970,16 +955,6 @@ t_tarea* guardarTCB(tcb* tcbAGuardar, int idPatota) {
 	}
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);
-}
-
-
-int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas){
-	return 0;
-}
-
-
-t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota){
-	return NULL;
 }
 
 
