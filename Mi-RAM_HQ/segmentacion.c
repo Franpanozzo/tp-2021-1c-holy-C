@@ -38,7 +38,6 @@ t_tablaSegmentosPatota* buscarTablaDePaginasDePatota(int idPatotaABuscar) {
 	        log_error(logMemoria,"Tabla de Segmentos de patota %d no encontrada!! - No existe PCB para ese TCB \n", idPatotaABuscar);
 			exit(1);
 	    }
-
 	    return tablaSegmentosBuscada;
 }
 

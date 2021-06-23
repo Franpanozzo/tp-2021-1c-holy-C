@@ -109,15 +109,16 @@ int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, i
 
         int bytesAEscribir =  info_pagina->bytesDisponibles - *aMeter;
 
-        if(bytesAEscribir < 0) {
+        if(bytesAEscribir < 0)
+        {
 			bytesAEscribir = info_pagina->bytesDisponibles;
 			info_pagina->bytesDisponibles = 0;
-	        set_frame(info_pagina->frame_m_ppal,mem); //marco el frame como en uso porque se escribio toda
-								}
-        	else {
-				 bytesAEscribir = *aMeter;
-				 info_pagina->bytesDisponibles = info_pagina->bytesDisponibles - *aMeter;
-				 }
+	    	set_frame(info_pagina->frame_m_ppal,mem); //marco el frame como en uso porque se escribio toda
+		}
+		else {
+			 bytesAEscribir = *aMeter;
+			 info_pagina->bytesDisponibles = info_pagina->bytesDisponibles - *aMeter;
+			 }
 
         agregarEstructAdminTipo(info_pagina, despDesdePagina, bytesAEscribir, tipo, datoAdicional);
 
@@ -126,6 +127,7 @@ int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, i
         	lock(mutexEscribirMemoria);
             memcpy(memoria_principal+desp, pagina, bytesAEscribir);
             unlock(mutexEscribirMemoria);
+
         }
         else if(mem == MEM_VIRT){
             FILE * file = fopen(configRam.pathSwap, "r+");
@@ -189,6 +191,7 @@ void agregarEstructAdminTipo(t_info_pagina* info_pagina,int despDesdePagina,int 
 	t_alojado* nuevo_alojado = malloc(sizeof(t_alojado));
 	log_info(logMemoria, "Se va a agregar a la pagina %d , la carga de %d desde %d , y son %d", info_pagina->indice,
 			tipo,despDesdePagina,bytesAlojados);
+	nuevo_alojado->indice = list_size(info_pagina->estructurasAlojadas);
 	nuevo_alojado->desplazamientoInicial = despDesdePagina;
 	nuevo_alojado->bytesAlojados = bytesAlojados;
 	nuevo_alojado->tipo = tipo;
@@ -228,6 +231,21 @@ void set_frame(int frame, int mem) {
 }
 
 
+void clear_frame(int frame, int mem)
+{
+    if(mem == MEM_PPAL)
+        bitarray_clean_bit(frames_ocupados_ppal, frame);
+
+    /*else if (mem == MEM_VIRT)
+        bitarray_clean_bit(frames_ocupados_virtual, frame); */
+    else
+       {
+       	log_error(logMemoria, "El frame que se quiere acceder es invalido");
+       	exit(1);
+       }
+}
+
+
 uint32_t buscar_frame_disponible(int mem) {
     int size = 0;
     if(mem == MEM_PPAL)
@@ -237,34 +255,15 @@ uint32_t buscar_frame_disponible(int mem) {
 
     for(uint32_t f = 0; f < size; f++)
     {
-        if(!get_frame(f, mem) && frameTotalmenteLibre(f)) {
+        if(!get_frame(f, mem)) {
     	//if(!get_frame(f, mem))
             return f;
         }
     }
 
+    log_info(logMemoria, "No se encontro un frame disponible");
     return FRAME_INVALIDO;
 }
-
-/*
-int frameTotalmenteLibre(int frame) {
-
-	void* pagina = leer_memoria(frame, MEM_PPAL);
-	char* chequeador = malloc(2);
-	*(chequeador + 1) = '\0';
-
-	for(int i = 0; i<configRam.tamanioPagina; i++) {
-		memcpy(chequeador,pagina,1);
-		if(*chequeador != '$') return 0;
-		pagina++;
-	}
-
-	free(chequeador);
-	free(pagina);
-
-	return 1;
-}
-*/
 
 
 int frameTotalmenteLibre(int frame) {
@@ -705,7 +704,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 			if(info_pagina != NULL)
 			{
 				log_info(logMemoria, "La pagina en el frame %d tiene lugar y se va a aprovechar", info_pagina->frame_m_ppal);
-				insertar_en_memoria_seg(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
+				insertar_en_memoria_pag(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
 			} else
 			{
 				log_info(logMemoria, "No se encontro una pagina con espacio restante");
@@ -717,7 +716,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 				if(info_pagina->frame_m_ppal != FRAME_INVALIDO)
 				{
 					log_info(logMemoria,"Hay un frame disponible, el %d", info_pagina->frame_m_ppal);
-					insertar_en_memoria_seg(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
+					insertar_en_memoria_pag(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
 				}
 					else
 					{
@@ -735,7 +734,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 					if(info_pagina->frame_m_ppal != FRAME_INVALIDO)
 					{
 						log_info(logMemoria,"Hay un frame disponible, el %d", info_pagina->frame_m_ppal);
-						insertar_en_memoria_seg(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
+						insertar_en_memoria_pag(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
 					}
 						else
 						{
@@ -927,6 +926,122 @@ void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter, int *datoA
 	}
 
 	return buffer;
+}
+
+
+void expulsarTripulante(int idTripulante,int idPatota) {
+
+		bool tieneTripu(t_info_pagina* info_pagina)
+		{
+		  return tieneTripulanteAlojado(info_pagina->estructurasAlojadas, idTripulante);
+		}
+
+			t_tablaPaginasPatota* tablaPatota = buscarTablaDePaginasDePatota(idPatota);
+			t_list* paginasTripu = paginasConTripu(tablaPatota->tablaDePaginas,idTripulante);
+
+			if(paginasTripu != NULL)
+			{
+				t_list_iterator* iteradorPaginas = list_iterator_create(paginasTripu);
+
+				while(iterator_has_next(iteradorPaginas))
+				{
+					t_info_pagina* paginaActual = iterator_next(iteradorPaginas);
+					t_alojado* tripuAlojado = obtenerAlojadoPagina(paginaActual, idTripulante);
+					paginaActual->bytesDisponibles -= tripuAlojado->bytesAlojados;
+					list_remove(paginaActual->estructurasAlojadas,tripuAlojado->indice);
+					free(tripuAlojado);
+
+					if(paginaActual->bytesDisponibles == 0)
+					{
+						clear_frame(paginaActual->frame_m_ppal, MEM_PPAL);
+						list_remove(tablaPatota->tablaDePaginas, paginaActual);
+						list_destroy(paginaActual->estructurasAlojadas);
+						free(paginaActual);
+					}
+				}
+				chequearUltimoTripulante(tablaPatota);
+			}
+}
+
+
+void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
+
+	if(!noTieneTripulantes(tablaPatota)) {
+
+		void borrarProceso(t_info_pagina* info_pagina)
+		{
+
+			void borrarAlojados(t_alojado* alojado)
+			{
+				free(alojado);
+			}
+
+			list_destroy_and_destroy_elements(tablaPatota->tablaDePaginas, (void*) borrarAlojados);
+			free(info_pagina);
+			clear_frame(info_pagina->frame_m_ppal, MEM_PPAL);
+		}
+
+		list_destroy_and_destroy_elements(tablaPatota->tablaDePaginas, (void*) borrarProceso);
+	}
+}
+
+
+bool noTieneTripulantes(t_tablaPaginasPatota* tablaPatota) {
+
+	bool tienePaginaTripulante(t_info_pagina* info_pagina)
+	{
+		return tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TCB);
+	}
+
+	return list_any_satisfy(tablaPatota, (void*) tienePaginaTripulante);
+
+}
+
+
+void dumpPag() {
+
+	char* nombreArchivo = temporal_get_string_time("DUMP_%y%m%d%H%M%S.dmp");
+	char* rutaAbsoluta = string_from_format("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/Dump/%s",nombreArchivo);
+
+	FILE* archivoDump txt_open_for_append(rutaAbsoluta);
+
+	if(archivoDump == NULL){
+		log_error(logMemoria, "No se pudo abrir el archivo correctamente");
+		exit(1);
+	}
+
+	char* fechaYHora = temporal_get_string_time("%d/%m/%y %H:%M:%S \n");
+	char* dump = string_from_format("DUMP: %s",fechaYHora);
+
+	txt_write_in_file(archivoDump, "--------------------------------------------------------------------------\n");
+	txt_write_in_file(archivoDump, dump);
+
+	for(int i=0; i< cant_frames_ppal; i++) {
+
+		if(!frameTotalmenteLibre(i))
+		{
+			t_tablaSegmentosPatota* tablaSegmentos = patotaConFrame(i);
+			t_info_pagina* info_pagina = paginaConFrame(i);
+
+			char* dumpMarco = string_from_format("Marco:%d    Estado:Ocupado    Proceso:%d    Pagina:%d \n",
+					i, tablaSegmentos->idPatota, info_pagina->indice);
+
+			txt_write_in_file(archivoDump, dumpMarco);
+			free(dumpMarco);
+		}
+		else
+		{
+			char* dumpMarco = string_from_format("Marco:%d    Estado:Libre      Proceso:-    Pagina:- \n",i);
+			txt_write_in_file(archivoDump, dumpMarco);
+			free(dumpMarco);
+		}
+	}
+
+	txt_write_in_file(archivoDump, "--------------------------------------------------------------------------\n");
+
+	txt_close_file(archivoDump);
+	free(rutaAbsoluta);
+	free(dump);
 }
 
 

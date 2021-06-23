@@ -58,6 +58,7 @@ typedef struct {
 } t_info_pagina;
 
 typedef struct {
+	int indice;
 	int desplazamientoInicial;
 	int bytesAlojados;
 	tipoEstructura tipo;
