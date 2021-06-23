@@ -253,15 +253,10 @@ void pasarDeLista(t_tripulante* tripulante){
 			break;
 
 		case BLOCKED:
-			if(sabotaje->haySabotaje){
-				meterEnLista(tripulante, listaSabotaje);
-				log_info(logDiscordiador,"El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
-			}
-			else{
-				meterEnLista(tripulante, listaBlocked);
-				log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
-			}
+			meterEnLista(tripulante, listaBlocked);
+			log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
 			break;
+
 		default:
 			log_error(logDiscordiador,"No se reconoce el estado", tripulante->idTripulante);
 			exit(1);
@@ -543,6 +538,8 @@ void elegirTripulanteSabotaje(){
 	list_remove_by_condition(listaSabotaje->elementos, esElTripulanteSabotaje);
 
 	unlock(listaSabotaje->mutex);
+
+	avisarTerminoPlanificacion(sabotaje->tripulanteSabotaje);
 }
 
 
