@@ -25,6 +25,8 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 
 void atenderTripulantes(int*);

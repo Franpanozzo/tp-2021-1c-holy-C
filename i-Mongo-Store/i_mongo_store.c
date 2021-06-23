@@ -23,6 +23,8 @@ int main(void) {
 
 	iniciarFileSystem();
 
+	setearTodosLosFiles();
+
 	liberarConfiguracion();
 	free(path);
 
@@ -177,6 +179,8 @@ void crearFileSystemDesdeCero(char* destinoRaiz, char* destinoSuperBloque, char*
 	FILE* oxigeno = fopen(destinoOxigeno,"wb");
 	FILE* comida = fopen(destinoComida,"wb");
 	FILE* basura = fopen(destinoBasura,"wb");
+
+	crearMemoria(blocks);
 
 }
 

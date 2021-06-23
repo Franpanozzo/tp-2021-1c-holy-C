@@ -14,7 +14,9 @@ void liberarConfiguracion();
 int indiceTarea(t_tarea*);
 char* crearDestinoApartirDeRaiz(char*);
 bool validarExistenciaFileSystem(char*, char*,char*);
-void setearFiles(t_file*, char*);
+void setearFile(t_file*, char*);
+void setearTodosLosFiles();
+void crearMemoria(FILE*);
 
 
 #endif
