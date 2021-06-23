@@ -60,12 +60,12 @@ void cargarConfiguracion(){
 	datosConfig = malloc(sizeof(t_datosConfig));
 	superBloque = malloc(sizeof(t_superBloque));
 
-	superBloque->block_size = config_get_int_value(config,"BLOCK_SIZE");
-	superBloque->blocks = config_get_int_value(config,"BLOCKS");
-	datosConfig->puntoMontaje = strdup(config_get_string_value(config,"PUNTO_MONTAJE"));
-	datosConfig->puerto = config_get_int_value(config,"PUERTO");
-	datosConfig->tiempoSincronizacion = config_get_int_value(config,"TIEMPO_SINCRONIZACION");
-	datosConfig->posicionesSabotaje = strdup(config_get_string_value(config,"POSICIONES_SABOTAJE"));
+	superBloque->block_size = (uint32_t) config_get_int_value(config,"BLOCK_SIZE");
+	superBloque->blocks = (uint32_t)config_get_int_value(config,"BLOCKS");
+	datosConfig->puntoMontaje = config_get_string_value(config,"PUNTO_MONTAJE");
+	datosConfig->puerto = (uint32_t)config_get_int_value(config,"PUERTO");
+	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(config,"TIEMPO_SINCRONIZACION");
+	datosConfig->posicionesSabotaje = config_get_string_value(config,"POSICIONES_SABOTAJE");
 
 }
 

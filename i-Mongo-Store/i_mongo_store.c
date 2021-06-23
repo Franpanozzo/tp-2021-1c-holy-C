@@ -7,15 +7,21 @@ int main(void) {
 
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
 
+	crearConfig();
+
 	cargarConfiguracion();
 
 	crearTareasIO();
 
-	int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
-	pthread_t manejoTripulante;
-	pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
-	pthread_join(manejoTripulante, (void*) NULL);
+
+	//int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
+
+	//pthread_t manejoTripulante;
+	//pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
+	//pthread_join(manejoTripulante, (void*) NULL);
+
+	iniciarFileSystem();
 
 	liberarConfiguracion();
 	free(path);
@@ -144,3 +150,48 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 	eliminarPaquete(paquete);
 
 }
+
+char* crearDestinoApartirDeRaiz(char* destino){
+
+	char* raiz = string_new();
+
+	string_append(&raiz, datosConfig->puntoMontaje);
+	string_append(&raiz, "/");
+	string_append(&raiz, destino);
+
+	return raiz;
+
+}
+
+bool validarExistenciaFileSystem(FILE* superBloque, FILE* blocks){
+
+	return superBloque != NULL && blocks != NULL;
+}
+
+void iniciarFileSystem(){
+
+	char* destinoSuperBloque = crearDestinoApartirDeRaiz("SuperBloque.ims");
+	char* destinoBlocks = crearDestinoApartirDeRaiz("Blocks.ims");
+
+	FILE* superBloque = fopen(destinoSuperBloque,"rb");
+	FILE* blocks = fopen(destinoBlocks,"rb");
+
+	if(validarExistenciaFileSystem(superBloque,blocks)){
+
+		log_info(logImongo,"Existe un file system actualmente");
+
+	}
+
+	else{
+
+		log_info(logImongo,"No existe un file system actualmente");
+
+		//crearFileSystemDesdeCero();
+
+	}
+
+}
+
+
+
+
