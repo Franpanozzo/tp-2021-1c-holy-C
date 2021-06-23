@@ -163,30 +163,86 @@ char* crearDestinoApartirDeRaiz(char* destino){
 
 }
 
-bool validarExistenciaFileSystem(FILE* superBloque, FILE* blocks){
 
-	return superBloque != NULL && blocks != NULL;
+bool validarExistenciaFileSystem(char* superBloque, char* blocks, char* raiz){
+
+
+	return (access(superBloque, F_OK ) != -1) && (access(blocks, F_OK ) != -1) && (access(raiz, F_OK ) != -1);
+
+}
+
+
+void crearFileSystemDesdeCero(char* destinoRaiz, char* destinoSuperBloque, char* destinoBlocks){
+
+	FILE* superBloque = fopen(destinoSuperBloque,"wb");
+	FILE* blocks = fopen(destinoBlocks,"wb");
+
+	char* pathFiles = crearDestinoApartirDeRaiz("Files");
+	char* pathBitacora = crearDestinoApartirDeRaiz("Files/Bitacora");
+
+	if(mkdir(pathFiles,0777) != 0){
+
+		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
+	}
+
+	if(mkdir(pathBitacora,0777) != 0){
+
+			log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
+		}
+
+	char* destinoOxigeno = crearDestinoApartirDeRaiz("Files/Oxigeno.ims");
+	char* destinoComida = crearDestinoApartirDeRaiz("Files/Comida.ims");
+	char* destinoBasura = crearDestinoApartirDeRaiz("Files/Basura.ims");
+
+	FILE* oxigeno = fopen(destinoOxigeno,"wb");
+	FILE* comida = fopen(destinoComida,"wb");
+	FILE* basura = fopen(destinoBasura,"wb");
+
 }
 
 void iniciarFileSystem(){
 
+	char* destinoRaiz = crearDestinoApartirDeRaiz("");
+
+	int flag = access(destinoRaiz, F_OK );
+
+	if(flag == -1){
+
+		log_info(logImongo, "No existe el punto de montaje en el directorio %s , se creara uno", destinoRaiz);
+
+		mkdir(destinoRaiz,0777);
+
+		}
+
+	else if(flag == 0){
+
+			log_info(logImongo, "Existe el punto de montaje en el directorio %s , se procedera a validar la existencia de SuperBloque.ims y Blocks.ims", destinoRaiz);
+
+			}
+
+	else{
+
+		log_info(logImongo, "La verificacion de si existe la carpeta punto de montaje esta tirando cualquier valor");
+		exit(1);
+	}
+
+
 	char* destinoSuperBloque = crearDestinoApartirDeRaiz("SuperBloque.ims");
 	char* destinoBlocks = crearDestinoApartirDeRaiz("Blocks.ims");
 
-	FILE* superBloque = fopen(destinoSuperBloque,"rb");
-	FILE* blocks = fopen(destinoBlocks,"rb");
-
-	if(validarExistenciaFileSystem(superBloque,blocks)){
+	if(validarExistenciaFileSystem(destinoSuperBloque,destinoBlocks,destinoRaiz)){
 
 		log_info(logImongo,"Existe un file system actualmente");
+
 
 	}
 
 	else{
 
-		log_info(logImongo,"No existe un file system actualmente");
+		log_info(logImongo,"Existe el punto de montaje ahora, pero no existe SuperBloque.ims y Blocks.ims, creando archivos...");
 
-		//crearFileSystemDesdeCero();
+		crearFileSystemDesdeCero(destinoRaiz, destinoSuperBloque, destinoBlocks);
+
 
 	}
 

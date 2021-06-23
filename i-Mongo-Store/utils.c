@@ -55,6 +55,7 @@ void crearTareasIO(){
 	todasLasTareasIO[5] = strdup("CONSUMIR_COMIDA");
 }
 
+
 void cargarConfiguracion(){
 
 	datosConfig = malloc(sizeof(t_datosConfig));
@@ -62,12 +63,26 @@ void cargarConfiguracion(){
 
 	superBloque->block_size = (uint32_t) config_get_int_value(config,"BLOCK_SIZE");
 	superBloque->blocks = (uint32_t)config_get_int_value(config,"BLOCKS");
+	int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
+	bitArray = malloc(sizeBitArray);
+	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArray ,MSB_FIRST);
+
+	for(int i=0; i<sizeBitArray;i++){
+
+		bitarray_clean_bit(superBloque->bitmap, i);
+		//int valor =  bitarray_test_bit(superBloque->bitmap, i);
+		//printf("%d ", valor);
+	}
+
+    log_info(logImongo,"Se inicializo un bitmap con %d posiciones", bitarray_get_max_bit(superBloque->bitmap));
+
 	datosConfig->puntoMontaje = config_get_string_value(config,"PUNTO_MONTAJE");
 	datosConfig->puerto = (uint32_t)config_get_int_value(config,"PUERTO");
 	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(config,"TIEMPO_SINCRONIZACION");
 	datosConfig->posicionesSabotaje = config_get_string_value(config,"POSICIONES_SABOTAJE");
 
 }
+
 
 void liberarConfiguracion(){
 

@@ -38,6 +38,7 @@ t_log* logImongo;
 char** todasLasTareasIO;
 t_datosConfig* datosConfig;
 t_superBloque* superBloque;
+char* bitArray;
 
 
 #endif

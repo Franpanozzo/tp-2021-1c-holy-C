@@ -23,6 +23,8 @@
 #include "utils.h"
 #include "variables.h"
 #include <math.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 
 void atenderTripulantes(int*);
@@ -30,8 +32,9 @@ int esperarTripulante(int);
 void manejarTripulante(int*);
 void deserializarSegun(t_paquete*, int);
 char* crearDestinoApartirDeRaiz(char*);
-bool validarExistenciaFileSystem(FILE*, FILE*);
+bool validarExistenciaFileSystem(char*, char*,char*);
 void iniciarFileSystem();
+void crearFileSystemDesdeCero(char*, char*, char*);
 
 
 #endif
