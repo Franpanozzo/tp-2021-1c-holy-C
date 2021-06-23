@@ -32,9 +32,6 @@ void iniciarColas(){
 	pthread_mutex_init(&listaSabotaje->mutex, NULL);
 }
 
-void iniciarSemaforos(){
-	sem_init(&semPlanificacion,0,0);
-}
 
 void iniciarMutex(){
 	pthread_mutex_init(&mutexPlanificadorFin, NULL);
@@ -65,11 +62,8 @@ void cargar_configuracion(){
 	}
 	free(algoritmo);
 
-	//duracionSabotaje = config_get_int_value(config,"DURACION_SABOTAJE");
-	//retardoCiclosCPU = config_get_int_value(config,"RETARDO_CICLO_CPU");
-
-	//planificacion = CORRIENDO;
-
+	sabotaje->tiempo = config_get_int_value(config,"DURACION_SABOTAJE");
+	retardoCiclosCPU = config_get_int_value(config,"RETARDO_CICLO_CPU");
 }
 
 int leerPlanificacion(){
@@ -151,55 +145,18 @@ char * pathLog(){
 }
 
 
-t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje){
+t_tripulante* masCercaAlSabotaje(void* primerTripulante, void* segundoTripulante){
+	t_tripulante* tripulante1 = (t_tripulante*) primerTripulante;
+	t_tripulante* tripulante2 = (t_tripulante*) segundoTripulante;
 
-	int diferenciaX  = 0;
-	int diferenciaY = 0;
-	int diferenciaMasCerca = 0;
-	int diferenciaComparado = 0;
-
-	t_list * listaDeComparacion = list_create();
-	list_add_all(listaDeComparacion, listaReady->elementos);
-	list_add_all(listaDeComparacion, listaExec->elementos);
-
-	t_list_iterator * iterator = list_iterator_create(listaDeComparacion);
-	t_tripulante * tripulante;
-	t_tripulante * tripulanteMasCerca;
-
-	tripulanteMasCerca = (t_tripulante *) list_iterator_next(iterator);
-	//log_info(logDiscordiador, "\n %p \n",tripulanteMasCerca);
-	diferenciaX = diferencia(tripulanteMasCerca->coordenadas.posX, lugarSabotaje.posX);
-	diferenciaY = diferencia(tripulanteMasCerca->coordenadas.posY, lugarSabotaje.posY);
-
-	diferenciaMasCerca = diferenciaX + diferenciaY;
-	log_info(logDiscordiador,"diferencia : %d de tripulanteid: %d", diferenciaMasCerca, tripulanteMasCerca->idTripulante);
-	while(list_iterator_has_next(iterator)){
-
-		tripulante = (t_tripulante *) list_iterator_next(iterator);
-		diferenciaX = diferencia(tripulante->coordenadas.posX, lugarSabotaje.posX);
-		diferenciaY = diferencia(tripulante->coordenadas.posY, lugarSabotaje.posY);
-
-		diferenciaComparado = diferenciaX + diferenciaY;
-		log_info(logDiscordiador, "diferencia: %d de tripulanteid: %d", diferenciaComparado, tripulante->idTripulante);
-		//s: x=0,y=0
-		//t4: x=1,y=1
-		//t2: x=1,y=0-1
-		//t1: x=6,y=6
-
-		if(diferenciaComparado < diferenciaMasCerca || (diferenciaComparado == diferenciaMasCerca && tripulante->idTripulante < tripulanteMasCerca->idTripulante)){
-			log_info(logDiscordiador,"el tripulanteid: %d con posX: %d posY: %d desaloja al el tripulanteid: %d con posX: %d posY: %d"
-			, tripulante->idTripulante, tripulante->coordenadas.posX, tripulante->coordenadas.posY,
-			tripulanteMasCerca->idTripulante, tripulanteMasCerca->coordenadas.posX, tripulanteMasCerca->coordenadas.posY);
-
-			diferenciaMasCerca = diferenciaComparado;
-			tripulanteMasCerca =  tripulante;
-		}
-	}
-	list_iterator_destroy(iterator);
-	list_destroy(listaDeComparacion);
-	return tripulanteMasCerca;
-
+	if(distancia(tripulante1->coordenadas, sabotaje->coordenadas) <
+			distancia(tripulante2->coordenadas, sabotaje->coordenadas))
+		return tripulante1;
+	else
+		return tripulante2;
 }
+
+
 void esperarTerminarTripulante(t_tripulante* tripulante){
 	sem_wait(&tripulante->semaforoFin);
 }
@@ -274,7 +231,7 @@ void* sacarDeLista(t_lista* lista){
 	return dato;
 }
 
-void pasarAcolaSabotaje(t_lista* lista){
+void pasarAlistaSabotaje(t_lista* lista){
 	lock(lista->mutex);
 	list_sort(lista->elementos, tripulanteDeMenorId);
 	list_add_all(listaSabotaje->elementos, lista->elementos);
@@ -430,16 +387,18 @@ int esIO(char* tarea){
 }
 
 
+uint32_t distancia(t_coordenadas unaCoordenada, t_coordenadas otraCoordenada){
+	return diferencia(unaCoordenada.posX, otraCoordenada.posX) +
+			diferencia(unaCoordenada.posY, otraCoordenada.posY);
+}
+
+
 uint32_t calculoCiclosExec(t_tripulante* tripulante){
-
-	uint32_t desplazamientoEnX = diferencia(tripulante->instruccionAejecutar->coordenadas.posX, tripulante->coordenadas.posX);
-	uint32_t desplazamientoEnY = diferencia(tripulante->instruccionAejecutar->coordenadas.posY, tripulante->coordenadas.posY);
-
 	if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
-		return  desplazamientoEnX + desplazamientoEnY + 1;
+		return  distancia(tripulante->instruccionAejecutar->coordenadas, tripulante->coordenadas) + 1;
 	}
-
-	return desplazamientoEnX + desplazamientoEnY + tripulante->instruccionAejecutar->tiempo;
+	return distancia(tripulante->instruccionAejecutar->coordenadas, tripulante->coordenadas) +
+			tripulante->instruccionAejecutar->tiempo;
 }
 
 
@@ -566,9 +525,37 @@ bool tieneIgualEstado(void* unTripulante){
 }
 
 
+bool esElTripulanteSabotaje(void* unTripulante){
+	t_tripulante* tripulante = (t_tripulante*) unTripulante;
+	return tripulante->idTripulante == sabotaje->tripulanteSabotaje->idTripulante;
+}
 
 
+void elegirTripulanteSabotaje(){
+	lock(listaSabotaje->mutex);
 
+	sabotaje->tripulanteSabotaje = (t_tripulante*)
+			list_get_minimum(listaSabotaje->elementos, (void*)masCercaAlSabotaje);
+
+	log_info(logDiscordiador,"---EL TRIPU BLOQUEADO TIENE ID %d",
+			sabotaje->tripulanteSabotaje->idTripulante);
+
+	list_remove_by_condition(listaSabotaje->elementos, esElTripulanteSabotaje);
+
+	unlock(listaSabotaje->mutex);
+}
+
+
+void ponerEnReady(void* unTripulante){
+	t_tripulante* tripulante = (t_tripulante*) unTripulante;
+	tripulante->estado = READY;
+}
+
+
+void ponerEnSabotaje(void* unTripulante){
+	t_tripulante* tripulante = (t_tripulante*) unTripulante;
+	tripulante->estado = SABOTAJE;
+}
 
 
 // FUNCION 2

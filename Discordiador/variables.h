@@ -5,6 +5,7 @@ t_config* config;
 
 t_log* logDiscordiador;
 pthread_t planificador;
+pthread_t sabo;
 
 puertoEIP* puertoEIPRAM;
 puertoEIP* puertoEIPMongo;
@@ -18,6 +19,7 @@ int quantum;
 int idTripulanteBlocked;
 int gradoMultiprocesamiento;
 int idBuscado;
+int retardoCiclosCPU;
 t_estado estadoAcomparar;
 
 t_sabotaje* sabotaje;

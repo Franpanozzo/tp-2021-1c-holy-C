@@ -31,25 +31,13 @@ void leerConsola(){
 			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
+			modificarPlanificacion(CORRIENDO);
+			log_info(logDiscordiador, "Se inicio la planificacion");
 
-			if(leerPlanificacion() == PAUSADA){
-							modificarPlanificacion(CORRIENDO);
-							log_info(logDiscordiador, "Se inicio la planificacion");
-							sleep(1);
-						}
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-
-			if(leerPlanificacion() == CORRIENDO){
-							modificarPlanificacion(PAUSADA);
-							log_info(logDiscordiador, "Se pauso la planificacion");
-							sleep(1);
-						}
-						else{
-							log_error(logDiscordiador, "La planificacion no esta corriendo");
-						}
-
-
+			modificarPlanificacion(PAUSADA);
+			log_info(logDiscordiador, "Se pauso la planificacion");
 		}
 
 		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){
@@ -57,18 +45,23 @@ void leerConsola(){
 			if(leerPlanificacion() == CORRIENDO){
 					modificarPlanificacion(PAUSADA);
 				}
-							listarTripulantes();
-							sleep(1);
+			listarTripulantes();
 		}
 		else if (strcmp(comandoYparametros[cursor], "ELIMINAR_TRIPULANTE") == 0){
 			log_info(logDiscordiador, "Se ingreso el comando ELIMINAR_TRIPULANTE");
-							if(leerPlanificacion() == CORRIENDO){
-								modificarPlanificacion(PAUSADA);
-							}
-								cursor ++;
-								uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
-								idBuscado = idTripulante;
-								eliminarTripulante();
+			cursor ++;
+			uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
+			idBuscado = idTripulante;
+			eliminarTripulante();
+			idBuscado = -1;
+
+		}
+		else if (strcmp(comandoYparametros[cursor], "SABOTAJE") == 0){
+			log_info(logDiscordiador, "Se ingreso el comando SABOTAJE");
+			cursor ++;
+			sabotaje->coordenadas.posX = 6;
+			sabotaje->coordenadas.posY = 6;
+			sabotaje->haySabotaje = 1;
 
 		}
 		else{

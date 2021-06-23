@@ -36,11 +36,16 @@ void iterarCola(t_lista*, t_estado);
 void pasarDeLista(t_tripulante*);
 void meterEnLista(void* , t_lista*);
 void* sacarDeLista(t_lista*);
+void ponerEnSabotaje(void*);
+void elegirTripulanteSabotaje();
+void ponerEnReady(void*);
+uint32_t distancia(t_coordenadas, t_coordenadas);
+
 
 char* deserializarString (t_paquete*);
 void mandarTareaAejecutar(t_tripulante*,int);
 void actualizarEstadoEnRAM(t_tripulante*);
-void pasarAcolaSabotaje(t_lista*);
+void pasarAlistaSabotaje(t_lista*);
 int enviarA(puertoEIP*, void*, tipoDeDato);
 bool tripulanteDeMenorId(void*, void*);
 t_tripulante* elTripuMasCerca(t_coordenadas);

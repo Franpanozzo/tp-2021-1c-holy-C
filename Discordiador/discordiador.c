@@ -6,10 +6,14 @@ int main() {
 	logDiscordiador = iniciarLogger(path,"Discordiador",1);
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
-	iniciarSemaforos();
 	iniciarMutex();
 	iniciarColas();
 	iniciarTareasIO();
+	sabotaje = malloc(sizeof(t_sabotaje));
+	sabotaje->tripulanteSabotaje = malloc(sizeof(t_tripulante));
+	sabotaje->tripulanteSabotaje->idTripulante = -1;
+	sabotaje->haySabotaje = 0;
+
 	cargar_configuracion();
 
 	idTripulante = 0;
@@ -18,9 +22,6 @@ int main() {
 	modificarPlanificacion(PAUSADA);
 	idBuscado = -1;
 
-	sabotaje = malloc(sizeof(t_sabotaje));
-	sabotaje->tripulanteSabotaje = NULL;
-	sabotaje->haySabotaje = 0;
 
 	sem_init(&sabotaje->semaforoIniciarSabotaje,0,0);
 	sem_init(&sabotaje->semaforoCorrerSabotaje,0,0);
@@ -30,6 +31,10 @@ int main() {
 
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
 	pthread_detach(planificador);
+
+	pthread_create(&sabo, NULL, (void*) hiloSabotaje, NULL);
+	pthread_detach(sabo);
+
 	leerConsola();
 	free(path);
 	free(puertoEIPRAM->IP);
@@ -52,8 +57,10 @@ void hiloPlanificador(){
 			list_iterate(listaNew->elementos, (void*)esperarTerminarTripulante);
 //			list_iterate(colaReady->elements, (void*)esperarTerminarTripulante);
 
-			if(sabotaje->tripulanteSabotaje != NULL){
+			if(sabotaje->tripulanteSabotaje->idTripulante != -1){
+				log_info(logDiscordiador,"----- ESPERANDO AL TRIPU SABO -----");
 				esperarTerminarTripulante(sabotaje->tripulanteSabotaje);
+				log_info(logDiscordiador,"----- YA TERMINE DE ESPERAR AL TRIPU SABO -----");
 			}
 
 			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripulantes());
@@ -67,9 +74,10 @@ void hiloPlanificador(){
 			list_iterate(listaReady->elementos, (void*)esperarTerminarTripulante);
 			actualizarLista(listaReady, READY);
 
-			if(sabotaje->haySabotaje){ //HAY SABOTAJE
+			if(sabotaje->haySabotaje && sabotaje->tripulanteSabotaje->idTripulante == -1){ //HAY SABOTAJE
 				sem_post(&sabotaje->semaforoIniciarSabotaje);
 				sem_wait(&sabotaje->semaforoCorrerSabotaje);//se traba esperando a q se bloqueen a los tripus por el sabotaje
+				log_info(logDiscordiador,"----- SIGUE EL PLANI MIENTRAS HAY SABO -----");
 			}
 
 			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
@@ -79,7 +87,7 @@ void hiloPlanificador(){
 			list_iterate(listaNew->elementos, (void*)avisarTerminoPlanificacion);
 			list_iterate(listaReady->elementos, (void*)avisarTerminoPlanificacion);
 
-			if(sabotaje->tripulanteSabotaje != NULL){
+			if(sabotaje->tripulanteSabotaje->idTripulante != -1){
 				avisarTerminoPlanificacion(sabotaje->tripulanteSabotaje);
 			}
 		}
@@ -95,25 +103,45 @@ void hiloSabotaje(){
 		 * deserializa para ver si llego un sabotaje en el caso de
 		 * que si, se hace lo siguiente:
 		 */
+		while(sabotaje->haySabotaje == 0);
+		log_info(logDiscordiador,"----- DETECTE Q HAY UN SABOTAJE -----");
 
+		//PREPARACION SABOTAJE
 		sabotaje->haySabotaje = 1;
-		sem_wait(&sabotaje->semaforoIniciarSabotaje);//esperar a que el plani termine de actualizar las colas
+		sem_wait(&sabotaje->semaforoIniciarSabotaje);//esperar a que el plani termine de actualizar las listas
+		log_info(logDiscordiador,"----- EL PLANIFICADOR ME DEJO AVANZAR -----");
 
-		sabotaje->tripulanteSabotaje = elTripuMasCerca(sabotaje->coordenadas);
-		t_estado estadoAnterior = sabotaje->tripulanteSabotaje->estado;
-		sabotaje->tripulanteSabotaje->estado = SABOTAJE;
+		pasarAlistaSabotaje(listaExec);
+		pasarAlistaSabotaje(listaReady);
+		list_iterate(listaSabotaje->elementos, (void*)ponerEnSabotaje);
 
-		pasarAcolaSabotaje(listaExec);
-		pasarAcolaSabotaje(listaReady);
+		log_info(logDiscordiador,"----- LA LISTA DE READY QUEDO CON %d TRIPULANTES -----",
+				list_size(listaReady->elementos));
+		log_info(logDiscordiador,"----- LA LISTA DE EXEC QUEDO CON %d TRIPULANTES -----",
+						list_size(listaExec->elementos));
+		log_info(logDiscordiador,"----- LA LISTA DE SABOTAJE QUEDO CON %d TRIPULANTES -----",
+						list_size(listaSabotaje->elementos));
 
-		sem_post(&sabotaje->semaforoCorrerSabotaje);//destrabar el plani
+		elegirTripulanteSabotaje();
 
-		sem_wait(&sabotaje->semaforoTerminoTripulante);//esperar q el tripu termine el sabotaje
+		sem_post(&sabotaje->semaforoCorrerSabotaje);//avisarle al planificador que termino la preparacion
 
-		//reestablecer todo_ como estaba antes
+		//FINALIZACION SABOTAJE
+		sem_wait(&sabotaje->semaforoTerminoTripulante);//esperar q el tripulante termine el sabotaje
+
+		list_iterate(listaSabotaje->elementos, (void*)ponerEnReady);
+		list_add_all(listaReady->elementos, listaSabotaje->elementos);
+		list_iterate(listaReady->elementos, (void*)avisarTerminoPlanificacion);
+		list_add(listaReady->elementos, sabotaje->tripulanteSabotaje);
+		list_clean(listaSabotaje->elementos);
 		sabotaje->haySabotaje = 0;
+		sabotaje->tripulanteSabotaje->idTripulante = -1;
 
-		sem_post(&sabotaje->semaforoTerminoSabotaje);//avisarle al tripu
+		log_info(logDiscordiador,"----- LA LISTA DE READY FINAL SABOTAJE QUEDO CON %d TRIPULANTES -----",
+						list_size(listaReady->elementos));
+
+
+		sem_post(&sabotaje->semaforoTerminoSabotaje);//avisarle al tripulante que ya volvio _todo a la normalidad
 	}
 }
 
@@ -121,7 +149,6 @@ void hiloSabotaje(){
 void hiloTripulante(t_tripulante* tripulante){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
-	//int ciclosSabo = 0;
 	int quantumPendiente = quantum;
 	while(tripulante->estaVivo){
 
@@ -131,7 +158,10 @@ void hiloTripulante(t_tripulante* tripulante){
 		switch(tripulante->estado){
 			case NEW:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
-				tripulante->estado = READY;
+				if(sabotaje->haySabotaje == 1)
+					tripulante->estado = SABOTAJE;
+				else
+					tripulante->estado = READY;
 				recibirPrimerTareaDeMiRAM(tripulante);
 				break;
 			case READY:
@@ -139,17 +169,20 @@ void hiloTripulante(t_tripulante* tripulante){
 					ciclosExec = calculoCiclosExec(tripulante);
 				}
 				quantumPendiente = quantum;
-				log_info(logDiscordiador,"tripulanteId %d: estoy en ready con %d ciclos exec",
+				log_info(logDiscordiador,"el tripulante %d esta en ready con %d ciclos exec",
 						tripulante->idTripulante, ciclosExec);
 				tripulante->estado = EXEC;
 				break;
 			case EXEC:
-				log_info(logDiscordiador,"tripulanteId %d: estoy en exec con %d ciclos y %d quantum",
+				log_info(logDiscordiador,"el tripulante %d esta en exec con %d ciclos y %d quantum",
 						tripulante->idTripulante, ciclosExec, quantumPendiente);
-				desplazarse(tripulante, tripulante->instruccionAejecutar->coordenadas);
+
+				if(distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas) > 0){
+					desplazarse(tripulante, tripulante->instruccionAejecutar->coordenadas);
+				}
 				ciclosExec --;
 				quantumPendiente--;
-				sleep(1);
+				sleep(retardoCiclosCPU);
 				if(quantumPendiente == 0){
 					tripulante->estado = READY;
 				}
@@ -168,9 +201,9 @@ void hiloTripulante(t_tripulante* tripulante){
 				break;
 			case BLOCKED:
 				if(tripulante->idTripulante == leerTripulanteBlocked()){
-					sleep(1);
+					sleep(retardoCiclosCPU);
 					lock(mutexLogDiscordiador);
-					log_info(logDiscordiador,"tripulanteId %d: estoy en block ejecutando, me quedan %d ciclos",
+					log_info(logDiscordiador,"el tripulante %d esta en block ejecutando, me quedan %d ciclos",
 							tripulante->idTripulante, ciclosBlocked);
 					unlock(mutexLogDiscordiador);
 					ciclosBlocked --;
@@ -183,9 +216,26 @@ void hiloTripulante(t_tripulante* tripulante){
 				}
 				break;
 			case SABOTAJE:
-				desplazarse(tripulante, sabotaje->coordenadas);
-				sabotaje->tiempo --;
-				if(sabotaje->tiempo <= 0){
+				ciclosExec = 0;
+
+				log_info(logDiscordiador,"el tripulante %d entro al case SABO",
+						tripulante->idTripulante);
+
+				if(distancia(tripulante->coordenadas, sabotaje->coordenadas) > 0){
+					desplazarse(tripulante, sabotaje->coordenadas);
+					sleep(retardoCiclosCPU);
+
+					log_info(logDiscordiador,"el tripulante %d esta yendo al sabo, "
+							"esta a %d de distancia", tripulante->idTripulante,
+							distancia(tripulante->coordenadas, sabotaje->coordenadas));
+				}
+				else{
+
+					log_info(logDiscordiador,"el tripulante %d llego a la posicion "
+							"del SABO %d|%d", tripulante->idTripulante,
+							tripulante->coordenadas.posX, tripulante->coordenadas.posX);
+
+					sleep(sabotaje->tiempo);
 					sem_post(&sabotaje->semaforoTerminoTripulante);
 					sem_wait(&sabotaje->semaforoTerminoSabotaje);
 				}
@@ -213,7 +263,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		}
 	}
 	else{
-		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota ID: %d",patota->ID);
+		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota %d",patota->ID);
 	}
 	free(patota);
 	free(confirmacion);
@@ -241,45 +291,16 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	sem_init(&tripulante->semaforoFin, 0, 0);
 	tripulante->estaVivo = 1;
 
-	meterEnLista(tripulante, listaNew);
+	if(sabotaje->haySabotaje == 1)
+		meterEnLista(tripulante, listaSabotaje);
+	else
+		meterEnLista(tripulante, listaNew);
 
 	log_info(logDiscordiador,"Se creo el tripulante numero %d",tripulante->idTripulante);
 
 	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripulante, (void*) tripulante);
 	pthread_detach(_hiloTripulante);
 }
-
-
-/*
-void actualizarCola(t_lista* lista){
-
-	int tamanioInicialCola = queue_size(cola.cola);
-	log_info(logDiscordiador,"------Planficando cola de %s con %d tripulantes-----",
-			traducirEstado(estado), tamanioInicialCola);
-
-	for(int i=0; i<tamanioInicialCola; i++){
-		tripulante = (t_tripulante*) sacarDeLista(cola);
-
-		if(tripulante->estado != estado){
-			if(estado == READY){
-				if(queue_size(listaExec) < gradoMultiprocesamiento){
-					pasarDeCola(tripulante);
-				}
-				else{
-					tripulante->estado = estado;
-					pasarAlista(tripulante, cola);
-				}
-			}
-			else{
-				pasarDeCola(tripulante);
-			}
-		}
-		else{
-			pasarAlista(tripulante, cola);
-		}
-	}
-}
-*/
 
 
 void actualizarLista(t_lista* lista, t_estado estado){
