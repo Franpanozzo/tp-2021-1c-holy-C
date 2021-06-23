@@ -31,8 +31,6 @@ void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
 void deserializarSegun(t_paquete*, int);
-char* crearDestinoApartirDeRaiz(char*);
-bool validarExistenciaFileSystem(char*, char*,char*);
 void iniciarFileSystem();
 void crearFileSystemDesdeCero(char*, char*, char*);
 

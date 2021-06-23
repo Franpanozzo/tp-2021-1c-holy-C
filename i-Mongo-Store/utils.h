@@ -12,6 +12,9 @@ void crearTareasIO();
 void cargarConfiguracion();
 void liberarConfiguracion();
 int indiceTarea(t_tarea*);
+char* crearDestinoApartirDeRaiz(char*);
+bool validarExistenciaFileSystem(char*, char*,char*);
+void setearFiles(t_file*, char*);
 
 
 #endif

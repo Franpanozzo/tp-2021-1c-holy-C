@@ -39,6 +39,9 @@ char** todasLasTareasIO;
 t_datosConfig* datosConfig;
 t_superBloque* superBloque;
 char* bitArray;
+t_file* oxigeno;
+t_file* comida;
+t_file* basura;
 
 
 #endif

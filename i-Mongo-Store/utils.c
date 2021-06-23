@@ -81,6 +81,43 @@ void cargarConfiguracion(){
 	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(config,"TIEMPO_SINCRONIZACION");
 	datosConfig->posicionesSabotaje = config_get_string_value(config,"POSICIONES_SABOTAJE");
 
+	char* pathOxigeno = crearDestinoApartirDeRaiz("Files/Oxigeno.ims");
+	char* pathComida = crearDestinoApartirDeRaiz("Files/Comida.ims");
+	char* pathBasura = crearDestinoApartirDeRaiz("Files/Basura.ims");
+
+	setearFiles(oxigeno,pathOxigeno);
+	setearFiles(comida,pathComida);
+	setearFiles(basura,pathBasura);
+
+}
+
+char* crearDestinoApartirDeRaiz(char* destino){
+
+	char* raiz = string_new();
+
+	string_append(&raiz, datosConfig->puntoMontaje);
+	string_append(&raiz, "/");
+	string_append(&raiz, destino);
+
+	return raiz;
+
+}
+
+
+bool validarExistenciaFileSystem(char* superBloque, char* blocks, char* raiz){
+
+
+	return (access(superBloque, F_OK ) != -1) && (access(blocks, F_OK ) != -1) && (access(raiz, F_OK ) != -1);
+
+}
+
+void setearFiles(t_file* archivoFile, char* path){
+
+
+	archivoFile->tamanioArchivo = archivoFile->cantidadBloques * superBloque->block_size;
+	archivoFile->cantidadBloques = list_size(archivoFile->bloquesQueOcupa);
+	//archivoFile->md5_archivo = FALTA EL MD5 del archivo
+
 }
 
 

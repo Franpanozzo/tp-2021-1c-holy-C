@@ -151,26 +151,6 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 }
 
-char* crearDestinoApartirDeRaiz(char* destino){
-
-	char* raiz = string_new();
-
-	string_append(&raiz, datosConfig->puntoMontaje);
-	string_append(&raiz, "/");
-	string_append(&raiz, destino);
-
-	return raiz;
-
-}
-
-
-bool validarExistenciaFileSystem(char* superBloque, char* blocks, char* raiz){
-
-
-	return (access(superBloque, F_OK ) != -1) && (access(blocks, F_OK ) != -1) && (access(raiz, F_OK ) != -1);
-
-}
-
 
 void crearFileSystemDesdeCero(char* destinoRaiz, char* destinoSuperBloque, char* destinoBlocks){
 
