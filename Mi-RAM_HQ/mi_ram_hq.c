@@ -124,7 +124,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			break;
 		}
 		case EXPULSAR:
-			log_info(logMiRAM,"SE VA A EXPUÑSAR UN TRIPULANTE");
+			log_info(logMiRAM,"SE VA A EXPULSAR UN TRIPULANTE");
 			deserializarExpulsionTripulante(paquete);
 			break;
 
@@ -231,6 +231,8 @@ void deserializarExpulsionTripulante(t_paquete* paquete) {
 	offset += sizeof(uint32_t);
 
 	memcpy(&(idTripu),stream + offset,sizeof(uint32_t));
+
+	log_info(logMiRAM, "Se procede a eliminar de la memoria el tripulante %d de la patota", idTripu, idPatota);
 
 	expulsarTripulante(idTripu,idPatota);
 }
