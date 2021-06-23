@@ -124,8 +124,8 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			break;
 		}
 		case EXPULSAR:
-			log_info(logMiRAM,"Voy a expulsar un tripulante, todavia no esta emplementada");
-//			deserializarTripulante(paquete,tripulanteSock);
+			log_info(logMiRAM,"SE VA A EXPUÑSAR UN TRIPULANTE");
+			deserializarExpulsionTripulante(paquete);
 			break;
 
 		case ESTADO_TRIPULANTE:
@@ -156,7 +156,6 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		default:
 			log_info(logMiRAM,"No se puede deserializar ese tipo de estructura negro \n");
 			exit(1);
-
 		}
 	eliminarPaquete(paquete);
 	close(tripulanteSock);
@@ -218,6 +217,23 @@ t_tarea* deserializarSolicitudTarea(t_paquete* paquete) {
 	return asignarProxTarea(idPatota, idTripulante);
 }
 
+
+void deserializarExpulsionTripulante(t_paquete* paquete) {
+
+	uint32_t idPatota;
+	uint32_t idTripu;
+
+	void* stream = paquete->buffer->stream;
+
+	int offset=0;
+
+	memcpy(&(idPatota),stream,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(idTripu),stream + offset,sizeof(uint32_t));
+
+	expulsarTripulante(idTripu,idPatota);
+}
 
 
 /*

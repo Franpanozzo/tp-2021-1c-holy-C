@@ -30,6 +30,7 @@ void mandarTarea(t_tarea* , int);
 t_tarea* tarea_error();
 char asignarEstadoTripu(t_estado);
 int recibirActualizarTripulante(t_paquete* );
+void deserializarExpulsionTripulante(t_paquete*);
 
 
 

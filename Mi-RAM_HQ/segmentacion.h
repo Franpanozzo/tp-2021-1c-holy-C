@@ -10,9 +10,6 @@
 #include "memoria.h"
 
 
-int guardarPCBSeg(pcb*, char*);
-t_tarea* guardarTCBSeg(tcb*, int);
-
 typedef struct {
 	int idPatota;
 	t_list* tablaDeSegmentos;
@@ -34,6 +31,25 @@ typedef struct {
 
 
 t_list* tablasSegmentosPatotas;
+
+
+int guardarPCBSeg(pcb*, char*);
+t_tarea* guardarTCBSeg(tcb*, int);
+t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int);
+int asignarSegmentosEnTabla(void* , t_tablaSegmentosPatota* , tipoEstructura);
+void insertar_en_memoria_seg(t_info_segmento*, void*);
+int buscarSegmentoSegunAjuste(int);
+t_info_segmento* crearSegmentoEnTabla(t_tablaSegmentosPatota, tipoEstructura);
+
+
+
+
+
+
+
+
+
+
 
 
 #endif /* SEGMENTACION_H_ */

@@ -36,12 +36,6 @@ typedef struct {
 
 } t_configRam;
 
-typedef enum {
-	PCB,
-	TCB,
-	TAREAS
-} tipoEstructura;
-
 typedef struct {
 	int idPatota;
 	t_list* tablaDePaginas; //Aca adentro van a estar los t_info_pagina
@@ -115,6 +109,16 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
 tcb* cargarEnTripulante(void* );
 t_tarea* asignarProxTarea(int , int);
 t_list_iterator* iterarHastaIndice(t_list*, int);
+void existenciaDeTablaParaPatota(t_tablaPaginasPatota*);
+void chequearUltimoTripulante(t_tablaPaginasPatota*);
+bool noTieneTripulantes(t_tablaPaginasPatota*);
+t_tablaPaginasPatota* patotaConFrame(int);
+t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
+void expulsarTripulante(int ,int);
+
+
+
+
 
 
 

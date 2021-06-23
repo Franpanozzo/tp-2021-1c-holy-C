@@ -255,7 +255,7 @@ uint32_t buscar_frame_disponible(int mem) {
 
     for(uint32_t f = 0; f < size; f++)
     {
-        if(!get_frame(f, mem)) {
+        if(!get_frame(f, mem) && frameTotalmenteLibre(f)) {
     	//if(!get_frame(f, mem))
             return f;
         }
@@ -303,6 +303,8 @@ t_tarea* asignarProxTarea(int idPatota,int idTripulante) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
 
+	existenciaDeTablaParaPatota(tablaPaginasPatotaActual);
+
 	log_info(logMemoria,"Se encontro la tabla de paginas_ PATOTA: %d - CANT PAGINAS: %d",
 					tablaPaginasPatotaActual->idPatota, list_size(tablaPaginasPatotaActual->tablaDePaginas));
 
@@ -311,11 +313,17 @@ t_tarea* asignarProxTarea(int idPatota,int idTripulante) {
 	log_info(logMemoria, "Tripulante a asignar proxima tarea: ID: %d | ESTADO: %c | POS_X: %d | POS_Y: %d | DL_TAREA: %d | DL_PATOTA: %d",
 			tcb->idTripulante, tcb->estado, tcb->posX, tcb->posY, tcb->proximaAEjecutar, tcb->dlPatota);
 
-
-	log_info(logMemoria, "Toma %d",list_size(tablaPaginasPatotaActual->tablaDePaginas));
-
-	return irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcb);
+	return irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcb);;
 }
+
+
+void existenciaDeTablaParaPatota(t_tablaPaginasPatota* tablaPaginasPatotaActual) {
+	if(tablaPaginasPatotaActual == NULL) {
+		log_error(logMemoria, "No existe TCB para ese PCB");
+		exit(1);
+	}
+}
+
 
 
 t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
@@ -937,29 +945,58 @@ void expulsarTripulante(int idTripulante,int idPatota) {
 		}
 
 			t_tablaPaginasPatota* tablaPatota = buscarTablaDePaginasDePatota(idPatota);
+			existenciaDeTablaParaPatota(tablaPatota);
 			t_list* paginasTripu = paginasConTripu(tablaPatota->tablaDePaginas,idTripulante);
+
+			log_info(logMemoria, "Se va a eliminar el tripulante %d de la patota %d",idTripulante, tablaPatota->idPatota);
 
 			if(paginasTripu != NULL)
 			{
 				t_list_iterator* iteradorPaginas = list_iterator_create(paginasTripu);
 
-				while(iterator_has_next(iteradorPaginas))
+				while(list_iterator_has_next(iteradorPaginas))
 				{
-					t_info_pagina* paginaActual = iterator_next(iteradorPaginas);
-					t_alojado* tripuAlojado = obtenerAlojadoPagina(paginaActual, idTripulante);
-					paginaActual->bytesDisponibles -= tripuAlojado->bytesAlojados;
-					list_remove(paginaActual->estructurasAlojadas,tripuAlojado->indice);
+					t_info_pagina* paginaActual = list_iterator_next(iteradorPaginas);
+					t_alojado* tripuAlojado = obtenerAlojadoPagina(paginaActual->estructurasAlojadas, idTripulante);
+					paginaActual->bytesDisponibles += tripuAlojado->bytesAlojados;
+
+					log_info(logMemoria,"Se va a sacar de la lista de alojados de cant %d el tripu %d",
+							list_size(paginaActual->estructurasAlojadas), tripuAlojado->indice);
+
+					if(paginaActual->estructurasAlojadas == NULL) {
+						log_error(logMemoria,"No hay na aca");
+					}
+
+					bool tripuConID(t_alojado* alojado) {
+				    	return alojado->tipo == TCB && alojado->datoAdicional == idTripulante;
+					}
+
+					list_remove_by_condition(paginaActual->estructurasAlojadas,(void*) tripuConID);
+					//reducirIndiceAlojados(paginaActual->estructurasAlojadas);
+
+					log_info(logMemoria, "Se elimino el dato del TRIPULANTE %d en la PAGINA: %d",idTripulante, paginaActual->indice);
+					log_info(logMemoria,"PAGINA: %d - BYTES DISPONIBLES: %d",paginaActual->indice,paginaActual->bytesDisponibles);
+
 					free(tripuAlojado);
 
-					if(paginaActual->bytesDisponibles == 0)
+					if(paginaActual->bytesDisponibles == 32)
 					{
+						log_info(logMemoria,"Pagina %d vacia se procede a liberar el frame y borrarla de tabla",paginaActual->indice);
 						clear_frame(paginaActual->frame_m_ppal, MEM_PPAL);
-						list_remove(tablaPatota->tablaDePaginas, paginaActual);
+
+						bool paginaConID(t_alojado* pagina)
+						{
+							return pagina->indice == paginaActual->indice;
+						}
+
+						list_remove_by_condition(tablaPatota->tablaDePaginas, (void*) paginaConID);
 						list_destroy(paginaActual->estructurasAlojadas);
+
 						free(paginaActual);
 					}
 				}
 				chequearUltimoTripulante(tablaPatota);
+				list_iterator_destroy(iteradorPaginas);
 			}
 }
 
@@ -967,6 +1004,8 @@ void expulsarTripulante(int idTripulante,int idPatota) {
 void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 
 	if(!noTieneTripulantes(tablaPatota)) {
+
+		log_info(logMemoria,"La patota %d no tiene mas tripulantes. Se procede a borrarla de memoria", tablaPatota->idPatota);
 
 		void borrarProceso(t_info_pagina* info_pagina)
 		{
@@ -976,11 +1015,17 @@ void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 				free(alojado);
 			}
 
-			list_destroy_and_destroy_elements(tablaPatota->tablaDePaginas, (void*) borrarAlojados);
-			free(info_pagina);
+			list_destroy_and_destroy_elements(info_pagina->estructurasAlojadas, (void*) borrarAlojados);
+			log_info(logMemoria,"SE LIBERA  EL FRAME: %d",info_pagina->frame_m_ppal);
 			clear_frame(info_pagina->frame_m_ppal, MEM_PPAL);
+			free(info_pagina);
 		}
 
+		bool tablaConID(t_tablaPaginasPatota* tablaPatota2) {
+			return tablaPatota2->idPatota == tablaPatota->idPatota;
+		}
+
+		list_remove_by_condition(tablasPaginasPatotas, (void*) tablaConID);
 		list_destroy_and_destroy_elements(tablaPatota->tablaDePaginas, (void*) borrarProceso);
 	}
 }
@@ -993,7 +1038,7 @@ bool noTieneTripulantes(t_tablaPaginasPatota* tablaPatota) {
 		return tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TCB);
 	}
 
-	return list_any_satisfy(tablaPatota, (void*) tienePaginaTripulante);
+	return list_any_satisfy(tablaPatota->tablaDePaginas, (void*) tienePaginaTripulante);
 
 }
 
@@ -1003,7 +1048,7 @@ void dumpPag() {
 	char* nombreArchivo = temporal_get_string_time("DUMP_%y%m%d%H%M%S.dmp");
 	char* rutaAbsoluta = string_from_format("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/Dump/%s",nombreArchivo);
 
-	FILE* archivoDump txt_open_for_append(rutaAbsoluta);
+	FILE* archivoDump = txt_open_for_append(rutaAbsoluta);
 
 	if(archivoDump == NULL){
 		log_error(logMemoria, "No se pudo abrir el archivo correctamente");
@@ -1018,13 +1063,14 @@ void dumpPag() {
 
 	for(int i=0; i< cant_frames_ppal; i++) {
 
-		if(!frameTotalmenteLibre(i))
+		t_tablaPaginasPatota* tablaPaginasPatota = patotaConFrame(i);
+
+		if(tablaPaginasPatota != NULL)
 		{
-			t_tablaSegmentosPatota* tablaSegmentos = patotaConFrame(i);
-			t_info_pagina* info_pagina = paginaConFrame(i);
+			t_info_pagina* info_pagina = paginaConFrame(i,tablaPaginasPatota);
 
 			char* dumpMarco = string_from_format("Marco:%d    Estado:Ocupado    Proceso:%d    Pagina:%d \n",
-					i, tablaSegmentos->idPatota, info_pagina->indice);
+					i, tablaPaginasPatota->idPatota, info_pagina->indice);
 
 			txt_write_in_file(archivoDump, dumpMarco);
 			free(dumpMarco);
@@ -1042,6 +1088,41 @@ void dumpPag() {
 	txt_close_file(archivoDump);
 	free(rutaAbsoluta);
 	free(dump);
+}
+
+
+t_tablaPaginasPatota* patotaConFrame(int frame) {
+		bool frameEnUso(t_tablaPaginasPatota* tablaPaginas) {
+
+			t_list_iterator* iteradorTablaPaginas = list_iterator_create(tablaPaginas->tablaDePaginas);
+
+			while(list_iterator_has_next(iteradorTablaPaginas))
+			{
+				t_info_pagina* infoPagina = list_iterator_next(iteradorTablaPaginas);
+				if(infoPagina->frame_m_ppal == frame) return 1;
+			}
+
+			list_iterator_destroy(iteradorTablaPaginas);
+
+			return 0;
+		}
+
+		return list_find(tablasPaginasPatotas,(void*) frameEnUso);
+}
+
+
+t_info_pagina* paginaConFrame(int frame,t_tablaPaginasPatota* tablaPaginasPatota) {
+
+	t_list_iterator* iteradorTablaPaginas = list_iterator_create(tablaPaginasPatota->tablaDePaginas);
+
+	while(list_iterator_has_next(iteradorTablaPaginas))
+	{
+		t_info_pagina* infoPagina = list_iterator_next(iteradorTablaPaginas);
+		if(infoPagina->frame_m_ppal == frame) return infoPagina;
+	}
+
+	log_error(logMemoria,"No hay pagina con ese frame (?");
+	return NULL;
 }
 
 

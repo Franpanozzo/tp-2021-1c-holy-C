@@ -19,6 +19,10 @@
 #include <commons/log.h>
 #include <commons/bitarray.h>
 #include <math.h>
+#include <commons/temporal.h>
+#include <commons/txt.h>
+
+
 
 
 typedef struct {
@@ -38,6 +42,12 @@ typedef struct {
 	uint32_t dlPatota;
 
 } tcb;
+
+typedef enum {
+	PCB,
+	TCB,
+	TAREAS
+} tipoEstructura;
 
 
 

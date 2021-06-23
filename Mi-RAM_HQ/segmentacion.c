@@ -3,7 +3,7 @@
 
 
 t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
-
+/*
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
 	tcbAGuardar->dlPatota = 0;
 	tcbAGuardar->proximaAEjecutar = 1;
@@ -14,13 +14,14 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 	int res = asignarSegmentosEnTabla((void*) tcbAGuardar, tablaSegmentosPatotaActual,TCB);
 	if(res == 0) return NULL;
 
-	t_tarea* tarea = irABuscarSiguienteTarea(tablaSegmentosPatotaActual, tcbAGuardar);
+	//t_tarea* tarea = irABuscarSiguienteTarea(tablaSegmentosPatotaActual, tcbAGuardar);
 
-	return tarea;
+	return tarea;*/
+	return NULL;
 }
+/*
 
-
-t_tablaSegmentosPatota* buscarTablaDePaginasDePatota(int idPatotaABuscar) {
+t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 
 	bool idIgualA(t_tablaSegmentosPatota* tablaSegmentosBuscada)
 	    {
@@ -40,10 +41,11 @@ t_tablaSegmentosPatota* buscarTablaDePaginasDePatota(int idPatotaABuscar) {
 	    }
 	    return tablaSegmentosBuscada;
 }
-
+*/
 
 int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 
+	/*
 	int pcbGuardado, tareasGuardadas;
 	t_tablaSegmentosPatota* tablaPaginasPatotaActual = malloc(sizeof(t_tablaSegmentosPatota));
 	tablaPaginasPatotaActual->idPatota = pcbAGuardar->pid;
@@ -59,10 +61,11 @@ int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 
 	free(pcbAGuardar);
 
-	return pcbGuardado && tareasGuardadas;
+	return pcbGuardado && tareasGuardadas; */
+	return 0;
 
 }
-
+/*
 
 int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegmentosPatotaActual, tipoEstructura tipo){
 
@@ -178,7 +181,7 @@ void insertar_en_memoria_seg(t_info_segmento* info_segmento, void* bufferAMeter)
 }
 
 
-
+*/
 
 
 
