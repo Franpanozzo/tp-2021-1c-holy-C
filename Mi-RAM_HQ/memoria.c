@@ -51,7 +51,7 @@ void iniciarMemoria() {
 
 	memoria_principal = malloc(configRam.tamanioMemoria);
 
-	memset(memoria_principal,'$',configRam.tamanioMemoria);
+	//memset(memoria_principal,'$',configRam.tamanioMemoria);
 
 	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
 
@@ -60,6 +60,13 @@ void iniciarMemoria() {
     char* data = asignar_bytes(cant_frames_ppal);
 
     frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
+
+    lugaresLibres = list_create();
+
+    t_lugarLibre lugarInicial = malloc(sizeof(t_lugarLibre));
+
+    lugarInicial->inicio = 0;
+    lugarInicial->bytesAlojados = configRam.tamanioMemoria;
 
 	log_info(logMemoria,"El esquema usado es %s", configRam.esquemaMemoria);
 
@@ -441,7 +448,6 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 
 int actualizarTripulanteEnMem(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
 
-
 	t_list* tablaPaginasConTripu = paginasConTripu(tablaPaginasPatotaActual->tablaDePaginas, tcbAGuardar->idTripulante);
 
 	return sobreescribirTripu(tablaPaginasConTripu, tcbAGuardar);
@@ -659,6 +665,8 @@ int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
 
 	log_info(logMemoria, "Se creo la tabla de paginas para la patota: %d", pcbAGuardar->pid);
 
+	pcbAGuardar->dlTareas = estimarDLTareasPag();
+
 	pcbGuardado = asignarPaginasEnTabla((void*) pcbAGuardar, tablaPaginasPatotaActual,PCB);
 
 	log_info(logMemoria, "La direccion logica de las tareas es: %d", pcbAGuardar->dlTareas);
@@ -797,7 +805,7 @@ t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* tablaPaginasPa
 }
 
 
-uint32_t estimarDLTareas(){
+uint32_t estimarDLTareasPag(){
 
 	int nroPagina;
     //HAY QUE HACER OTRA CUENTA
@@ -890,7 +898,6 @@ void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter, int *datoA
 			*aMeter = 8;
 			buffer = malloc(*aMeter);
 			*datoAdicional = -1;
-			pcbAGuardar->dlTareas = estimarDLTareas();
 			log_info(logMemoria,"DL TAREA: %d \n", pcbAGuardar->dlTareas);
 
 			memcpy(buffer, &(pcbAGuardar->pid), sizeof(uint32_t));
@@ -936,73 +943,68 @@ void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter, int *datoA
 }
 
 
-void expulsarTripulante(int idTripulante,int idPatota) {
+void expulsarTripulantePag(int idTripulante,int idPatota) {
 
-		bool tieneTripu(t_info_pagina* info_pagina)
+	t_tablaPaginasPatota* tablaPatota = buscarTablaDePaginasDePatota(idPatota);
+	existenciaDeTablaParaPatota(tablaPatota);
+	t_list* paginasTripu = paginasConTripu(tablaPatota->tablaDePaginas,idTripulante);
+
+	log_info(logMemoria, "Se va a eliminar el tripulante %d de la patota %d",idTripulante, tablaPatota->idPatota);
+
+	if(paginasTripu != NULL)
+	{
+		t_list_iterator* iteradorPaginas = list_iterator_create(paginasTripu);
+
+		while(list_iterator_has_next(iteradorPaginas))
 		{
-		  return tieneTripulanteAlojado(info_pagina->estructurasAlojadas, idTripulante);
-		}
+			t_info_pagina* paginaActual = list_iterator_next(iteradorPaginas);
+			t_alojado* tripuAlojado = obtenerAlojadoPagina(paginaActual->estructurasAlojadas, idTripulante);
+			paginaActual->bytesDisponibles += tripuAlojado->bytesAlojados;
 
-			t_tablaPaginasPatota* tablaPatota = buscarTablaDePaginasDePatota(idPatota);
-			existenciaDeTablaParaPatota(tablaPatota);
-			t_list* paginasTripu = paginasConTripu(tablaPatota->tablaDePaginas,idTripulante);
+			log_info(logMemoria,"Se va a sacar de la lista de alojados de cant %d el tripu %d",
+					list_size(paginaActual->estructurasAlojadas), tripuAlojado->indice);
 
-			log_info(logMemoria, "Se va a eliminar el tripulante %d de la patota %d",idTripulante, tablaPatota->idPatota);
-
-			if(paginasTripu != NULL)
-			{
-				t_list_iterator* iteradorPaginas = list_iterator_create(paginasTripu);
-
-				while(list_iterator_has_next(iteradorPaginas))
-				{
-					t_info_pagina* paginaActual = list_iterator_next(iteradorPaginas);
-					t_alojado* tripuAlojado = obtenerAlojadoPagina(paginaActual->estructurasAlojadas, idTripulante);
-					paginaActual->bytesDisponibles += tripuAlojado->bytesAlojados;
-
-					log_info(logMemoria,"Se va a sacar de la lista de alojados de cant %d el tripu %d",
-							list_size(paginaActual->estructurasAlojadas), tripuAlojado->indice);
-
-					if(paginaActual->estructurasAlojadas == NULL) {
-						log_error(logMemoria,"No hay na aca");
-					}
-
-					bool tripuConID(t_alojado* alojado) {
-				    	return alojado->tipo == TCB && alojado->datoAdicional == idTripulante;
-					}
-
-					list_remove_by_condition(paginaActual->estructurasAlojadas,(void*) tripuConID);
-					//reducirIndiceAlojados(paginaActual->estructurasAlojadas);
-
-					log_info(logMemoria, "Se elimino el dato del TRIPULANTE %d en la PAGINA: %d",idTripulante, paginaActual->indice);
-					log_info(logMemoria,"PAGINA: %d - BYTES DISPONIBLES: %d",paginaActual->indice,paginaActual->bytesDisponibles);
-
-					free(tripuAlojado);
-
-					if(paginaActual->bytesDisponibles == 32)
-					{
-						log_info(logMemoria,"Pagina %d vacia se procede a liberar el frame y borrarla de tabla",paginaActual->indice);
-						clear_frame(paginaActual->frame_m_ppal, MEM_PPAL);
-
-						bool paginaConID(t_alojado* pagina)
-						{
-							return pagina->indice == paginaActual->indice;
-						}
-
-						list_remove_by_condition(tablaPatota->tablaDePaginas, (void*) paginaConID);
-						list_destroy(paginaActual->estructurasAlojadas);
-
-						free(paginaActual);
-					}
-				}
-				chequearUltimoTripulante(tablaPatota);
-				list_iterator_destroy(iteradorPaginas);
+			if(paginaActual->estructurasAlojadas == NULL) {
+				log_error(logMemoria,"No hay na aca");
 			}
+
+			bool tripuConID(t_alojado* alojado) {
+				return alojado->tipo == TCB && alojado->datoAdicional == idTripulante;
+			}
+
+			list_remove_by_condition(paginaActual->estructurasAlojadas,(void*) tripuConID);
+			//reducirIndiceAlojados(paginaActual->estructurasAlojadas);
+
+			log_info(logMemoria, "Se elimino el dato del TRIPULANTE %d en la PAGINA: %d",idTripulante, paginaActual->indice);
+			log_info(logMemoria,"PAGINA: %d - BYTES DISPONIBLES: %d",paginaActual->indice,paginaActual->bytesDisponibles);
+
+			free(tripuAlojado);
+
+			if(paginaActual->bytesDisponibles == 32)
+			{
+				log_info(logMemoria,"Pagina %d vacia se procede a liberar el frame y borrarla de tabla",paginaActual->indice);
+				clear_frame(paginaActual->frame_m_ppal, MEM_PPAL);
+
+				bool paginaConID(t_alojado* pagina)
+				{
+					return pagina->indice == paginaActual->indice;
+				}
+
+				list_remove_by_condition(tablaPatota->tablaDePaginas, (void*) paginaConID);
+				list_destroy(paginaActual->estructurasAlojadas);
+
+				free(paginaActual);
+			}
+		}
+		chequearUltimoTripulante(tablaPatota);
+		list_iterator_destroy(iteradorPaginas);
+	}
 }
 
 
 void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 
-	if(!noTieneTripulantes(tablaPatota)) {
+	if(!tieneTripulantesPag(tablaPatota)) {
 
 		log_info(logMemoria,"La patota %d no tiene mas tripulantes. Se procede a borrarla de memoria", tablaPatota->idPatota);
 
@@ -1030,7 +1032,7 @@ void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 }
 
 
-bool noTieneTripulantes(t_tablaPaginasPatota* tablaPatota) {
+bool tieneTripulantesPag(t_tablaPaginasPatota* tablaPatota) {
 
 	bool tienePaginaTripulante(t_info_pagina* info_pagina)
 	{
@@ -1127,11 +1129,11 @@ t_info_pagina* paginaConFrame(int frame,t_tablaPaginasPatota* tablaPaginasPatota
 
 int guardarPCB(pcb* pcbAGuardar, char* stringTareas) {
 
-	if(strcmp(configRam.esquemaMemoria,"PAGINADO") == 0)
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		return guardarPCBPag(pcbAGuardar, stringTareas);
 	}
-	if(strcmp(configRam.esquemaMemoria,"SEGMENTADO") == 0)
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
 		return guardarPCBSeg(pcbAGuardar, stringTareas);
 	}
@@ -1139,12 +1141,13 @@ int guardarPCB(pcb* pcbAGuardar, char* stringTareas) {
 	exit(1);
 }
 
+
 t_tarea* guardarTCB(tcb* tcbAGuardar, int idPatota) {
-	if(strcmp(configRam.esquemaMemoria,"PAGINADO") == 0)
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		return guardarTCBPag(tcbAGuardar, idPatota);
 	}
-	if(strcmp(configRam.esquemaMemoria,"SEGMENTADO") == 0)
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
 		return guardarTCBSeg(tcbAGuardar, idPatota);
 	}
@@ -1152,6 +1155,19 @@ t_tarea* guardarTCB(tcb* tcbAGuardar, int idPatota) {
 	exit(1);
 }
 
+
+void expulsarTripulante(idTripu,idPatota) {
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		expulsarTripulantePag(idTripu, idPatota);
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		expulsarTripulanteSeg(idTripu, idPatota);
+	}
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+}
 
 
 

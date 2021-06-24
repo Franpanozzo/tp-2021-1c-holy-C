@@ -1,9 +1,8 @@
 #include "segmentacion.h"
 
 
-
 t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
-/*
+
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
 	tcbAGuardar->dlPatota = 0;
 	tcbAGuardar->proximaAEjecutar = 1;
@@ -14,12 +13,11 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 	int res = asignarSegmentosEnTabla((void*) tcbAGuardar, tablaSegmentosPatotaActual,TCB);
 	if(res == 0) return NULL;
 
-	//t_tarea* tarea = irABuscarSiguienteTarea(tablaSegmentosPatotaActual, tcbAGuardar);
+	t_tarea* tarea = irABuscarSiguienteTarea(tablaSegmentosPatotaActual, tcbAGuardar);
 
-	return tarea;*/
-	return NULL;
+	return tarea;
 }
-/*
+
 
 t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 
@@ -31,7 +29,6 @@ t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 
 	        return a;
 	    }
-
 		t_tablaSegmentosPatota* tablaSegmentosBuscada = list_find(tablasSegmentosPatotas, (void*)idIgualA);
 
 	    if(tablaSegmentosBuscada == NULL)
@@ -41,31 +38,112 @@ t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 	    }
 	    return tablaSegmentosBuscada;
 }
-*/
+
 
 int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 
-	/*
 	int pcbGuardado, tareasGuardadas;
-	t_tablaSegmentosPatota* tablaPaginasPatotaActual = malloc(sizeof(t_tablaSegmentosPatota));
-	tablaPaginasPatotaActual->idPatota = pcbAGuardar->pid;
-	tablaPaginasPatotaActual->tablaDeSegmentos = list_create();
+	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = malloc(sizeof(t_tablaSegmentosPatota));
+	tablaSegmentosPatotaActual->idPatota = pcbAGuardar->pid;
+	tablaSegmentosPatotaActual->tablaDeSegmentos = list_create();
+	list_add(tablasSegmentosPatotas,tablaSegmentosPatotaActual);
 
 	log_info(logMemoria, "Se creo la tabla de segmentos para la patota: %d", pcbAGuardar->pid);
 
-	pcbGuardado = asignarSegmentosEnTabla((void*) pcbAGuardar, tablaPaginasPatotaActual,PCB);
+	pcbAGuardar->dlTareas = 1;
+	pcbGuardado = asignarSegmentosEnTabla((void*) pcbAGuardar, tablaSegmentosPatotaActual,PCB);
 
 	log_info(logMemoria, "La direccion logica de las tareas es: %d", pcbAGuardar->dlTareas);
 
-	tareasGuardadas = asignarSegmentosEnTabla((void*) stringTareas, tablaPaginasPatotaActual,TAREAS);
+	tareasGuardadas = asignarSegmentosEnTabla((void*) stringTareas, tablaSegmentosPatotaActual,TAREAS);
 
 	free(pcbAGuardar);
 
-	return pcbGuardado && tareasGuardadas; */
-	return 0;
-
+	return pcbGuardado && tareasGuardadas;
 }
-/*
+
+
+void expulsarTripulanteSeg(int idTripu, int idPatota) {
+
+	t_tablaSegmentosPatota* tablaSegmentosBuscada = buscarTablaDeSegmentosDePatota(idPatota);
+
+	bool segConTripu(t_info_segmento* info_segmento)
+	{
+		return info_segmento->tipo == TCB && info_segmento->datoAdicional == idTripu;
+	}
+
+	t_info_segmento* info_segmento = list_find(tablaSegmentosBuscada, (void*) segConTripu);
+
+	bool despuesQueSeg(t_lugarLibre* lugarLibre)
+	{
+		int finSegmento = info_segmento->deslazamientoInicial + info_segmento->bytesAlojados;
+		return lugarLibre->inicio == finSegmento + 1;
+	}
+
+	bool antesQueSeg(t_lugarLibre* lugarLibre)
+	{
+		int fin = lugarLibre->inicio + lugarLibre->bytesAlojados;
+		return fin + 1 == info_segmento->deslazamientoInicial;
+	}
+
+	t_lugarLibre* lugarLibreAntes = list_find(lugaresLibres, (void*) antesQueSeg);
+	t_lugarLibre* lugarLibreDespues = list_find(lugaresLibres, (void*) despuesQueSeg);
+
+	if(lugarLibreAntes != NULL)
+	{
+		if(lugarLibreDespues != NULL)
+		{
+			lugarLibreAntes->bytesAlojados += info_segmento->bytesAlojados + lugarLibreDespues->bytesAlojados;
+			borrarLugarLibre(lugarLibreDespues);
+		}
+		else
+		{
+			lugarLibreAntes->bytesAlojados += info_segmento->bytesAlojados;
+		}
+	}
+	else if(lugarLibreDespues != NULL)
+	{
+		lugarLibreDespues->inicio = info_segmento->deslazamientoInicial;
+	}
+	else // NO TIENE UN LUGAR ANTES NI UNO DESPPUES, CREO UN NUEVO LUGAR LIBRE
+	{
+		t_lugarLibre* lugarLibre = malloc(sizeof(t_lugarLibre));
+		lugarLibre->inicio = info_segmento->deslazamientoInicial;
+		lugarLibre->bytesAlojados = info_segmento->bytesAlojados;
+		list_add(lugaresLibres,lugarLibre);
+	}
+
+
+	bool mismoIndice(t_info_segmento* info_segmento2)
+	{
+		return info_segmento2->indice == info_segmento->indice;
+	}
+
+	list_remove_by_condition(tablaSegmentosBuscada->tablaDeSegmentos, (void*) mismoIndice);
+
+	chequearUltimoTripulanteSeg(tablaSegmentosBuscada);
+}
+
+
+void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
+	if(!tieneTripulantesSeg()) {
+
+		void borrarSegmento(t_info_segmento* info_segmento)
+		{
+			free(info_segmento);
+		}
+
+		bool tablaConID(t_tablaSegmentosPatota* tablaPatota2)
+		{
+			return tablaPatota2->idPatota == tablaSegmentosPatota->idPatota;
+		}
+
+		list_remove_by_condition(tablasPaginasPatotas, (void*) tablaConID);
+		list_destroy_and_destroy_elements(tablaSegmentosPatota->tablaDeSegmentos, (void*) borrarSegmento);
+	}
+}
+
+
 
 int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegmentosPatotaActual, tipoEstructura tipo){
 
@@ -74,7 +152,6 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 	void* bufferAMeter = meterEnBuffer(aGuardar, tipo, &aMeter, &datoAdicional);
 	t_info_segmento* info_segmento;
 	info_segmento->tipo = tipo;
-
 
 	int inicioSegmentoLibre = buscarSegmentoSegunAjuste(aMeter);
 
@@ -108,68 +185,66 @@ t_info_segmento* crearSegmentoEnTabla(t_tablaSegmentosPatota tablaSegmentosPatot
 }
 
 
+void borrarLugarLibre(t_lugarLibre* lugarAEliminar) {
+	bool empiezaEn(t_lugarLibre* lugarLibre)
+	{
+		return lugarLibre->inicio == lugarAEliminar->inicio;
+	}
+	list_remove_by_condition(lugaresLibres, (void*) empiezaEn);
+	free(lugarAEliminar);
+}
+
+
 int buscarSegmentoSegunAjuste(int aMeter) {
 
-	void* recorredorMemoria = memoria_principal;
-	int bytesLibres;
-	int desplazamiento = 0;
+	int inicio;
 
-
-	t_list* lugaresLibres = list_create();
-
-	//desplazamiento <= configRam.tamanioMemoria
-	while(recorredorMemoria != NULL) //recorredorMemoria != NULL  PORQUE NO ANDA?? ANTES PASABA LO MISMO
+	bool entraAMeter(t_lugarLibre* lugarLibre)
 	{
-		if(*recorredorMemoria == '$')
+		return (lugarLibre - aMeter) > 0;
+	}
+	t_list* lugaresQueEntra = list_filter(lugaresLibres, (void*) entraAMeter);
+
+
+	if(strcmp(configRam.criterioSeeleccion,"BF") == 0)
+	{
+
+		t_lugarLibre* sobraMenos(t_lugarLibre* lugarLibre1, t_lugarLibre* lugarLibre2)
 		{
-			while(*recorredorMemoria == '$')
-			{
-				bytesLibres++;
-				recorredorMemoria++;
-			}
-			int loQueSobra = bytesLibres - aMeter;
-
-			if(loQueSobra >= 0) {
-
-				if(strcmp(configRam.criterioSeeleccion,"BF") == 0)
-				{
-					t_lugarLibre* lugarLibre = malloc(sizeof(t_lugarLibre));
-					lugarLibre->inicio = desplazamiento;
-					lugarLibre->bytesSobrantes = loQueSobra;
-					list_add(lugaresLibres,lugarLibre);
-				}
-				else if(strcmp(configRam.criterioSeeleccion,"FF") == 0)
-				{
-					return desplazamiento;
-				}
-				else
-				{
-					log_error(logMemoria, "El criterio de seleccion de particion libre no es valido");
-					exit(1);
-				}
-			}
-
-			desplazamiento += bytesLibres;
-			bytesLibres = 0;
+			if(lugarLibre1->bytesAlojados < lugarLibre2->bytesAlojados) return lugarLibre1;
+			else return lugarLibre2;
 		}
-		else
+
+		t_lugarLibre* lugarLibreOptimo = list_get_minimum(lugaresQueEntra, (void*) sobraMenos);
+		inicio = lugarLibreOptimo->inicio;
+		lugarLibreOptimo->inicio += aMeter;
+		lugarLibreOptimo->bytesAlojados -= aMeter;
+
+		if(lugarLibreOptimo->bytesAlojados == 0)
 		{
-			recorredorMemoria++;
+			borrarLugarLibre(lugarLibreOptimo);
 		}
-		desplazamiento++;
+		return inicio;
 	}
 
-	if(list_size(lugaresLibres) == 0) return -1;
 
-	t_lugarLibre* sobraMenos(t_lugarLibre* lugarLibre1, t_lugarLibre* lugarLibre2) {
+	else if(strcmp(configRam.criterioSeeleccion,"FF") == 0)
+	{
+		t_lugarLibre* empiezaAntes(t_lugarLibre* lugarLibre1, t_lugarLibre* lugarLibre2)
+		{
+			if(lugarLibre1->inicio < lugarLibre2->inicio) return lugarLibre1;
+			else return lugarLibre2;
+		}
 
-		if(lugarLibre1->bytesSobrantes < lugarLibre2->bytesSobrantes) return lugarLibre1;
-		else return lugarLibre2;
+		t_lugarLibre* primerLugarLibre = list_get_minimum(lugaresQueEntra, (void*) empiezaAntes);
+
+		return primerLugarLibre->inicio;
 	}
-
-	t_lugarLibre* lugarLibre = list_get_minimum(lugaresLibres, (void*) sobraMenos);
-
-	return lugarLibre->inicio;
+	else
+	{
+		log_error(logMemoria, "El criterio de seleccion de particion libre no es valido");
+		exit(1);
+	}
 }
 
 
@@ -180,8 +255,6 @@ void insertar_en_memoria_seg(t_info_segmento* info_segmento, void* bufferAMeter)
 	unlock(mutexEscribirMemoria);
 }
 
-
-*/
 
 
 

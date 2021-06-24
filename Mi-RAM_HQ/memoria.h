@@ -92,7 +92,7 @@ int guardarPCB(pcb*, char*);
 t_tarea* guardarTCB(tcb*, int);
 t_tarea* guardarTCBPag(tcb*, int);
 int guardarPCBPag(pcb*, char*);
-uint32_t estimarDLTareas();
+uint32_t estimarDLTareasPag();
 uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* );
 t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* , tcb* );
 bool tieneEstructuraAlojada(t_list* , tipoEstructura);
@@ -111,10 +111,10 @@ t_tarea* asignarProxTarea(int , int);
 t_list_iterator* iterarHastaIndice(t_list*, int);
 void existenciaDeTablaParaPatota(t_tablaPaginasPatota*);
 void chequearUltimoTripulante(t_tablaPaginasPatota*);
-bool noTieneTripulantes(t_tablaPaginasPatota*);
+bool tieneTripulantesPag(t_tablaPaginasPatota*);
 t_tablaPaginasPatota* patotaConFrame(int);
 t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
-void expulsarTripulante(int ,int);
+void expulsarTripulantePag(int ,int);
 void dumpPag();
 
 

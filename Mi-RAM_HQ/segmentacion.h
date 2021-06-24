@@ -25,10 +25,11 @@ typedef struct {
 
 typedef struct {
 	int inicio;
-	int bytesSobrantes;
-
+	int bytesAlojados;
 } t_lugarLibre;
 
+
+t_list* lugaresLibres;
 
 t_list* tablasSegmentosPatotas;
 
@@ -40,6 +41,9 @@ int asignarSegmentosEnTabla(void* , t_tablaSegmentosPatota* , tipoEstructura);
 void insertar_en_memoria_seg(t_info_segmento*, void*);
 int buscarSegmentoSegunAjuste(int);
 t_info_segmento* crearSegmentoEnTabla(t_tablaSegmentosPatota, tipoEstructura);
+void expulsarTripulanteSeg(int ,int);
+void borrarLugarLibre(t_lugarLibre*);
+
 
 
 
