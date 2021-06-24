@@ -313,7 +313,7 @@ t_tarea* asignarProxTarea(int idPatota,int idTripulante) {
 	log_info(logMemoria, "Tripulante a asignar proxima tarea: ID: %d | ESTADO: %c | POS_X: %d | POS_Y: %d | DL_TAREA: %d | DL_PATOTA: %d",
 			tcb->idTripulante, tcb->estado, tcb->posX, tcb->posY, tcb->proximaAEjecutar, tcb->dlPatota);
 
-	return irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcb);;
+	return irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcb);
 }
 
 
@@ -323,7 +323,6 @@ void existenciaDeTablaParaPatota(t_tablaPaginasPatota* tablaPaginasPatotaActual)
 		exit(1);
 	}
 }
-
 
 
 t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
@@ -1045,7 +1044,7 @@ bool noTieneTripulantes(t_tablaPaginasPatota* tablaPatota) {
 
 void dumpPag() {
 
-	char* nombreArchivo = temporal_get_string_time("DUMP_%y%m%d%H%M%S.dmp");
+	char* nombreArchivo = temporal_get_string_time("DUMP_%y%m%d%H%M%S%MS.dmp");
 	char* rutaAbsoluta = string_from_format("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/Dump/%s",nombreArchivo);
 
 	FILE* archivoDump = txt_open_for_append(rutaAbsoluta);

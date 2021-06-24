@@ -115,7 +115,7 @@ bool noTieneTripulantes(t_tablaPaginasPatota*);
 t_tablaPaginasPatota* patotaConFrame(int);
 t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
 void expulsarTripulante(int ,int);
-
+void dumpPag();
 
 
 

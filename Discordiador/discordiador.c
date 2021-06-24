@@ -60,7 +60,6 @@ int main() {
 	//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2
 	iniciarPatota(coordenadas, "GENERAR_OXIGENO 4;2;3;7\nGENERAR_COMIDA 2;2;3;7", tripulantes );
 
-
 	int tripulantes2 = 2;
 	t_coordenadas coordenadas2[tripulantes2 ];
 	for(int i=0; i<tripulantes;i++){
