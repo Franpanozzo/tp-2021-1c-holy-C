@@ -15,7 +15,7 @@ void leerConsola(){
 
 		if(strcmp(comandoYparametros[cursor], "INICIAR_PATOTA") == 0){
 
-			log_info(logDiscordiador, "\nSe ingreso el comando iniciar patota");
+			log_info(logDiscordiador, "Se ingreso el comando iniciar patota");
 			cursor ++;
 
 			uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
@@ -41,10 +41,6 @@ void leerConsola(){
 		}
 
 		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){
-
-			if(leerPlanificacion() == CORRIENDO){
-					modificarPlanificacion(PAUSADA);
-				}
 			listarTripulantes();
 		}
 		else if (strcmp(comandoYparametros[cursor], "ELIMINAR_TRIPULANTE") == 0){

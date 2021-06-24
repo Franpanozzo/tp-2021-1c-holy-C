@@ -31,6 +31,10 @@ void hiloTripulante(t_tripulante*);
 void iniciarTripulante(t_coordenadas, uint32_t);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
 
-void actualizarLista(t_lista* lista, t_estado estado);
+void actualizarListaEyB(t_lista*, t_estado);
+void actualizarListaReady();
+void actualizarListaNew();
+void actualizarListaExec();
+void actualizarListaBlocked();
 
 #endif
