@@ -232,6 +232,8 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 
 	return stream;
 }
+
+
 void* serializarString(void* stream, void* estructura, int offset){
 	char* string = (char*) estructura;
 	memcpy(stream,string,strlen(string) + 1);
@@ -246,7 +248,6 @@ void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offs
 
 	return stream;
 }
-
 
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperacion){

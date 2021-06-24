@@ -27,32 +27,30 @@ char * pathLog(){
 }
 
 
-int indiceTarea(t_tarea* tarea){
+void asignarTareas(){
+	tareas = malloc(sizeof(char*) * 3);
 
-	int i = 0;
-
-	while(todasLasTareasIO[i] != NULL){
-
-		if(strcmp(todasLasTareasIO[i],tarea->nombreTarea) == 0){
-			return i;
-		}
-
-		i++;
-	}
-
-	return -1;
+	tareas[0] = strdup("OXIGENO");
+	tareas[1] = strdup("COMIDA");
+	tareas[2] = strdup("BASURA");
 }
 
 
-void crearTareasIO(){
-	todasLasTareasIO = malloc(sizeof(char*) * 6);
+int indiceTarea(t_tarea* tarea){
 
-	todasLasTareasIO[0] = strdup("GENERAR_OXIGENO");
-	todasLasTareasIO[1] = strdup("CONSUMIR_OXIGENO");
-	todasLasTareasIO[2] = strdup("GENERAR_BASURA");
-	todasLasTareasIO[3] = strdup("DESCARTAR_BASURA");
-	todasLasTareasIO[4] = strdup("GENERAR_COMIDA");
-	todasLasTareasIO[5] = strdup("CONSUMIR_COMIDA");
+		int i = 0;
+
+			while(tareas[i] != NULL){
+
+				if(string_contains(tarea->nombreTarea, tareas[i])){
+
+					return i;
+				}
+
+				i++;
+			}
+
+			return -1;
 }
 
 
@@ -126,31 +124,75 @@ void setearTodosLosFiles(){
 }
 
 
-void crearMemoria(int * blocks){
+void crearMemoria(int fd){
 
-	//int fd = fileno(blocks);
-	//char* pathBlocks = crearDestinoApartirDeRaiz("Blocks.ims");
-	//int fd = open(pathBlocks,O_RDWR, S_IRUSR | S_IWUSR);
 	int size = superBloque->block_size * superBloque->blocks;
-	//printf("   %d     \n", fd);
-	int result = lseek(*blocks, size-1,SEEK_SET);
-	result = write(*blocks,"",1);
-	lseek(*blocks, 0,SEEK_SET);
-	char* memoriaBlocks = mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED,*blocks,0);
-	//char* a = strdup("a");
-	//for(int i=0; i<size -1; i++){
-		//memcpy(memoriaBlocks+i,a,strlen(a)+1);
-	//}
 
-	msync(memoriaBlocks,size,MS_SYNC);
-	char * memoriaBlocksCopia;
-	memcpy(memoriaBlocks,memoriaBlocks, superBloque->block_size * superBloque->blocks);
+	int result = lseek(fd, size - 1,SEEK_SET);
 
+	 if (result == -1) {
+	      close(fd);
+	      log_info(logImongo,"Anda mal el file descriptor del disco secundario");
+	      exit(1);
+	      }
 
-	//log_info(logImongo,"El tamanio del blocks es: %d \n",strlen((char*)memoriaBlocks));
+	result = write(fd,"",1);
+
+	 if (result < 0) {
+	    close(fd);
+	    log_info(logImongo,"Anda mal generar con "" el espacio en el disco secundario");
+	        exit(1);
+	    }
+
+	lseek(fd, 0,SEEK_SET);
+
+	memoriaSecundaria = mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
 
 }
 
+/*
+void sincronizarMemoria(void* dato){
+
+	int size = superBloque->block_size * superBloque->blocks;
+
+	char copiaMemoriaSecundaria= malloc(size);
+	memcpy(copiaMemoriaSecundaria,memoriaSecundaria, size);
+
+	char* datoAingresar = (char*) dato;
+
+	int sizeDato = strlen(datoAingresar);
+
+	memcpy(copiaMemoriaSecundaria,datoAingresar,sizeDato);
+
+	memcpy(memoriaSecundaria,copiaMemoriaSecundaria,size);
+
+	msync(memoriaSecundaria,size,MS_SYNC);
+}
+*/
+
+void generarOxigeno(t_tarea* tarea){
+
+}
+
+void consumirOxigeno(t_tarea* tarea){
+
+}
+
+void generarComida(t_tarea* tarea){
+
+}
+
+void consumirComida(t_tarea* tarea){
+
+}
+
+void generarBasura(t_tarea* tarea){
+
+}
+
+void descartarBasura(t_tarea* tarea){
+
+}
 
 void liberarConfiguracion(){
 
@@ -158,4 +200,12 @@ void liberarConfiguracion(){
 	free(datosConfig->posicionesSabotaje);
 	free(datosConfig);
 
+}
+
+void liberarTareas(){
+
+	for(int i=0; i<3; i++){
+		free(tareas[i]);
+	}
+	free(tareas);
 }

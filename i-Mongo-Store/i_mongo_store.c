@@ -9,9 +9,11 @@ int main(void) {
 
 	crearConfig();
 
+	asignarTareas();
+
 	cargarConfiguracion();
 
-	crearTareasIO();
+
 
 
 
@@ -26,6 +28,7 @@ int main(void) {
 	setearTodosLosFiles();
 
 	liberarConfiguracion();
+	liberarTareas();
 	free(path);
 
 	return EXIT_SUCCESS;
@@ -82,70 +85,44 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 	switch(paquete->codigoOperacion){
 
 		case TAREA:
-		{
-				t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
+					{
 
-				log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
+					t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
 
-				switch(indiceTarea(tarea)){
+					log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
 
-						case 0:
-						{
-									log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO \n");
-									t_paquete* respuesta = armarPaqueteCon((void*)"GENERAR_OXIGENO",STRING);
-									enviarPaquete(respuesta,tripulanteSock);
-									break;
-						}
-						case 1:
-						{
-									log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO \n");
-									t_paquete* respuesta = armarPaqueteCon((void*)"CONSUMIR_OXIGENO",STRING);
-									enviarPaquete(respuesta,tripulanteSock);
-									break;
+					seleccionarTarea(tarea);
 
-						}
-						case 2:
-						{
-									log_info(logImongo,"Recibi una tarea de GENERAR_BASURA \n");
-									t_paquete* respuesta = armarPaqueteCon((void*)"GENERAR_BASURA",STRING);
-									enviarPaquete(respuesta,tripulanteSock);
-									break;
-
-						}
-						case 3:
-						{
-									log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
-									t_paquete* respuesta = armarPaqueteCon((void*)"DESCARTAR_BASURA",STRING);
-									enviarPaquete(respuesta,tripulanteSock);
-									break;
-						}
-						case 4:
-						{
-									log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA \n");
-									t_paquete* respuesta = armarPaqueteCon((void*)"GENERAR_COMIDA",STRING);
-									enviarPaquete(respuesta,tripulanteSock);
-									break;
-						}
-						case 5:
-						{
-									log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA \n");
-									t_paquete* respuesta = armarPaqueteCon((void*)"CONSUMIR_COMIDA",STRING);
-									enviarPaquete(respuesta,tripulanteSock);
-									break;
-						}
-
-						default:
-
-								log_info(logImongo,"No existe ese tipo de tarea negro \n");
-								exit(1);
+					break;
 
 					}
-				break;
 
-		}
+		case DESPLAZAMIENTO:
+					{
+					break;
+					}
+
+		case INICIO_TAREA:
+					{
+					break;
+					}
+
+		case FIN_TAREA:
+					{
+					break;
+					}
+
+		case ID_SABOTAJE:
+					{
+					break;
+					}
+		case FIN_SABOTAJE:
+					{
+					break;
+					}
 
 		default:
-				log_info(logImongo,"Estos casos todavia no estan contemplados");
+				log_info(logImongo,"i-Mongo-Store no entiende esa tarea");
 
 	}
 
@@ -154,11 +131,174 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 }
 
 
+int tipoTarea(t_tarea* tarea){
+
+	if(tarea->nombreTarea[0] == 'G'){
+
+		return 0;
+	}
+
+	else if(tarea->nombreTarea[0] == 'C'){
+
+		return 1;
+
+		}
+
+	else{
+
+		log_info(logImongo,"Esta tarea de oxigeno no existe %s", tarea->nombreTarea);
+		exit(1);
+	}
+}
+
+int tipoBasura(t_tarea* tarea){
+
+	if(tarea->nombreTarea[0] == 'G'){
+
+		return 0;
+	}
+
+	else if(tarea->nombreTarea[0] == 'D'){
+
+		return 1;
+
+		}
+
+	else{
+
+		log_info(logImongo,"Esta tarea de oxigeno no existe %s", tarea->nombreTarea);
+		exit(1);
+	}
+}
+
+
+void seleccionarTipoOxigeno(t_tarea* tarea){
+
+	switch(tipoTarea(tarea)){
+
+	case 0:
+			{
+				generarOxigeno(tarea);
+
+				break;
+
+			}
+	case 1:
+			{
+
+				consumirOxigeno(tarea);
+
+				break;
+
+			}
+	default:
+		log_info(logImongo,"No existe ese caso de error en la seleccion del tipo de tarea Oxigeno");
+		exit(1);
+
+	}
+}
+
+
+void seleccionarTipoComida(t_tarea* tarea){
+
+		switch(tipoTarea(tarea)){
+
+		case 0:
+				{
+					generarComida(tarea);
+
+					break;
+
+				}
+		case 1:
+				{
+
+					consumirComida(tarea);
+
+					break;
+
+				}
+		default:
+			log_info(logImongo,"No existe ese caso de error en la seleccion del tipo de tarea Comida");
+			exit(1);
+
+	}
+}
+
+
+void seleccionarTipoBasura(t_tarea* tarea){
+
+		switch(tipoBasura(tarea)){
+
+		case 0:
+				{
+					generarBasura(tarea);
+
+					break;
+
+				}
+		case 1:
+				{
+
+					descartarBasura(tarea);
+
+					break;
+				}
+		default:
+			log_info(logImongo,"No existe ese caso de error en la seleccion del tipo de tarea Basura");
+			exit(1);
+
+	}
+}
+
+
+void seleccionarTarea(t_tarea* tarea){
+
+
+				switch(indiceTarea(tarea)){
+
+						case 0:
+						{
+									log_info(logImongo,"Recibi una tarea de OXIGENO \n");
+
+									seleccionarTipoOxigeno(tarea);
+
+									break;
+						}
+						case 1:
+						{
+									log_info(logImongo,"Recibi una tarea de COMIDA \n");
+
+									seleccionarTipoComida(tarea);
+
+									break;
+
+						}
+						case 2:
+						{
+									log_info(logImongo,"Recibi una tarea de BASURA \n");
+
+									seleccionarTipoBasura(tarea);
+
+									break;
+
+						}
+
+						default:
+
+								log_info(logImongo,"No existe ese tipo de tarea negro \n");
+								exit(1);
+
+					}
+
+}
+
+
 void crearFileSystemDesdeCero(char* destinoRaiz, char* destinoSuperBloque, char* destinoBlocks){
 
-	int super_bloque = open(destinoSuperBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
-	int *blocks = malloc(sizeof(int));
-	*blocks = open(destinoBlocks,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
+	FILE* superBloque = fopen(destinoSuperBloque,"wb");
+
+	int fd = open(destinoBlocks,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
 
 	char* pathFiles = crearDestinoApartirDeRaiz("Files");
 	char* pathBitacora = crearDestinoApartirDeRaiz("Files/Bitacora");
@@ -181,7 +321,7 @@ void crearFileSystemDesdeCero(char* destinoRaiz, char* destinoSuperBloque, char*
 	FILE* comida = fopen(destinoComida,"wb");
 	FILE* basura = fopen(destinoBasura,"wb");
 
-	crearMemoria(blocks);
+	crearMemoria(fd);
 
 }
 

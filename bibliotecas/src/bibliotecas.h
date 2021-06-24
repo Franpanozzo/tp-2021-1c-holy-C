@@ -28,13 +28,20 @@
 	} puertoEIP;
 
 	typedef enum{
+
 		PATOTA,
 		TRIPULANTE,
 		EXPULSAR,
 		ESTADO_TRIPULANTE,
 		SIGUIENTE_TAREA,
-		TAREA,
-		STRING
+		TAREA, // t_tarea
+		DESPLAZAMIENTO,// id tripulante con t_coordenada x 2
+		INICIO_TAREA, // id tripulante  y nombre tarea solamente (char*)
+		FIN_TAREA, // id tripulante y nombre tarea solamente (char*)
+		ID_SABOTAJE, // id tripulante
+		FIN_SABOTAJE,// id tripulante
+		STRING// "OK" si la tarea se guardo en disco secundario o "ERROR" si no hubo espacio
+
 	} tipoDeDato;
 
 	typedef struct {

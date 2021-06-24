@@ -35,13 +35,14 @@ typedef struct{
 
 t_config* config;
 t_log* logImongo;
-char** todasLasTareasIO;
 t_datosConfig* datosConfig;
 t_superBloque* superBloque;
 char* bitArray;
 t_file* oxigeno;
 t_file* comida;
 t_file* basura;
+char* memoriaSecundaria;
+char** tareas;
 
 
 #endif
