@@ -16,7 +16,7 @@ char* crearDestinoApartirDeRaiz(char*);
 bool validarExistenciaFileSystem(char*, char*,char*);
 void setearFile(t_file*, char*);
 void setearTodosLosFiles();
-void crearMemoria(FILE*);
+void crearMemoria(int*);
 
 
 #endif

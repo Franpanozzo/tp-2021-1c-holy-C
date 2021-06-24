@@ -156,8 +156,9 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 void crearFileSystemDesdeCero(char* destinoRaiz, char* destinoSuperBloque, char* destinoBlocks){
 
-	FILE* superBloque = fopen(destinoSuperBloque,"wb");
-	FILE* blocks = fopen(destinoBlocks,"wb");
+	int super_bloque = open(destinoSuperBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
+	int *blocks = malloc(sizeof(int));
+	*blocks = open(destinoBlocks,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
 
 	char* pathFiles = crearDestinoApartirDeRaiz("Files");
 	char* pathBitacora = crearDestinoApartirDeRaiz("Files/Bitacora");

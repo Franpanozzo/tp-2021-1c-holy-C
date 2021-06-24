@@ -126,15 +126,28 @@ void setearTodosLosFiles(){
 }
 
 
-void crearMemoria(FILE* blocks){
+void crearMemoria(int * blocks){
 
-	int fd = fileno(blocks);
+	//int fd = fileno(blocks);
+	//char* pathBlocks = crearDestinoApartirDeRaiz("Blocks.ims");
+	//int fd = open(pathBlocks,O_RDWR, S_IRUSR | S_IWUSR);
+	int size = superBloque->block_size * superBloque->blocks;
+	//printf("   %d     \n", fd);
+	int result = lseek(*blocks, size-1,SEEK_SET);
+	result = write(*blocks,"",1);
+	lseek(*blocks, 0,SEEK_SET);
+	char* memoriaBlocks = mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED,*blocks,0);
+	//char* a = strdup("a");
+	//for(int i=0; i<size -1; i++){
+		//memcpy(memoriaBlocks+i,a,strlen(a)+1);
+	//}
 
-	printf("   %d     \n", fd);
+	msync(memoriaBlocks,size,MS_SYNC);
+	char * memoriaBlocksCopia;
+	memcpy(memoriaBlocks,memoriaBlocks, superBloque->block_size * superBloque->blocks);
 
-	//char* memoriaBlocks = mmap(NULL,superBloque->block_size * superBloque->blocks,PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
 
-	//printf("El tamanio del blocks es: %d \n",strlen(memoriaBlocks));
+	//log_info(logImongo,"El tamanio del blocks es: %d \n",strlen((char*)memoriaBlocks));
 
 }
 
