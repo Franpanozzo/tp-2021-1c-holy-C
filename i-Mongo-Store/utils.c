@@ -1,11 +1,48 @@
 #include "utils.h"
 
 
-void crearConfig(){
+void crearConfigImongo(){
 
-	config  = config_create("/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
+	configImongo  = config_create("/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
 
-	if(config == NULL){
+	if(configImongo == NULL){
+
+		log_error(logImongo, "La ruta es incorrecta ");
+
+		exit(1);
+	}
+}
+
+void crearConfigOxigenoIMS(){
+
+	configOxigeno  = config_create(pathOxigeno);
+
+	if(configOxigeno == NULL){
+
+		log_error(logImongo, "La ruta es incorrecta ");
+
+		exit(1);
+	}
+}
+
+void crearConfigComidaIMS(){
+
+	configComida  = config_create(pathComida);
+
+	if(configComida == NULL){
+
+		log_error(logImongo, "La ruta es incorrecta ");
+
+		exit(1);
+	}
+}
+
+
+void crearConfigBasuraIMS(){
+
+	configBasura  = config_create(pathBasura);
+
+	if(configBasura  == NULL){
 
 		log_error(logImongo, "La ruta es incorrecta ");
 
@@ -57,33 +94,6 @@ int indiceTarea(t_tarea* tarea){
 }
 
 
-void cargarConfiguracion(){
-
-	datosConfig = malloc(sizeof(t_datosConfig));
-	superBloque = malloc(sizeof(t_superBloque));
-
-	superBloque->block_size = (uint32_t) config_get_int_value(config,"BLOCK_SIZE");
-	superBloque->blocks = (uint32_t)config_get_int_value(config,"BLOCKS");
-	int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
-	bitArray = malloc(sizeBitArray);
-	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArray ,MSB_FIRST);
-
-	for(int i=0; i<sizeBitArray;i++){
-
-		bitarray_clean_bit(superBloque->bitmap, i);
-		//int valor =  bitarray_test_bit(superBloque->bitmap, i);
-		//printf("%d ", valor);
-	}
-
-    log_info(logImongo,"Se inicializo un bitmap con %d posiciones", bitarray_get_max_bit(superBloque->bitmap));
-
-	datosConfig->puntoMontaje = config_get_string_value(config,"PUNTO_MONTAJE");
-	datosConfig->puerto = (uint32_t)config_get_int_value(config,"PUERTO");
-	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(config,"TIEMPO_SINCRONIZACION");
-	datosConfig->posicionesSabotaje = config_get_string_value(config,"POSICIONES_SABOTAJE");
-
-}
-
 char* crearDestinoApartirDeRaiz(char* destino){
 
 	char* raiz = string_new();
@@ -97,33 +107,46 @@ char* crearDestinoApartirDeRaiz(char* destino){
 }
 
 
+void cargarConfiguracion(){
+
+	datosConfig = malloc(sizeof(t_datosConfig));
+	superBloque = malloc(sizeof(t_superBloque));
+
+	superBloque->block_size = (uint32_t) config_get_int_value(configImongo,"BLOCK_SIZE");
+	superBloque->blocks = (uint32_t)config_get_int_value(configImongo,"BLOCKS");
+	int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
+	bitArray = malloc(sizeBitArray);
+	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArray ,MSB_FIRST);
+
+	for(int i=0; i<sizeBitArray;i++){
+
+		bitarray_clean_bit(superBloque->bitmap, i);
+		//int valor =  bitarray_test_bit(superBloque->bitmap, i);
+		//printf("%d ", valor);
+	}
+
+    log_info(logImongo,"Se inicializo un bitmap con %d posiciones", bitarray_get_max_bit(superBloque->bitmap));
+
+	datosConfig->puntoMontaje = config_get_string_value(configImongo,"PUNTO_MONTAJE");
+	datosConfig->puerto = (uint32_t)config_get_int_value(configImongo,"PUERTO");
+	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(configImongo,"TIEMPO_SINCRONIZACION");
+	datosConfig->posicionesSabotaje = config_get_string_value(configImongo,"POSICIONES_SABOTAJE");
+
+	pathSuperBloque = crearDestinoApartirDeRaiz("SuperBloque.ims");
+	pathBloque = crearDestinoApartirDeRaiz("Blocks.ims");
+	pathFiles = crearDestinoApartirDeRaiz("Files");
+	pathOxigeno = crearDestinoApartirDeRaiz("Files/Oxigeno.ims");
+	pathComida = crearDestinoApartirDeRaiz("Files/Comida.ims");
+	pathBasura = crearDestinoApartirDeRaiz("Files/Basura.ims");
+	pathBitacora = crearDestinoApartirDeRaiz("Files/Bitacora");
+
+}
+
+
 bool validarExistenciaFileSystem(char* superBloque, char* blocks, char* raiz){
 
 	return (access(superBloque, F_OK ) != -1) && (access(blocks, F_OK ) != -1) && (access(raiz, F_OK ) != -1);
 
-}
-
-
-void setearFile(t_file* archivoFile, char* path){
-
-	archivoFile = malloc(sizeof(t_file));
-	archivoFile->bloquesQueOcupa = list_create();
-	archivoFile->cantidadBloques = list_size(archivoFile->bloquesQueOcupa);
-	archivoFile->tamanioArchivo = archivoFile->cantidadBloques * superBloque->block_size;
-	//archivoFile->md5_archivo = FALTA EL MD5 del archivo
-
-}
-
-
-void setearTodosLosFiles(){
-
-	char* pathOxigeno = crearDestinoApartirDeRaiz("Files/Oxigeno.ims");
-	char* pathComida = crearDestinoApartirDeRaiz("Files/Comida.ims");
-	char* pathBasura = crearDestinoApartirDeRaiz("Files/Basura.ims");
-
-	setearFile(oxigeno,pathOxigeno);
-	setearFile(comida,pathComida);
-	setearFile(basura,pathBasura);
 }
 
 
@@ -173,27 +196,100 @@ void sincronizarMemoria(void* dato){
 }
 */
 
-void generarOxigeno(t_tarea* tarea){
+void mandarErrorAdiscordiador(int* tripulanteSock){
+
+	char* error = strdup("ERROR");
+
+	t_paquete* paquete = armarPaqueteCon(error,STRING);
+
+	enviarPaquete(paquete,*tripulanteSock);
+}
+
+void mandarOKAdiscordiador(int* tripulanteSock){
+
+	char* error = strdup("OK");
+
+	t_paquete* paquete = armarPaqueteCon(error,STRING);
+
+	enviarPaquete(paquete,*tripulanteSock);
+}
+
+int bloquesLibres(){
+
+	int flag = 0;
+
+	for(int i=0; i<superBloque->blocks;i++){
+
+	flag += bitarray_test_bit(superBloque->bitmap,i);
+
+	}
+
+	return superBloque->blocks - flag;
+}
+
+
+bool verificarSiExiste(char* nombreArchivo){
+
+	return access(nombreArchivo,F_OK) != 1;
 
 }
 
-void consumirOxigeno(t_tarea* tarea){
+
+void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
+
+	int bloquesAocupar = (int) ceil(tarea->parametro / superBloque->block_size);
+
+	int bloques = bloquesLibres(bloquesAocupar);
+
+	if(bloquesAocupar >= bloques){
+
+		log_info(logImongo,"Se comprobó que hay espacio en el disco para la tarea %s",tarea->nombreTarea);
+
+		if(verificarSiExiste(pathOxigeno)){
+
+			oxigeno->bloquesQueOcupa = config_get_string_value(configOxigeno,"BLOCKS");
+			oxigeno->cantidadBloques = config_get_int_value(configOxigeno,"BLOCK_COUNT");
+			oxigeno->caracterLlenado = config_get_string_value(configOxigeno,"CARACTER_LLENADO");
+			oxigeno->md5_archivo = config_get_string_value(configOxigeno,"MD5_ARCHIVO");
+			oxigeno->tamanioArchivo = config_get_int_value(configOxigeno,"SIZE");
+
+		}
+		else{
+
+
+
+		}
+
+
+
+	}
+	else{
+
+		mandarErrorAdiscordiador(tripulanteSock);
+
+		log_info(logImongo,"No hay mas espacio en el disco para la tarea %s", tarea->nombreTarea);
+
+	}
 
 }
 
-void generarComida(t_tarea* tarea){
+void consumirOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 }
 
-void consumirComida(t_tarea* tarea){
+void generarComida(t_tarea* tarea, int* tripulanteSock){
 
 }
 
-void generarBasura(t_tarea* tarea){
+void consumirComida(t_tarea* tarea, int* tripulanteSock){
 
 }
 
-void descartarBasura(t_tarea* tarea){
+void generarBasura(t_tarea* tarea, int* tripulanteSock){
+
+}
+
+void descartarBasura(t_tarea* tarea, int* tripulanteSock){
 
 }
 

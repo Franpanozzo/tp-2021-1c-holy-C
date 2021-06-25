@@ -4,23 +4,24 @@
 #include "variables.h"
 #include "i_mongo_store.h"
 
-
-void crearConfig();
+void crearConfigImongo();
+void crearConfigOxigenoIMS();
+void crearConfigComidaIMS();
+void crearConfigBasuraIMS();
 char * pathLog();
 void cargarConfiguracion();
 void liberarConfiguracion();
 int indiceTarea(t_tarea*);
 char* crearDestinoApartirDeRaiz(char*);
 bool validarExistenciaFileSystem(char*, char*,char*);
-void setearFile(t_file*, char*);
-void setearTodosLosFiles();
 void crearMemoria(int);
-void generarOxigeno(t_tarea*);
-void consumirOxigeno(t_tarea*);
-void generarComida(t_tarea*);
-void consumirComida(t_tarea*);
-void generarBasura(t_tarea*);
-void descartarBasura(t_tarea*);
+void generarOxigeno(t_tarea*,int*);
+void consumirOxigeno(t_tarea*,int*);
+void generarComida(t_tarea*,int*);
+void consumirComida(t_tarea*,int*);
+void generarBasura(t_tarea*,int*);
+void descartarBasura(t_tarea*,int*);
+void mandarErrorAdiscordiador(int*);
 
 
 #endif

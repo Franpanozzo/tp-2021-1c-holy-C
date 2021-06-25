@@ -5,6 +5,7 @@
 #include "i_mongo_store.h"
 
 
+
 typedef struct{
 
 	uint32_t block_size;
@@ -17,8 +18,8 @@ typedef struct{
 
 	uint32_t tamanioArchivo;
 	uint32_t cantidadBloques;
-	t_list* bloquesQueOcupa;
-	char caracterLlenado;
+	char* bloquesQueOcupa;
+	char* caracterLlenado;
 	char* md5_archivo;
 
 }t_file;
@@ -33,7 +34,10 @@ typedef struct{
 }t_datosConfig;
 
 
-t_config* config;
+t_config* configImongo;
+t_config* configOxigeno;
+t_config* configComida;
+t_config* configBasura;
 t_log* logImongo;
 t_datosConfig* datosConfig;
 t_superBloque* superBloque;
@@ -43,6 +47,13 @@ t_file* comida;
 t_file* basura;
 char* memoriaSecundaria;
 char** tareas;
+char* pathSuperBloque;
+char* pathBloque;
+char* pathOxigeno;
+char* pathComida;
+char* pathBasura;
+char* pathFiles;
+char* pathBitacora;
 
 
 #endif

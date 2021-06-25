@@ -32,10 +32,10 @@
 void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
-void deserializarSegun(t_paquete*, int);
+void deserializarSegun(t_paquete*, int*);
 void iniciarFileSystem();
 void crearFileSystemDesdeCero(char*, char*, char*);
-void seleccionarTarea(t_tarea*);
+void seleccionarTarea(t_tarea*, int*);
 void liberarTareas();
 void asignarTareas();
 

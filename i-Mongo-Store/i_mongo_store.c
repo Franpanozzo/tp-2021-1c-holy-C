@@ -7,15 +7,13 @@ int main(void) {
 
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
 
-	crearConfig();
+	crearConfigImongo();
 
 	asignarTareas();
 
 	cargarConfiguracion();
 
 	iniciarFileSystem();
-
-	setearTodosLosFiles();
 
 	//int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
@@ -72,11 +70,11 @@ void manejarTripulante(int *tripulanteSock) {
 
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
-    deserializarSegun(paquete,*tripulanteSock);
+    deserializarSegun(paquete,tripulanteSock);
 }
 
 
-void deserializarSegun(t_paquete* paquete, int tripulanteSock){
+void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 	log_info(logImongo,"Deserializando...");
 
@@ -89,7 +87,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 					log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
 
-					seleccionarTarea(tarea);
+					seleccionarTarea(tarea,tripulanteSock);
 
 					break;
 
@@ -132,7 +130,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 
 
-void seleccionarTarea(t_tarea* tarea){
+void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 
 				switch(indiceTarea(tarea)){
@@ -142,7 +140,7 @@ void seleccionarTarea(t_tarea* tarea){
 						{
 									log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO \n");
 
-									generarOxigeno(tarea);
+									generarOxigeno(tarea,tripulanteSock);
 
 									break;
 						}
@@ -152,7 +150,7 @@ void seleccionarTarea(t_tarea* tarea){
 						{
 									log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO \n");
 
-									consumirOxigeno(tarea);
+									consumirOxigeno(tarea,tripulanteSock);
 
 									break;
 						}
@@ -161,7 +159,7 @@ void seleccionarTarea(t_tarea* tarea){
 						{
 									log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA \n");
 
-									generarComida(tarea);
+									generarComida(tarea,tripulanteSock);
 
 									break;
 
@@ -171,7 +169,7 @@ void seleccionarTarea(t_tarea* tarea){
 						{
 									log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA \n");
 
-									consumirComida(tarea);
+									consumirComida(tarea,tripulanteSock);
 
 									break;
 
@@ -182,7 +180,7 @@ void seleccionarTarea(t_tarea* tarea){
 						{
 									log_info(logImongo,"Recibi una tarea de GENERAR_BASURA \n");
 
-									generarBasura(tarea);
+									generarBasura(tarea,tripulanteSock);
 
 									break;
 
@@ -193,7 +191,7 @@ void seleccionarTarea(t_tarea* tarea){
 						{
 									log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
 
-									descartarBasura(tarea);
+									descartarBasura(tarea,tripulanteSock);
 
 									break;
 
@@ -209,14 +207,11 @@ void seleccionarTarea(t_tarea* tarea){
 }
 
 
-void crearFileSystemDesdeCero(char* destinoRaiz, char* destinoSuperBloque, char* destinoBlocks){
+void crearFileSystemDesdeCero(char* destinoSuperBloque, char* destinoBlocks, char* destinoRaiz){
 
 	FILE* superBloque = fopen(destinoSuperBloque,"wb");
 
 	int fd = open(destinoBlocks,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
-
-	char* pathFiles = crearDestinoApartirDeRaiz("Files");
-	char* pathBitacora = crearDestinoApartirDeRaiz("Files/Bitacora");
 
 	if(mkdir(pathFiles,0777) != 0){
 
@@ -228,35 +223,26 @@ void crearFileSystemDesdeCero(char* destinoRaiz, char* destinoSuperBloque, char*
 			log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
 		}
 
-	char* destinoOxigeno = crearDestinoApartirDeRaiz("Files/Oxigeno.ims");
-	char* destinoComida = crearDestinoApartirDeRaiz("Files/Comida.ims");
-	char* destinoBasura = crearDestinoApartirDeRaiz("Files/Basura.ims");
-
-	FILE* oxigeno = fopen(destinoOxigeno,"wb");
-	FILE* comida = fopen(destinoComida,"wb");
-	FILE* basura = fopen(destinoBasura,"wb");
-
 	crearMemoria(fd);
 
 }
 
 void iniciarFileSystem(){
 
-	char* destinoRaiz = crearDestinoApartirDeRaiz("");
 
-	int flag = access(destinoRaiz, F_OK );
+	int flag = access(datosConfig->puntoMontaje, F_OK );
 
 	if(flag == -1){
 
-		log_info(logImongo, "No existe el punto de montaje en el directorio %s , se creara uno", destinoRaiz);
+		log_info(logImongo, "No existe el punto de montaje en el directorio %s , se creara uno", datosConfig->puntoMontaje);
 
-		mkdir(destinoRaiz,0777);
+		mkdir(datosConfig->puntoMontaje,0777);
 
 		}
 
 	else if(flag == 0){
 
-			log_info(logImongo, "Existe el punto de montaje en el directorio %s , se procedera a validar la existencia de SuperBloque.ims y Blocks.ims", destinoRaiz);
+			log_info(logImongo, "Existe el punto de montaje en el directorio %s , se procedera a validar la existencia de SuperBloque.ims y Blocks.ims", datosConfig->puntoMontaje);
 
 			}
 
@@ -266,11 +252,7 @@ void iniciarFileSystem(){
 		exit(1);
 	}
 
-
-	char* destinoSuperBloque = crearDestinoApartirDeRaiz("SuperBloque.ims");
-	char* destinoBlocks = crearDestinoApartirDeRaiz("Blocks.ims");
-
-	if(validarExistenciaFileSystem(destinoSuperBloque,destinoBlocks,destinoRaiz)){
+	if(validarExistenciaFileSystem(pathSuperBloque,pathBloque,datosConfig->puntoMontaje)){
 
 		log_info(logImongo,"Existe un file system actualmente");
 
@@ -281,7 +263,7 @@ void iniciarFileSystem(){
 
 		log_info(logImongo,"Existe el punto de montaje ahora, pero no existe SuperBloque.ims y Blocks.ims, creando archivos...");
 
-		crearFileSystemDesdeCero(destinoRaiz, destinoSuperBloque, destinoBlocks);
+		crearFileSystemDesdeCero(pathSuperBloque,pathBloque,datosConfig->puntoMontaje);
 
 
 	}
