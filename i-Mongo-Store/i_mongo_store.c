@@ -13,9 +13,9 @@ int main(void) {
 
 	cargarConfiguracion();
 
+	iniciarFileSystem();
 
-
-
+	setearTodosLosFiles();
 
 	//int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
@@ -23,12 +23,10 @@ int main(void) {
 	//pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	//pthread_join(manejoTripulante, (void*) NULL);
 
-	iniciarFileSystem();
-
-	setearTodosLosFiles();
-
 	liberarConfiguracion();
+
 	liberarTareas();
+
 	free(path);
 
 	return EXIT_SUCCESS;
@@ -131,125 +129,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 }
 
 
-int tipoTarea(t_tarea* tarea){
 
-	if(tarea->nombreTarea[0] == 'G'){
-
-		return 0;
-	}
-
-	else if(tarea->nombreTarea[0] == 'C'){
-
-		return 1;
-
-		}
-
-	else{
-
-		log_info(logImongo,"Esta tarea de oxigeno no existe %s", tarea->nombreTarea);
-		exit(1);
-	}
-}
-
-int tipoBasura(t_tarea* tarea){
-
-	if(tarea->nombreTarea[0] == 'G'){
-
-		return 0;
-	}
-
-	else if(tarea->nombreTarea[0] == 'D'){
-
-		return 1;
-
-		}
-
-	else{
-
-		log_info(logImongo,"Esta tarea de oxigeno no existe %s", tarea->nombreTarea);
-		exit(1);
-	}
-}
-
-
-void seleccionarTipoOxigeno(t_tarea* tarea){
-
-	switch(tipoTarea(tarea)){
-
-	case 0:
-			{
-				generarOxigeno(tarea);
-
-				break;
-
-			}
-	case 1:
-			{
-
-				consumirOxigeno(tarea);
-
-				break;
-
-			}
-	default:
-		log_info(logImongo,"No existe ese caso de error en la seleccion del tipo de tarea Oxigeno");
-		exit(1);
-
-	}
-}
-
-
-void seleccionarTipoComida(t_tarea* tarea){
-
-		switch(tipoTarea(tarea)){
-
-		case 0:
-				{
-					generarComida(tarea);
-
-					break;
-
-				}
-		case 1:
-				{
-
-					consumirComida(tarea);
-
-					break;
-
-				}
-		default:
-			log_info(logImongo,"No existe ese caso de error en la seleccion del tipo de tarea Comida");
-			exit(1);
-
-	}
-}
-
-
-void seleccionarTipoBasura(t_tarea* tarea){
-
-		switch(tipoBasura(tarea)){
-
-		case 0:
-				{
-					generarBasura(tarea);
-
-					break;
-
-				}
-		case 1:
-				{
-
-					descartarBasura(tarea);
-
-					break;
-				}
-		default:
-			log_info(logImongo,"No existe ese caso de error en la seleccion del tipo de tarea Basura");
-			exit(1);
-
-	}
-}
 
 
 void seleccionarTarea(t_tarea* tarea){
@@ -258,27 +138,62 @@ void seleccionarTarea(t_tarea* tarea){
 				switch(indiceTarea(tarea)){
 
 						case 0:
-						{
-									log_info(logImongo,"Recibi una tarea de OXIGENO \n");
 
-									seleccionarTipoOxigeno(tarea);
+						{
+									log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO \n");
+
+									generarOxigeno(tarea);
 
 									break;
 						}
-						case 1:
-						{
-									log_info(logImongo,"Recibi una tarea de COMIDA \n");
 
-									seleccionarTipoComida(tarea);
+						case 1:
+
+						{
+									log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO \n");
+
+									consumirOxigeno(tarea);
 
 									break;
-
 						}
 						case 2:
-						{
-									log_info(logImongo,"Recibi una tarea de BASURA \n");
 
-									seleccionarTipoBasura(tarea);
+						{
+									log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA \n");
+
+									generarComida(tarea);
+
+									break;
+
+						}
+						case 3:
+
+						{
+									log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA \n");
+
+									consumirComida(tarea);
+
+									break;
+
+						}
+
+						case 4:
+
+						{
+									log_info(logImongo,"Recibi una tarea de GENERAR_BASURA \n");
+
+									generarBasura(tarea);
+
+									break;
+
+						}
+
+						case 5:
+
+						{
+									log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
+
+									descartarBasura(tarea);
 
 									break;
 

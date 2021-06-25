@@ -30,9 +30,12 @@ char * pathLog(){
 void asignarTareas(){
 	tareas = malloc(sizeof(char*) * 3);
 
-	tareas[0] = strdup("OXIGENO");
-	tareas[1] = strdup("COMIDA");
-	tareas[2] = strdup("BASURA");
+	tareas[0] = strdup("GENERAR_OXIGENO");
+	tareas[1] = strdup("CONSUMIR_OXIGENO");
+	tareas[2] = strdup("GENERAR_COMIDA");
+	tareas[3] = strdup("CONSUMIR_COMIDA");
+	tareas[4] = strdup("GENERAR_BASURA");
+	tareas[5] = strdup("DESCARTAR_BASURA");
 }
 
 
@@ -202,9 +205,10 @@ void liberarConfiguracion(){
 
 }
 
+
 void liberarTareas(){
 
-	for(int i=0; i<3; i++){
+	for(int i=0; i<6; i++){
 		free(tareas[i]);
 	}
 	free(tareas);

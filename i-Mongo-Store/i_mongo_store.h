@@ -38,12 +38,6 @@ void crearFileSystemDesdeCero(char*, char*, char*);
 void seleccionarTarea(t_tarea*);
 void liberarTareas();
 void asignarTareas();
-void seleccionarTipoTarea(t_tarea*);
-int tipoTarea(t_tarea*);
-int tipoBasura(t_tarea*);
-void seleccionarTipoOxigeno(t_tarea*);
-void seleccionarTipoComida(t_tarea*);
-void seleccionarTipoBasura(t_tarea*);
 
 
 #endif
