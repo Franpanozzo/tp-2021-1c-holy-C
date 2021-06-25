@@ -40,9 +40,29 @@ t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int);
 int asignarSegmentosEnTabla(void* , t_tablaSegmentosPatota* , tipoEstructura);
 void insertar_en_memoria_seg(t_info_segmento*, void*);
 int buscarSegmentoSegunAjuste(int);
-t_info_segmento* crearSegmentoEnTabla(t_tablaSegmentosPatota, tipoEstructura);
+t_info_segmento* crearSegmentoEnTabla(t_tablaSegmentosPatota*, tipoEstructura);
 void expulsarTripulanteSeg(int ,int);
 void borrarLugarLibre(t_lugarLibre*);
+int actualizarTripulanteSeg(tcb* ,int);
+void existenciaDeTablaSegParaPatota(t_tablaSegmentosPatota*);
+t_info_segmento* buscarSegmentoTripulante(int, t_tablaSegmentosPatota*);
+void* leer_memoria_seg(t_info_segmento*);
+void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota*);
+int asignarSegmentosEnTabla(void*, t_tablaSegmentosPatota*, tipoEstructura);
+bool tieneTripulantesSeg(t_tablaSegmentosPatota*);
+void actualizarTripulanteEnMemSeg(tcb*, t_info_segmento*);
+t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* ,tcb*);
+t_tarea* asignarProxTareaSeg(int, int);
+
+
+
+
+
+
+
+
+
+
 
 
 

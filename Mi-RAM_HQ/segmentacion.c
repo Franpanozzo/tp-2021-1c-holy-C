@@ -5,17 +5,132 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
 	tcbAGuardar->dlPatota = 0;
-	tcbAGuardar->proximaAEjecutar = 1;
+	tcbAGuardar->proximaAEjecutar = 0; //desplazamiento dentro del segmento de las tareas (el cual es siempre el segundo segmento).
 
-	log_info(logMemoria,"Se encontro la tabla de segmentos -- PATOTA: %d - CANT SEGMENTOS: %d",
-				tablaSegmentosPatotaActual->idPatota, list_size(tablaSegmentosPatotaActual->tablaDeSegmentos));
+	existenciaDeTablaSegParaPatota(tablaSegmentosPatotaActual);
 
 	int res = asignarSegmentosEnTabla((void*) tcbAGuardar, tablaSegmentosPatotaActual,TCB);
 	if(res == 0) return NULL;
 
-	t_tarea* tarea = irABuscarSiguienteTarea(tablaSegmentosPatotaActual, tcbAGuardar);
+	return irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcbAGuardar);
+}
+
+
+t_tarea* asignarProxTareaSeg(int idPatota, int idTripu){
+
+	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
+
+	existenciaDeTablaSegParaPatota(tablaSegmentosPatotaActual);
+
+	t_info_segmento* t_segmentoTripulante = buscarSegmentoTripulante(idTripu,tablaSegmentosPatotaActual);
+
+	void* segmentoConTripu = leer_memoria_seg(t_segmentoTripulante);
+
+	tcb* tcb = cargarEnTripulante(segmentoConTripu);
+
+	log_info(logMemoria, "Tripulante a asignar proxima tarea: ID: %d | ESTADO: %c | POS_X: %d | POS_Y: %d | DL_TAREA: %d | DL_PATOTA: %d",
+				tcb->idTripulante, tcb->estado, tcb->posX, tcb->posY, tcb->proximaAEjecutar, tcb->dlPatota);
+
+	t_tarea* tarea = irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcb);
+
+	if(strcmp(tarea->nombreTarea,"TAREA_NULA") == 0) {
+		expulsarTripulanteSeg(idTripu, idPatota);
+	}
 
 	return tarea;
+}
+
+
+t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* tablaSegmentosPatotaActual,tcb* tcbAGuardar) {
+
+	t_info_segmento* t_segmentoConTarea = list_get(tablaSegmentosPatotaActual->tablaDeSegmentos,1);
+
+	void* segmentoConTarea = leer_memoria_seg(t_segmentoConTarea);
+	void* recorredorSegmento = segmentoConTarea;
+	recorredorSegmento += tcbAGuardar->proximaAEjecutar;
+	char* aux = malloc(2);
+	*(aux+1) = '\0';
+	char* tarea = string_new();
+
+	memcpy(aux,recorredorSegmento,1);
+
+	while(*aux != '|'  && *aux != '\0')
+	{
+		string_append(&tarea,aux);
+		recorredorSegmento++;
+		tcbAGuardar->proximaAEjecutar++;
+		memcpy(aux,recorredorSegmento,1);
+
+		log_info(logMemoria,"Sacando tarea: %s",tarea);
+		log_info(logMemoria,"Proximo a leer: %s",aux);
+	}
+	tcbAGuardar->proximaAEjecutar++;
+
+	log_info(logMemoria,"TCB prox a ejecutar quedo en: %d", tcbAGuardar->proximaAEjecutar);
+
+	t_info_segmento* t_segmentoTripulante = buscarSegmentoTripulante(tcbAGuardar->idTripulante, tablaSegmentosPatotaActual);
+
+	actualizarTripulanteEnMemSeg(tcbAGuardar, t_segmentoTripulante);
+
+	if(*tarea == '|') tarea = string_substring_from(tarea,1);
+
+	t_tarea* tareaAMandar = armarTarea(tarea);
+	free(aux);
+	free(segmentoConTarea);
+	free(tarea);
+
+	return tareaAMandar;
+}
+
+
+int actualizarTripulanteSeg(tcb* tcbAGuardar, int idPatota) {
+
+	t_tablaSegmentosPatota* tablaConTripulante = buscarTablaDeSegmentosDePatota(idPatota);
+
+	existenciaDeTablaSegParaPatota(tablaConTripulante);
+
+	t_info_segmento* t_segmentoTripulante = buscarSegmentoTripulante(tcbAGuardar->idTripulante,tablaConTripulante);
+
+	void* segmentoConTripu = leer_memoria_seg(t_segmentoTripulante);
+
+	cargarDLTripulante(segmentoConTripu, tcbAGuardar);
+
+	actualizarTripulanteEnMemSeg(tcbAGuardar, t_segmentoTripulante);
+
+	return 1;
+}
+
+
+void actualizarTripulanteEnMemSeg(tcb* tcbAGuardar, t_info_segmento* t_segmentoTripulante) {
+
+	log_info(logMemoria, "Se va a actualizar el tripulante: ID: %d | ESTADO: %c | POS_X: %d | POS_Y: %d | DL_TAREA: %d | DL_PATOTA: %d",
+			tcbAGuardar->idTripulante, tcbAGuardar->estado, tcbAGuardar->posX, tcbAGuardar->posY, tcbAGuardar->proximaAEjecutar, tcbAGuardar->dlPatota);
+
+	int aMeter, relleno;
+	void* segmentoActualizado = meterEnBuffer(tcbAGuardar, TCB, &aMeter, &relleno);
+
+	insertar_en_memoria_seg(t_segmentoTripulante, segmentoActualizado);
+}
+
+
+void existenciaDeTablaSegParaPatota(t_tablaSegmentosPatota* tablaSegmentosPatotaActual) {
+	if(tablaSegmentosPatotaActual == NULL) {
+		log_error(logMemoria, "No existe TCB para ese PCB");
+		exit(1);
+	}
+	log_info(logMemoria,"Se encontro la tabla de segmentos -- PATOTA: %d - CANT SEGMENTOS: %d",
+			tablaSegmentosPatotaActual->idPatota, list_size(tablaSegmentosPatotaActual->tablaDeSegmentos));
+}
+
+
+t_info_segmento* buscarSegmentoTripulante(int idTripulante, t_tablaSegmentosPatota* tablaConTripulante) {
+
+	bool segConTripu(t_info_segmento* info_segmento)
+	{
+		return info_segmento->tipo == TCB && info_segmento->datoAdicional == idTripulante;
+	}
+
+	return list_find(tablaConTripulante->tablaDeSegmentos, (void*) segConTripu);
 }
 
 
@@ -29,6 +144,8 @@ t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 
 	        return a;
 	    }
+		log_info(logMemoria, "Patotas con tabla totales: %d",list_size(tablasSegmentosPatotas));
+
 		t_tablaSegmentosPatota* tablaSegmentosBuscada = list_find(tablasSegmentosPatotas, (void*)idIgualA);
 
 	    if(tablaSegmentosBuscada == NULL)
@@ -48,7 +165,7 @@ int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 	tablaSegmentosPatotaActual->tablaDeSegmentos = list_create();
 	list_add(tablasSegmentosPatotas,tablaSegmentosPatotaActual);
 
-	log_info(logMemoria, "Se creo la tabla de segmentos para la patota: %d", pcbAGuardar->pid);
+	log_info(logMemoria, "Se creo la tabla de segmentos para la patota: %d - ahora hay %d patotas", pcbAGuardar->pid, list_size(tablasSegmentosPatotas));
 
 	pcbAGuardar->dlTareas = 1;
 	pcbGuardado = asignarSegmentosEnTabla((void*) pcbAGuardar, tablaSegmentosPatotaActual,PCB);
@@ -67,12 +184,7 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 
 	t_tablaSegmentosPatota* tablaSegmentosBuscada = buscarTablaDeSegmentosDePatota(idPatota);
 
-	bool segConTripu(t_info_segmento* info_segmento)
-	{
-		return info_segmento->tipo == TCB && info_segmento->datoAdicional == idTripu;
-	}
-
-	t_info_segmento* info_segmento = list_find(tablaSegmentosBuscada, (void*) segConTripu);
+	t_info_segmento* info_segmento = buscarSegmentoTripulante(idTripu, tablaSegmentosBuscada);
 
 	bool despuesQueSeg(t_lugarLibre* lugarLibre)
 	{
@@ -105,14 +217,13 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 	{
 		lugarLibreDespues->inicio = info_segmento->deslazamientoInicial;
 	}
-	else // NO TIENE UN LUGAR ANTES NI UNO DESPPUES, CREO UN NUEVO LUGAR LIBRE
+	else // NO TIENE UN LUGAR ANTES NI UNO DESPUES, CREO UN NUEVO LUGAR LIBRE
 	{
 		t_lugarLibre* lugarLibre = malloc(sizeof(t_lugarLibre));
 		lugarLibre->inicio = info_segmento->deslazamientoInicial;
 		lugarLibre->bytesAlojados = info_segmento->bytesAlojados;
 		list_add(lugaresLibres,lugarLibre);
 	}
-
 
 	bool mismoIndice(t_info_segmento* info_segmento2)
 	{
@@ -126,7 +237,7 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 
 
 void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
-	if(!tieneTripulantesSeg()) {
+	if(!tieneTripulantesSeg(tablaSegmentosPatota)) {
 
 		void borrarSegmento(t_info_segmento* info_segmento)
 		{
@@ -144,6 +255,17 @@ void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
 }
 
 
+bool tieneTripulantesSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
+
+	bool tieneSegmentoTripulante(t_info_segmento* info_segmento)
+	{
+		return info_segmento->tipo == TCB;
+	}
+
+	return list_any_satisfy(tablaSegmentosPatota->tablaDeSegmentos, (void*) tieneSegmentoTripulante);
+}
+
+
 
 int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegmentosPatotaActual, tipoEstructura tipo){
 
@@ -151,7 +273,6 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 	int datoAdicional;
 	void* bufferAMeter = meterEnBuffer(aGuardar, tipo, &aMeter, &datoAdicional);
 	t_info_segmento* info_segmento;
-	info_segmento->tipo = tipo;
 
 	int inicioSegmentoLibre = buscarSegmentoSegunAjuste(aMeter);
 
@@ -164,6 +285,8 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 	info_segmento->datoAdicional = datoAdicional;
 	info_segmento->deslazamientoInicial = inicioSegmentoLibre;
 	info_segmento->bytesAlojados = aMeter;
+	info_segmento->tipo = tipo;
+
 
 	insertar_en_memoria_seg(info_segmento,bufferAMeter);
 
@@ -171,13 +294,13 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 }
 
 
-t_info_segmento* crearSegmentoEnTabla(t_tablaSegmentosPatota tablaSegmentosPatotaActual, tipoEstructura tipo) {
+t_info_segmento* crearSegmentoEnTabla(t_tablaSegmentosPatota* tablaSegmentosPatotaActual, tipoEstructura tipo) {
 
 	t_info_segmento* info_segmento = malloc(sizeof(t_info_segmento));
 	info_segmento->indice = list_size(tablaSegmentosPatotaActual->tablaDeSegmentos);
 	info_segmento->tipo = tipo;
 
-	log_info(logMemoria, "Se creo el t_info_segmento de tipo: %d", tipo);
+	log_info(logMemoria, "Se creo el t_info_segmento %d de tipo: %d", info_segmento->indice, tipo);
 
 	list_add(tablaSegmentosPatotaActual->tablaDeSegmentos,info_segmento);
 
@@ -201,9 +324,16 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 
 	bool entraAMeter(t_lugarLibre* lugarLibre)
 	{
-		return (lugarLibre - aMeter) > 0;
+		return (lugarLibre->bytesAlojados - aMeter) > 0;
 	}
 	t_list* lugaresQueEntra = list_filter(lugaresLibres, (void*) entraAMeter);
+
+	if(list_size(lugaresQueEntra) == 0)
+	{
+		//ACA HAY QUE COMPACTAR
+		log_info(logMemoria, "No hay lugares libres en donde entren %d bytes, se procede a compactar", aMeter);
+		return -1;
+	}
 
 
 	if(strcmp(configRam.criterioSeeleccion,"BF") == 0)
@@ -224,6 +354,8 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 		{
 			borrarLugarLibre(lugarLibreOptimo);
 		}
+
+		free(lugaresQueEntra);
 		return inicio;
 	}
 
@@ -250,10 +382,34 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 
 void insertar_en_memoria_seg(t_info_segmento* info_segmento, void* bufferAMeter) {
 
-	lock(mutexEscribirMemoria);
+	lock(&mutexEscribirMemoria);
 	memcpy(memoria_principal + info_segmento->deslazamientoInicial, bufferAMeter, info_segmento->bytesAlojados);
-	unlock(mutexEscribirMemoria);
+	unlock(&mutexEscribirMemoria);
+
+	log_info(logMemoria, "Se escribio en RAM: SEGMENTO--> INICIO: %d | HASTA: %d ",
+			info_segmento->deslazamientoInicial, info_segmento->deslazamientoInicial + info_segmento->bytesAlojados -1);
 }
+
+
+void* leer_memoria_seg(t_info_segmento* info_Segmento) {
+
+	void* segmento = malloc(info_Segmento->bytesAlojados);
+
+	log_info(logMemoria, "Se va a leer el segmento que arranca en %d", info_Segmento->deslazamientoInicial);
+	lock(&mutexEscribirMemoria);
+	memcpy(segmento, memoria_principal + info_Segmento->deslazamientoInicial, info_Segmento->bytesAlojados);
+	unlock(&mutexEscribirMemoria);
+
+	return segmento;
+}
+
+
+
+
+
+
+
+
 
 
 

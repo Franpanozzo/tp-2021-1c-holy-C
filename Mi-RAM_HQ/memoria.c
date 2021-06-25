@@ -41,7 +41,14 @@ char* asignar_bytes(int cant_frames)
 
 void iniciarMemoria() {
 
-	tablasPaginasPatotas = list_create();
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		tablasPaginasPatotas = list_create();
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		tablasSegmentosPatotas = list_create();
+	}
 
     pthread_mutex_init(&mutexMemoria, NULL);
     pthread_mutex_init(&mutexEscribirMemoria, NULL);
@@ -63,10 +70,11 @@ void iniciarMemoria() {
 
     lugaresLibres = list_create();
 
-    t_lugarLibre lugarInicial = malloc(sizeof(t_lugarLibre));
+    t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
 
     lugarInicial->inicio = 0;
     lugarInicial->bytesAlojados = configRam.tamanioMemoria;
+    list_add(lugaresLibres,lugarInicial);
 
 	log_info(logMemoria,"El esquema usado es %s", configRam.esquemaMemoria);
 
@@ -75,7 +83,7 @@ void iniciarMemoria() {
 
 // LA MAYORIA DE LO COMENTADO ES PARA CUANDO IMPLEMENTEMOS LA MEMORIA VIRTUAL
 
-void* leer_memoria(int frame, int mem) {
+void* leer_memoria_pag(int frame, int mem) {
     //desplazamiento en memoria
     int desp = frame * configRam.tamanioPagina;
     // mostrar_memoria();
@@ -84,9 +92,9 @@ void* leer_memoria(int frame, int mem) {
 	if(mem == MEM_PPAL)
 	{
 		log_info(logMemoria,"Se va a leer la pagina que arranca en %d", desp);
-		lock(mutexEscribirMemoria);
+		lock(&mutexEscribirMemoria);
 		memcpy(pagina, memoria_principal+desp, configRam.tamanioPagina);
-		unlock(mutexEscribirMemoria);
+		unlock(&mutexEscribirMemoria);
 	}
 
 	else if(mem == MEM_VIRT)
@@ -131,9 +139,9 @@ int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, i
 
         if(mem == MEM_PPAL)
         {
-        	lock(mutexEscribirMemoria);
+        	lock(&mutexEscribirMemoria);
             memcpy(memoria_principal+desp, pagina, bytesAEscribir);
-            unlock(mutexEscribirMemoria);
+            unlock(&mutexEscribirMemoria);
 
         }
         else if(mem == MEM_VIRT){
@@ -172,9 +180,9 @@ void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicial, i
 
 	if(mem == MEM_PPAL)
 	{
-		lock(mutexEscribirMemoria);
+		lock(&mutexEscribirMemoria);
 		memcpy(memoria_principal+desp, buffer, bytesAEscribir);
-		unlock(mutexEscribirMemoria);
+		unlock(&mutexEscribirMemoria);
 
 		log_info(logMemoria, "Se sobreescribio en RAM: FRAME: %d | DESDE: %d | HASTA: %d ", frame,
 		        		desplInicial, bytesAEscribir + desplInicial -1);
@@ -299,14 +307,14 @@ void* buscar_pagina(t_info_pagina* info_pagina) {
     int frame_ppal = info_pagina->frame_m_ppal;
     //int frame_virtual = info_pagina->frame_m_virtual;
     if(frame_ppal != FRAME_INVALIDO)
-        pagina = leer_memoria(frame_ppal, MEM_PPAL);
+        pagina = leer_memoria_pag(frame_ppal, MEM_PPAL);
 
         // log_info(logger, "pagina encontrada en memoria principal");
     return pagina;
 }
 
 
-t_tarea* asignarProxTarea(int idPatota,int idTripulante) {
+t_tarea* asignarProxTareaPag(int idPatota,int idTripulante) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
 
@@ -320,7 +328,13 @@ t_tarea* asignarProxTarea(int idPatota,int idTripulante) {
 	log_info(logMemoria, "Tripulante a asignar proxima tarea: ID: %d | ESTADO: %c | POS_X: %d | POS_Y: %d | DL_TAREA: %d | DL_PATOTA: %d",
 			tcb->idTripulante, tcb->estado, tcb->posX, tcb->posY, tcb->proximaAEjecutar, tcb->dlPatota);
 
-	return irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcb);
+	t_tarea* tarea = irABuscarSiguienteTareaPag(tablaPaginasPatotaActual, tcb);
+
+	if(strcmp(tarea->nombreTarea,"TAREA_NULA") == 0) {
+		expulsarTripulantePag(idTripulante, idPatota);
+	}
+
+	return tarea;
 }
 
 
@@ -342,7 +356,7 @@ t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 	int res = asignarPaginasEnTabla((void*) tcbAGuardar, tablaPaginasPatotaActual,TCB);
 	if(res == 0) return NULL;
 
-	t_tarea* tarea = irABuscarSiguienteTarea(tablaPaginasPatotaActual, tcbAGuardar);
+	t_tarea* tarea = irABuscarSiguienteTareaPag(tablaPaginasPatotaActual, tcbAGuardar);
 
 	return tarea;
 }
@@ -361,7 +375,7 @@ t_list_iterator* iterarHastaIndice(t_list* tablaPaginas, int indicePagina) {
 }
 
 
-t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
+t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
 
 	log_info(logMemoria,"Soy el tripu %d voy a buscar tarea a %d", tcbAGuardar->idTripulante, tcbAGuardar->proximaAEjecutar);
 
@@ -392,7 +406,7 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 
 		if(tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TAREAS))
 		{
-		pagina = leer_memoria(info_pagina->frame_m_ppal,MEM_PPAL);
+		pagina = leer_memoria_pag(info_pagina->frame_m_ppal,MEM_PPAL);
 		recorredorPagina = pagina;
 		recorredorPagina += desplazamiento;
 
@@ -431,7 +445,7 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 
 	}
 
-	actualizarTripulanteEnMem(tablaPaginasPatotaActual, tcbAGuardar);
+	actualizarTripulanteEnMemPag(tablaPaginasPatotaActual, tcbAGuardar);
 
 
 	if(*tarea == '|') tarea = string_substring_from(tarea,1);
@@ -446,7 +460,7 @@ t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 }
 
 
-int actualizarTripulanteEnMem(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
+int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
 
 	t_list* tablaPaginasConTripu = paginasConTripu(tablaPaginasPatotaActual->tablaDePaginas, tcbAGuardar->idTripulante);
 
@@ -500,7 +514,7 @@ t_list* paginasConTripu(t_list* tablaDePaginas, uint32_t idTripu) {
 }
 
 
-int actualizarTripulante(tcb* tcbAGuardar, int idPatota) {
+int actualizarTripulantePag(tcb* tcbAGuardar, int idPatota) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
 
@@ -527,7 +541,7 @@ int actualizarTripulante(tcb* tcbAGuardar, int idPatota) {
 			t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
 
 
-			void* pagina = leer_memoria(info_pagina->frame_m_ppal, MEM_PPAL);
+			void* pagina = leer_memoria_pag(info_pagina->frame_m_ppal, MEM_PPAL);
 
 			log_info(logMemoria, "SE LEE DEL TRIPU: %d - FRAME: %d | D_INCIAL: %d | BYTES_ALOJ: %d", tcbAGuardar->idTripulante,
 					info_pagina->frame_m_ppal, alojado->desplazamientoInicial, alojado->bytesAlojados);
@@ -550,7 +564,7 @@ int actualizarTripulante(tcb* tcbAGuardar, int idPatota) {
 		tcbAGuardar->idTripulante, tcbAGuardar->estado, tcbAGuardar->posX, tcbAGuardar->posY, tcbAGuardar->proximaAEjecutar, tcbAGuardar->dlPatota);
 
 		free(bufferTripu);
-		return actualizarTripulanteEnMem(tablaPaginasPatotaActual, tcbAGuardar);
+		return actualizarTripulanteEnMemPag(tablaPaginasPatotaActual, tcbAGuardar);
 }
 
 
@@ -576,7 +590,7 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 				t_info_pagina* info_pagina = list_get(paginasConTripulante,i);
 				t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, idTripulante);
 
-				void* pagina = leer_memoria(info_pagina->frame_m_ppal, MEM_PPAL);
+				void* pagina = leer_memoria_pag(info_pagina->frame_m_ppal, MEM_PPAL);
 
 				log_info(logMemoria, "SE LEE DEL TRIPU: %d - FRAME: %d | D_INCIAL: %d | BYTES_ALOJ: %d", idTripulante,
 						info_pagina->frame_m_ppal, alojado->desplazamientoInicial, alojado->bytesAlojados);
@@ -709,7 +723,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 
 	while(aMeter > 0)
 	{
-		lock(mutexMemoria);
+		lock(&mutexMemoria);
 		log_info(logMemoria, "HAY QUE METER %d BYTES",aMeter);
 
 	if(tipo != PCB)
@@ -759,7 +773,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 				}
 
 	copiaBuffer += bytesEscritos;
-	unlock(mutexMemoria);
+	unlock(&mutexMemoria);
 	}
 	log_info(logMemoria,"Se insertaron todos los bytes en ram");
 	free(bufferAMeter);
@@ -1156,7 +1170,7 @@ t_tarea* guardarTCB(tcb* tcbAGuardar, int idPatota) {
 }
 
 
-void expulsarTripulante(idTripu,idPatota) {
+void expulsarTripulante(int idTripu,int idPatota) {
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		expulsarTripulantePag(idTripu, idPatota);
@@ -1164,6 +1178,36 @@ void expulsarTripulante(idTripu,idPatota) {
 	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
 		expulsarTripulanteSeg(idTripu, idPatota);
+	}
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+}
+
+
+t_tarea* asignarProxTarea(int idPatota, int idTripu) {
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		return asignarProxTareaPag(idPatota, idTripu);
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		return asignarProxTareaSeg(idPatota, idTripu);
+	}
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+}
+
+
+int actualizarTripulante(tcb* tcbAGuardar, int idPatota){
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		log_info(logMemoria,"No me voy pa aca");
+		return actualizarTripulantePag(tcbAGuardar, idPatota);
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		log_info(logMemoria,"Me voy pa aca");
+		return actualizarTripulanteSeg(tcbAGuardar, idPatota);
 	}
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);

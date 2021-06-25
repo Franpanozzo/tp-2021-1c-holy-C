@@ -78,7 +78,7 @@ bool get_frame(int , int);
 void set_frame(int , int);
 char* asignar_bytes(int );
 void iniciarMemoria();
-void* leer_memoria(int,int);
+void* leer_memoria_pag(int,int);
 int insertar_en_memoria_pag(t_info_pagina*, void*, int, int*, tipoEstructura, int, int*);
 void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura,int);
 uint32_t buscar_frame_disponible(int );
@@ -94,20 +94,20 @@ t_tarea* guardarTCBPag(tcb*, int);
 int guardarPCBPag(pcb*, char*);
 uint32_t estimarDLTareasPag();
 uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* );
-t_tarea* irABuscarSiguienteTarea(t_tablaPaginasPatota* , tcb* );
+t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* , tcb* );
 bool tieneEstructuraAlojada(t_list* , tipoEstructura);
 bool tieneTripulanteAlojado(t_list* , int);
 t_alojado* obtenerAlojadoPagina(t_list* , int);
-int actualizarTripulanteEnMem(t_tablaPaginasPatota* , tcb*);
+int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* , tcb*);
 t_tarea* armarTarea(char* );
 int frameTotalmenteLibre(int );
 t_list* paginasConTripu(t_list*, uint32_t );
 int sobreescribirTripu(t_list* , tcb* );
 void cargarDLTripulante(void* , tcb* );
-int actualizarTripulante(tcb* , int);
+int actualizarTripulantePag(tcb* , int);
 tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
 tcb* cargarEnTripulante(void* );
-t_tarea* asignarProxTarea(int , int);
+t_tarea* asignarProxTareaPag(int , int);
 t_list_iterator* iterarHastaIndice(t_list*, int);
 void existenciaDeTablaParaPatota(t_tablaPaginasPatota*);
 void chequearUltimoTripulante(t_tablaPaginasPatota*);
@@ -116,6 +116,12 @@ t_tablaPaginasPatota* patotaConFrame(int);
 t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
 void expulsarTripulantePag(int ,int);
 void dumpPag();
+void expulsarTripulante(int idTripu,int idPatota);
+t_tarea* asignarProxTarea(int, int);
+int actualizarTripulante(tcb* , int);
+
+
+
 
 
 
