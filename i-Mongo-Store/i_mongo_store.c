@@ -25,6 +25,10 @@ int main(void) {
 
 	liberarTareas();
 
+	liberarTodosLosConfig();
+
+	log_destroy(logImongo);
+
 	free(path);
 
 	return EXIT_SUCCESS;
@@ -209,7 +213,40 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 void crearFileSystemDesdeCero(char* destinoSuperBloque, char* destinoBlocks, char* destinoRaiz){
 
-	FILE* superBloque = fopen(destinoSuperBloque,"wb");
+	superBloque = malloc(sizeof(t_superBloque));
+
+	superBloque->block_size = (uint32_t) config_get_int_value(configImongo,"BLOCK_SIZE");
+	superBloque->blocks = (uint32_t)config_get_int_value(configImongo,"BLOCKS");
+
+	int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
+	bitArray = malloc(sizeBitArray);
+	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArray ,MSB_FIRST);
+
+	for(int i=0; i<sizeBitArray;i++){
+
+		bitarray_clean_bit(superBloque->bitmap, i);
+
+	}
+
+    log_info(logImongo,"Se inicializo un bitmap con %d posiciones", bitarray_get_max_bit(superBloque->bitmap));
+
+    char* bitmap = malloc(sizeBitArray + 1);
+
+    for(int i=0; i<sizeBitArray;i++){
+
+      	int valor =  bitarray_test_bit(superBloque->bitmap, i);
+
+      	bitmap[i] = valor + '0';
+
+      	printf("%c ", bitmap[i]);
+
+     }
+
+    config_set_value(configSuperBloque,"BLOCK_SIZE",string_itoa(superBloque->block_size));
+    config_set_value(configSuperBloque,"BLOCKS",string_itoa(superBloque->blocks));
+    config_set_value(configSuperBloque,"BITMAP",bitmap);
+
+    config_save(configSuperBloque);
 
 	int fd = open(destinoBlocks,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
 
@@ -228,7 +265,6 @@ void crearFileSystemDesdeCero(char* destinoSuperBloque, char* destinoBlocks, cha
 }
 
 void iniciarFileSystem(){
-
 
 	int flag = access(datosConfig->puntoMontaje, F_OK );
 
@@ -256,6 +292,35 @@ void iniciarFileSystem(){
 
 		log_info(logImongo,"Existe un file system actualmente");
 
+		superBloque->block_size = config_get_int_value(configSuperBloque,"BLOCK_SIZE");
+		superBloque->blocks = config_get_int_value(configSuperBloque,"BLOCKS");
+
+		int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
+		bitArray = malloc(sizeBitArray);
+		superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArray ,MSB_FIRST);
+
+		char* bitmap = config_get_string_value(configSuperBloque,"BITMAP");
+
+		for(int i=0; i<sizeBitArray;i++){
+
+			if(bitmap[i] == '1'){
+
+				bitarray_set_bit(superBloque->bitmap,i);
+
+			}
+			else if (bitmap[i] == '0'){
+
+				bitarray_clean_bit(superBloque->bitmap,i);
+
+			}
+			else{
+
+				log_info(logImongo,"El archivo del bitarray tira valores no validos");
+				exit(1);
+
+			}
+
+		}
 
 	}
 

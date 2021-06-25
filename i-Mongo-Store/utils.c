@@ -51,6 +51,19 @@ void crearConfigBasuraIMS(){
 }
 
 
+void crearConfigSuperBloque(){
+
+	configSuperBloque  = config_create(pathSuperBloque);
+
+	if(configSuperBloque  == NULL){
+
+		log_error(logImongo, "La ruta es incorrecta ");
+
+		exit(1);
+	}
+}
+
+
 char * pathLog(){
 
 	char *pathLog = string_new();
@@ -110,23 +123,6 @@ char* crearDestinoApartirDeRaiz(char* destino){
 void cargarConfiguracion(){
 
 	datosConfig = malloc(sizeof(t_datosConfig));
-	superBloque = malloc(sizeof(t_superBloque));
-
-	superBloque->block_size = (uint32_t) config_get_int_value(configImongo,"BLOCK_SIZE");
-	superBloque->blocks = (uint32_t)config_get_int_value(configImongo,"BLOCKS");
-	int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
-	bitArray = malloc(sizeBitArray);
-	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArray ,MSB_FIRST);
-
-	for(int i=0; i<sizeBitArray;i++){
-
-		bitarray_clean_bit(superBloque->bitmap, i);
-		//int valor =  bitarray_test_bit(superBloque->bitmap, i);
-		//printf("%d ", valor);
-	}
-
-    log_info(logImongo,"Se inicializo un bitmap con %d posiciones", bitarray_get_max_bit(superBloque->bitmap));
-
 	datosConfig->puntoMontaje = config_get_string_value(configImongo,"PUNTO_MONTAJE");
 	datosConfig->puerto = (uint32_t)config_get_int_value(configImongo,"PUERTO");
 	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(configImongo,"TIEMPO_SINCRONIZACION");
@@ -258,6 +254,7 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 
 
+
 		}
 
 
@@ -291,6 +288,15 @@ void generarBasura(t_tarea* tarea, int* tripulanteSock){
 
 void descartarBasura(t_tarea* tarea, int* tripulanteSock){
 
+}
+
+void liberarTodosLosConfig(){
+
+	config_destroy(configImongo);
+	config_destroy(configOxigeno);
+	config_destroy(configComida);
+	config_destroy(configBasura);
+	config_destroy(configSuperBloque);
 }
 
 void liberarConfiguracion(){

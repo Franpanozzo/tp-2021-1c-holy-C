@@ -38,6 +38,7 @@ t_config* configImongo;
 t_config* configOxigeno;
 t_config* configComida;
 t_config* configBasura;
+t_config* configSuperBloque;
 t_log* logImongo;
 t_datosConfig* datosConfig;
 t_superBloque* superBloque;
