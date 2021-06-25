@@ -249,14 +249,21 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 			oxigeno->md5_archivo = config_get_string_value(configOxigeno,"MD5_ARCHIVO");
 			oxigeno->tamanioArchivo = config_get_int_value(configOxigeno,"SIZE");
 
+			bloquesAocupar += oxigeno->cantidadBloques;
+
+
+
 		}
 		else{
 
-
+			config_set_value(configOxigeno,"CARACTER_LLENADO","O");
 
 
 		}
 
+		config_set_value(configOxigeno,"BLOCK_COUNT",string_itoa(bloquesAocupar));
+		config_set_value(configOxigeno,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
+		config_save(configOxigeno);
 
 
 	}

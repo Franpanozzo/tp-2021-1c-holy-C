@@ -1,6 +1,6 @@
 #include "bibliotecas.h"
 
-// anda
+
 int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon lleva parametro porque puede elegir si conectarse con Mongo o RAM
 
 	puertoEIP* puertoEIPAConectar = (puertoEIP*) port; // Castear parámetro que recibo por referencia
