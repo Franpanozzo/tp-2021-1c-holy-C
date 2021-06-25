@@ -1,23 +1,11 @@
 #include "utils.h"
 
 
-void crearConfigImongo(){
+void crearConfig(t_config* config, char* path){
 
-	configImongo  = config_create("/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
+	config  = config_create(path);
 
-	if(configImongo == NULL){
-
-		log_error(logImongo, "La ruta es incorrecta ");
-
-		exit(1);
-	}
-}
-
-void crearConfigOxigenoIMS(){
-
-	configOxigeno  = config_create(pathOxigeno);
-
-	if(configOxigeno == NULL){
+	if(config == NULL){
 
 		log_error(logImongo, "La ruta es incorrecta ");
 
@@ -25,42 +13,14 @@ void crearConfigOxigenoIMS(){
 	}
 }
 
-void crearConfigComidaIMS(){
+void cargarTodosLosConfig(){
 
-	configComida  = config_create(pathComida);
+	crearConfig(configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
+	crearConfig(configSuperBloque,pathSuperBloque);
+	crearConfig(configOxigeno,pathOxigeno);
+	crearConfig(configComida,pathComida);
+	crearConfig(configBasura,pathBasura);
 
-	if(configComida == NULL){
-
-		log_error(logImongo, "La ruta es incorrecta ");
-
-		exit(1);
-	}
-}
-
-
-void crearConfigBasuraIMS(){
-
-	configBasura  = config_create(pathBasura);
-
-	if(configBasura  == NULL){
-
-		log_error(logImongo, "La ruta es incorrecta ");
-
-		exit(1);
-	}
-}
-
-
-void crearConfigSuperBloque(){
-
-	configSuperBloque  = config_create(pathSuperBloque);
-
-	if(configSuperBloque  == NULL){
-
-		log_error(logImongo, "La ruta es incorrecta ");
-
-		exit(1);
-	}
 }
 
 

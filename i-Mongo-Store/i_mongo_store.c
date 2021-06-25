@@ -7,7 +7,7 @@ int main(void) {
 
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
 
-	crearConfigImongo();
+	cargarTodosLosConfig();
 
 	asignarTareas();
 

@@ -6,11 +6,8 @@
 #include "i_mongo_store.h"
 
 
-void crearConfigImongo();
-void crearConfigSuperBloque();
-void crearConfigOxigenoIMS();
-void crearConfigComidaIMS();
-void crearConfigBasuraIMS();
+void crearConfig(t_config*, char*);
+void cargarTodosLosConfig();
 char * pathLog();
 void cargarConfiguracion();
 void liberarConfiguracion();
