@@ -20,18 +20,24 @@ void iniciarListas(){
 	listaExec = malloc(sizeof(t_lista));
 	listaBlocked = malloc(sizeof(t_lista));
 	listaSabotaje = malloc(sizeof(t_lista));
+	listaAeliminar = malloc(sizeof(t_lista));
+
 
 	listaNew->elementos = list_create();
 	listaReady->elementos = list_create();
 	listaExec->elementos = list_create();
 	listaBlocked->elementos = list_create();
 	listaSabotaje->elementos = list_create();
+	listaAeliminar->elementos = list_create();
+
 
 	pthread_mutex_init(&listaNew->mutex, NULL);
 	pthread_mutex_init(&(listaReady->mutex), NULL);
 	pthread_mutex_init(&listaExec->mutex, NULL);
 	pthread_mutex_init(&listaBlocked->mutex, NULL);
 	pthread_mutex_init(&listaSabotaje->mutex, NULL);
+	pthread_mutex_init(&listaAeliminar->mutex, NULL);
+
 }
 
 
@@ -398,59 +404,62 @@ void listarTripulantes(){
 }
 
 
-void eliminarTripulante(int id){
 
+void eliminarTripulante(int id){
 	bool esElBuscado(t_tripulante* tripulante){
 		return tripulante->idTripulante == id;
 	}
 
-	t_lista* arrayListas[4] = {listaReady, listaExec, listaBlocked, listaNew};
 	t_tripulante* tripulanteAeliminar = NULL;
+	t_lista* arrayListas[4] = {listaReady, listaExec, listaBlocked, listaNew};
 
 	for(int i=0; tripulanteAeliminar == NULL && i<4; i++){
-//		lock(&arrayListas[i]->mutex);
-		tripulanteAeliminar = (t_tripulante*)list_remove_by_condition(arrayListas[i]->elementos, (void*)esElBuscado);
-//		unlock(&arrayListas[i]->mutex);
+		tripulanteAeliminar = (t_tripulante*)list_find(arrayListas[i]->elementos, (void*)esElBuscado);
 	}
 
-	if(tripulanteAeliminar != NULL){
-		int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
-		close(socket);
-		tripulanteAeliminar->estaVivo = 0;
-	}
-	else{
-		log_info(logDiscordiador,"No se ha encontrado un tripulante con el id %d",id);
-	}
-
+	log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
+	lock(&listaAeliminar->mutex);
+	list_add(listaAeliminar->elementos, tripulanteAeliminar);
+	unlock(&listaAeliminar->mutex);
 }
 
 
-void eliminarTripulante(int id){
-
-	bool esElBuscado(t_tripulante* tripulante){
+/*
+ * bool esElBuscado(t_tripulante* tripulante){
 		return tripulante->idTripulante == id;
 	}
 
-	t_lista* arrayListas[4] = {listaReady, listaExec, listaBlocked, listaNew};
-	t_tripulante* tripulanteAeliminar = NULL;
+	t_list* listaAux = list_create();
+	list_add_all(listaAux, listaReady->elementos);
+	list_add_all(listaAux, listaExec->elementos);
+	list_add_all(listaAux, listaBlocked->elementos);
+	list_add_all(listaAux, listaNew->elementos);
+	list_add_all(listaAux, listaSabotaje->elementos);
 
-	for(int i=0; tripulanteAeliminar == NULL && i<4; i++){
-		lock(&arrayListas[i]->mutex);
-		tripulanteAeliminar = (t_tripulante*)list_remove_by_condition(arrayListas[i]->elementos, (void*)esElBuscado);
-		unlock(&arrayListas[i]->mutex);
+	t_tripulante* tripulanteAeliminar = (t_tripulante*)list_find(listaAux, (void*)esElBuscado);
+	log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
+	lock(&listaAeliminar->mutex);
+	list_add(listaAeliminar->elementos, tripulanteAeliminar);
+	unlock(&listaAeliminar->mutex);
+
+	list_clean(listaAux);
+	list_destroy(listaAux);
+ */
+
+void sacarDeColas(t_tripulante* tripulante){
+	bool hayQueSacarlo(t_tripulante* otroTripulante){
+		return tripulante == otroTripulante;
 	}
 
-	if(tripulanteAeliminar != NULL){
-		int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
-		close(socket);
-		tripulanteAeliminar->estaVivo = 0;
-	}
-	else{
-		log_info(logDiscordiador,"No se ha encontrado un tripulante con el id %d",id);
-	}
+	list_remove_by_condition(listaReady->elementos, (void*)hayQueSacarlo);
+	list_remove_by_condition(listaExec->elementos, (void*)hayQueSacarlo);
+	list_remove_by_condition(listaBlocked->elementos, (void*)hayQueSacarlo);
+	list_remove_by_condition(listaNew->elementos, (void*)hayQueSacarlo);
+	list_remove_by_condition(listaSabotaje->elementos, (void*)hayQueSacarlo);
 
+	tripulante->estaVivo = 0;
+	avisarTerminoPlanificacion(tripulante);
 }
-
 
 // ----- ME QUEDE ACA EN LA ORGANIZACION DE LAS FUNCIONES
 

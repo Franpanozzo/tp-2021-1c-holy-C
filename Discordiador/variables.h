@@ -29,7 +29,6 @@
 	t_estado estadoAcomparar;
 	t_sabotaje* sabotaje;
 
-
 	char** todasLasTareasIO;
 
 
@@ -38,6 +37,7 @@
 	t_lista* listaNew;
 	t_lista* listaReady;
 	t_lista* listaSabotaje;
+	t_lista* listaAeliminar;
 
 
 	pthread_mutex_t mutexTotalTripus;

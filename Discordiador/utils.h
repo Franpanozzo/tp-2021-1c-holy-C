@@ -24,7 +24,7 @@
 
 	void elegirTripulanteAbloquear();
 
-	void comunicarseConTripulantes(t_lista* lista, void(*closure)(void*));
+	void comunicarseConTripulantes(t_lista*, void(*closure)(void*));
 
 	void pasarDeLista(t_tripulante*);
 	void meterEnLista(t_tripulante* , t_lista*);
@@ -34,6 +34,7 @@
 	void ponerEnReady(t_tripulante*);
 	uint32_t distancia(t_coordenadas, t_coordenadas);
 
+	void sacarDeColas(t_tripulante*);
 
 	char* deserializarString (t_paquete*);
 	void actualizarEstadoEnRAM(t_tripulante*);

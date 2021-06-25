@@ -45,7 +45,6 @@ int main() {
 
 
 void hiloPlanificador(){
-
 	while(1){
 		if(leerPlanificacion() == CORRIENDO && totalTripulantes() > 0){
 
@@ -53,15 +52,12 @@ void hiloPlanificador(){
 			comunicarseConTripulantes(listaExec, (void*)esperarTerminarTripulante);
 			comunicarseConTripulantes(listaBlocked, (void*)esperarTerminarTripulante);
 			comunicarseConTripulantes(listaNew, (void*)esperarTerminarTripulante);
-/*
- *
-			if(!list_is_empty(listaExec->elementos))
-				list_iterate(listaExec->elementos, (void*)esperarTerminarTripulante);
-			if(!list_is_empty(listaBlocked->elementos))
-				list_iterate(listaBlocked->elementos, (void*)esperarTerminarTripulante);
-			if(!list_is_empty(listaNew->elementos))
-				list_iterate(listaNew->elementos, (void*)esperarTerminarTripulante);
- */
+
+			lock(&listaAeliminar->mutex);
+			while(!list_is_empty(listaAeliminar->elementos)){
+				sacarDeColas(list_remove(listaAeliminar->elementos, 0));
+			}
+			unlock(&listaAeliminar->mutex);
 
 			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripulantes());
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
@@ -247,6 +243,8 @@ void hiloTripulante(t_tripulante* tripulante){
 				break;
 		}
 	}
+	int socket = enviarA(puertoEIPRAM, tripulante, EXPULSAR);
+	close(socket);
 	liberarTripulante(tripulante);
 }
 
