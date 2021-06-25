@@ -22,7 +22,6 @@
 	int planificacion;
 	int quantum;
 	int gradoMultiprocesamiento;
-	int idBuscado;
 	int retardoCiclosCPU;
 	int idTripulanteBlocked;
 

@@ -181,35 +181,28 @@ void deserializarSolicitudTarea(t_paquete* paquete, int tripulanteSock) {
 	offset += sizeof(uint32_t);
 	memcpy(&(idTripulante), stream + offset, sizeof(uint32_t));
 
-	/*
-	bool esIgualA(tcb* tcbAcomparar){
-
-		return tcbAcomparar->idTripulante == idTripulante
-				&& tcbAcomparar->patota->pid == idPatota;
-	}*/
-
-	lock(mutexListaPCB);
+	lock(&mutexListaPCB);
 	pcb* supuestaPatotaTripu = buscarPatota(idPatota);
 
 	log_info(logMiRAM,"SUPUESTA PATOTA  DEL TRIPU %d",idPatota,idTripulante);
-    unlock(mutexListaPCB);
+    unlock(&mutexListaPCB);
 
-	lock(mutexListaTCB);
+	lock(&mutexListaTCB);
 	tcb* buscado = buscarTripulante(idTripulante, supuestaPatotaTripu);
-	unlock(mutexListaTCB);
+	unlock(&mutexListaTCB);
 
 
-	lock(mutexTripulante);
+	lock(&mutexTripulante);
 	log_info(logMiRAM,"LLENDO A BUSCAR TAREA DEL TRIPU %d",buscado->idTripulante);
 
-	lock(mutexListaTareas);
+	lock(&mutexListaTareas);
 	setearSgteTarea(buscado);
 
 	t_paquete *paqueteTarea  = armarPaqueteCon(buscado->proximaAEjecutar,TAREA);
 	enviarPaquete(paqueteTarea,tripulanteSock);
 
-	unlock(mutexListaTareas);
-	unlock(mutexTripulante);
+	unlock(&mutexListaTareas);
+	unlock(&mutexTripulante);
 
 }
 
@@ -324,9 +317,9 @@ void deserializarInfoPCB(t_paquete* paquete) {
 
 	deserializarTareas(stream + offset, nuevoPCB->listaTareas, tamanio);
 
-	lock(mutexListaPCB);
+	lock(&mutexListaPCB);
 	list_add(listaPCB,nuevoPCB);
-    unlock(mutexListaPCB);
+    unlock(&mutexListaPCB);
 }
 
 
@@ -348,11 +341,11 @@ void actualizarTripulante(t_paquete* paquete) {
 	memcpy(&(idTCBAActualizar),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	lock(mutexListaTCB);
+	lock(&mutexListaTCB);
 	tcb* tcbEncontrado = buscarTripulante(idTCBAActualizar,patotaDeTripu);
-	unlock(mutexListaTCB);
+	unlock(&mutexListaTCB);
 
-	lock(mutexTripulante);
+	lock(&mutexTripulante);
 	memcpy(&(tcbEncontrado->estado),stream + offset,sizeof(t_estado));
 	offset += sizeof(t_estado);
 
@@ -363,7 +356,7 @@ void actualizarTripulante(t_paquete* paquete) {
 	offset += sizeof(uint32_t);
 
 	log_info(logMiRAM,"Actualizado el tripulante de id %d de la  patota %d",tcbEncontrado->idTripulante, idPatota);
-	unlock(mutexTripulante);
+	unlock(&mutexTripulante);
 
 }
 
@@ -428,24 +421,24 @@ void deserializarTripulante(t_paquete* paquete, int tripulanteSock) {
 
 	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d",nuevoTCB->idTripulante, idPatota);
 
-	lock(mutexListaPCB);
+	lock(&mutexListaPCB);
 	pcb* patotaCorrespondiente = buscarPatota(idPatota);
-	unlock(mutexListaPCB);
+	unlock(&mutexListaPCB);
 
 	nuevoTCB->patota = patotaCorrespondiente;
 
 	log_info(logMiRAM,"Se le asigno la patota %d al tripulante %d",idPatota, nuevoTCB->idTripulante);
 
-	lock(mutexListaTareas);
+	lock(&mutexListaTareas);
 	asignarSiguienteTarea(nuevoTCB);
 
 	mandarTarea(nuevoTCB->proximaAEjecutar, tripulanteSock);
-	unlock(mutexListaTareas);
+	unlock(&mutexListaTareas);
 
 
-	lock(mutexListaTCB);
+	lock(&mutexListaTCB);
 	list_add(listaTCB,nuevoTCB);
-	unlock(mutexListaTCB);
+	unlock(&mutexListaTCB);
 }
 
 

@@ -22,14 +22,16 @@
 	void esperarTerminarTripulante(t_tripulante*);
 	void avisarTerminoPlanificacion(t_tripulante*);
 
-	void casoBlocked();
+	void elegirTripulanteAbloquear();
+
+	void comunicarseConTripulantes(t_lista* lista, void(*closure)(void*));
 
 	void pasarDeLista(t_tripulante*);
-	void meterEnLista(void* , t_lista*);
+	void meterEnLista(t_tripulante* , t_lista*);
 	void* sacarDeLista(t_lista*);
-	void ponerEnSabotaje(void*);
+	void ponerEnSabotaje(t_tripulante*);
 	void elegirTripulanteSabotaje();
-	void ponerEnReady(void*);
+	void ponerEnReady(t_tripulante*);
 	uint32_t distancia(t_coordenadas, t_coordenadas);
 
 
@@ -37,7 +39,7 @@
 	void actualizarEstadoEnRAM(t_tripulante*);
 	void pasarAlistaSabotaje(t_lista*);
 	int enviarA(puertoEIP*, void*, tipoDeDato);
-	bool tripulanteDeMenorId(void*, void*);
+	bool tripulanteDeMenorId(t_tripulante*, t_tripulante*);
 	t_tripulante* elTripuMasCerca(t_coordenadas);
 
 	void recibirPrimerTareaDeMiRAM(t_tripulante*);
@@ -56,12 +58,11 @@
 	char* traducirEstado(t_estado);
 
 	void cambiarDeEstado(t_tripulante*, t_estado);
-	bool esElBuscado(void*);
-	bool tieneDistintoEstado(void*);
-	bool tieneIgualEstado(void*);
+	bool tieneDistintoEstado(t_tripulante*);
+	bool tieneIgualEstado(t_tripulante*);
 	int totalTripulantes();
 
-	void eliminarTripulante();
+	void eliminarTripulante(int);
 	void eliminarPatota(t_patota*);
 	void liberarTripulante(t_tripulante*);
 

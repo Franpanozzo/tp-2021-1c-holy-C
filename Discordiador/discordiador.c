@@ -20,8 +20,6 @@ int main() {
 	idPatota = 0;
 	idTripulanteBlocked = NO_HAY_TRIPULANTE_BLOQUEADO;
 	modificarPlanificacion(PAUSADA);
-	idBuscado = -1;
-
 
 	sem_init(&sabotaje->semaforoIniciarSabotaje,0,0);
 	sem_init(&sabotaje->semaforoCorrerSabotaje,0,0);
@@ -51,18 +49,33 @@ void hiloPlanificador(){
 	while(1){
 		if(leerPlanificacion() == CORRIENDO && totalTripulantes() > 0){
 
-			list_iterate(listaExec->elementos, (void*)esperarTerminarTripulante);
-			list_iterate(listaBlocked->elementos, (void*)esperarTerminarTripulante);
-			list_iterate(listaNew->elementos, (void*)esperarTerminarTripulante);
+			// FALTAN LOS MUTEX
+			comunicarseConTripulantes(listaExec, (void*)esperarTerminarTripulante);
+			comunicarseConTripulantes(listaBlocked, (void*)esperarTerminarTripulante);
+			comunicarseConTripulantes(listaNew, (void*)esperarTerminarTripulante);
+/*
+ *
+			if(!list_is_empty(listaExec->elementos))
+				list_iterate(listaExec->elementos, (void*)esperarTerminarTripulante);
+			if(!list_is_empty(listaBlocked->elementos))
+				list_iterate(listaBlocked->elementos, (void*)esperarTerminarTripulante);
+			if(!list_is_empty(listaNew->elementos))
+				list_iterate(listaNew->elementos, (void*)esperarTerminarTripulante);
+ */
 
 			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripulantes());
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
 
-			actualizarListaExec();
-			actualizarListaBlocked();
-			actualizarListaNew();
-			list_iterate(listaReady->elementos, (void*)esperarTerminarTripulante);
-			actualizarListaReady();
+			if(!list_is_empty(listaExec->elementos))
+				actualizarListaExec();
+			if(!list_is_empty(listaBlocked->elementos))
+				actualizarListaBlocked();
+			if(!list_is_empty(listaNew->elementos))
+				actualizarListaNew();
+			if(!list_is_empty(listaReady->elementos)){
+				list_iterate(listaReady->elementos, (void*)esperarTerminarTripulante);
+				actualizarListaReady();
+			}
 
 			if(sabotaje->haySabotaje && sabotaje->tripulanteSabotaje == NULL){ //HAY SABOTAJE
 				sem_post(&sabotaje->semaforoIniciarSabotaje);
@@ -71,10 +84,14 @@ void hiloPlanificador(){
 
 			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
 
-			list_iterate(listaExec->elementos, (void*)avisarTerminoPlanificacion);
-			list_iterate(listaBlocked->elementos, (void*)avisarTerminoPlanificacion);
-			list_iterate(listaNew->elementos, (void*)avisarTerminoPlanificacion);
-			list_iterate(listaReady->elementos, (void*)avisarTerminoPlanificacion);
+			if(!list_is_empty(listaExec->elementos))
+				list_iterate(listaExec->elementos, (void*)avisarTerminoPlanificacion);
+			if(!list_is_empty(listaBlocked->elementos))
+				list_iterate(listaBlocked->elementos, (void*)avisarTerminoPlanificacion);
+			if(!list_is_empty(listaNew->elementos))
+				list_iterate(listaNew->elementos, (void*)avisarTerminoPlanificacion);
+			if(!list_is_empty(listaReady->elementos))
+				list_iterate(listaReady->elementos, (void*)avisarTerminoPlanificacion);
 
 		}
 	}
@@ -126,8 +143,6 @@ void hiloSabotaje(){
 
 
 		sem_post(&sabotaje->semaforoCorrerSabotaje);//avisarle al planificador que termino la preparacion
-
-//		list_iterate(listaReady->elementos, (void*)avisarTerminoPlanificacion);
 
 //		sem_post(&sabotaje->semaforoTerminoSabotaje);//avisarle al tripulante que ya volvio _todo a la normalidad
 	}
@@ -284,7 +299,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	log_info(logDiscordiador,"Se creo el tripulante numero %d con posicion %d|%d",
 			tripulante->idTripulante, tripulante->coordenadas.posX, tripulante->coordenadas.posY);
 
-	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripulante, (void*) tripulante);
+	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripulante, tripulante);
 	pthread_detach(_hiloTripulante);
 }
 
@@ -292,11 +307,11 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 void actualizarListaReady(){
 
-	void ponerEnExec(void* tripulante){
+	void ponerEnExec(t_tripulante* tripulante){
 		cambiarDeEstado(tripulante, EXEC);
 	}
 
-	lock(listaReady->mutex);
+	lock(&listaReady->mutex);
 
 	log_info(logDiscordiador,"------Iniciando planficacion cola de ready con %d tripulantes-----",
 				list_size(listaReady->elementos));
@@ -309,7 +324,7 @@ void actualizarListaReady(){
 	log_info(logDiscordiador,"------Finalizando planficacion cola de ready con %d tripulantes-----",
 					list_size(listaReady->elementos));
 
-	unlock(listaReady->mutex);
+	unlock(&listaReady->mutex);
 
 	list_destroy(listaAux);
 }
@@ -317,7 +332,7 @@ void actualizarListaReady(){
 
 void actualizarListaNew(){
 
-	lock(listaNew->mutex);
+	lock(&listaNew->mutex);
 
 	log_info(logDiscordiador,"------Iniciando planficacion cola de new con %d tripulantes-----",
 				list_size(listaNew->elementos));
@@ -333,9 +348,9 @@ void actualizarListaNew(){
 
 	list_clean(listaNew->elementos);
 	log_info(logDiscordiador,"------Finalizando planficacion cola de new con %d tripulantes-----",
-					list_size(listaReady->elementos));
+					list_size(listaNew->elementos));
 
-	unlock(listaReady->mutex);
+	unlock(&listaNew->mutex);
 }
 
 
@@ -346,37 +361,33 @@ void actualizarListaExec(){
 
 void actualizarListaBlocked(){
 	actualizarListaEyB(listaBlocked, BLOCKED);
-	casoBlocked();
+	if(idTripulanteBlocked == NO_HAY_TRIPULANTE_BLOQUEADO && list_size(listaBlocked->elementos) > 0)
+		elegirTripulanteAbloquear();
 }
 
 
 void actualizarListaEyB(t_lista* lista, t_estado estado){
 
-	bool tieneDistintoEstado(void* unTripulante){
-		t_tripulante* tripulante = (t_tripulante*) unTripulante;
+	bool tieneDistintoEstado(t_tripulante* tripulante){
 		return estado != tripulante->estado;
 	}
 
-	bool tieneIgualEstado(void* unTripulante){
-		return !tieneDistintoEstado(unTripulante);
-	}
-
-	lock(lista->mutex);
+	lock(&lista->mutex);
 
 	log_info(logDiscordiador,"------Planficando cola de %s con %d tripulantes-----",
 				traducirEstado(estado), list_size(lista->elementos));
 
-	t_list* listaAux = list_filter(lista->elementos, tieneDistintoEstado);
-	t_list* listaAux2 = list_filter(lista->elementos, tieneIgualEstado);
-	list_clean(lista->elementos);
-	list_add_all(lista->elementos, listaAux2);
+	t_list* listaAux = list_filter(lista->elementos, (void*)tieneDistintoEstado);
 	list_iterate(listaAux, (void*)pasarDeLista);
+	list_destroy(listaAux);
+
+	while(list_any_satisfy(lista->elementos, (void*)tieneDistintoEstado)){
+		list_remove_by_condition(lista->elementos, (void*)tieneDistintoEstado);
+	}
+
 
 	log_info(logDiscordiador,"------FIN Planficando cola de %s con %d tripulantes-----",
 					traducirEstado(estado), list_size(lista->elementos));
 
-	unlock(lista->mutex);
-
-	list_destroy(listaAux);
-	list_destroy(listaAux2);
+	unlock(&lista->mutex);
 }

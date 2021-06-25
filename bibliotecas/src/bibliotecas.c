@@ -33,7 +33,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 	}
 
 	free(serverAddress);
-	printf("Cliente conectado del puerto %d y IP %s \n",puertoEIPAConectar->puerto,puertoEIPAConectar->IP);
+	//printf("Cliente conectado del puerto %d y IP %s \n",puertoEIPAConectar->puerto,puertoEIPAConectar->IP);
 	return server_sock;
 
 }
@@ -66,7 +66,7 @@ int iniciarConexionDesdeServidor(int puerto) {
 	free(serverAddress);
 	free(localAddress);
 
-	printf("Servidor conectado \n");
+	//printf("Servidor conectado \n");
 	return server_sock;
 
 }
@@ -82,8 +82,8 @@ t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 	t_log* logger = log_create(archivoLog, nombrePrograma, flagConsola, LOG_LEVEL_INFO);
 	//hay q hacer un chequeo de q el programa q se paso es correcto?
 	if(logger == NULL){
-		printf("No se pudo iniciar el logger del archivo %s perteneciente al programa %s \n"
-				, archivoLog, nombrePrograma);
+		//printf("No se pudo iniciar el logger del archivo %s perteneciente al programa %s \n"
+		//		, archivoLog, nombrePrograma);
 		exit(1);
 	}
 	else
@@ -154,7 +154,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		}
 
 		default:
-				printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
+				//printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
 				exit(1);
 	}
 
@@ -283,7 +283,7 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperaci
 				return serializarString(stream,estructura,offset);
 
 		default:
-				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
+				//printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
 				exit(1);
 	}
 
@@ -296,7 +296,7 @@ t_paquete* armarPaqueteCon(void* estructura,tipoDeDato cod_op){
 	paquete->buffer->size = tamanioEstructura(estructura,paquete->codigoOperacion);
 	paquete->buffer->stream = serializarEstructura(estructura,paquete->buffer->size,paquete->codigoOperacion);
 
-	printf("Paquete %d creado \n", paquete->codigoOperacion);
+	//printf("Paquete %d creado \n", paquete->codigoOperacion);
 
 	return  paquete;
 
@@ -310,7 +310,7 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 	void* a_enviar = serializarPaquete(paquete,tamanioTotal);
 	send(socket, a_enviar, tamanioTotal,0);
 
-	printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
+	//printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
 
 	free(a_enviar);
 	eliminarPaquete(paquete);
@@ -334,15 +334,13 @@ void* serializarPaquete(t_paquete* paquete, int bytes){
 }
 
 
-void lock(pthread_mutex_t mutex){
-
-    pthread_mutex_lock(&mutex);
+void lock(pthread_mutex_t* mutex){
+    pthread_mutex_lock(mutex);
 }
 
 
-void unlock(pthread_mutex_t mutex){
-
-    pthread_mutex_unlock(&mutex);
+void unlock(pthread_mutex_t* mutex){
+    pthread_mutex_unlock(mutex);
 }
 
 

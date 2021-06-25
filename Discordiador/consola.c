@@ -47,9 +47,7 @@ void leerConsola(){
 			log_info(logDiscordiador, "Se ingreso el comando ELIMINAR_TRIPULANTE");
 			cursor ++;
 			uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
-			idBuscado = idTripulante;
-			eliminarTripulante();
-			idBuscado = -1;
+			eliminarTripulante(idTripulante);
 
 		}
 		else if (strcmp(comandoYparametros[cursor], "SABOTAJE") == 0){

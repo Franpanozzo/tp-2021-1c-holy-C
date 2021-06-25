@@ -98,9 +98,9 @@
 		t_list* elementos;
 	}t_lista;
 
-	void lock(pthread_mutex_t);
+	void lock(pthread_mutex_t*);
 
-	void unlock(pthread_mutex_t);
+	void unlock(pthread_mutex_t*);
 
 	int iniciarConexionDesdeServidor(int);
 
