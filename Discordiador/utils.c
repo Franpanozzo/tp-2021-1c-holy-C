@@ -115,19 +115,26 @@ void modificarPlanificacion(int estadoPlanificacion){
 
 
 int totalTripulantes(){
+	int total = 0;
+
 	lock(&listaNew->mutex);
-	lock(&listaReady->mutex);
-	lock(&listaExec->mutex);
-	lock(&listaBlocked->mutex);
-	lock(&listaSabotaje->mutex);
-
-	int total = list_size(listaNew->elementos) + list_size(listaReady->elementos) +
-			list_size(listaExec->elementos) + list_size(listaBlocked->elementos) + list_size(listaSabotaje->elementos);
-
+	total += list_size(listaNew->elementos);
 	unlock(&listaNew->mutex);
+
+	lock(&listaReady->mutex);
+	total += list_size(listaReady->elementos);
 	unlock(&listaReady->mutex);
+
+	lock(&listaExec->mutex);
+	total += list_size(listaExec->elementos);
 	unlock(&listaExec->mutex);
+
+	lock(&listaBlocked->mutex);
+	total += list_size(listaBlocked->elementos);
 	unlock(&listaBlocked->mutex);
+
+	lock(&listaSabotaje->mutex);
+	total += list_size(listaSabotaje->elementos);
 	unlock(&listaSabotaje->mutex);
 
 	return total;
@@ -382,15 +389,23 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 
 void listarLista(t_lista* lista){
 
-	void imprimirTripulante(void* unTripulante){
-		t_tripulante* tripulante = (t_tripulante*) unTripulante;
+	void imprimirTripulante(t_tripulante* tripulante){
 		log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Estado: %s",
 				tripulante->idTripulante, tripulante->idPatota, traducirEstado(tripulante->estado));
 	}
 
+	bool estaVivo(t_tripulante* tripulante){
+		bool hayQueSacarlo(t_tripulante* otroTripulante){
+				return tripulante == otroTripulante;
+			}
+		return !list_any_satisfy(listaAeliminar->elementos, (void*) hayQueSacarlo);
+	}
+
 	lock(&lista->mutex);
-	list_iterate(lista->elementos, (void*)imprimirTripulante);
+	t_list* listaAux = list_filter(lista->elementos, (void*) estaVivo);
 	unlock(&lista->mutex);
+	list_iterate(listaAux, (void*)imprimirTripulante);
+	list_destroy(listaAux);
 }
 
 
