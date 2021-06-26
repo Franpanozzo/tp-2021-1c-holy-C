@@ -14,7 +14,10 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 
 	dumpSeg();
 
-	return irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcbAGuardar);
+	t_tarea* tarea = irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcbAGuardar);
+	free(tcbAGuardar);
+
+	return tarea;
 }
 
 
@@ -39,6 +42,8 @@ t_tarea* asignarProxTareaSeg(int idPatota, int idTripu){
 		expulsarTripulanteSeg(idTripu, idPatota);
 	}
 
+	free(tcb);
+	free(segmentoConTripu);
 	return tarea;
 }
 
@@ -99,6 +104,9 @@ int actualizarTripulanteSeg(tcb* tcbAGuardar, int idPatota) {
 
 	actualizarTripulanteEnMemSeg(tcbAGuardar, t_segmentoTripulante);
 
+	free(segmentoConTripu);
+	free(tcbAGuardar);
+
 	return 1;
 }
 
@@ -112,6 +120,7 @@ void actualizarTripulanteEnMemSeg(tcb* tcbAGuardar, t_info_segmento* t_segmentoT
 	void* segmentoActualizado = meterEnBuffer(tcbAGuardar, TCB, &aMeter, &relleno);
 
 	insertar_en_memoria_seg(t_segmentoTripulante, segmentoActualizado);
+	free(segmentoActualizado);
 }
 
 
@@ -177,6 +186,7 @@ int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 	tareasGuardadas = asignarSegmentosEnTabla((void*) stringTareas, tablaSegmentosPatotaActual,TAREAS);
 
 	free(pcbAGuardar);
+	free(stringTareas);
 
 	return pcbGuardado && tareasGuardadas;
 }
@@ -299,6 +309,7 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 
 
 	insertar_en_memoria_seg(info_segmento,bufferAMeter);
+	free(bufferAMeter);
 
 	return 1;
 }
@@ -342,6 +353,7 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 	{
 		//ACA HAY QUE COMPACTAR
 		log_info(logMemoria, "No hay lugares libres en donde entren %d bytes, se procede a compactar", aMeter);
+		list_destroy(lugaresQueEntra);
 		return -1;
 	}
 
@@ -365,10 +377,9 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 			borrarLugarLibre(lugarLibreOptimo);
 		}
 
-		free(lugaresQueEntra);
+		list_destroy(lugaresQueEntra);
 		return inicio;
 	}
-
 
 	else if(strcmp(configRam.criterioSeeleccion,"FF") == 0)
 	{
@@ -380,11 +391,13 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 
 		t_lugarLibre* primerLugarLibre = list_get_minimum(lugaresQueEntra, (void*) empiezaAntes);
 
+		list_destroy(lugaresQueEntra);
 		return primerLugarLibre->inicio;
 	}
 	else
 	{
 		log_error(logMemoria, "El criterio de seleccion de particion libre no es valido");
+		list_destroy(lugaresQueEntra);
 		exit(1);
 	}
 }
@@ -446,7 +459,9 @@ void dumpSeg() {
 
 	txt_close_file(archivoDump);
 	free(rutaAbsoluta);
+	free(fechaYHora);
 	free(dump);
+	free(nombreArchivo);
 }
 
 

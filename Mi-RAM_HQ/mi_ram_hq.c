@@ -119,7 +119,6 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			{
 				t_tarea* tareaError = tarea_error();
 				mandarTarea(tareaError, tripulanteSock);
-				free(tareaError);
 			}
 			break;
 		}
@@ -472,12 +471,15 @@ void mandarTarea(t_tarea* tarea, int socketTrip) {
 	log_info(logMiRAM,"Tarea enviada\n");
 
 	enviarPaquete(paqueteEnviado, socketTrip);
+
+	free(tarea->nombreTarea);
+	free(tarea);
 }
 
 
 t_tarea* tarea_error() {
 	t_tarea* tareaError = malloc(sizeof(t_tarea));
-	tareaError->nombreTarea = "TAREA_ERROR";
+	tareaError->nombreTarea = strdup("TAREA_ERROR");
 	tareaError->parametro = 0;
 	tareaError->posX = 0;
 	tareaError->posY = 0;

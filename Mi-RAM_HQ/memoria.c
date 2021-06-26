@@ -18,6 +18,7 @@ void cargar_configuracion() {
 	configRam.criterioSeeleccion = config_get_string_value(config, "CRITERIO_SELECCION");
 	configRam.puerto = config_get_int_value(config, "PUERTO");
 
+	//config_destroy(config);
 }
 
 
