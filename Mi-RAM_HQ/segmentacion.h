@@ -53,6 +53,9 @@ bool tieneTripulantesSeg(t_tablaSegmentosPatota*);
 void actualizarTripulanteEnMemSeg(tcb*, t_info_segmento*);
 t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* ,tcb*);
 t_tarea* asignarProxTareaSeg(int, int);
+void dumpSeg();
+void imprimirDatosSegmento(t_tablaSegmentosPatota*, FILE*);
+
 
 
 

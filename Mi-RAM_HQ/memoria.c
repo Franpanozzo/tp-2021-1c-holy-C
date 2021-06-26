@@ -410,14 +410,14 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 		recorredorPagina = pagina;
 		recorredorPagina += desplazamiento;
 
-			while(desplazamiento != 32 && *proximoALeer != '|'  && *proximoALeer != '\0')
+			while(desplazamiento != configRam.tamanioPagina && *proximoALeer != '|'  && *proximoALeer != '\0')
 				{
 					memcpy(aux,recorredorPagina,1);
 					string_append(&tarea,aux);
 					recorredorPagina++;
 					desplazamiento++;
 
-					if(desplazamiento != 32)
+					if(desplazamiento != configRam.tamanioPagina)
 					{
 						memcpy(proximoALeer,recorredorPagina,1);
 					}
@@ -1042,6 +1042,8 @@ void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 
 		list_remove_by_condition(tablasPaginasPatotas, (void*) tablaConID);
 		list_destroy_and_destroy_elements(tablaPatota->tablaDePaginas, (void*) borrarProceso);
+
+		free(tablaPatota);
 	}
 }
 

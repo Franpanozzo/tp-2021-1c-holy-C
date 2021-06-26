@@ -12,6 +12,8 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 	int res = asignarSegmentosEnTabla((void*) tcbAGuardar, tablaSegmentosPatotaActual,TCB);
 	if(res == 0) return NULL;
 
+	dumpSeg();
+
 	return irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcbAGuardar);
 }
 
@@ -233,11 +235,15 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 	list_remove_by_condition(tablaSegmentosBuscada->tablaDeSegmentos, (void*) mismoIndice);
 
 	chequearUltimoTripulanteSeg(tablaSegmentosBuscada);
+
+	dumpSeg();
 }
 
 
 void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
 	if(!tieneTripulantesSeg(tablaSegmentosPatota)) {
+
+		log_info(logMemoria,"La patota %d no tiene mas tripulantes. Se procede a borrarla de memoria", tablaSegmentosPatota->idPatota);
 
 		void borrarSegmento(t_info_segmento* info_segmento)
 		{
@@ -249,8 +255,12 @@ void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
 			return tablaPatota2->idPatota == tablaSegmentosPatota->idPatota;
 		}
 
-		list_remove_by_condition(tablasPaginasPatotas, (void*) tablaConID);
+		log_info(logMemoria,"La patota tiene %d segmentos", list_size(tablaSegmentosPatota->tablaDeSegmentos));
+
+		list_remove_by_condition(tablasSegmentosPatotas, (void*) tablaConID);
 		list_destroy_and_destroy_elements(tablaSegmentosPatota->tablaDeSegmentos, (void*) borrarSegmento);
+
+		free(tablaSegmentosPatota);
 	}
 }
 
@@ -403,6 +413,58 @@ void* leer_memoria_seg(t_info_segmento* info_Segmento) {
 	return segmento;
 }
 
+
+
+void dumpSeg() {
+
+	char* nombreArchivo = temporal_get_string_time("DUMP_%y%m%d%H%M%S%MS.dmp");
+	char* rutaAbsoluta = string_from_format("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/Dump/%s",nombreArchivo);
+
+	FILE* archivoDump = txt_open_for_append(rutaAbsoluta);
+
+	if(archivoDump == NULL){
+		log_error(logMemoria, "No se pudo abrir el archivo correctamente");
+		exit(1);
+	}
+
+	char* fechaYHora = temporal_get_string_time("%d/%m/%y %H:%M:%S \n");
+	char* dump = string_from_format("DUMP: %s",fechaYHora);
+
+	txt_write_in_file(archivoDump, "--------------------------------------------------------------------------\n");
+	txt_write_in_file(archivoDump, dump);
+
+	void imprimirTabla(t_tablaSegmentosPatota* tablaSegPatota) {
+
+		imprimirDatosSegmento(tablaSegPatota,archivoDump);
+
+	}
+
+	list_iterate(tablasSegmentosPatotas,(void*) imprimirTabla);
+
+
+	txt_write_in_file(archivoDump, "--------------------------------------------------------------------------\n");
+
+	txt_close_file(archivoDump);
+	free(rutaAbsoluta);
+	free(dump);
+}
+
+
+void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivoDump) {
+
+	void imprimirSegmento(t_info_segmento* info_segmento) {
+
+		  //char* posEnHexa = mem_hexstring(memoria_principal, info_segmento->deslazamientoInicial);
+
+		char* dumpMarco = string_from_format("Proceso:%d   Segmento:%d	 Inicio:0x%X	 Tam:%db \n",
+				tablaSegPatota->idPatota, info_segmento->indice, info_segmento->deslazamientoInicial, info_segmento->bytesAlojados);
+
+		txt_write_in_file(archivoDump, dumpMarco);
+		free(dumpMarco);
+
+	}
+	list_iterate(tablaSegPatota->tablaDeSegmentos, (void*) imprimirSegmento);
+}
 
 
 

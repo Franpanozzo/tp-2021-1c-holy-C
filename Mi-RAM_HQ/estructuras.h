@@ -21,6 +21,7 @@
 #include <math.h>
 #include <commons/temporal.h>
 #include <commons/txt.h>
+#include <commons/memory.h>
 
 
 
