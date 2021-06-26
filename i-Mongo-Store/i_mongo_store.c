@@ -35,6 +35,7 @@ int main(void) {
 
 }
 
+
 void atenderTripulantes(int* serverSock) {
 
     while(1){
@@ -131,9 +132,6 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 }
 
 
-
-
-
 void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 
@@ -211,7 +209,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 }
 
 
-void crearFileSystemDesdeCero(char* destinoSuperBloque, char* destinoBlocks, char* destinoRaiz){
+void crearFileSystemDesdeCero(){
 
 	superBloque = malloc(sizeof(t_superBloque));
 
@@ -230,25 +228,12 @@ void crearFileSystemDesdeCero(char* destinoSuperBloque, char* destinoBlocks, cha
 
     log_info(logImongo,"Se inicializo un bitmap con %d posiciones", bitarray_get_max_bit(superBloque->bitmap));
 
-    char* bitmap = malloc(sizeBitArray + 1);
-
-    for(int i=0; i<sizeBitArray;i++){
-
-      	int valor =  bitarray_test_bit(superBloque->bitmap, i);
-
-      	bitmap[i] = valor + '0';
-
-      	printf("%c ", bitmap[i]);
-
-     }
 
     config_set_value(configSuperBloque,"BLOCK_SIZE",string_itoa(superBloque->block_size));
     config_set_value(configSuperBloque,"BLOCKS",string_itoa(superBloque->blocks));
-    config_set_value(configSuperBloque,"BITMAP",bitmap);
+    actualizarStringBitMap();
 
-    config_save(configSuperBloque);
-
-	int fd = open(destinoBlocks,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
+	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
 
 	if(mkdir(pathFiles,0777) != 0){
 
@@ -263,6 +248,7 @@ void crearFileSystemDesdeCero(char* destinoSuperBloque, char* destinoBlocks, cha
 	crearMemoria(fd);
 
 }
+
 
 void iniciarFileSystem(){
 
@@ -322,13 +308,16 @@ void iniciarFileSystem(){
 
 		}
 
+		int fd = open(pathBloque,O_RDWR,S_IRWXU|S_IRWXG|S_IRWXO);
+		memoriaSecundaria = mmap(NULL,superBloque->block_size * superBloque->blocks, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
+
 	}
 
 	else{
 
 		log_info(logImongo,"Existe el punto de montaje ahora, pero no existe SuperBloque.ims y Blocks.ims, creando archivos...");
 
-		crearFileSystemDesdeCero(pathSuperBloque,pathBloque,datosConfig->puntoMontaje);
+		crearFileSystemDesdeCero();
 
 
 	}

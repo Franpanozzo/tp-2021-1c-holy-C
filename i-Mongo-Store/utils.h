@@ -23,6 +23,11 @@ void generarBasura(t_tarea*,int*);
 void descartarBasura(t_tarea*,int*);
 void mandarErrorAdiscordiador(int*);
 void liberarTodosLosConfig();
+int* obtenerArrayDePosiciones(int);
+int bloquesLibres(int);
+void actualizarPosicionesFile(t_file*, int*, t_config*,int);
+int min(int ,int );
+void actualizarStringBitMap();
 
 
 #endif

@@ -5,7 +5,6 @@
 #include "i_mongo_store.h"
 
 
-
 typedef struct{
 
 	uint32_t block_size;
@@ -13,6 +12,7 @@ typedef struct{
 	t_bitarray* bitmap;
 
 }t_superBloque;
+
 
 typedef struct{
 
@@ -23,6 +23,7 @@ typedef struct{
 	char* md5_archivo;
 
 }t_file;
+
 
 typedef struct{
 
@@ -47,6 +48,7 @@ t_file* oxigeno;
 t_file* comida;
 t_file* basura;
 char* memoriaSecundaria;
+char* copiaMemoriaSecundaria;
 char** tareas;
 char* pathSuperBloque;
 char* pathBloque;

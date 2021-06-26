@@ -13,6 +13,7 @@ void crearConfig(t_config* config, char* path){
 	}
 }
 
+
 void cargarTodosLosConfig(){
 
 	crearConfig(configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
@@ -130,27 +131,11 @@ void crearMemoria(int fd){
 
 	memoriaSecundaria = mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
 
-}
-
-/*
-void sincronizarMemoria(void* dato){
-
-	int size = superBloque->block_size * superBloque->blocks;
-
-	char copiaMemoriaSecundaria= malloc(size);
+	copiaMemoriaSecundaria= malloc(size);
 	memcpy(copiaMemoriaSecundaria,memoriaSecundaria, size);
 
-	char* datoAingresar = (char*) dato;
-
-	int sizeDato = strlen(datoAingresar);
-
-	memcpy(copiaMemoriaSecundaria,datoAingresar,sizeDato);
-
-	memcpy(memoriaSecundaria,copiaMemoriaSecundaria,size);
-
-	msync(memoriaSecundaria,size,MS_SYNC);
 }
-*/
+
 
 void mandarErrorAdiscordiador(int* tripulanteSock){
 
@@ -161,6 +146,7 @@ void mandarErrorAdiscordiador(int* tripulanteSock){
 	enviarPaquete(paquete,*tripulanteSock);
 }
 
+
 void mandarOKAdiscordiador(int* tripulanteSock){
 
 	char* error = strdup("OK");
@@ -170,17 +156,22 @@ void mandarOKAdiscordiador(int* tripulanteSock){
 	enviarPaquete(paquete,*tripulanteSock);
 }
 
-int bloquesLibres(){
+
+int bloquesLibres(int bloquesAocupar){
 
 	int flag = 0;
 
 	for(int i=0; i<superBloque->blocks;i++){
 
-	flag += bitarray_test_bit(superBloque->bitmap,i);
+	flag += !bitarray_test_bit(superBloque->bitmap,i);
+
+	if(flag == bloquesAocupar){
+		break;
+	}
 
 	}
 
-	return superBloque->blocks - flag;
+	return flag;
 }
 
 
@@ -191,13 +182,169 @@ bool verificarSiExiste(char* nombreArchivo){
 }
 
 
+int* obtenerArrayDePosiciones(int bloquesAocupar){
+
+	int flag = 0;
+
+	int bloquesLibres = 0;
+
+	int* cadaBloqueAocupar = malloc(sizeof(int) * bloquesAocupar);
+
+	for(int i=0; i<superBloque->blocks;i++){
+
+		flag = bitarray_test_bit(superBloque->bitmap,i);
+
+		if(flag == 0){
+
+		*(cadaBloqueAocupar + bloquesLibres) = i;
+
+		bloquesLibres++;
+
+		}
+
+		if(bloquesLibres == bloquesAocupar){
+
+		break;
+
+		}
+
+	}
+
+	return cadaBloqueAocupar;
+
+}
+
+
+void actualizarStringBitMap(){
+
+int sizeBitArray = superBloque->block_size * superBloque->blocks /8;
+
+char* bitmap = malloc(sizeBitArray + 1);
+
+  for(int i=0; i<sizeBitArray;i++){
+
+    	int valor =  bitarray_test_bit(superBloque->bitmap, i);
+
+    	bitmap[i] = valor + '0';
+
+    	printf("%c ", bitmap[i]);
+
+   }
+
+  bitmap[sizeBitArray] = '\0';
+
+  config_set_value(configSuperBloque,"BITMAP",bitmap);
+
+  config_save(configSuperBloque);
+
+  free(bitmap);
+
+
+}
+
+
+void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config* config, int bloquesAocupar){
+
+	char* bloquesQueTenia = oxigeno->bloquesQueOcupa;
+
+	int tamanio = string_length(bloquesQueTenia);
+
+	char* bloquesActuales = string_substring(bloquesQueTenia,0,tamanio - 1);
+
+	int i = 0;
+
+	while ( i < bloquesAocupar){
+
+		string_append(&bloquesActuales,",");
+		string_append(&bloquesActuales,string_itoa(*(arrayDePosiciones + i)));
+		i++;
+
+	}
+	string_append(&bloquesActuales,"]");
+
+	archivo->bloquesQueOcupa = bloquesActuales;
+	archivo->cantidadBloques += bloquesAocupar;
+	archivo->tamanioArchivo = archivo->cantidadBloques * superBloque->block_size;
+
+	config_set_value(configOxigeno,"BLOCK_COUNT",archivo->bloquesQueOcupa);
+	config_set_value(configOxigeno,"SIZE",string_itoa(archivo->tamanioArchivo));
+	config_set_value(configOxigeno,"BLOCKS",string_itoa(archivo->cantidadBloques));
+	config_save(config);
+
+	free(bloquesQueTenia);
+
+}
+
+int min(int a,int b){
+    if(a>b){
+        return b;
+    }
+    else{
+        return a;
+    }
+}
+
+
+void sincronizarMemoriaSecundaria(){
+
+	int tiempoEspera = datosConfig->tiempoSincronizacion;
+
+	sleep(tiempoEspera);
+
+	int size = superBloque->block_size * superBloque->blocks;
+
+	memcpy(memoriaSecundaria,copiaMemoriaSecundaria,size);
+
+	msync(memoriaSecundaria,size,MS_SYNC);
+}
+
+
+void actualizarBitArray(int* posicionesQueOcupa, int bloquesAocupar){
+
+	for(int i=0; i<bloquesAocupar; i++){
+		bitarray_set_bit(superBloque->bitmap, posicionesQueOcupa[i]);
+	}
+
+	actualizarStringBitMap();
+
+}
+
+
+void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* caracterLlenado, int bloquesAocupar){
+
+	int flag = tarea->parametro;
+
+	char caracter = caracterLlenado[0];
+
+
+	char** palabraAguardar = malloc(sizeof(char*)*bloquesAocupar);
+
+	for(int i = 0; i < bloquesAocupar;i++){
+
+		palabraAguardar[i] = string_repeat(caracter,min(superBloque->block_size,flag));
+		flag -= superBloque->block_size;
+	}
+
+
+
+	for(int i=0; i<bloquesAocupar; i++){
+		int offset = posicionesQueOcupa[i] * superBloque->block_size;
+		memcpy(copiaMemoriaSecundaria + offset,palabraAguardar[i],superBloque->block_size);
+	}
+
+	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
+
+
+}
+
+
 void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 	int bloquesAocupar = (int) ceil(tarea->parametro / superBloque->block_size);
 
 	int bloques = bloquesLibres(bloquesAocupar);
 
-	if(bloquesAocupar >= bloques){
+	if(bloques >= bloquesAocupar){
 
 		log_info(logImongo,"Se comprobó que hay espacio en el disco para la tarea %s",tarea->nombreTarea);
 
@@ -210,8 +357,6 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 			oxigeno->tamanioArchivo = config_get_int_value(configOxigeno,"SIZE");
 
 			bloquesAocupar += oxigeno->cantidadBloques;
-
-
 
 		}
 		else{
@@ -226,6 +371,15 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 		config_save(configOxigeno);
 
 
+
+		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+
+		actualizarPosicionesFile(oxigeno,posicionesQueOcupa,configOxigeno,bloquesAocupar);
+
+		guardarEnMemoriaSecundaria(tarea,posicionesQueOcupa,oxigeno->caracterLlenado,bloquesAocupar);
+
+		mandarOKAdiscordiador(tripulanteSock);
+
 	}
 	else{
 
@@ -237,25 +391,31 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 }
 
+
 void consumirOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 }
+
 
 void generarComida(t_tarea* tarea, int* tripulanteSock){
 
 }
 
+
 void consumirComida(t_tarea* tarea, int* tripulanteSock){
 
 }
+
 
 void generarBasura(t_tarea* tarea, int* tripulanteSock){
 
 }
 
+
 void descartarBasura(t_tarea* tarea, int* tripulanteSock){
 
 }
+
 
 void liberarTodosLosConfig(){
 
@@ -266,6 +426,7 @@ void liberarTodosLosConfig(){
 	config_destroy(configSuperBloque);
 }
 
+
 void liberarConfiguracion(){
 
 	free(datosConfig->puntoMontaje);
@@ -273,7 +434,6 @@ void liberarConfiguracion(){
 	free(datosConfig);
 
 }
-
 
 void liberarTareas(){
 
