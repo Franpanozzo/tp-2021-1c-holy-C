@@ -13,7 +13,6 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 	if(res == 0) return NULL;
 
 	t_tarea* tarea = irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcbAGuardar);
-	free(tcbAGuardar);
 
 	return tarea;
 }
@@ -241,6 +240,7 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 	}
 
 	list_remove_by_condition(tablaSegmentosBuscada->tablaDeSegmentos, (void*) mismoIndice);
+	free(info_segmento);
 
 	chequearUltimoTripulanteSeg(tablaSegmentosBuscada);
 }

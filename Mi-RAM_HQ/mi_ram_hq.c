@@ -396,7 +396,11 @@ t_tarea* deserializarTripulante(t_paquete* paquete) {
 		return tarea_error();
 	}
 
-	return guardarTCB(nuevoTCB,idPatota);
+	t_tarea* tarea = guardarTCB(nuevoTCB,idPatota);
+
+	free(nuevoTCB);
+
+	return tarea;
 
 	//NOS QUEDAMOS ACA
 	//BUSCAR EN RAM LA TAREA A DARLE, YA ENTRA EN JUEGO EL TEMA DE IR A BUSCAR A LAS PAGINAS SEGUN DESPLAZ ETC.
