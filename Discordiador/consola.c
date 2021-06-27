@@ -29,6 +29,10 @@ void leerConsola(){
 			}
 
 			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
+
+			free(coordenadasTripulantes);
+//			free(tareas);
+
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
 			modificarPlanificacion(CORRIENDO);
@@ -113,7 +117,7 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 
 	if(parametros[*cursor] != NULL){
 		log_info(logDiscordiador,"Se ingresaron coordenadas de mas, solo se tendran en cuenta "
-				"las primeras %d coordenadas \n", cantidadTripulantes);
+				"las primeras %d coordenadas", cantidadTripulantes);
 	}
 
 	return coordenadasTripulantes;
@@ -136,14 +140,16 @@ void liberarStringSplit(char** arrayParametros) {
 char* procesarPathTareas(char** parametros, int* cursor){
 
 	if(parametros[*cursor] == NULL){
-		log_error(logDiscordiador,"\n Faltan parametros en el comando INICIAR_PATOTA, no se ingreso el path de las tareas");
+		log_error(logDiscordiador,"Faltan parametros en el comando INICIAR_PATOTA, "
+				"no se ingreso el path de las tareas");
 					//break se tiene q romper el leer consola
 		}
 
 	FILE* archivo = fopen(parametros[*cursor], "r");
 
 	if(archivo == NULL){
-		log_error(logDiscordiador,"\n No se encontro el archivo con las tareas, revise la direccion ingresada %s", parametros[*cursor]);
+		log_error(logDiscordiador,"No se encontro el archivo con las tareas, "
+				"revise la direccion ingresada %s", parametros[*cursor]);
 	}
 
 	char* unaTarea = malloc(sizeof(char) * 50);

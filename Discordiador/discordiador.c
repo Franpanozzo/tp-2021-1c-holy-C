@@ -48,7 +48,6 @@ void hiloPlanificador(){
 	while(1){
 		if(leerPlanificacion() == CORRIENDO && totalTripulantes() > 0){
 
-			// FALTAN LOS MUTEX
 			comunicarseConTripulantes(listaExec, (void*)esperarTerminarTripulante);
 			comunicarseConTripulantes(listaBlocked, (void*)esperarTerminarTripulante);
 			comunicarseConTripulantes(listaNew, (void*)esperarTerminarTripulante);
@@ -112,7 +111,6 @@ void hiloSabotaje(){
 
 		pasarAlistaSabotaje(listaExec);
 		pasarAlistaSabotaje(listaReady);
-		list_iterate(listaSabotaje->elementos, (void*)ponerEnSabotaje);
 
 		log_info(logDiscordiador,"----- LA LISTA DE READY QUEDO CON %d TRIPULANTES -----",
 				list_size(listaReady->elementos));
@@ -150,10 +148,6 @@ void hiloTripulante(t_tripulante* tripulante){
 	int ciclosBlocked = 0;
 	int quantumPendiente = quantum;
 	while(tripulante->estaVivo){
-
-		if(tripulante->estado != NEW){
-			actualizarEstadoEnRAM(tripulante);
-		}
 		switch(tripulante->estado){
 			case NEW:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
@@ -265,7 +259,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota %d",patota->ID);
 	}
 
-	free(patota);
+	eliminarPatota(patota);
 	close(miRAMsocket);
 }
 
@@ -289,7 +283,7 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	sem_init(&tripulante->semaforoFin, 0, 0);
 	tripulante->estaVivo = 1;
 
-	if(sabotaje->haySabotaje == 1)
+	if(sabotaje->haySabotaje)
 		meterEnLista(tripulante, listaSabotaje);
 	else
 		meterEnLista(tripulante, listaNew);
@@ -335,16 +329,10 @@ void actualizarListaNew(){
 	log_info(logDiscordiador,"------Iniciando planficacion cola de new con %d tripulantes-----",
 				list_size(listaNew->elementos));
 
-	if(sabotaje->haySabotaje){
-		list_iterate(listaNew->elementos, (void*)ponerEnSabotaje);
-		pasarAlistaSabotaje(listaNew);
-	}
-	else{
-		list_iterate(listaNew->elementos, (void*)ponerEnReady);
-		list_iterate(listaNew->elementos, (void*)pasarDeLista);
-	}
-
+	list_iterate(listaNew->elementos, (void*)ponerEnReady);
+	list_iterate(listaNew->elementos, (void*)pasarDeLista);
 	list_clean(listaNew->elementos);
+
 	log_info(logDiscordiador,"------Finalizando planficacion cola de new con %d tripulantes-----",
 					list_size(listaNew->elementos));
 
@@ -359,7 +347,7 @@ void actualizarListaExec(){
 
 void actualizarListaBlocked(){
 	actualizarListaEyB(listaBlocked, BLOCKED);
-	if(idTripulanteBlocked == NO_HAY_TRIPULANTE_BLOQUEADO && list_size(listaBlocked->elementos) > 0)
+	if(idTripulanteBlocked == NO_HAY_TRIPULANTE_BLOQUEADO)
 		elegirTripulanteAbloquear();
 }
 

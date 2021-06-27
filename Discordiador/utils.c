@@ -211,14 +211,6 @@ t_patota* asignarDatosAPatota(char* tareasString){
 }
 
 
-bool tripulanteDeMenorId(t_tripulante* tripulante1, t_tripulante* tripulante2){
-	t_tripulante* tripulanteMenorId = (t_tripulante*) tripulante1;
-	t_tripulante* tripulanteMayorId = (t_tripulante*) tripulante2;
-
-	return tripulanteMenorId->idTripulante < tripulanteMayorId->idTripulante;
-}
-
-
 uint32_t diferencia(uint32_t numero1, uint32_t numero2){
 	return (uint32_t) abs(numero1-numero2);
 }
@@ -261,14 +253,23 @@ void elegirTripulanteAbloquear(){
 
 
 void pasarAlistaSabotaje(t_lista* lista){
+
+	bool tripulanteDeMenorId(t_tripulante* tripulante1, t_tripulante* tripulante2){
+		return tripulante1->idTripulante < tripulante2->idTripulante;
+	}
+
 	lock(&lista->mutex);
 	list_sort(lista->elementos, (void*)tripulanteDeMenorId);
-	list_add_all(listaSabotaje->elementos, lista->elementos);
+	list_iterate(lista->elementos, (void*)ponerEnSabotaje);
+	list_iterate(lista->elementos, (void*)pasarDeLista);
 	list_clean(lista->elementos);
 	unlock(&lista->mutex);
 }
 
+
 void pasarDeLista(t_tripulante* tripulante){
+	actualizarEstadoEnRAM(tripulante);
+
 	switch(tripulante->estado){
 		case READY:
 			meterEnLista(tripulante, listaReady);
@@ -284,6 +285,11 @@ void pasarDeLista(t_tripulante* tripulante){
 		case BLOCKED:
 			meterEnLista(tripulante, listaBlocked);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
+			break;
+
+		case SABOTAJE:
+			meterEnLista(tripulante, listaSabotaje);
+			log_info(logDiscordiador,"El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
 			break;
 
 		default:
@@ -364,6 +370,10 @@ uint32_t calculoCiclosExec(t_tripulante* tripulante){
 
 void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 
+//	t_desplazamiento desplazamiento;
+//	desplazamiento.id = tripulante->idTripulante;
+//	desplazamiento.inicio = tripulante->coordenadas;
+
 	int diferenciaEnX = diferencia(tripulante->coordenadas.posX, destino.posX);
 	int diferenciaEnY = diferencia(tripulante->coordenadas.posY, destino.posY);
 	int restaEnX = tripulante->coordenadas.posX - destino.posX;
@@ -379,10 +389,14 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 	}
 	else if(diferenciaEnY){
 		desplazamiento = restaEnY / diferenciaEnY;
-		tripulante->coordenadas.posY = (tripulante->coordenadas.posY - desplazamiento);
+		tripulante->coordenadas.posY = tripulante->coordenadas.posY - desplazamiento;
 	}
 
-//	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
+//	desplazamiento.fin = tripulante->coordenadas;
+
+//	enviarA(puertoEIPRAM, tripulante, MOVIMIENTO); // FALTA EL CLOSE
+//	enviarA(puertoEIPMongo, tripulante, DESPLAZAMIENTO);
+	//	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
 
 }
 
