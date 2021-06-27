@@ -347,7 +347,7 @@ void actualizarListaExec(){
 
 void actualizarListaBlocked(){
 	actualizarListaEyB(listaBlocked, BLOCKED);
-	if(idTripulanteBlocked == NO_HAY_TRIPULANTE_BLOQUEADO)
+	if(idTripulanteBlocked == NO_HAY_TRIPULANTE_BLOQUEADO && list_size(listaBlocked->elementos) > 0)
 		elegirTripulanteAbloquear();
 }
 
