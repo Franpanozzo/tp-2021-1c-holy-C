@@ -51,8 +51,9 @@ int main() {
 	pthread_mutex_init(&mutexLogDiscordiador, NULL);
 	pthread_mutex_init(&mutexTotalTripus, NULL);
 	//
+
 	int tripulantes = 3;
-	t_coordenadas coordenadas[tripulantes ];
+	t_coordenadas coordenadas[tripulantes];
 	for(int i=0; i<tripulantes;i++){
 		coordenadas[i].posX = i +1;
 		coordenadas[i].posY = i + 2;

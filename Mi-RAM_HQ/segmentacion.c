@@ -102,7 +102,6 @@ int actualizarTripulanteSeg(tcb* tcbAGuardar, int idPatota) {
 	actualizarTripulanteEnMemSeg(tcbAGuardar, t_segmentoTripulante);
 
 	free(segmentoConTripu);
-	free(tcbAGuardar);
 
 	return 1;
 }
@@ -152,9 +151,14 @@ t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 
 	        return a;
 	    }
-		log_info(logMemoria, "Patotas con tabla totales: %d",list_size(tablasSegmentosPatotas));
 
+		lock(&mutexTablasSegmentos);
+		log_info(logMemoria, "Patotas con tabla totales: %d",list_size(tablasSegmentosPatotas));
+		unlock(&mutexTablasSegmentos);
+
+		lock(&mutexTablasSegmentos);
 		t_tablaSegmentosPatota* tablaSegmentosBuscada = list_find(tablasSegmentosPatotas, (void*)idIgualA);
+		unlock(&mutexTablasSegmentos);
 
 	    if(tablaSegmentosBuscada == NULL)
 	    {
@@ -171,9 +175,13 @@ int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = malloc(sizeof(t_tablaSegmentosPatota));
 	tablaSegmentosPatotaActual->idPatota = pcbAGuardar->pid;
 	tablaSegmentosPatotaActual->tablaDeSegmentos = list_create();
+	lock(&mutexTablasSegmentos);
 	list_add(tablasSegmentosPatotas,tablaSegmentosPatotaActual);
+	unlock(&mutexTablasSegmentos);
 
+	lock(&mutexTablasSegmentos);
 	log_info(logMemoria, "Se creo la tabla de segmentos para la patota: %d - ahora hay %d patotas", pcbAGuardar->pid, list_size(tablasSegmentosPatotas));
+	unlock(&mutexTablasSegmentos);
 
 	pcbAGuardar->dlTareas = 1;
 	pcbGuardado = asignarSegmentosEnTabla((void*) pcbAGuardar, tablaSegmentosPatotaActual,PCB);
@@ -207,8 +215,11 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 		return fin + 1 == info_segmento->deslazamientoInicial;
 	}
 
+	lock(&mutexBuscarLugarLibre);
 	t_lugarLibre* lugarLibreAntes = list_find(lugaresLibres, (void*) antesQueSeg);
 	t_lugarLibre* lugarLibreDespues = list_find(lugaresLibres, (void*) despuesQueSeg);
+	unlock(&mutexBuscarLugarLibre);
+
 
 	if(lugarLibreAntes != NULL)
 	{
@@ -231,7 +242,9 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 		t_lugarLibre* lugarLibre = malloc(sizeof(t_lugarLibre));
 		lugarLibre->inicio = info_segmento->deslazamientoInicial;
 		lugarLibre->bytesAlojados = info_segmento->bytesAlojados;
+		lock(&mutexBuscarLugarLibre);
 		list_add(lugaresLibres,lugarLibre);
+		unlock(&mutexBuscarLugarLibre);
 	}
 
 	bool mismoIndice(t_info_segmento* info_segmento2)
@@ -263,7 +276,9 @@ void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
 
 		log_info(logMemoria,"La patota tiene %d segmentos", list_size(tablaSegmentosPatota->tablaDeSegmentos));
 
+		lock(&mutexTablasSegmentos);
 		list_remove_by_condition(tablasSegmentosPatotas, (void*) tablaConID);
+		unlock(&mutexTablasSegmentos);
 		list_destroy_and_destroy_elements(tablaSegmentosPatota->tablaDeSegmentos, (void*) borrarSegmento);
 
 		free(tablaSegmentosPatota);
@@ -290,7 +305,9 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 	void* bufferAMeter = meterEnBuffer(aGuardar, tipo, &aMeter, &datoAdicional);
 	t_info_segmento* info_segmento;
 
+	lock(&mutexBuscarLugarLibre);
 	int inicioSegmentoLibre = buscarSegmentoSegunAjuste(aMeter);
+	unlock(&mutexBuscarLugarLibre);
 
 	if(inicioSegmentoLibre == -1) {
 		log_info(logMemoria, "Memoria principal llena");
@@ -330,7 +347,9 @@ void borrarLugarLibre(t_lugarLibre* lugarAEliminar) {
 	{
 		return lugarLibre->inicio == lugarAEliminar->inicio;
 	}
+	lock(&mutexBuscarLugarLibre);
 	list_remove_by_condition(lugaresLibres, (void*) empiezaEn);
+	unlock(&mutexBuscarLugarLibre);
 	free(lugarAEliminar);
 }
 
@@ -343,6 +362,7 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 	{
 		return (lugarLibre->bytesAlojados - aMeter) > 0;
 	}
+
 	t_list* lugaresQueEntra = list_filter(lugaresLibres, (void*) entraAMeter);
 
 	if(list_size(lugaresQueEntra) == 0)
@@ -354,7 +374,7 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 	}
 
 
-	if(strcmp(configRam.criterioSeeleccion,"BF") == 0)
+	if(strcmp(configRam.criterioSeleccion,"BF") == 0)
 	{
 
 		t_lugarLibre* sobraMenos(t_lugarLibre* lugarLibre1, t_lugarLibre* lugarLibre2)
@@ -377,7 +397,7 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 		return inicio;
 	}
 
-	else if(strcmp(configRam.criterioSeeleccion,"FF") == 0)
+	else if(strcmp(configRam.criterioSeleccion,"FF") == 0)
 	{
 		t_lugarLibre* empiezaAntes(t_lugarLibre* lugarLibre1, t_lugarLibre* lugarLibre2)
 		{
@@ -448,7 +468,9 @@ void dumpSeg() {
 
 	}
 
+	lock(&mutexTablasSegmentos);
 	list_iterate(tablasSegmentosPatotas,(void*) imprimirTabla);
+	unlock(&mutexTablasSegmentos);
 
 
 	txt_write_in_file(archivoDump, "--------------------------------------------------------------------------\n");

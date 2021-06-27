@@ -10,6 +10,8 @@ pthread_mutex_t mutexListaTareas;
 pthread_mutex_t mutexTripulante;
 
 sem_t habilitarPatotaEnRam;
+//sem_t habilitarExpulsionEnRam;
+
 
 int main(void) {
 
@@ -28,6 +30,8 @@ int main(void) {
     pthread_mutex_init(&mutexTripulante, NULL);
 
 	sem_init(&habilitarPatotaEnRam,0,1);
+	//sem_init(&habilitarExpulsionEnRam,0,1);
+
 
     int serverSock = iniciarConexionDesdeServidor(configRam.puerto);
 
@@ -198,7 +202,10 @@ int recibirActualizarTripulante(t_paquete* paquete) {
 	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d en estado %c, en pos X: %d | pos Y: %d",
 			nuevoTCB->idTripulante, idPatota, nuevoTCB->estado, nuevoTCB->posX, nuevoTCB->posY);
 
-	return actualizarTripulante(nuevoTCB,idPatota);
+	int confirmacion = actualizarTripulante(nuevoTCB,idPatota);
+
+	free(nuevoTCB);
+	return confirmacion;
 
 }
 
@@ -233,7 +240,9 @@ void deserializarExpulsionTripulante(t_paquete* paquete) {
 
 	log_info(logMiRAM, "Se procede a eliminar de la memoria el tripulante %d de la patota", idTripu, idPatota);
 
+	lock(&mutexExpulsionTripulante);
 	expulsarTripulante(idTripu,idPatota);
+	unlock(&mutexExpulsionTripulante);
 }
 
 

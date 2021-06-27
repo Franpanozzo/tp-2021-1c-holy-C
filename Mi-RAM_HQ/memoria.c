@@ -15,7 +15,7 @@ void cargar_configuracion() {
 	configRam.tamanioSwap = config_get_int_value(config, 	"TAMANIO_SWAP");
 	configRam.pathSwap = config_get_string_value(config, 	"PATH_SWAP");
 	configRam.algoritmoReemplazo = config_get_string_value(config, "ALGORITMO_REEMPLAZO");
-	configRam.criterioSeeleccion = config_get_string_value(config, "CRITERIO_SELECCION");
+	configRam.criterioSeleccion = config_get_string_value(config, "CRITERIO_SELECCION");
 	configRam.puerto = config_get_int_value(config, "PUERTO");
 
 	//config_destroy(config);
@@ -53,6 +53,8 @@ void iniciarMemoria() {
 
     pthread_mutex_init(&mutexMemoria, NULL);
     pthread_mutex_init(&mutexEscribirMemoria, NULL);
+    pthread_mutex_init(&mutexBuscarLugarLibre, NULL);
+    pthread_mutex_init(&mutexExpulsionTripulante, NULL);
 
 
 	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
@@ -291,7 +293,10 @@ int frameTotalmenteLibre(int frame) {
 		while(list_iterator_has_next(iteradorTablaPaginas))
 		{
 			t_info_pagina* infoPagina = list_iterator_next(iteradorTablaPaginas);
-			if(infoPagina->frame_m_ppal == frame) return 1;
+			if(infoPagina->frame_m_ppal == frame) {
+				list_iterator_destroy(iteradorTablaPaginas);
+				return 1;
+			}
 		}
 
 		list_iterator_destroy(iteradorTablaPaginas);
@@ -299,7 +304,9 @@ int frameTotalmenteLibre(int frame) {
 		return 0;
 	}
 
-	return !list_any_satisfy(tablasPaginasPatotas,(void*) frameEnUso);
+	bool a = list_any_satisfy(tablasPaginasPatotas,(void*) frameEnUso);
+
+	return !a;
 }
 
 
@@ -335,6 +342,7 @@ t_tarea* asignarProxTareaPag(int idPatota,int idTripulante) {
 		expulsarTripulantePag(idTripulante, idPatota);
 	}
 
+	free(tcb);
 	return tarea;
 }
 
@@ -478,6 +486,7 @@ int sobreescribirTripu(t_list* paginasConTripu, tcb* tcbAGuardar) {
 
 	if(cantPaginasConTripu == 0) {
 		log_error(logMemoria, "No hay paginas que contengan al tripulante %d en memoria" , tcbAGuardar->idTripulante);
+		free(paginasConTripu);
 		return 0;
 	}
 
@@ -496,6 +505,8 @@ int sobreescribirTripu(t_list* paginasConTripu, tcb* tcbAGuardar) {
 		offset += alojado->bytesAlojados;
 		i++;
 	}
+	free(paginasConTripu);
+	free(bufferAMeter);
 
 	return 1;
 }
@@ -527,6 +538,7 @@ int actualizarTripulantePag(tcb* tcbAGuardar, int idPatota) {
 
 		if(cantPaginasConTripu == 0) {
 			log_error(logMemoria, "No hay paginas que contengan al tripulante %d en memoria" , tcbAGuardar->idTripulante);
+			free(paginasConTripulante);
 			return 0;
 		}
 
@@ -555,6 +567,7 @@ int actualizarTripulantePag(tcb* tcbAGuardar, int idPatota) {
 			}
 			else {
 				log_error(logMemoria, "Se leyo mal la pagina mi bro");
+				free(paginasConTripulante);
 				return 0;
 			}
 		}
@@ -565,6 +578,7 @@ int actualizarTripulantePag(tcb* tcbAGuardar, int idPatota) {
 		tcbAGuardar->idTripulante, tcbAGuardar->estado, tcbAGuardar->posX, tcbAGuardar->posY, tcbAGuardar->proximaAEjecutar, tcbAGuardar->dlPatota);
 
 		free(bufferTripu);
+		free(paginasConTripulante);
 		return actualizarTripulanteEnMemPag(tablaPaginasPatotaActual, tcbAGuardar);
 }
 
@@ -603,7 +617,11 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 				free(pagina);
 			}
 
-			return cargarEnTripulante(bufferTripu);
+			tcb* tcb = cargarEnTripulante(bufferTripu);
+			free(bufferTripu);
+			free(paginasConTripulante);
+
+			return tcb;
 }
 
 
@@ -676,7 +694,9 @@ int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = malloc(sizeof(t_tablaPaginasPatota));
 	tablaPaginasPatotaActual->idPatota = pcbAGuardar->pid;
 	tablaPaginasPatotaActual->tablaDePaginas = list_create();
+	lock(&mutexTablasPaginas);
 	list_add(tablasPaginasPatotas, tablaPaginasPatotaActual);
+	unlock(&mutexTablasPaginas);
 
 	log_info(logMemoria, "Se creo la tabla de paginas para la patota: %d", pcbAGuardar->pid);
 
@@ -689,6 +709,7 @@ int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
 	tareasGuardadas = asignarPaginasEnTabla((void*) stringTareas, tablaPaginasPatotaActual,TAREAS);
 
 	free(pcbAGuardar);
+	free(stringTareas);
 
 	return pcbGuardado && tareasGuardadas;
 }
@@ -793,7 +814,9 @@ t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int idPatotaABuscar) {
 	        return a;
 	    }
 
+		lock(&mutexTablasPaginas);
 	    t_tablaPaginasPatota* tablaPaginasBuscada = list_find(tablasPaginasPatotas, (void*)idIgualA);
+	    unlock(&mutexTablasPaginas);
 
 	    if(tablaPaginasBuscada == NULL)
 	    {
@@ -1011,6 +1034,8 @@ void expulsarTripulantePag(int idTripulante,int idPatota) {
 				free(paginaActual);
 			}
 		}
+
+		free(paginasTripu);
 		chequearUltimoTripulante(tablaPatota);
 		list_iterator_destroy(iteradorPaginas);
 	}
@@ -1041,7 +1066,9 @@ void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 			return tablaPatota2->idPatota == tablaPatota->idPatota;
 		}
 
+		lock(&mutexTablasPaginas);
 		list_remove_by_condition(tablasPaginasPatotas, (void*) tablaConID);
+		unlock(&mutexTablasPaginas);
 		list_destroy_and_destroy_elements(tablaPatota->tablaDePaginas, (void*) borrarProceso);
 
 		free(tablaPatota);
@@ -1125,7 +1152,11 @@ t_tablaPaginasPatota* patotaConFrame(int frame) {
 			return 0;
 		}
 
-		return list_find(tablasPaginasPatotas,(void*) frameEnUso);
+		lock(&mutexTablasPaginas);
+		t_tablaPaginasPatota* tablaPaginasPatota = list_find(tablasPaginasPatotas,(void*) frameEnUso);
+		unlock(&mutexTablasPaginas);
+
+		return tablaPaginasPatota;
 }
 
 

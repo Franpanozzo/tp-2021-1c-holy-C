@@ -31,7 +31,7 @@ typedef struct {
 	int tamanioSwap;
 	char* pathSwap;
 	char* algoritmoReemplazo;
-	char* criterioSeeleccion;
+	char* criterioSeleccion;
 	int puerto;
 
 } t_configRam;
@@ -71,6 +71,11 @@ t_list* tablasPaginasPatotas;
 
 pthread_mutex_t mutexMemoria;
 pthread_mutex_t mutexEscribirMemoria;
+pthread_mutex_t mutexBuscarLugarLibre;
+pthread_mutex_t mutexTablasSegmentos;
+pthread_mutex_t mutexTablasPaginas;
+pthread_mutex_t mutexExpulsionTripulante;
+
 
 
 void cargar_configuracion();
