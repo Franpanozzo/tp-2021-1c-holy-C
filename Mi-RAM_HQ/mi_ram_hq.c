@@ -2,7 +2,7 @@
 
 
 sem_t habilitarPatotaEnRam;
-//sem_t habilitarExpulsionEnRam;
+sem_t habilitarExpulsionEnRam;
 
 
 int main(void) {
@@ -15,7 +15,7 @@ int main(void) {
 	iniciarMemoria();
 
 	sem_init(&habilitarPatotaEnRam,0,1);
-	//sem_init(&habilitarExpulsionEnRam,0,1);
+	sem_init(&habilitarExpulsionEnRam,0,1);
 
 
     int serverSock = iniciarConexionDesdeServidor(configRam.puerto);
@@ -48,8 +48,8 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		pthread_detach(t);
-		//pthread_join(t, (void**) NULL);
+		//pthread_detach(t);
+		pthread_join(t, (void**) NULL);
     }
 }
 
@@ -225,6 +225,8 @@ void deserializarExpulsionTripulante(t_paquete* paquete) {
 
 	log_info(logMiRAM, "Se procede a eliminar de la memoria el tripulante %d de la patota", idTripu, idPatota);
 
+
+	//sem_wait(&mutexExpulsionTripulante);
 	lock(&mutexExpulsionTripulante);
 	expulsarTripulante(idTripu,idPatota);
 	unlock(&mutexExpulsionTripulante);

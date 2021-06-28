@@ -511,7 +511,7 @@ int sobreescribirTripu(t_list* paginasConTripu, tcb* tcbAGuardar) {
 		offset += alojado->bytesAlojados;
 		i++;
 	}
-	free(paginasConTripu);
+	list_destroy(paginasConTripu);
 	free(bufferAMeter);
 
 	return 1;
@@ -584,7 +584,7 @@ int actualizarTripulantePag(tcb* tcbAGuardar, int idPatota) {
 		tcbAGuardar->idTripulante, tcbAGuardar->estado, tcbAGuardar->posX, tcbAGuardar->posY, tcbAGuardar->proximaAEjecutar, tcbAGuardar->dlPatota);
 
 		free(bufferTripu);
-		free(paginasConTripulante);
+		list_destroy(paginasConTripulante);
 		return actualizarTripulanteEnMemPag(tablaPaginasPatotaActual, tcbAGuardar);
 }
 
@@ -625,7 +625,7 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 
 			tcb* tcb = cargarEnTripulante(bufferTripu);
 			free(bufferTripu);
-			free(paginasConTripulante);
+			list_destroy(paginasConTripulante);
 
 			return tcb;
 }
@@ -1041,7 +1041,7 @@ void expulsarTripulantePag(int idTripulante,int idPatota) {
 			}
 		}
 
-		free(paginasTripu);
+		list_destroy(paginasTripu);
 		chequearUltimoTripulante(tablaPatota);
 		list_iterator_destroy(iteradorPaginas);
 	}
