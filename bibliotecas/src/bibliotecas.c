@@ -147,11 +147,6 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			return sizeof(uint32_t) * 2;
 		}
 
-		case STRING:
-		{
-			char * string = (char *) estructura;
-			return strlen(string) + 1;
-		}
 
 		case DESPLAZAMIENTO:
 		{
@@ -160,14 +155,14 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 
 		case INICIO_TAREA:
 		{
-			char* nombreTarea = (char*) estructura;
-			return sizeof(uint32_t) + strlen(nombreTarea) + 1;
+			t_avisoTarea* aviso = (t_avisoTarea*) estructura;
+			return sizeof(uint32_t)*2 + strlen(aviso->nombreTarea) + 1;
 		}
 
 		case FIN_TAREA:
 		{
-			char* nombreTarea = (char*) estructura;
-			return sizeof(uint32_t) + strlen(nombreTarea) + 1;
+			t_avisoTarea* aviso = (t_avisoTarea*) estructura;
+			return sizeof(uint32_t)*2 + strlen(aviso->nombreTarea) + 1;
 		}
 
 		case ID_SABOTAJE:
@@ -180,6 +175,11 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			return sizeof(uint32_t);
 		}
 
+		case STRING:
+		{
+			char * string = (char *) estructura;
+			return strlen(string) + 1;
+		}
 
 		default:
 				//printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
@@ -297,9 +297,13 @@ void* serializarDesplazamiento(void* stream, void* estructura, int offset){
 
 void* serializarAvisoTarea(void* stream, void* estructura, int offset){
 	t_avisoTarea* avisoTarea = (t_avisoTarea*) estructura;
+	uint32_t tamanioNombreTarea = strlen(avisoTarea->nombreTarea) + 1;
+
 	memcpy(stream + offset, &(avisoTarea->idTripulante),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset,avisoTarea->nombreTarea ,strlen(avisoTarea->nombreTarea) + 1);
+	memcpy(stream + offset, &tamanioNombreTarea , sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, avisoTarea->nombreTarea , tamanioNombreTarea);
 
 	return stream;
 }
@@ -343,8 +347,6 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperaci
 		case TAREA:
 				return serializarTarea(stream,estructura,offset);
 
-		case STRING:
-				return serializarString(stream,estructura,offset);
 
 		case DESPLAZAMIENTO:
 				return serializarDesplazamiento(stream, estructura, offset);
@@ -361,6 +363,8 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperaci
 		case FIN_SABOTAJE:
 			return serializarAvisoSabotaje(stream, estructura, offset);
 
+		case STRING:
+				return serializarString(stream,estructura,offset);
 		default:
 				//printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
 				exit(1);

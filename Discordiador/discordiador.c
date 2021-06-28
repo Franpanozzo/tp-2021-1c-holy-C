@@ -130,6 +130,8 @@ void hiloSabotaje(){
 		list_clean(listaSabotaje->elementos);
 		sabotaje->haySabotaje = 0;
 		list_add(listaReady->elementos, sabotaje->tripulanteSabotaje);
+		int socketMongo = enviarA(puertoEIPMongo, &sabotaje->tripulanteSabotaje->idTripulante, FIN_SABOTAJE);
+		close(socketMongo);
 		sabotaje->tripulanteSabotaje = NULL;
 
 		log_info(logDiscordiador,"----- LA LISTA DE READY FINAL SABOTAJE QUEDO CON %d TRIPULANTES -----",
@@ -184,10 +186,11 @@ void hiloTripulante(t_tripulante* tripulante){
 				}
 				else{
 					if(avisoTarea == NULL){
+						avisoTarea = malloc(sizeof(t_avisoTarea));
 						avisoTarea->idTripulante = tripulante->idTripulante;
 						avisoTarea->nombreTarea = tripulante->instruccionAejecutar->nombreTarea;
-//						int socketMongo = enviarA(puertoEIPMongo, avisoTarea, INICIO_TAREA);
-//						close(socketMongo);
+						int socketMongo = enviarA(puertoEIPMongo, avisoTarea, INICIO_TAREA);
+						close(socketMongo);
 					}
 					ciclosExec --;
 				}
@@ -196,8 +199,9 @@ void hiloTripulante(t_tripulante* tripulante){
 				}
 				if(ciclosExec <= 0){
 
-//					int socketMongo = enviarA(puertoEIPMongo, avisoTarea, FIN_TAREA);
-//					close(socketMongo);
+					int socketMongo = enviarA(puertoEIPMongo, avisoTarea, FIN_TAREA);
+					close(socketMongo);
+					free(avisoTarea);
 					avisoTarea = NULL;
 
 					if(esIO(tripulante->instruccionAejecutar->nombreTarea)){

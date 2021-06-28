@@ -421,7 +421,24 @@ void listarLista(t_lista* lista){
 
 
 void listarTripulantes(){
+
+ /*	void imprimirTripulante(t_tripulante* tripulante){
+		log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Estado: %s",
+				tripulante->idTripulante, tripulante->idPatota, traducirEstado(tripulante->estado));
+	}
+
+	bool estaVivo(t_tripulante* tripulante){
+		bool hayQueSacarlo(t_tripulante* otroTripulante){
+				return tripulante == otroTripulante;
+			}
+		return !list_any_satisfy(listaAeliminar->elementos, (void*) hayQueSacarlo);
+	}
+*/
+
+
 	log_info(logDiscordiador,"Estado de la nave: %s", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
+
+//	t_list* listaAux =
 
 	listarLista(listaNew);
 	listarLista(listaReady);
@@ -534,6 +551,9 @@ void elegirTripulanteSabotaje(){
 	list_remove_by_condition(listaSabotaje->elementos, (void*)esElTripulanteSabotaje);
 
 	unlock(&listaSabotaje->mutex);
+
+	int socketMongo = enviarA(puertoEIPMongo, &sabotaje->tripulanteSabotaje->idTripulante, ID_SABOTAJE);
+	close(socketMongo);
 
 	avisarTerminoPlanificacion(sabotaje->tripulanteSabotaje);
 }
