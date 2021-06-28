@@ -34,7 +34,12 @@
 		EXPULSAR,
 		ESTADO_TRIPULANTE,
 		SIGUIENTE_TAREA,
-		TAREA,
+		TAREA, // id tripulante con t_tarea
+		DESPLAZAMIENTO,// id tripulante con t_coordenada x 2
+		INICIO_TAREA, // id tripulante  y nombre tarea solamente (char)
+		FIN_TAREA, // id tripulante y nombre tarea solamente (char)
+		ID_SABOTAJE, // id tripulante
+		FIN_SABOTAJE,// id tripulante
 		STRING
 	} tipoDeDato;
 
@@ -94,6 +99,17 @@
 	} t_sabotaje;
 
 	typedef struct{
+		uint32_t idTripulante;
+		t_coordenadas inicio;
+		t_coordenadas fin;
+	} t_desplazamiento;
+
+	typedef struct{
+		uint32_t idTripulante;
+		char* nombreTarea;
+	} t_avisoTarea;
+
+	typedef struct{
 		pthread_mutex_t mutex;
 		t_list* elementos;
 	}t_lista;
@@ -117,6 +133,10 @@
 	void* serializarTripulante(void*, void*, int);
 	void* serializarSolicitudSiguienteTarea(void*, void* , int);
 	void* serializarString(void*, void*, int);
+	void* serializarSolicitudSiguienteTarea(void*, void*, int);
+	void* serializarDesplazamiento(void*, void*, int);
+	void* serializarAvisoTarea(void*, void*, int);
+	void* serializarAvisoSabotaje(void*, void*, int);
 	t_tarea* deserializarTarea(void*);
 
 

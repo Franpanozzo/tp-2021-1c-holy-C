@@ -153,6 +153,34 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			return strlen(string) + 1;
 		}
 
+		case DESPLAZAMIENTO:
+		{
+			return sizeof(uint32_t) + sizeof(t_coordenadas)*2;
+		}
+
+		case INICIO_TAREA:
+		{
+			char* nombreTarea = (char*) estructura;
+			return sizeof(uint32_t) + strlen(nombreTarea) + 1;
+		}
+
+		case FIN_TAREA:
+		{
+			char* nombreTarea = (char*) estructura;
+			return sizeof(uint32_t) + strlen(nombreTarea) + 1;
+		}
+
+		case ID_SABOTAJE:
+		{
+			return sizeof(uint32_t);
+		}
+
+		case FIN_SABOTAJE:
+		{
+			return sizeof(uint32_t);
+		}
+
+
 		default:
 				//printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
 				exit(1);
@@ -232,11 +260,14 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 
 	return stream;
 }
+
+
 void* serializarString(void* stream, void* estructura, int offset){
 	char* string = (char*) estructura;
 	memcpy(stream,string,strlen(string) + 1);
 	return stream;
 }
+
 
 void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offset){
 	t_tripulante* tripulante = (t_tripulante*) estructura;
@@ -247,6 +278,39 @@ void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offs
 	return stream;
 }
 
+
+void* serializarDesplazamiento(void* stream, void* estructura, int offset){
+	t_desplazamiento* desplazamiento = (t_desplazamiento*) estructura;
+	memcpy(stream + offset, &(desplazamiento->idTripulante),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(desplazamiento->inicio.posX),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(desplazamiento->inicio.posY),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(desplazamiento->fin.posX),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(desplazamiento->fin.posY),sizeof(uint32_t));
+
+	return stream;
+}
+
+
+void* serializarAvisoTarea(void* stream, void* estructura, int offset){
+	t_avisoTarea* avisoTarea = (t_avisoTarea*) estructura;
+	memcpy(stream + offset, &(avisoTarea->idTripulante),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset,avisoTarea->nombreTarea ,strlen(avisoTarea->nombreTarea) + 1);
+
+	return stream;
+}
+
+
+void* serializarAvisoSabotaje(void* stream, void* estructura, int offset){
+	int* id = (int*) estructura;
+	memcpy(stream, id, sizeof(uint32_t));
+
+	return stream;
+}
 
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperacion){
@@ -277,10 +341,25 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperaci
 				return serializarSolicitudSiguienteTarea(stream,estructura,offset);
 
 		case TAREA:
-
 				return serializarTarea(stream,estructura,offset);
+
 		case STRING:
 				return serializarString(stream,estructura,offset);
+
+		case DESPLAZAMIENTO:
+				return serializarDesplazamiento(stream, estructura, offset);
+
+		case INICIO_TAREA:
+			return serializarAvisoTarea(stream, estructura, offset);
+
+		case FIN_TAREA:
+			return serializarAvisoTarea(stream, estructura, offset);
+
+		case ID_SABOTAJE:
+			return serializarAvisoSabotaje(stream, estructura, offset);
+
+		case FIN_SABOTAJE:
+			return serializarAvisoSabotaje(stream, estructura, offset);
 
 		default:
 				//printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
