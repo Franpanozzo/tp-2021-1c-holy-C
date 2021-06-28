@@ -147,6 +147,8 @@ void hiloTripulante(t_tripulante* tripulante){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
 	int quantumPendiente = quantum;
+	t_avisoTarea* avisoTarea = NULL;
+
 	while(tripulante->estaVivo){
 		switch(tripulante->estado){
 			case NEW:
@@ -160,25 +162,44 @@ void hiloTripulante(t_tripulante* tripulante){
 					ciclosExec = calculoCiclosExec(tripulante);
 				}
 				quantumPendiente = quantum;
+
 				log_info(logDiscordiador,"el tripulante %d esta en ready con %d ciclos exec",
-						tripulante->idTripulante, ciclosExec);
+						tripulante->idTripulante, ciclosExec +
+						distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas));
+
 				sem_post(&tripulante->semaforoFin);
 				sem_wait(&tripulante->semaforoInicio);
 				break;
 			case EXEC:
 				log_info(logDiscordiador,"el tripulante %d esta en exec con %d ciclos y %d quantum",
-						tripulante->idTripulante, ciclosExec, quantumPendiente);
+						tripulante->idTripulante, ciclosExec +
+						distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas),
+						quantumPendiente);
+
+				sleep(retardoCiclosCPU);
+				quantumPendiente--;
 
 				if(distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas) > 0){
 					desplazarse(tripulante, tripulante->instruccionAejecutar->coordenadas);
 				}
-				ciclosExec --;
-				quantumPendiente--;
-				sleep(retardoCiclosCPU);
+				else{
+					if(avisoTarea == NULL){
+						avisoTarea->idTripulante = tripulante->idTripulante;
+						avisoTarea->nombreTarea = tripulante->instruccionAejecutar->nombreTarea;
+//						int socketMongo = enviarA(puertoEIPMongo, avisoTarea, INICIO_TAREA);
+//						close(socketMongo);
+					}
+					ciclosExec --;
+				}
 				if(quantumPendiente == 0){
 					tripulante->estado = READY;
 				}
 				if(ciclosExec <= 0){
+
+//					int socketMongo = enviarA(puertoEIPMongo, avisoTarea, FIN_TAREA);
+//					close(socketMongo);
+					avisoTarea = NULL;
+
 					if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
 						int socketMongo = enviarA(puertoEIPMongo, tripulante->instruccionAejecutar, TAREA);
 						close(socketMongo);

@@ -361,10 +361,9 @@ uint32_t distancia(t_coordenadas unaCoordenada, t_coordenadas otraCoordenada){
 
 uint32_t calculoCiclosExec(t_tripulante* tripulante){
 	if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
-		return  distancia(tripulante->instruccionAejecutar->coordenadas, tripulante->coordenadas) + 1;
+		return 1;
 	}
-	return distancia(tripulante->instruccionAejecutar->coordenadas, tripulante->coordenadas) +
-			tripulante->instruccionAejecutar->tiempo;
+	return tripulante->instruccionAejecutar->tiempo;
 }
 
 
@@ -378,25 +377,23 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 	int diferenciaEnY = diferencia(tripulante->coordenadas.posY, destino.posY);
 	int restaEnX = tripulante->coordenadas.posX - destino.posX;
 	int restaEnY = tripulante->coordenadas.posY - destino.posY;
-	int desplazamiento = 0;
 
 //	log_info(logDiscordiador,"Moviendose de la posicion en X|Y ==> %d|%d  ",
-//			tripulante->posX, tripulante->posY );
+//			tripulante->coordenadas.posX, tripulante->coordenadas.posY );
 
 	if(diferenciaEnX){
-		desplazamiento = restaEnX / diferenciaEnX;
-		tripulante->coordenadas.posX = tripulante->coordenadas.posX - desplazamiento;
+		tripulante->coordenadas.posX -= restaEnX / diferenciaEnX;;
 	}
 	else if(diferenciaEnY){
-		desplazamiento = restaEnY / diferenciaEnY;
-		tripulante->coordenadas.posY = tripulante->coordenadas.posY - desplazamiento;
+		tripulante->coordenadas.posY -= restaEnY / diferenciaEnY;
 	}
 
 //	desplazamiento.fin = tripulante->coordenadas;
 
 //	enviarA(puertoEIPRAM, tripulante, MOVIMIENTO); // FALTA EL CLOSE
 //	enviarA(puertoEIPMongo, tripulante, DESPLAZAMIENTO);
-	//	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",tripulante->posX, tripulante->posY);
+//	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",
+//			tripulante->coordenadas.posX, tripulante->coordenadas.posY);
 
 }
 
