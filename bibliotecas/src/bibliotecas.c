@@ -452,3 +452,17 @@ void eliminarPaquete(t_paquete* paquete){
 
 
 
+void liberarDoblesPunterosAChar(char** arrayParametros) {
+
+	char** liberadorDeStrings = arrayParametros;
+
+	while((*liberadorDeStrings) != NULL) {
+
+		free(*liberadorDeStrings);
+		liberadorDeStrings++;
+		//if((*liberadorDeStrings) == NULL) free(arrayParametros);
+	}
+	free(arrayParametros);
+}
+
+

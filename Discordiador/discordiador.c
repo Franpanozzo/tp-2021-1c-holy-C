@@ -6,6 +6,7 @@ int main() {
 	logDiscordiador = iniciarLogger(path,"Discordiador",1);
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
+
 	iniciarMutex();
 	iniciarListas();
 	iniciarTareasIO();
@@ -26,9 +27,9 @@ int main() {
 	sem_init(&sabotaje->semaforoTerminoTripulante,0,0);
 	sem_init(&sabotaje->semaforoTerminoSabotaje,0,0);
 
-
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
 	pthread_detach(planificador);
+
 
 	pthread_create(&sabo, NULL, (void*) hiloSabotaje, NULL);
 	pthread_detach(sabo);
@@ -87,7 +88,6 @@ void hiloPlanificador(){
 				list_iterate(listaNew->elementos, (void*)avisarTerminoPlanificacion);
 			if(!list_is_empty(listaReady->elementos))
 				list_iterate(listaReady->elementos, (void*)avisarTerminoPlanificacion);
-
 		}
 	}
 }
@@ -156,6 +156,7 @@ void hiloTripulante(t_tripulante* tripulante){
 			case NEW:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
 				recibirPrimerTareaDeMiRAM(tripulante);
+        sem_post(&semUltimoTripu);
 				sem_post(&tripulante->semaforoFin);
 				sem_wait(&tripulante->semaforoInicio);
 				break;
@@ -164,7 +165,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					ciclosExec = calculoCiclosExec(tripulante);
 				}
 				quantumPendiente = quantum;
-
+        
 				log_info(logDiscordiador,"el tripulante %d esta en ready con %d ciclos exec",
 						tripulante->idTripulante, ciclosExec +
 						distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas));
@@ -236,9 +237,6 @@ void hiloTripulante(t_tripulante* tripulante){
 				break;
 			case SABOTAJE:
 				ciclosExec = 0;
-
-				log_info(logDiscordiador,"el tripulante %d entro al case SABO", tripulante->idTripulante);
-
 				if(distancia(tripulante->coordenadas, sabotaje->coordenadas) > 0){
 					desplazarse(tripulante, sabotaje->coordenadas);
 					sleep(retardoCiclosCPU);
@@ -247,7 +245,6 @@ void hiloTripulante(t_tripulante* tripulante){
 							tripulante->idTripulante, distancia(tripulante->coordenadas, sabotaje->coordenadas));
 				}
 				else{
-
 					log_info(logDiscordiador,"el tripulante %d llego a la posicion del SABO %d|%d",
 							tripulante->idTripulante, tripulante->coordenadas.posX, tripulante->coordenadas.posX);
 
@@ -275,7 +272,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 	if(confirmacion(miRAMsocket)){
 		log_info(logDiscordiador,"creando la patota %d con %d tripulantes",
 				patota->ID, cantidadTripulantes);
-
+    
 		for (int i=0; i<cantidadTripulantes; i++){
 			iniciarTripulante(*(coordenadas+i), patota->ID);
 		}
@@ -323,7 +320,6 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 
 void actualizarListaReady(){
-
 	void ponerEnExec(t_tripulante* tripulante){
 		cambiarDeEstado(tripulante, EXEC);
 	}
@@ -349,8 +345,6 @@ void actualizarListaReady(){
 
 void actualizarListaNew(){
 
-	lock(&listaNew->mutex);
-
 	log_info(logDiscordiador,"------Iniciando planficacion cola de new con %d tripulantes-----",
 				list_size(listaNew->elementos));
 
@@ -360,7 +354,7 @@ void actualizarListaNew(){
 
 	log_info(logDiscordiador,"------Finalizando planficacion cola de new con %d tripulantes-----",
 					list_size(listaNew->elementos));
-
+  
 	unlock(&listaNew->mutex);
 }
 

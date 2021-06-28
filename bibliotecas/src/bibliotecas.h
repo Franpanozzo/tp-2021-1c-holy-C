@@ -138,6 +138,8 @@
 	void* serializarAvisoTarea(void*, void*, int);
 	void* serializarAvisoSabotaje(void*, void*, int);
 	t_tarea* deserializarTarea(void*);
+	void liberarDoblesPunterosAChar(char** );
+
 
 
 	/**
