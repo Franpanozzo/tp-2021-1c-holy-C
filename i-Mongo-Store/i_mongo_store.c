@@ -7,11 +7,13 @@ int main(void) {
 
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
 
-	cargarTodosLosConfig();
+	crearConfig(&configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
+
+	cargarDatosConfig();
+
+	cargarPaths();
 
 	asignarTareas();
-
-	cargarConfiguracion();
 
 	iniciarFileSystem();
 
@@ -25,9 +27,9 @@ int main(void) {
 
 	liberarTareas();
 
-	liberarTodosLosConfig();
+	//log_destroy(logImongo); PREGUNTAR AYUDANTE DIOS MIO
 
-	log_destroy(logImongo);
+	//config_destroy(configImongo); PREGUNTAR AYUDANTE DIOS MIO
 
 	free(path);
 
@@ -216,22 +218,39 @@ void crearFileSystemDesdeCero(){
 	superBloque->block_size = (uint32_t) config_get_int_value(configImongo,"BLOCK_SIZE");
 	superBloque->blocks = (uint32_t)config_get_int_value(configImongo,"BLOCKS");
 
-	int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
-	bitArray = malloc(sizeBitArray);
-	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArray ,MSB_FIRST);
+	int sizeBitArrayEnBytes = (int) ceil (((float)superBloque->blocks / (float) 8));
 
-	for(int i=0; i<sizeBitArray;i++){
+	bitArray = malloc(sizeBitArrayEnBytes);
+
+	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArrayEnBytes ,MSB_FIRST);
+
+	int cantidadPosicionesBitArray = bitarray_get_max_bit(superBloque->bitmap);
+
+	 log_info(logImongo,"Se inicializo un bitmap con %d posiciones", superBloque->blocks );
+
+	for(int i=0; i<superBloque->blocks;i++){
 
 		bitarray_clean_bit(superBloque->bitmap, i);
 
 	}
 
-    log_info(logImongo,"Se inicializo un bitmap con %d posiciones", bitarray_get_max_bit(superBloque->bitmap));
+	for(int i=superBloque->blocks; i<cantidadPosicionesBitArray ; i++){
 
+		bitarray_set_bit(superBloque->bitmap, i);
+
+		//PONER EN 1 BLOQUES MUERTOS CUANDO NO SON MULTIPLOS DE 8
+
+		}
+
+    FILE* elSuperBloque = fopen(pathSuperBloque,"wb");
+
+    crearConfig(&configSuperBloque,pathSuperBloque);
 
     config_set_value(configSuperBloque,"BLOCK_SIZE",string_itoa(superBloque->block_size));
     config_set_value(configSuperBloque,"BLOCKS",string_itoa(superBloque->blocks));
     actualizarStringBitMap();
+
+    fclose(elSuperBloque);
 
 	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
 
@@ -247,7 +266,7 @@ void crearFileSystemDesdeCero(){
 
 	crearMemoria(fd);
 
-}
+}//
 
 
 void iniciarFileSystem(){
@@ -275,11 +294,16 @@ void iniciarFileSystem(){
 	}
 
 	if(validarExistenciaFileSystem(pathSuperBloque,pathBloque,datosConfig->puntoMontaje)){
-
+		/*
 		log_info(logImongo,"Existe un file system actualmente");
+
+		crearConfig(&configSuperBloque,pathSuperBloque);
 
 		superBloque->block_size = config_get_int_value(configSuperBloque,"BLOCK_SIZE");
 		superBloque->blocks = config_get_int_value(configSuperBloque,"BLOCKS");
+
+		log_info(logImongo,"El valor del block size es: %d", superBloque->block_size);
+		log_info(logImongo,"La cantidad de bloques es: %d", superBloque->blocks);
 
 		int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
 		bitArray = malloc(sizeBitArray);
@@ -310,7 +334,7 @@ void iniciarFileSystem(){
 
 		int fd = open(pathBloque,O_RDWR,S_IRWXU|S_IRWXG|S_IRWXO);
 		memoriaSecundaria = mmap(NULL,superBloque->block_size * superBloque->blocks, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
-
+*/
 	}
 
 	else{

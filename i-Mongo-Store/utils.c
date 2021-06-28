@@ -1,28 +1,18 @@
 #include "utils.h"
 
 
-void crearConfig(t_config* config, char* path){
+void crearConfig(t_config** config, char* path){
 
-	config  = config_create(path);
+	*config  = config_create(path);
 
-	if(config == NULL){
+	if(*config == NULL){
 
 		log_error(logImongo, "La ruta es incorrecta ");
 
 		exit(1);
 	}
-}
+}//
 
-
-void cargarTodosLosConfig(){
-
-	crearConfig(configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
-	crearConfig(configSuperBloque,pathSuperBloque);
-	crearConfig(configOxigeno,pathOxigeno);
-	crearConfig(configComida,pathComida);
-	crearConfig(configBasura,pathBasura);
-
-}
 
 
 char * pathLog(){
@@ -35,11 +25,12 @@ char * pathLog(){
 	string_append(&pathLog, ".log");
 	free(fecha);
 	return pathLog;
-}
+}//
 
 
 void asignarTareas(){
-	tareas = malloc(sizeof(char*) * 3);
+
+	tareas = malloc(sizeof(char*) * 6);
 
 	tareas[0] = strdup("GENERAR_OXIGENO");
 	tareas[1] = strdup("CONSUMIR_OXIGENO");
@@ -47,7 +38,7 @@ void asignarTareas(){
 	tareas[3] = strdup("CONSUMIR_COMIDA");
 	tareas[4] = strdup("GENERAR_BASURA");
 	tareas[5] = strdup("DESCARTAR_BASURA");
-}
+}//
 
 
 int indiceTarea(t_tarea* tarea){
@@ -81,13 +72,7 @@ char* crearDestinoApartirDeRaiz(char* destino){
 }
 
 
-void cargarConfiguracion(){
-
-	datosConfig = malloc(sizeof(t_datosConfig));
-	datosConfig->puntoMontaje = config_get_string_value(configImongo,"PUNTO_MONTAJE");
-	datosConfig->puerto = (uint32_t)config_get_int_value(configImongo,"PUERTO");
-	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(configImongo,"TIEMPO_SINCRONIZACION");
-	datosConfig->posicionesSabotaje = config_get_string_value(configImongo,"POSICIONES_SABOTAJE");
+void cargarPaths(){
 
 	pathSuperBloque = crearDestinoApartirDeRaiz("SuperBloque.ims");
 	pathBloque = crearDestinoApartirDeRaiz("Blocks.ims");
@@ -97,14 +82,41 @@ void cargarConfiguracion(){
 	pathBasura = crearDestinoApartirDeRaiz("Files/Basura.ims");
 	pathBitacora = crearDestinoApartirDeRaiz("Files/Bitacora");
 
-}
+}//
+
+
+void cargarDatosConfig(){
+
+	datosConfig = malloc(sizeof(t_datosConfig));
+	datosConfig->puntoMontaje = config_get_string_value(configImongo,"PUNTO_MONTAJE");
+	datosConfig->puerto = (uint32_t)config_get_int_value(configImongo,"PUERTO");
+	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(configImongo,"TIEMPO_SINCRONIZACION");
+	datosConfig->posicionesSabotaje = config_get_string_value(configImongo,"POSICIONES_SABOTAJE");
+
+}//
 
 
 bool validarExistenciaFileSystem(char* superBloque, char* blocks, char* raiz){
 
 	return (access(superBloque, F_OK ) != -1) && (access(blocks, F_OK ) != -1) && (access(raiz, F_OK ) != -1);
 
-}
+}//
+
+
+void detallesArchivo(int fileDescriptor){
+
+	struct stat sb;
+
+		    if (fstat(fileDescriptor, &sb) == -1) {
+		        perror("stat");
+		        exit(EXIT_FAILURE);
+		    }
+
+		    printf("Tamanio total del archivo: %lu bytes\n", sb.st_size);
+		    printf("Ultimo estado:       %s", ctime(&sb.st_ctime));
+		    printf("Ultimo acceso:         %s", ctime(&sb.st_atime));
+		    printf("Ultima modificacion del archivo:   %s", ctime(&sb.st_mtime));
+}//
 
 
 void crearMemoria(int fd){
@@ -134,7 +146,11 @@ void crearMemoria(int fd){
 	copiaMemoriaSecundaria= malloc(size);
 	memcpy(copiaMemoriaSecundaria,memoriaSecundaria, size);
 
-}
+	log_info(logImongo,"Se ha creado la memoria secundaria con la capacidad %d con su copia para sincronizar", size);
+
+	detallesArchivo(fd);
+
+}//
 
 
 void mandarErrorAdiscordiador(int* tripulanteSock){
@@ -217,7 +233,7 @@ int* obtenerArrayDePosiciones(int bloquesAocupar){
 
 void actualizarStringBitMap(){
 
-int sizeBitArray = superBloque->block_size * superBloque->blocks /8;
+int sizeBitArray = superBloque->blocks;
 
 char* bitmap = malloc(sizeBitArray + 1);
 
@@ -227,9 +243,20 @@ char* bitmap = malloc(sizeBitArray + 1);
 
     	bitmap[i] = valor + '0';
 
-    	printf("%c ", bitmap[i]);
+    	//printf("%c ", bitmap[i]);
 
    }
+
+/*
+  for(int i = sizeBitArray; i<bitarray_get_max_bit(superBloque->bitmap);i++){
+
+	  int valor =  bitarray_test_bit(superBloque->bitmap, i);
+
+	      	printf("%d ", valor);
+
+  }
+ PARA ANALIZAR LOS BLOQUES MUERTOS SI NO SON MULTIPLOS DE 8
+*/
 
   bitmap[sizeBitArray] = '\0';
 
@@ -245,7 +272,7 @@ char* bitmap = malloc(sizeBitArray + 1);
 
 void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config* config, int bloquesAocupar){
 
-	char* bloquesQueTenia = oxigeno->bloquesQueOcupa;
+	char* bloquesQueTenia = archivo->bloquesQueOcupa;
 
 	int tamanio = string_length(bloquesQueTenia);
 
@@ -266,9 +293,9 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 	archivo->cantidadBloques += bloquesAocupar;
 	archivo->tamanioArchivo = archivo->cantidadBloques * superBloque->block_size;
 
-	config_set_value(configOxigeno,"BLOCK_COUNT",archivo->bloquesQueOcupa);
-	config_set_value(configOxigeno,"SIZE",string_itoa(archivo->tamanioArchivo));
-	config_set_value(configOxigeno,"BLOCKS",string_itoa(archivo->cantidadBloques));
+	config_set_value(config,"BLOCK_COUNT",archivo->bloquesQueOcupa);
+	config_set_value(config,"SIZE",string_itoa(archivo->tamanioArchivo));
+	config_set_value(config,"BLOCKS",string_itoa(archivo->cantidadBloques));
 	config_save(config);
 
 	free(bloquesQueTenia);
@@ -305,7 +332,7 @@ void actualizarBitArray(int* posicionesQueOcupa, int bloquesAocupar){
 		bitarray_set_bit(superBloque->bitmap, posicionesQueOcupa[i]);
 	}
 
-	actualizarStringBitMap();
+	actualizarStringBitMap(bloquesAocupar);
 
 }
 
@@ -350,6 +377,8 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 		if(verificarSiExiste(pathOxigeno)){
 
+			crearConfig(&configOxigeno,pathOxigeno);
+
 			oxigeno->bloquesQueOcupa = config_get_string_value(configOxigeno,"BLOCKS");
 			oxigeno->cantidadBloques = config_get_int_value(configOxigeno,"BLOCK_COUNT");
 			oxigeno->caracterLlenado = config_get_string_value(configOxigeno,"CARACTER_LLENADO");
@@ -361,8 +390,12 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 		}
 		else{
 
-			config_set_value(configOxigeno,"CARACTER_LLENADO","O");
+			FILE* archivoOxigeno = fopen(pathOxigeno,"wb");
+			fclose(archivoOxigeno);
 
+			crearConfig(&configOxigeno,pathOxigeno);
+
+			config_set_value(configOxigeno,"CARACTER_LLENADO","O");
 
 		}
 
@@ -417,23 +450,13 @@ void descartarBasura(t_tarea* tarea, int* tripulanteSock){
 }
 
 
-void liberarTodosLosConfig(){
-
-	config_destroy(configImongo);
-	config_destroy(configOxigeno);
-	config_destroy(configComida);
-	config_destroy(configBasura);
-	config_destroy(configSuperBloque);
-}
-
-
 void liberarConfiguracion(){
 
 	free(datosConfig->puntoMontaje);
 	free(datosConfig->posicionesSabotaje);
 	free(datosConfig);
 
-}
+}//
 
 void liberarTareas(){
 
@@ -441,4 +464,4 @@ void liberarTareas(){
 		free(tareas[i]);
 	}
 	free(tareas);
-}
+}//
