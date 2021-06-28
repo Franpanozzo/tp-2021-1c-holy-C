@@ -3,11 +3,15 @@
 
 t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 
+	sleep(10);
+
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
 	tcbAGuardar->dlPatota = 0;
 	tcbAGuardar->proximaAEjecutar = 0; //desplazamiento dentro del segmento de las tareas (el cual es siempre el segundo segmento).
 
+	lock(&mutexTablaSegmentosPatota);
 	existenciaDeTablaSegParaPatota(tablaSegmentosPatotaActual);
+	unlock(&mutexTablaSegmentosPatota);
 
 	int res = asignarSegmentosEnTabla((void*) tcbAGuardar, tablaSegmentosPatotaActual,TCB);
 	if(res == 0) return NULL;
@@ -22,9 +26,13 @@ t_tarea* asignarProxTareaSeg(int idPatota, int idTripu){
 
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
 
+	lock(&mutexTablaSegmentosPatota);
 	existenciaDeTablaSegParaPatota(tablaSegmentosPatotaActual);
+	unlock(&mutexTablaSegmentosPatota);
 
+	lock(&mutexTablaSegmentosPatota);
 	t_info_segmento* t_segmentoTripulante = buscarSegmentoTripulante(idTripu,tablaSegmentosPatotaActual);
+	unlock(&mutexTablaSegmentosPatota);
 
 	void* segmentoConTripu = leer_memoria_seg(t_segmentoTripulante);
 
@@ -72,7 +80,9 @@ t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* tablaSegmentosPatota
 
 	log_info(logMemoria,"TCB prox a ejecutar quedo en: %d", tcbAGuardar->proximaAEjecutar);
 
+	lock(&mutexTablaSegmentosPatota);
 	t_info_segmento* t_segmentoTripulante = buscarSegmentoTripulante(tcbAGuardar->idTripulante, tablaSegmentosPatotaActual);
+	unlock(&mutexTablaSegmentosPatota);
 
 	actualizarTripulanteEnMemSeg(tcbAGuardar, t_segmentoTripulante);
 
@@ -91,9 +101,13 @@ int actualizarTripulanteSeg(tcb* tcbAGuardar, int idPatota) {
 
 	t_tablaSegmentosPatota* tablaConTripulante = buscarTablaDeSegmentosDePatota(idPatota);
 
+	lock(&mutexTablaSegmentosPatota);
 	existenciaDeTablaSegParaPatota(tablaConTripulante);
+	unlock(&mutexTablaSegmentosPatota);
 
+	lock(&mutexTablaSegmentosPatota);
 	t_info_segmento* t_segmentoTripulante = buscarSegmentoTripulante(tcbAGuardar->idTripulante,tablaConTripulante);
+	unlock(&mutexTablaSegmentosPatota);
 
 	void* segmentoConTripu = leer_memoria_seg(t_segmentoTripulante);
 
@@ -201,7 +215,9 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 
 	t_tablaSegmentosPatota* tablaSegmentosBuscada = buscarTablaDeSegmentosDePatota(idPatota);
 
+	lock(&mutexTablaSegmentosPatota);
 	t_info_segmento* info_segmento = buscarSegmentoTripulante(idTripu, tablaSegmentosBuscada);
+	unlock(&mutexTablaSegmentosPatota);
 
 	bool despuesQueSeg(t_lugarLibre* lugarLibre)
 	{
@@ -252,7 +268,9 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 		return info_segmento2->indice == info_segmento->indice;
 	}
 
+	lock(&mutexTablaSegmentosPatota);
 	list_remove_by_condition(tablaSegmentosBuscada->tablaDeSegmentos, (void*) mismoIndice);
+	unlock(&mutexTablaSegmentosPatota);
 	free(info_segmento);
 
 	chequearUltimoTripulanteSeg(tablaSegmentosBuscada);
@@ -260,7 +278,9 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 
 
 void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
+	lock(&mutexTablaSegmentosPatota);
 	if(!tieneTripulantesSeg(tablaSegmentosPatota)) {
+		unlock(&mutexTablaSegmentosPatota);
 
 		log_info(logMemoria,"La patota %d no tiene mas tripulantes. Se procede a borrarla de memoria", tablaSegmentosPatota->idPatota);
 
@@ -279,9 +299,14 @@ void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
 		lock(&mutexTablasSegmentos);
 		list_remove_by_condition(tablasSegmentosPatotas, (void*) tablaConID);
 		unlock(&mutexTablasSegmentos);
+		lock(&mutexTablaSegmentosPatota);
 		list_destroy_and_destroy_elements(tablaSegmentosPatota->tablaDeSegmentos, (void*) borrarSegmento);
+		unlock(&mutexTablaSegmentosPatota);
 
 		free(tablaSegmentosPatota);
+	}
+	else {
+		unlock(&mutexTablaSegmentosPatota);
 	}
 }
 
@@ -314,7 +339,9 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 		return 0;
 	}
 
+	lock(&mutexTablaSegmentosPatota);
 	info_segmento = crearSegmentoEnTabla(tablaSegmentosPatotaActual,tipo);
+	unlock(&mutexTablaSegmentosPatota);
 	info_segmento->datoAdicional = datoAdicional;
 	info_segmento->deslazamientoInicial = inicioSegmentoLibre;
 	info_segmento->bytesAlojados = aMeter;
@@ -489,7 +516,7 @@ void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivo
 
 		  //char* posEnHexa = mem_hexstring(memoria_principal, info_segmento->deslazamientoInicial);
 
-		char* dumpMarco = string_from_format("Proceso:%d   Segmento:%d	 Inicio:0x%X	 Tam:%db \n",
+		char* dumpMarco = string_from_format("Proceso:%d   Segmento:%d	 Inicio:0x%04X	 Tam:%db \n",
 				tablaSegPatota->idPatota, info_segmento->indice, info_segmento->deslazamientoInicial, info_segmento->bytesAlojados);
 
 		txt_write_in_file(archivoDump, dumpMarco);

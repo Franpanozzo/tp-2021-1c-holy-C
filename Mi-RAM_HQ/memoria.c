@@ -51,10 +51,16 @@ void iniciarMemoria() {
 		tablasSegmentosPatotas = list_create();
 	}
 
+    signal(SIGUSR1, hacerDump);
+    log_info(logMemoria,"PID: %d",process_getpid());
+
     pthread_mutex_init(&mutexMemoria, NULL);
     pthread_mutex_init(&mutexEscribirMemoria, NULL);
+    pthread_mutex_init(&mutexTablasPaginas, NULL);
+    pthread_mutex_init(&mutexTablasSegmentos, NULL);
     pthread_mutex_init(&mutexBuscarLugarLibre, NULL);
     pthread_mutex_init(&mutexExpulsionTripulante, NULL);
+    pthread_mutex_init(&mutexTablaSegmentosPatota, NULL);
 
 
 	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
@@ -1235,18 +1241,31 @@ t_tarea* asignarProxTarea(int idPatota, int idTripu) {
 int actualizarTripulante(tcb* tcbAGuardar, int idPatota){
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
-		log_info(logMemoria,"No me voy pa aca");
 		return actualizarTripulantePag(tcbAGuardar, idPatota);
 	}
 	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
-		log_info(logMemoria,"Me voy pa aca");
 		return actualizarTripulanteSeg(tcbAGuardar, idPatota);
 	}
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);
 }
 
+
+void hacerDump(int signal) {
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		dumpPag();
+	}
+	else if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		dumpSeg();
+	}
+	else {
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+	}
+}
 
 
 

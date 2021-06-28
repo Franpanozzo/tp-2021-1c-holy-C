@@ -1,0 +1,12 @@
+--------------------------------------------------------------------------
+DUMP: 28/06/21 01:52:40 
+Proceso:1   Segmento:0	 Inicio:0x0000	 Tam:8b 
+Proceso:1   Segmento:1	 Inicio:0x0008	 Tam:66b 
+Proceso:1   Segmento:2	 Inicio:0x004A	 Tam:21b 
+Proceso:1   Segmento:3	 Inicio:0x005F	 Tam:21b 
+Proceso:1   Segmento:4	 Inicio:0x0074	 Tam:21b 
+Proceso:2   Segmento:0	 Inicio:0x0089	 Tam:8b 
+Proceso:2   Segmento:1	 Inicio:0x0091	 Tam:66b 
+Proceso:2   Segmento:2	 Inicio:0x00D3	 Tam:21b 
+Proceso:2   Segmento:3	 Inicio:0x00E8	 Tam:21b 
+--------------------------------------------------------------------------

@@ -75,6 +75,8 @@ pthread_mutex_t mutexBuscarLugarLibre;
 pthread_mutex_t mutexTablasSegmentos;
 pthread_mutex_t mutexTablasPaginas;
 pthread_mutex_t mutexExpulsionTripulante;
+pthread_mutex_t mutexTablaSegmentosPatota;
+
 
 
 
@@ -121,9 +123,11 @@ t_tablaPaginasPatota* patotaConFrame(int);
 t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
 void expulsarTripulantePag(int ,int);
 void dumpPag();
-void expulsarTripulante(int idTripu,int idPatota);
+void expulsarTripulante(int,int);
 t_tarea* asignarProxTarea(int, int);
 int actualizarTripulante(tcb* , int);
+void hacerDump(int);
+
 
 
 

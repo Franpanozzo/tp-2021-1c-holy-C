@@ -1,14 +1,6 @@
 #include "mi_ram_hq.h"
 
 
-t_list* listaPCB;
-t_list* listaTCB;
-
-pthread_mutex_t mutexListaTCB;
-pthread_mutex_t mutexListaPCB;
-pthread_mutex_t mutexListaTareas;
-pthread_mutex_t mutexTripulante;
-
 sem_t habilitarPatotaEnRam;
 //sem_t habilitarExpulsionEnRam;
 
@@ -21,13 +13,6 @@ int main(void) {
 
 	cargar_configuracion();
 	iniciarMemoria();
-
-    tablasPaginasPatotas = list_create();
-
-    pthread_mutex_init(&mutexListaTCB, NULL);
-    pthread_mutex_init(&mutexListaPCB, NULL);
-    pthread_mutex_init(&mutexListaTareas, NULL);
-    pthread_mutex_init(&mutexTripulante, NULL);
 
 	sem_init(&habilitarPatotaEnRam,0,1);
 	//sem_init(&habilitarExpulsionEnRam,0,1);
@@ -63,8 +48,8 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		//pthread_detach(t);
-		pthread_join(t, (void**) NULL);
+		pthread_detach(t);
+		//pthread_join(t, (void**) NULL);
     }
 }
 
@@ -246,48 +231,6 @@ void deserializarExpulsionTripulante(t_paquete* paquete) {
 }
 
 
-/*
-
-void setearSgteTarea(tcb *buscado){
-	t_list_iterator * iterator = list_iterator_create(buscado->patota->listaTareas);
-	while(list_iterator_has_next(iterator)){
-		t_tarea* tarea = list_iterator_next(iterator);
-		if(tarea == buscado->proximaAEjecutar){
-			tarea = list_iterator_next(iterator);
-			buscado->proximaAEjecutar = tarea;
-			log_info(logMiRAM,"TRIPU: %d - PROX. TAREA: %s",buscado->idTripulante,tarea->nombreTarea);
-			break;
-		}
-	}
-	list_iterator_destroy(iterator);
-}
-*/
-
-/*
-void deserializarTareas(void* stream,t_list* listaTareas,uint32_t tamanio){
-
-    char* string = malloc(tamanio);
-    memcpy(string,stream,tamanio);
-
-    char** arrayDeTareas = string_split(string,"\n");
-
-    //strcmp(arrayDeTareas[i], "") != 0
-    for(int i =0; arrayDeTareas[i] != NULL; i++){
-
-    	log_info(logMiRAM,"Procesando... %s\n",arrayDeTareas[i]);
-        armarTarea(arrayDeTareas[i],listaTareas);
-    }
-
-    t_tarea * tareaFinal = malloc(sizeof(t_tarea));
-    tareaFinal->nombreTarea = strdup("TAREA_NULA");
-	list_add(listaTareas,tareaFinal);
-
-	liberarDoblesPunterosAChar(arrayDeTareas);
-    free(string);
-
-}*/
-
-
 int deserializarInfoPCB(t_paquete* paquete) {
 
 	pcb* nuevoPCB = malloc(sizeof(pcb));
@@ -335,40 +278,6 @@ char* delimitarTareas(char* stringTareas) {
 
     return tareasDelimitadas;
 }
-
-
-/*
-tcb* buscarTripulante(int idTCBAActualizar,pcb* patotaDeTripu) {
-
-	bool idIgualA(tcb* tcbAComparar){
-
-			bool a;
-
-			a = tcbAComparar->idTripulante == idTCBAActualizar && (tcbAComparar->patota == patotaDeTripu) ;
-
-			//log_info(logMiRAM,"Comparado con primer patota %d \n",a);
-
-			return a;
-		}
-
-		tcb* tripulanteCorrespondiente;
-
-		tripulanteCorrespondiente = list_find(listaTCB,(void*) idIgualA);
-
-			if(tripulanteCorrespondiente == NULL){
-
-			log_error(logMiRAM,"No existe ese TCB negro\n");
-
-			exit(1);
-
-			}
-			else{
-
-			return tripulanteCorrespondiente;
-			// ASIGNAR TAREATRIPULANTE A LA PRIMERA POSICION DE LA LISTA DE LAS TAREAS DEL PCB
-
-			}
-}*/
 
 
 t_tarea* deserializarTripulante(t_paquete* paquete) {
@@ -428,53 +337,6 @@ char asignarEstadoTripu(t_estado estado) {
 	}
 
 }
-
-
-
-pcb* buscarPatota(uint32_t idPatotaBuscada) {
-
-	bool idIgualA(pcb* pcbAComparar){
-
-		bool a;
-
-		a = pcbAComparar->pid == idPatotaBuscada;
-
-		log_info(logMiRAM,"Comparado patota %d con patota de lista %d \n",pcbAComparar->pid,idPatotaBuscada);
-
-		return a;
-	}
-
-	pcb* patotaCorrespondiente;
-
-	patotaCorrespondiente = list_find(listaPCB,(void*) idIgualA);
-
-		if(patotaCorrespondiente == NULL){
-
-		log_error(logMiRAM,"No existe PCB para ese TCB negro\n");
-
-		exit(1);
-
-		}
-		else{
-
-		return patotaCorrespondiente;
-		// ASIGNAR TAREATRIPULANTE A LA PRIMERA POSICION DE LA LISTA DE LAS TAREAS DEL PCB
-
-		}
-}
-
-/*
-void asignarSiguienteTarea(tcb* tripulante) {
-
-	//Hago que su proxima tarea a ejecutar sea la primera de las lista,
-	//despues hay que hablar bien como va a pedirle las tareas
-	tripulante->proximaAEjecutar = list_get(tripulante->patota->listaTareas,0);
-
-
-	log_info(logMiRAM,"Asignando la tarea: %s\n", tripulante->proximaAEjecutar->nombreTarea);
-
-}
-*/
 
 
 void mandarTarea(t_tarea* tarea, int socketTrip) {

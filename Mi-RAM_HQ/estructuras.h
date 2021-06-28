@@ -22,8 +22,8 @@
 #include <commons/temporal.h>
 #include <commons/txt.h>
 #include <commons/memory.h>
-
-
+#include <signal.h>
+#include <commons/process.h>
 
 
 typedef struct {
