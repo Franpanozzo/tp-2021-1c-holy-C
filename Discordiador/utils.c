@@ -422,28 +422,48 @@ void listarLista(t_lista* lista){
 
 void listarTripulantes(){
 
- /*	void imprimirTripulante(t_tripulante* tripulante){
-		log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Estado: %s",
-				tripulante->idTripulante, tripulante->idPatota, traducirEstado(tripulante->estado));
+ 	void imprimirTripulante(t_tripulante* tripulante){
+		bool estaVivo(t_tripulante* tripulante){
+			bool hayQueSacarlo(t_tripulante* otroTripulante){
+					return tripulante == otroTripulante;
+				}
+			return !list_any_satisfy(listaAeliminar->elementos, (void*) hayQueSacarlo);
+		}
+
+ 		if(estaVivo(tripulante)){
+			log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Estado: %s",
+					tripulante->idTripulante, tripulante->idPatota, traducirEstado(tripulante->estado));
+ 		}
 	}
 
-	bool estaVivo(t_tripulante* tripulante){
-		bool hayQueSacarlo(t_tripulante* otroTripulante){
-				return tripulante == otroTripulante;
-			}
-		return !list_any_satisfy(listaAeliminar->elementos, (void*) hayQueSacarlo);
-	}
-*/
 
 
 	log_info(logDiscordiador,"Estado de la nave: %s", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
 
-//	t_list* listaAux =
+	t_list* listaAux = list_create();
 
-	listarLista(listaNew);
-	listarLista(listaReady);
-	listarLista(listaExec);
-	listarLista(listaBlocked);
+	lock(&listaNew->mutex);
+	list_add_all(listaAux, listaNew->elementos);
+	unlock(&listaNew->mutex);
+
+	lock(&listaReady->mutex);
+	list_add_all(listaAux, listaReady->elementos);
+	unlock(&listaReady->mutex);
+
+	lock(&listaExec->mutex);
+	list_add_all(listaAux, listaExec->elementos);
+	unlock(&listaExec->mutex);
+
+	lock(&listaBlocked->mutex);
+	list_add_all(listaAux, listaBlocked->elementos);
+	unlock(&listaBlocked->mutex);
+
+	lock(&listaSabotaje->mutex);
+	list_add_all(listaAux, listaSabotaje->elementos);
+	unlock(&listaSabotaje->mutex);
+
+	list_iterate(listaAux, (void*)imprimirTripulante);
+	list_destroy(listaAux);
 }
 
 
