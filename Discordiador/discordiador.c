@@ -30,7 +30,6 @@ int main() {
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
 	pthread_detach(planificador);
 
-
 	pthread_create(&sabo, NULL, (void*) hiloSabotaje, NULL);
 	pthread_detach(sabo);
 
