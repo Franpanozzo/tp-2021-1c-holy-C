@@ -36,5 +36,6 @@ void actualizarListaReady();
 void actualizarListaNew();
 void actualizarListaExec();
 void actualizarListaBlocked();
+void mandarTripulanteNulo();
 
 #endif

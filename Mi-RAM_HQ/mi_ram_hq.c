@@ -357,8 +357,8 @@ t_tarea* tarea_error() {
 	t_tarea* tareaError = malloc(sizeof(t_tarea));
 	tareaError->nombreTarea = strdup("TAREA_ERROR");
 	tareaError->parametro = 0;
-	tareaError->posX = 0;
-	tareaError->posY = 0;
+	tareaError->coordenadas.posX = 0;
+	tareaError->coordenadas.posY = 0;
 	tareaError->tiempo = 0;
 
 	return tareaError;

@@ -3,8 +3,6 @@
 
 t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 
-	sleep(10);
-
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
 	tcbAGuardar->dlPatota = 0;
 	tcbAGuardar->proximaAEjecutar = 0; //desplazamiento dentro del segmento de las tareas (el cual es siempre el segundo segmento).
@@ -42,10 +40,6 @@ t_tarea* asignarProxTareaSeg(int idPatota, int idTripu){
 				tcb->idTripulante, tcb->estado, tcb->posX, tcb->posY, tcb->proximaAEjecutar, tcb->dlPatota);
 
 	t_tarea* tarea = irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcb);
-
-	if(strcmp(tarea->nombreTarea,"TAREA_NULA") == 0) {
-		expulsarTripulanteSeg(idTripu, idPatota);
-	}
 
 	free(tcb);
 	free(segmentoConTripu);

@@ -26,6 +26,8 @@ int main() {
 	sem_init(&sabotaje->semaforoCorrerSabotaje,0,0);
 	sem_init(&sabotaje->semaforoTerminoTripulante,0,0);
 	sem_init(&sabotaje->semaforoTerminoSabotaje,0,0);
+	sem_init(&semUltimoTripu,0,0);
+
 
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
 	pthread_detach(planificador);
@@ -155,7 +157,7 @@ void hiloTripulante(t_tripulante* tripulante){
 			case NEW:
 				log_info(logDiscordiador,"tripulanteId %d: estoy en new", tripulante->idTripulante);
 				recibirPrimerTareaDeMiRAM(tripulante);
-        sem_post(&semUltimoTripu);
+				//sem_post(&semUltimoTripu);
 				sem_post(&tripulante->semaforoFin);
 				sem_wait(&tripulante->semaforoInicio);
 				break;
@@ -275,13 +277,40 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		for (int i=0; i<cantidadTripulantes; i++){
 			iniciarTripulante(*(coordenadas+i), patota->ID);
 		}
+
+		/*
+		for(int i=0;i<cantidadTripulantes;i++){
+			sem_wait(&semUltimoTripu);
+		}
+
+		mandarTripulanteNulo();
+		*/
 	}
 	else{
 		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota %d",patota->ID);
 	}
 
+
 	eliminarPatota(patota);
 	close(miRAMsocket);
+}
+
+
+void mandarTripulanteNulo() {
+	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+
+	tripulante->coordenadas.posX = 0;
+	tripulante->coordenadas.posY = 0;
+	tripulante->idTripulante = -1;
+	tripulante->idPatota = 0;
+	tripulante->estado = NEW;
+
+	int socket =iniciarConexionDesdeClienteHacia(puertoEIPRAM);
+	enviarPaquete(armarPaqueteCon((void*) tripulante, TRIPULANTE), socket);
+
+	recibirTareaDeMiRAM(socket, tripulante);
+
+	close(socket);
 }
 
 

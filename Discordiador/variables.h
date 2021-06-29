@@ -14,6 +14,7 @@
 	pthread_t planificador;
 	pthread_t sabo;
 
+
 	puertoEIP* puertoEIPRAM;
 	puertoEIP* puertoEIPMongo;
 
@@ -28,6 +29,8 @@
 
 	t_estado estadoAcomparar;
 	t_sabotaje* sabotaje;
+
+	sem_t semUltimoTripu;
 
 	char** todasLasTareasIO;
 

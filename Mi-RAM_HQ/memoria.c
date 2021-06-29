@@ -355,9 +355,6 @@ t_tarea* asignarProxTareaPag(int idPatota,int idTripulante) {
 
 	t_tarea* tarea = irABuscarSiguienteTareaPag(tablaPaginasPatotaActual, tcb);
 
-	if(strcmp(tarea->nombreTarea,"TAREA_NULA") == 0) {
-		expulsarTripulantePag(idTripulante, idPatota);
-	}
 
 	free(tcb);
 	return tarea;
@@ -713,8 +710,8 @@ t_tarea* armarTarea(char* string){
 	    } else {
 	        tarea->nombreTarea = strdup(arrayParametros[0]);
 	    }
-	    tarea->posX = (uint32_t) atoi(arrayParametros[1]);
-	    tarea->posY = (uint32_t) atoi(arrayParametros[2]);
+	    tarea->coordenadas.posX = (uint32_t) atoi(arrayParametros[1]);
+	    tarea->coordenadas.posY = (uint32_t) atoi(arrayParametros[2]);
 	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 	    liberarDoblesPunterosAChar(arrayParametros);
 
