@@ -11,17 +11,38 @@ int main(void) {
 
 	cargarDatosConfig();
 
+	mallocTareas();
+
 	cargarPaths();
 
 	asignarTareas();
 
 	iniciarFileSystem();
 
+	bitarray_set_bit(superBloque->bitmap,2);
+	bitarray_set_bit(superBloque->bitmap,3);
+	bitarray_set_bit(superBloque->bitmap,5);
+	bitarray_set_bit(superBloque->bitmap,6);
+	bitarray_set_bit(superBloque->bitmap,8);
+	bitarray_set_bit(superBloque->bitmap,10);
+
 	//int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
 	//pthread_t manejoTripulante;
 	//pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	//pthread_join(manejoTripulante, (void*) NULL);
+
+	t_tarea* tarea = malloc(sizeof(t_tarea));
+
+	tarea->nombreTarea = strdup("GENERAR_OXIGENO");
+	tarea->coordenadas.posX = 2;
+	tarea->coordenadas.posY = 2;
+	tarea->parametro = 27;
+	tarea->tiempo = 3;
+
+	generarOxigeno(tarea,NULL);
+
+	sincronizarMemoriaSecundaria();
 
 	liberarConfiguracion();
 
@@ -30,6 +51,8 @@ int main(void) {
 	//log_destroy(logImongo); PREGUNTAR AYUDANTE DIOS MIO
 
 	//config_destroy(configImongo); PREGUNTAR AYUDANTE DIOS MIO
+
+	//liberarTodosLosStructTareas();
 
 	free(path);
 
@@ -211,6 +234,51 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 }
 
 
+void crearFileSystemExistente(){
+
+	crearConfig(&configSuperBloque,pathSuperBloque);
+
+	superBloque = malloc(sizeof(t_superBloque));
+	superBloque->block_size = config_get_int_value(configSuperBloque,"BLOCK_SIZE");
+	superBloque->blocks = config_get_int_value(configSuperBloque,"BLOCKS");
+
+	log_info(logImongo,"El valor del block size es: %d", superBloque->block_size);
+	log_info(logImongo,"La cantidad de bloques es: %d", superBloque->blocks);
+
+	int sizeBitArrayEnBytes = (int) ceil (((float)superBloque->blocks / (float) 8));
+	bitArray = malloc(sizeBitArrayEnBytes);
+	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArrayEnBytes ,MSB_FIRST);
+
+	char* bitmap = config_get_string_value(configSuperBloque,"BITMAP");
+
+	int cantidadPosicionesBitArray = bitarray_get_max_bit(superBloque->bitmap);
+	for(int i=0; i<cantidadPosicionesBitArray;i++){
+
+		if(bitmap[i] == '1'){
+
+			bitarray_set_bit(superBloque->bitmap,i);
+
+		}
+		else if (bitmap[i] == '0'){
+
+			bitarray_clean_bit(superBloque->bitmap,i);
+
+		}
+		else{
+
+			log_info(logImongo,"El archivo del bitarray tira valores no validos");
+			exit(1);
+
+		}
+
+	}
+
+	int fd = open(pathBloque,O_RDWR,S_IRWXU|S_IRWXG|S_IRWXO);
+	memoriaSecundaria = mmap(NULL,superBloque->block_size * superBloque->blocks, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
+
+}//
+
+
 void crearFileSystemDesdeCero(){
 
 	superBloque = malloc(sizeof(t_superBloque));
@@ -297,48 +365,9 @@ void iniciarFileSystem(){
 
 		log_info(logImongo,"Existe un file system actualmente");
 
-		crearConfig(&configSuperBloque,pathSuperBloque);
-
-		superBloque = malloc(sizeof(t_superBloque));
-		superBloque->block_size = config_get_int_value(configSuperBloque,"BLOCK_SIZE");
-		superBloque->blocks = config_get_int_value(configSuperBloque,"BLOCKS");
-
-		log_info(logImongo,"El valor del block size es: %d", superBloque->block_size);
-		log_info(logImongo,"La cantidad de bloques es: %d", superBloque->blocks);
-
-		int sizeBitArrayEnBytes = (int) ceil (((float)superBloque->blocks / (float) 8));
-		bitArray = malloc(sizeBitArrayEnBytes);
-		superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArrayEnBytes ,MSB_FIRST);
-
-		char* bitmap = config_get_string_value(configSuperBloque,"BITMAP");
-
-		int cantidadPosicionesBitArray = bitarray_get_max_bit(superBloque->bitmap);
-		for(int i=0; i<cantidadPosicionesBitArray;i++){
-
-			if(bitmap[i] == '1'){
-
-				bitarray_set_bit(superBloque->bitmap,i);
-
-			}
-			else if (bitmap[i] == '0'){
-
-				bitarray_clean_bit(superBloque->bitmap,i);
-
-			}
-			else{
-
-				log_info(logImongo,"El archivo del bitarray tira valores no validos");
-				exit(1);
-
-			}
-
-		}
-
-		int fd = open(pathBloque,O_RDWR,S_IRWXU|S_IRWXG|S_IRWXO);
-		memoriaSecundaria = mmap(NULL,superBloque->block_size * superBloque->blocks, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
+		crearFileSystemExistente();
 
 	}
-
 	else{
 
 		log_info(logImongo,"Existe el punto de montaje ahora, pero no existe SuperBloque.ims y Blocks.ims, creando archivos...");

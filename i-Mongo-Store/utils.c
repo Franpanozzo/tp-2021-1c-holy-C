@@ -96,6 +96,14 @@ void cargarDatosConfig(){
 }//
 
 
+void mallocTareas(){
+	int tamanio = sizeof(t_file);
+	oxigeno = malloc(tamanio);
+	comida = malloc(tamanio);
+	basura = malloc(tamanio);
+}
+
+
 bool validarExistenciaFileSystem(char* superBloque, char* blocks, char* raiz){
 
 	return (access(superBloque, F_OK ) != -1) && (access(blocks, F_OK ) != -1) && (access(raiz, F_OK ) != -1);
@@ -160,20 +168,24 @@ void mandarErrorAdiscordiador(int* tripulanteSock){
 	t_paquete* paquete = armarPaqueteCon(error,STRING);
 
 	enviarPaquete(paquete,*tripulanteSock);
+
+	free(error);
 }
 
 
 void mandarOKAdiscordiador(int* tripulanteSock){
 
-	char* error = strdup("OK");
+	char* confirmacion = strdup("OK");
 
-	t_paquete* paquete = armarPaqueteCon(error,STRING);
+	t_paquete* paquete = armarPaqueteCon(confirmacion,STRING);
 
 	enviarPaquete(paquete,*tripulanteSock);
+
+	free(confirmacion);
 }
 
 
-int bloquesLibres(int bloquesAocupar){
+bool bloquesLibres(int bloquesAocupar){
 
 	int flag = 0;
 
@@ -181,21 +193,25 @@ int bloquesLibres(int bloquesAocupar){
 
 	flag += !bitarray_test_bit(superBloque->bitmap,i);
 
-	if(flag == bloquesAocupar){
-		break;
-	}
+
+		if(flag == bloquesAocupar){
+
+		return true;
+
+		}
 
 	}
 
-	return flag;
-}
+	return false ;
+
+}//
 
 
-bool verificarSiExiste(char* nombreArchivo){
+bool verificarSiExiste(char* pathArchivo){
 
-	return access(nombreArchivo,F_OK) != 1;
+	return access(pathArchivo,F_OK) != -1;
 
-}
+}//
 
 
 int* obtenerArrayDePosiciones(int bloquesAocupar){
@@ -228,7 +244,7 @@ int* obtenerArrayDePosiciones(int bloquesAocupar){
 
 	return cadaBloqueAocupar;
 
-}
+}//
 
 
 void actualizarStringBitMap(){
@@ -269,25 +285,72 @@ char* bitmap = malloc(sizeBitArray + 1);
 
 }
 
+void actualizarEstructurasFile(t_file* file){
+
+	file->bloquesQueOcupa = config_get_string_value(configOxigeno,"BLOCKS");
+	file->cantidadBloques = config_get_int_value(configOxigeno,"BLOCK_COUNT");
+	file->caracterLlenado = config_get_string_value(configOxigeno,"CARACTER_LLENADO");
+	file->md5_archivo = config_get_string_value(configOxigeno,"MD5_ARCHIVO");
+	file->tamanioArchivo = config_get_int_value(configOxigeno,"SIZE");
+}
+
 
 void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config* config, int bloquesAocupar){
 
 	char* bloquesQueTenia = archivo->bloquesQueOcupa;
 
+	printf("%s \n", bloquesQueTenia);
+
 	int tamanio = string_length(bloquesQueTenia);
 
-	char* bloquesActuales = string_substring(bloquesQueTenia,0,tamanio - 1);
+	printf("%d \n", tamanio);
+
+	char* bloquesActuales;
+
+	if(tamanio > 0){
+
+		bloquesActuales = string_substring(bloquesQueTenia,0,tamanio - 1);
+	}
+
+	else if(tamanio == 0){
+
+		bloquesActuales = string_new();
+
+	}
+
+	else{
+
+		log_info(logImongo, "No puede tener tamanio negativo un string");
+
+	}
+
+	printf("%s \n", bloquesActuales);
 
 	int i = 0;
 
 	while ( i < bloquesAocupar){
 
+		if(tamanio != 0){
+
+		//CASO EN EL QUE EL STRING TE VIENE ASI: [2
 		string_append(&bloquesActuales,",");
+
+		}
+		else{
+		//CASO EN EL QUE EL STRING TE VIENE VACIO
+		string_append(&bloquesActuales,"[");
+		tamanio++;
+
+		}
+
+		printf("%s \n", bloquesActuales);
 		string_append(&bloquesActuales,string_itoa(*(arrayDePosiciones + i)));
+		printf("%s \n", bloquesActuales);
 		i++;
 
 	}
 	string_append(&bloquesActuales,"]");
+	printf("%s \n", bloquesActuales);
 
 	archivo->bloquesQueOcupa = bloquesActuales;
 	archivo->cantidadBloques += bloquesAocupar;
@@ -300,16 +363,23 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 
 	free(bloquesQueTenia);
 
-}
+}//
 
 int min(int a,int b){
+
     if(a>b){
+
         return b;
+
     }
+
     else{
+
         return a;
+
     }
-}
+
+}//
 
 
 void sincronizarMemoriaSecundaria(){
@@ -341,22 +411,26 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 
 	int flag = tarea->parametro;
 
+	printf("flag = %d \n", flag);
+
 	char caracter = caracterLlenado[0];
 
+	printf("caracter = %c \n", caracter);
 
 	char** palabraAguardar = malloc(sizeof(char*)*bloquesAocupar);
 
 	for(int i = 0; i < bloquesAocupar;i++){
 
 		palabraAguardar[i] = string_repeat(caracter,min(superBloque->block_size,flag));
+		printf("palabra = %s \n", palabraAguardar[i]);
 		flag -= superBloque->block_size;
+		printf("flag = %d \n", flag);
 	}
-
-
 
 	for(int i=0; i<bloquesAocupar; i++){
 		int offset = posicionesQueOcupa[i] * superBloque->block_size;
-		memcpy(copiaMemoriaSecundaria + offset,palabraAguardar[i],superBloque->block_size);
+		printf("offset = %d \n", offset);
+		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i], superBloque->block_size);
 	}
 
 	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
@@ -367,11 +441,9 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 
 void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 
-	int bloquesAocupar = (int) ceil(tarea->parametro / superBloque->block_size);
+	int bloquesAocupar = (int) ceil((float) tarea->parametro / (float) superBloque->block_size);
 
-	int bloques = bloquesLibres(bloquesAocupar);
-
-	if(bloques >= bloquesAocupar){
+	if(bloquesLibres(bloquesAocupar)){
 
 		log_info(logImongo,"Se comprobó que hay espacio en el disco para la tarea %s",tarea->nombreTarea);
 
@@ -379,11 +451,7 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 			crearConfig(&configOxigeno,pathOxigeno);
 
-			oxigeno->bloquesQueOcupa = config_get_string_value(configOxigeno,"BLOCKS");
-			oxigeno->cantidadBloques = config_get_int_value(configOxigeno,"BLOCK_COUNT");
-			oxigeno->caracterLlenado = config_get_string_value(configOxigeno,"CARACTER_LLENADO");
-			oxigeno->md5_archivo = config_get_string_value(configOxigeno,"MD5_ARCHIVO");
-			oxigeno->tamanioArchivo = config_get_int_value(configOxigeno,"SIZE");
+			actualizarEstructurasFile(oxigeno);
 
 			bloquesAocupar += oxigeno->cantidadBloques;
 
@@ -396,6 +464,8 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 			crearConfig(&configOxigeno,pathOxigeno);
 
 			config_set_value(configOxigeno,"CARACTER_LLENADO","O");
+			config_set_value(configOxigeno,"BLOCKS","");
+			config_set_value(configOxigeno,"MD5_ARCHIVO","");
 
 		}
 
@@ -403,20 +473,22 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 		config_set_value(configOxigeno,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
 		config_save(configOxigeno);
 
-
+		actualizarEstructurasFile(oxigeno);
 
 		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
 
+
 		actualizarPosicionesFile(oxigeno,posicionesQueOcupa,configOxigeno,bloquesAocupar);
+
 
 		guardarEnMemoriaSecundaria(tarea,posicionesQueOcupa,oxigeno->caracterLlenado,bloquesAocupar);
 
-		mandarOKAdiscordiador(tripulanteSock);
+		//mandarOKAdiscordiador(tripulanteSock);
 
 	}
 	else{
 
-		mandarErrorAdiscordiador(tripulanteSock);
+		//mandarErrorAdiscordiador(tripulanteSock);
 
 		log_info(logImongo,"No hay mas espacio en el disco para la tarea %s", tarea->nombreTarea);
 
@@ -457,6 +529,25 @@ void liberarConfiguracion(){
 	free(datosConfig);
 
 }//
+
+
+void liberarStructTareas(t_file* file){
+
+	free(file->bloquesQueOcupa);
+	free(file->caracterLlenado);
+	free(file->md5_archivo);
+	free(file);
+
+}
+
+void liberarTodosLosStructTareas(){
+
+	liberarStructTareas(oxigeno);
+	liberarStructTareas(comida);
+	liberarStructTareas(basura);
+
+}
+
 
 void liberarTareas(){
 

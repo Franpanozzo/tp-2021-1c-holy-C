@@ -19,15 +19,21 @@ void consumirOxigeno(t_tarea*,int*);
 void generarComida(t_tarea*,int*);
 void consumirComida(t_tarea*,int*);
 void generarBasura(t_tarea*,int*);
+void actualizarEstructurasFile(t_file*);
 void descartarBasura(t_tarea*,int*);
 void mandarErrorAdiscordiador(int*);
 int* obtenerArrayDePosiciones(int);
-int bloquesLibres(int);
+bool bloquesLibres(int);
 void actualizarPosicionesFile(t_file*, int*, t_config*,int);
 int min(int ,int );
 void actualizarStringBitMap();
 void cargarPaths();
 void detallesArchivo(int);
+bool verificarSiExiste(char*);
+void mallocTareas();
+void liberarStructTareas(t_file*);
+void liberarTodosLosStructTareas();
+void sincronizarMemoriaSecundaria();
 
 
 #endif

@@ -35,6 +35,7 @@ void manejarTripulante(int*);
 void deserializarSegun(t_paquete*, int*);
 void iniciarFileSystem();
 void crearFileSystemDesdeCero();
+void crearFileSystemExistente();
 void seleccionarTarea(t_tarea*, int*);
 void liberarTareas();
 void asignarTareas();
