@@ -2,11 +2,14 @@
 #define MI_RAM_HQH
 
 #include "estructuras.h"
-#include "memoria.h"
+#include "paginacion.h"
 
 t_log* logMiRAM;
 
 
+void cargar_configuracion();
+char* asignar_bytes(int );
+void iniciarMemoria();
 char* delimitarTareas(char*);
 void mandarConfirmacionDisc(char* , int);
 void atenderTripulantes(int*);
@@ -31,6 +34,21 @@ t_tarea* tarea_error();
 char asignarEstadoTripu(t_estado);
 int recibirActualizarTripulante(t_paquete* );
 void deserializarExpulsionTripulante(t_paquete*);
+void cargarDLTripulante(void* , tcb* );
+tcb* cargarEnTripulante(void* );
+t_tarea* armarTarea(char* );
+void* meterEnBuffer(void* , tipoEstructura , int*, int*);
+int guardarPCB(pcb*, char*);
+t_tarea* guardarTCB(tcb*, int);
+void hacerDump(int);
+void expulsarTripulante(int,int);
+t_tarea* asignarProxTarea(int, int);
+int actualizarTripulante(tcb* , int);
+
+
+
+
+
 
 
 

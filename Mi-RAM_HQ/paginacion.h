@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-#ifndef MEMORIA_H_
-#define MEMORIA_H_
+#ifndef PAGINACION_H_
+#define PAGINACION_H_
 
 #define MEM_PPAL 0
 #define MEM_VIRT 1
@@ -21,7 +21,7 @@
 
 #include "estructuras.h"
 #include "segmentacion.h"
-//#include "mi_ram_hq.h"
+#include "mi_ram_hq.h"
 
 
 typedef struct {
@@ -83,11 +83,8 @@ pthread_mutex_t mutexAlojados;
 
 
 
-void cargar_configuracion();
 bool get_frame(int , int);
 void set_frame(int , int);
-char* asignar_bytes(int );
-void iniciarMemoria();
 void* leer_memoria_pag(int,int);
 int insertar_en_memoria_pag(t_info_pagina*, void*, int, int*, tipoEstructura, int, int*);
 void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura,int);
@@ -97,9 +94,6 @@ t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
 int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
 t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* );
-void* meterEnBuffer(void* , tipoEstructura , int*, int*);
-int guardarPCB(pcb*, char*);
-t_tarea* guardarTCB(tcb*, int);
 t_tarea* guardarTCBPag(tcb*, int);
 int guardarPCBPag(pcb*, char*);
 uint32_t estimarDLTareasPag();
@@ -109,14 +103,11 @@ bool tieneEstructuraAlojada(t_list* , tipoEstructura);
 bool tieneTripulanteAlojado(t_list* , int);
 t_alojado* obtenerAlojadoPagina(t_list* , int);
 int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* , tcb*);
-t_tarea* armarTarea(char* );
 int frameTotalmenteLibre(int );
 t_list* paginasConTripu(t_list*, uint32_t );
 int sobreescribirTripu(t_list* , tcb* );
-void cargarDLTripulante(void* , tcb* );
 int actualizarTripulantePag(tcb* , int);
 tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
-tcb* cargarEnTripulante(void* );
 t_tarea* asignarProxTareaPag(int , int);
 t_list_iterator* iterarHastaIndice(t_list*, int);
 void existenciaDeTablaParaPatota(t_tablaPaginasPatota*);
@@ -126,10 +117,6 @@ t_tablaPaginasPatota* patotaConFrame(int);
 t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
 void expulsarTripulantePag(int ,int);
 void dumpPag();
-void expulsarTripulante(int,int);
-t_tarea* asignarProxTarea(int, int);
-int actualizarTripulante(tcb* , int);
-void hacerDump(int);
 
 
 
@@ -145,7 +132,7 @@ void hacerDump(int);
 
 
 
-#endif /* MEMORIA_H_ */
+#endif /* PAGINACION_H_ */
 
 
 

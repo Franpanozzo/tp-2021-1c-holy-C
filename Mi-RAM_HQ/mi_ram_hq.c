@@ -157,6 +157,101 @@ void mandarConfirmacionDisc(char* aMandar, int socket) {
 }
 
 
+void cargar_configuracion() {
+	t_config* config = config_create("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/mi_ram_hq.config"); //Leo el archivo de configuracion
+
+	if (config == NULL) {
+		perror("Archivo de configuracion de RAM no encontrado");
+		return;
+	}
+
+	configRam.tamanioMemoria = config_get_int_value(config, "TAMANIO_MEMORIA");
+	configRam.esquemaMemoria = config_get_string_value(config, "ESQUEMA_MEMORIA");
+	configRam.tamanioPagina = config_get_int_value(config, "TAMANIO_PAGINA");
+	configRam.tamanioSwap = config_get_int_value(config, 	"TAMANIO_SWAP");
+	configRam.pathSwap = config_get_string_value(config, 	"PATH_SWAP");
+	configRam.algoritmoReemplazo = config_get_string_value(config, "ALGORITMO_REEMPLAZO");
+	configRam.criterioSeleccion = config_get_string_value(config, "CRITERIO_SELECCION");
+	configRam.puerto = config_get_int_value(config, "PUERTO");
+
+	//config_destroy(config);
+}
+
+
+char* asignar_bytes(int cant_frames)
+{
+    char* buf;
+    int bytes;
+    if(cant_frames < 8)
+        bytes = 1;
+    else
+    {
+        double c = (double) cant_frames;
+        bytes = (int) ceil(c/8.0);
+    }
+    log_info(logMemoria,"BYTES: %d\n", bytes);
+    buf = malloc(bytes);
+    memset(buf,0,bytes);
+    return buf;
+}
+
+
+void iniciarMemoria() {
+
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		tablasPaginasPatotas = list_create();
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		tablasSegmentosPatotas = list_create();
+	}
+
+    signal(SIGUSR1, hacerDump);
+    log_info(logMemoria,"PID: %d",process_getpid());
+
+    pthread_mutex_init(&mutexMemoria, NULL);
+    pthread_mutex_init(&mutexEscribirMemoria, NULL);
+    pthread_mutex_init(&mutexTablasPaginas, NULL);
+    pthread_mutex_init(&mutexTablasSegmentos, NULL);
+    pthread_mutex_init(&mutexBuscarLugarLibre, NULL);
+    pthread_mutex_init(&mutexExpulsionTripulante, NULL);
+    pthread_mutex_init(&mutexTablaSegmentosPatota, NULL);
+    pthread_mutex_init(&mutexTablaPaginasPatota, NULL);
+    pthread_mutex_init(&mutexBitarray, NULL);
+    pthread_mutex_init(&mutexAlojados, NULL);
+
+
+	sem_init(&habilitarExpulsionEnRam,0,1);
+
+
+	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
+
+	memoria_principal = malloc(configRam.tamanioMemoria);
+
+	//memset(memoria_principal,'$',configRam.tamanioMemoria);
+
+	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
+
+    log_info(logMemoria, "RAM FRAMES: %d", cant_frames_ppal);
+
+    char* data = asignar_bytes(cant_frames_ppal);
+
+    frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
+
+    lugaresLibres = list_create();
+
+    t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
+
+    lugarInicial->inicio = 0;
+    lugarInicial->bytesAlojados = configRam.tamanioMemoria;
+    list_add(lugaresLibres,lugarInicial);
+
+	log_info(logMemoria,"El esquema usado es %s", configRam.esquemaMemoria);
+
+}
+
+
 int recibirActualizarTripulante(t_paquete* paquete) {
 	tcb* nuevoTCB = malloc(sizeof(tcb));
 
@@ -364,6 +459,220 @@ t_tarea* tarea_error() {
 	return tareaError;
 }
 
+
+
+tcb* cargarEnTripulante(void* bufferTripu) {
+	tcb* nuevoTCB = malloc(sizeof(tcb));
+	int offset = 0;
+
+	memcpy(&(nuevoTCB->idTripulante),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->estado),bufferTripu + offset,sizeof(char));
+	offset += sizeof(char);
+
+	memcpy(&(nuevoTCB->posX),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->posY),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->proximaAEjecutar),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(nuevoTCB->dlPatota),bufferTripu + offset,sizeof(uint32_t));
+
+	return nuevoTCB;
+
+}
+
+
+void cargarDLTripulante(void* bufferTripu, tcb* tcbAGuardar) {
+	int offset=13;
+
+	memcpy(&(tcbAGuardar->proximaAEjecutar),bufferTripu + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+
+	memcpy(&(tcbAGuardar->dlPatota),bufferTripu + offset,sizeof(uint32_t));
+
+}
+
+
+t_tarea* armarTarea(char* string){
+
+	t_tarea* tarea = malloc(sizeof(t_tarea));
+
+	    char** arrayParametros = string_split(string,";");
+
+	    if(string_contains(arrayParametros[0]," ")){
+
+	    	char** arrayPrimerElemento = string_split(arrayParametros[0]," ");
+	    	tarea->nombreTarea = strdup(arrayPrimerElemento[0]);
+	    	tarea->parametro= (int) atoi(arrayPrimerElemento[1]);
+			liberarDoblesPunterosAChar(arrayPrimerElemento);
+
+	    } else {
+	        tarea->nombreTarea = strdup(arrayParametros[0]);
+	    }
+	    tarea->coordenadas.posX = (uint32_t) atoi(arrayParametros[1]);
+	    tarea->coordenadas.posY = (uint32_t) atoi(arrayParametros[2]);
+	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
+	    liberarDoblesPunterosAChar(arrayParametros);
+
+	    return tarea;
+}
+
+
+
+
+void* meterEnBuffer(void* aGuardar, tipoEstructura tipo, int* aMeter, int *datoAdicional) {
+
+	void* buffer;
+	int offset = 0;
+
+	switch(tipo)
+	{
+		case PCB:
+		{
+			pcb* pcbAGuardar = (pcb*) aGuardar;
+			*aMeter = 8;
+			buffer = malloc(*aMeter);
+			*datoAdicional = -1;
+			log_info(logMemoria,"DL TAREA: %d \n", pcbAGuardar->dlTareas);
+
+			memcpy(buffer, &(pcbAGuardar->pid), sizeof(uint32_t));
+			offset += sizeof(uint32_t);
+			memcpy(buffer + offset, &(pcbAGuardar->dlTareas), sizeof(uint32_t));
+			break;
+		}
+		case TCB:
+		{
+			tcb* tcbAGuardar = (tcb*) aGuardar;
+			*aMeter = 21;
+			buffer = malloc(*aMeter);
+			*datoAdicional = tcbAGuardar->idTripulante;
+			memcpy(buffer + offset, &(tcbAGuardar->idTripulante),sizeof(uint32_t));
+			offset += sizeof(uint32_t);
+			memcpy(buffer + offset, &(tcbAGuardar->estado),sizeof(char));
+			offset += sizeof(char);
+			memcpy(buffer + offset, &(tcbAGuardar->posX),sizeof(uint32_t));
+			offset += sizeof(uint32_t);
+			memcpy(buffer + offset, &(tcbAGuardar->posY),sizeof(uint32_t));
+			offset += sizeof(uint32_t);
+			memcpy(buffer + offset, &(tcbAGuardar->proximaAEjecutar),sizeof(uint32_t));
+			offset += sizeof(uint32_t);
+			memcpy(buffer + offset, &(tcbAGuardar->dlPatota),sizeof(uint32_t));
+			offset += sizeof(uint32_t);
+			break;
+		}
+		case TAREAS:
+		{
+			char* tareas = (char*) aGuardar;
+			*aMeter = strlen(tareas) + 1;
+			buffer = malloc(*aMeter);
+			*datoAdicional = -1;
+			memcpy(buffer, tareas, strlen(tareas) + 1);
+			break;
+		}
+		default:
+			log_error(logMemoria,"No puedo guardar eso en una pagina negro");
+			exit(1);
+	}
+
+	return buffer;
+}
+
+
+
+
+int guardarPCB(pcb* pcbAGuardar, char* stringTareas) {
+
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		return guardarPCBPag(pcbAGuardar, stringTareas);
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		return guardarPCBSeg(pcbAGuardar, stringTareas);
+	}
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+}
+
+
+t_tarea* guardarTCB(tcb* tcbAGuardar, int idPatota) {
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		return guardarTCBPag(tcbAGuardar, idPatota);
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		return guardarTCBSeg(tcbAGuardar, idPatota);
+	}
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+}
+
+
+void expulsarTripulante(int idTripu,int idPatota) {
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		expulsarTripulantePag(idTripu, idPatota);
+	}
+	else if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		expulsarTripulanteSeg(idTripu, idPatota);
+	}
+	else {
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+	}
+	sem_post(&habilitarExpulsionEnRam);
+}
+
+
+t_tarea* asignarProxTarea(int idPatota, int idTripu) {
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		return asignarProxTareaPag(idPatota, idTripu);
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		return asignarProxTareaSeg(idPatota, idTripu);
+	}
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+}
+
+
+int actualizarTripulante(tcb* tcbAGuardar, int idPatota){
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		return actualizarTripulantePag(tcbAGuardar, idPatota);
+	}
+	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		return actualizarTripulanteSeg(tcbAGuardar, idPatota);
+	}
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+}
+
+
+void hacerDump(int signal) {
+	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
+	{
+		dumpPag();
+	}
+	else if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	{
+		dumpSeg();
+	}
+	else {
+	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+	exit(1);
+	}
+}
 
 
 

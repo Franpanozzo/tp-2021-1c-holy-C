@@ -7,7 +7,7 @@
 
 #ifndef SEGMENTACION_H_
 #define SEGMENTACION_H_
-#include "memoria.h"
+#include "paginacion.h"
 
 
 typedef struct {
