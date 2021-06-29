@@ -65,7 +65,7 @@ int main() {
 	int tripulantes2 = 2;
 	t_coordenadas coordenadas2[tripulantes2 ];
 	for(int i=0; i<tripulantes;i++){
-		coordenadas2[i].posX = i +1;
+		coordenadas2[i].posX = i + 1;
 		coordenadas2[i].posY = i + 2;
 	}
 	//CONSUMIR_COMIDA;3;8;9\nGENERAR_BASURA;6;7;1\nGENERAR_COMIDA 8;5;1;2

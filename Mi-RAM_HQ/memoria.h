@@ -76,6 +76,9 @@ pthread_mutex_t mutexTablasSegmentos;
 pthread_mutex_t mutexTablasPaginas;
 pthread_mutex_t mutexExpulsionTripulante;
 pthread_mutex_t mutexTablaSegmentosPatota;
+pthread_mutex_t mutexTablaPaginasPatota;
+pthread_mutex_t mutexBitarray;
+pthread_mutex_t mutexAlojados;
 
 
 

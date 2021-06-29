@@ -51,5 +51,6 @@ typedef enum {
 } tipoEstructura;
 
 
+sem_t habilitarExpulsionEnRam;
 
 #endif

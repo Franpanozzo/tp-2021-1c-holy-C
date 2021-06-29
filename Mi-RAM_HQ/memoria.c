@@ -61,6 +61,12 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexBuscarLugarLibre, NULL);
     pthread_mutex_init(&mutexExpulsionTripulante, NULL);
     pthread_mutex_init(&mutexTablaSegmentosPatota, NULL);
+    pthread_mutex_init(&mutexTablaPaginasPatota, NULL);
+    pthread_mutex_init(&mutexBitarray, NULL);
+    pthread_mutex_init(&mutexAlojados, NULL);
+
+
+	sem_init(&habilitarExpulsionEnRam,0,1);
 
 
 	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
@@ -257,8 +263,11 @@ void set_frame(int frame, int mem) {
 
 void clear_frame(int frame, int mem)
 {
-    if(mem == MEM_PPAL)
+    if(mem == MEM_PPAL) {
+    	lock(&mutexBitarray);
         bitarray_clean_bit(frames_ocupados_ppal, frame);
+        unlock(&mutexBitarray);
+    }
 
     /*else if (mem == MEM_VIRT)
         bitarray_clean_bit(frames_ocupados_virtual, frame); */
@@ -334,8 +343,10 @@ t_tarea* asignarProxTareaPag(int idPatota,int idTripulante) {
 
 	existenciaDeTablaParaPatota(tablaPaginasPatotaActual);
 
+	lock(&mutexTablaPaginasPatota);
 	log_info(logMemoria,"Se encontro la tabla de paginas_ PATOTA: %d - CANT PAGINAS: %d",
 					tablaPaginasPatotaActual->idPatota, list_size(tablaPaginasPatotaActual->tablaDePaginas));
+	unlock(&mutexTablaPaginasPatota);
 
 	tcb* tcb = obtenerTripulante(tablaPaginasPatotaActual, idTripulante);
 
@@ -365,7 +376,9 @@ t_tarea* guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
 	tcbAGuardar->dlPatota = 00;
+	log_info(logMemoria,"Llegue 2");
 	tcbAGuardar->proximaAEjecutar = buscarInicioDLTareas(tablaPaginasPatotaActual);
+	log_info(logMemoria,"Llegue 3");
 	existenciaDeTablaParaPatota(tablaPaginasPatotaActual);
 
 	int res = asignarPaginasEnTabla((void*) tcbAGuardar, tablaPaginasPatotaActual,TCB);
@@ -405,8 +418,10 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 	int desplazamiento = tcbAGuardar->proximaAEjecutar % 100;
 	t_info_pagina* info_pagina;
 
+	lock(&mutexTablaPaginasPatota);
 	log_info(logMemoria, "PAGINAS EN TABLA: %d - ME MUEVO %d PAGINAS",
 			list_size(tablaPaginasPatotaActual->tablaDePaginas), indicePagina);
+	unlock(&mutexTablaPaginasPatota);
 
 	t_list_iterator* iteradorTablaPaginas = iterarHastaIndice(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
 
@@ -415,6 +430,7 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 
 	log_info(logMemoria,"Sacando tarea arrancando de indice: %d - desplazamiento: %d ", indicePagina, desplazamiento);
 
+	lock(&mutexTablaPaginasPatota);
 	while(list_iterator_has_next(iteradorTablaPaginas))
 	{
 		info_pagina = list_iterator_next(iteradorTablaPaginas);
@@ -457,8 +473,8 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 		}
 
 		if(*proximoALeer == '|' || *proximoALeer == '\0') break;
-
 	}
+	unlock(&mutexTablaPaginasPatota);
 
 	actualizarTripulanteEnMemPag(tablaPaginasPatotaActual, tcbAGuardar);
 
@@ -502,7 +518,9 @@ int sobreescribirTripu(t_list* paginasConTripu, tcb* tcbAGuardar) {
 	while(i < cantPaginasConTripu)
 	{
 		t_info_pagina* info_pagina = list_get(paginasConTripu,i);
+		lock(&mutexAlojados);
 		t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
+		unlock(&mutexAlojados);
 
 		log_info(logMemoria, "Se va a sobreescrbir el tripulante: ID: %d | ESTADO: %c | POS_X: %d | POS_Y: %d | DL_TAREA: %d | DL_PATOTA: %d",
 				tcbAGuardar->idTripulante, tcbAGuardar->estado, tcbAGuardar->posX, tcbAGuardar->posY, tcbAGuardar->proximaAEjecutar, tcbAGuardar->dlPatota);
@@ -526,7 +544,9 @@ t_list* paginasConTripu(t_list* tablaDePaginas, uint32_t idTripu) {
 	  return tieneTripulanteAlojado(info_pagina->estructurasAlojadas, idTripu);
 	}
 
+	lock(&mutexTablaPaginasPatota);
 	t_list* tablaPaginasConTripu = list_filter(tablaDePaginas, (void*) tieneTripu);
+	unlock(&mutexTablaPaginasPatota);
 
 	return tablaPaginasConTripu;
 }
@@ -557,10 +577,14 @@ int actualizarTripulantePag(tcb* tcbAGuardar, int idPatota) {
 		while(i < cantPaginasConTripu)
 		{
 			t_info_pagina* info_pagina = list_get(paginasConTripulante,i);
+			lock(&mutexAlojados);
 			t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
+			unlock(&mutexAlojados);
 
 
+			lock(&mutexTablaPaginasPatota);
 			void* pagina = leer_memoria_pag(info_pagina->frame_m_ppal, MEM_PPAL);
+			unlock(&mutexTablaPaginasPatota);
 
 			log_info(logMemoria, "SE LEE DEL TRIPU: %d - FRAME: %d | D_INCIAL: %d | BYTES_ALOJ: %d", tcbAGuardar->idTripulante,
 					info_pagina->frame_m_ppal, alojado->desplazamientoInicial, alojado->bytesAlojados);
@@ -609,9 +633,13 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 			while(i < cantPaginasConTripu)
 			{
 				t_info_pagina* info_pagina = list_get(paginasConTripulante,i);
+				lock(&mutexAlojados);
 				t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, idTripulante);
+				unlock(&mutexAlojados);
 
+				lock(&mutexTablaPaginasPatota);
 				void* pagina = leer_memoria_pag(info_pagina->frame_m_ppal, MEM_PPAL);
+				unlock(&mutexTablaPaginasPatota);
 
 				log_info(logMemoria, "SE LEE DEL TRIPU: %d - FRAME: %d | D_INCIAL: %d | BYTES_ALOJ: %d", idTripulante,
 						info_pagina->frame_m_ppal, alojado->desplazamientoInicial, alojado->bytesAlojados);
@@ -878,21 +906,34 @@ uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* tablaPaginasPatota) {
 
     bool buscarDLTarea(t_info_pagina* info_pagina) {
 
-    	return tieneEstructuraAlojada(info_pagina->estructurasAlojadas,TAREAS);
+    	//lock(&mutexAlojados);
+    	bool a = tieneEstructuraAlojada(info_pagina->estructurasAlojadas,TAREAS);
+    	//unlock(&mutexAlojados);
+
+    	return a;
     }
 
+    lock(&mutexTablaPaginasPatota);
     t_info_pagina* paginaConTarea = list_find(tablaPaginasPatota->tablaDePaginas, (void*) buscarDLTarea);
+    unlock(&mutexTablaPaginasPatota);
 
     bool tieneTarea(t_alojado* estructuraAlojada) {
     	return estructuraAlojada->tipo == TAREAS;
     }
 
+    lock(&mutexAlojados);
     t_alojado* alojadoConTarea = list_find(paginaConTarea->estructurasAlojadas, (void*) tieneTarea);
+    unlock(&mutexAlojados);
+
 
     //Retornar un struct DL de las tareas que tiene el indice de la pagina y el desplazamiento en esta
     //Se guarda en algun lado cuanto pesa el string
 
-    return paginaConTarea->indice * 100 + alojadoConTarea->desplazamientoInicial;
+    lock(&mutexAlojados);
+    int a = paginaConTarea->indice * 100 + alojadoConTarea->desplazamientoInicial;
+    unlock(&mutexAlojados);
+
+    return a;
 }
 
 
@@ -902,7 +943,9 @@ bool tieneEstructuraAlojada(t_list* listaAlojados, tipoEstructura tipo) {
 	    	return estructuraAlojada->tipo == tipo;
 	    }
 
+	//lock(&mutexAlojados);
 	t_alojado* alojadoConTarea = list_find(listaAlojados, (void*) contieneTipo);
+	//unlock(&mutexAlojados);
 
 	return alojadoConTarea != NULL;
 }
@@ -910,7 +953,9 @@ bool tieneEstructuraAlojada(t_list* listaAlojados, tipoEstructura tipo) {
 
 bool tieneTripulanteAlojado(t_list* listaAlojados, int idTCB) {
 
+	lock(&mutexAlojados);
 	t_alojado* alojadoConTarea = obtenerAlojadoPagina(listaAlojados, idTCB);
+	unlock(&mutexAlojados);
 
 	return alojadoConTarea != NULL;
 }
@@ -922,7 +967,9 @@ t_alojado* obtenerAlojadoPagina(t_list* listaAlojados, int idTCB) {
 	    	return estructuraAlojada->tipo == TCB && estructuraAlojada->datoAdicional == idTCB;
 	    }
 
+	//lock(&mutexAlojados);
 	t_alojado* alojadoConTarea = list_find(listaAlojados, (void*) contieneTipo);
+	//unlock(&mutexAlojados);
 
 	return alojadoConTarea;
 }
@@ -1002,11 +1049,18 @@ void expulsarTripulantePag(int idTripulante,int idPatota) {
 		while(list_iterator_has_next(iteradorPaginas))
 		{
 			t_info_pagina* paginaActual = list_iterator_next(iteradorPaginas);
+			lock(&mutexAlojados);
 			t_alojado* tripuAlojado = obtenerAlojadoPagina(paginaActual->estructurasAlojadas, idTripulante);
-			paginaActual->bytesDisponibles += tripuAlojado->bytesAlojados;
+			unlock(&mutexAlojados);
 
+			lock(&mutexAlojados);
+			paginaActual->bytesDisponibles += tripuAlojado->bytesAlojados;
+			unlock(&mutexAlojados);
+
+			lock(&mutexAlojados);
 			log_info(logMemoria,"Se va a sacar de la lista de alojados de cant %d el tripu %d",
 					list_size(paginaActual->estructurasAlojadas), tripuAlojado->indice);
+			unlock(&mutexAlojados);
 
 			if(paginaActual->estructurasAlojadas == NULL) {
 				log_error(logMemoria,"No hay na aca");
@@ -1016,16 +1070,25 @@ void expulsarTripulantePag(int idTripulante,int idPatota) {
 				return alojado->tipo == TCB && alojado->datoAdicional == idTripulante;
 			}
 
+			lock(&mutexAlojados);
 			list_remove_by_condition(paginaActual->estructurasAlojadas,(void*) tripuConID);
+			unlock(&mutexAlojados);
+
 			//reducirIndiceAlojados(paginaActual->estructurasAlojadas);
 
 			log_info(logMemoria, "Se elimino el dato del TRIPULANTE %d en la PAGINA: %d",idTripulante, paginaActual->indice);
+
+			lock(&mutexTablaPaginasPatota);
 			log_info(logMemoria,"PAGINA: %d - BYTES DISPONIBLES: %d",paginaActual->indice,paginaActual->bytesDisponibles);
+			unlock(&mutexTablaPaginasPatota);
+
 
 			free(tripuAlojado);
 
+			lock(&mutexTablaPaginasPatota);
 			if(paginaActual->bytesDisponibles == 32)
 			{
+				unlock(&mutexTablaPaginasPatota);
 				log_info(logMemoria,"Pagina %d vacia se procede a liberar el frame y borrarla de tabla",paginaActual->indice);
 				clear_frame(paginaActual->frame_m_ppal, MEM_PPAL);
 
@@ -1034,10 +1097,18 @@ void expulsarTripulantePag(int idTripulante,int idPatota) {
 					return pagina->indice == paginaActual->indice;
 				}
 
+				lock(&mutexTablaPaginasPatota);
 				list_remove_by_condition(tablaPatota->tablaDePaginas, (void*) paginaConID);
+				unlock(&mutexTablaPaginasPatota);
+
+				lock(&mutexAlojados);
 				list_destroy(paginaActual->estructurasAlojadas);
+				unlock(&mutexAlojados);
 
 				free(paginaActual);
+			}
+			else {
+				unlock(&mutexTablaPaginasPatota);
 			}
 		}
 
@@ -1062,7 +1133,9 @@ void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 				free(alojado);
 			}
 
+			lock(&mutexAlojados);
 			list_destroy_and_destroy_elements(info_pagina->estructurasAlojadas, (void*) borrarAlojados);
+			unlock(&mutexAlojados);
 			log_info(logMemoria,"SE LIBERA  EL FRAME: %d",info_pagina->frame_m_ppal);
 			clear_frame(info_pagina->frame_m_ppal, MEM_PPAL);
 			free(info_pagina);
@@ -1075,7 +1148,10 @@ void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 		lock(&mutexTablasPaginas);
 		list_remove_by_condition(tablasPaginasPatotas, (void*) tablaConID);
 		unlock(&mutexTablasPaginas);
+
+		lock(&mutexTablaPaginasPatota);
 		list_destroy_and_destroy_elements(tablaPatota->tablaDePaginas, (void*) borrarProceso);
+		unlock(&mutexTablaPaginasPatota);
 
 		free(tablaPatota);
 	}
@@ -1089,8 +1165,11 @@ bool tieneTripulantesPag(t_tablaPaginasPatota* tablaPatota) {
 		return tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TCB);
 	}
 
-	return list_any_satisfy(tablaPatota->tablaDePaginas, (void*) tienePaginaTripulante);
+	lock(&mutexTablaPaginasPatota);
+	bool a = list_any_satisfy(tablaPatota->tablaDePaginas, (void*) tienePaginaTripulante);
+	unlock(&mutexTablaPaginasPatota);
 
+	return a;
 }
 
 
@@ -1215,12 +1294,15 @@ void expulsarTripulante(int idTripu,int idPatota) {
 	{
 		expulsarTripulantePag(idTripu, idPatota);
 	}
-	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	else if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
 		expulsarTripulanteSeg(idTripu, idPatota);
 	}
+	else {
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);
+	}
+	sem_post(&habilitarExpulsionEnRam);
 }
 
 
