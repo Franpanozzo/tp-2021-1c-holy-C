@@ -276,7 +276,7 @@ void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
 	if(!tieneTripulantesSeg(tablaSegmentosPatota)) {
 		unlock(&mutexTablaSegmentosPatota);
 
-		log_info(logMemoria,"La patota %d no tiene mas tripulantes. Se procede a borrarla de memoria", tablaSegmentosPatota->idPatota);
+		log_info(logMemoria,"LA PATOTA %d NO TIENE MAS TRIPULANTES. SE PROCEDE A BORRARLA DE MEMORIA", tablaSegmentosPatota->idPatota);
 
 		void borrarSegmento(t_info_segmento* info_segmento)
 		{

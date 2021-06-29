@@ -222,7 +222,7 @@ void deserializarExpulsionTripulante(t_paquete* paquete) {
 
 	memcpy(&(idTripu),stream + offset,sizeof(uint32_t));
 
-	log_info(logMiRAM, "Se procede a eliminar de la memoria el tripulante %d de la patota", idTripu, idPatota);
+	log_info(logMiRAM, "Se procede a eliminar de la memoria el tripulante %d de la patota %d", idTripu, idPatota);
 
 
 	sem_wait(&habilitarExpulsionEnRam);
@@ -252,7 +252,7 @@ int deserializarInfoPCB(t_paquete* paquete) {
 
 	free(stringTareas);
 
-	sem_wait(&habilitarPatotaEnRam);
+	//sem_wait(&habilitarPatotaEnRam);
 	return guardarPCB(nuevoPCB,tareasDelimitadas);
 
 }
