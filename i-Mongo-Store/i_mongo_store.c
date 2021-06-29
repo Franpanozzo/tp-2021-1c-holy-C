@@ -294,24 +294,26 @@ void iniciarFileSystem(){
 	}
 
 	if(validarExistenciaFileSystem(pathSuperBloque,pathBloque,datosConfig->puntoMontaje)){
-		/*
+
 		log_info(logImongo,"Existe un file system actualmente");
 
 		crearConfig(&configSuperBloque,pathSuperBloque);
 
+		superBloque = malloc(sizeof(t_superBloque));
 		superBloque->block_size = config_get_int_value(configSuperBloque,"BLOCK_SIZE");
 		superBloque->blocks = config_get_int_value(configSuperBloque,"BLOCKS");
 
 		log_info(logImongo,"El valor del block size es: %d", superBloque->block_size);
 		log_info(logImongo,"La cantidad de bloques es: %d", superBloque->blocks);
 
-		int sizeBitArray = superBloque->block_size * superBloque->blocks / 8;
-		bitArray = malloc(sizeBitArray);
-		superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArray ,MSB_FIRST);
+		int sizeBitArrayEnBytes = (int) ceil (((float)superBloque->blocks / (float) 8));
+		bitArray = malloc(sizeBitArrayEnBytes);
+		superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArrayEnBytes ,MSB_FIRST);
 
 		char* bitmap = config_get_string_value(configSuperBloque,"BITMAP");
 
-		for(int i=0; i<sizeBitArray;i++){
+		int cantidadPosicionesBitArray = bitarray_get_max_bit(superBloque->bitmap);
+		for(int i=0; i<cantidadPosicionesBitArray;i++){
 
 			if(bitmap[i] == '1'){
 
@@ -334,7 +336,7 @@ void iniciarFileSystem(){
 
 		int fd = open(pathBloque,O_RDWR,S_IRWXU|S_IRWXG|S_IRWXO);
 		memoriaSecundaria = mmap(NULL,superBloque->block_size * superBloque->blocks, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
-*/
+
 	}
 
 	else{
