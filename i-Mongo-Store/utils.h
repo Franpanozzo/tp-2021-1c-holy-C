@@ -19,7 +19,7 @@ void consumirOxigeno(t_tarea*,int*);
 void generarComida(t_tarea*,int*);
 void consumirComida(t_tarea*,int*);
 void generarBasura(t_tarea*,int*);
-void actualizarEstructurasFile(t_file*);
+void actualizarEstructurasFile(t_file*, t_config*);
 void descartarBasura(t_tarea*,int*);
 void mandarErrorAdiscordiador(int*);
 int* obtenerArrayDePosiciones(int);

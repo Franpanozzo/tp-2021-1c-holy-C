@@ -19,12 +19,12 @@ int main(void) {
 
 	iniciarFileSystem();
 
-	bitarray_set_bit(superBloque->bitmap,2);
-	bitarray_set_bit(superBloque->bitmap,3);
-	bitarray_set_bit(superBloque->bitmap,5);
-	bitarray_set_bit(superBloque->bitmap,6);
-	bitarray_set_bit(superBloque->bitmap,8);
-	bitarray_set_bit(superBloque->bitmap,10);
+	//bitarray_set_bit(superBloque->bitmap,2);
+	//bitarray_set_bit(superBloque->bitmap,3);
+	//bitarray_set_bit(superBloque->bitmap,14);
+	//bitarray_set_bit(superBloque->bitmap,6);
+	//bitarray_set_bit(superBloque->bitmap,12);
+	//bitarray_set_bit(superBloque->bitmap,10);
 
 	//int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
@@ -32,15 +32,49 @@ int main(void) {
 	//pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	//pthread_join(manejoTripulante, (void*) NULL);
 
-	t_tarea* tarea = malloc(sizeof(t_tarea));
+	t_tarea* tareaO = malloc(sizeof(t_tarea));
 
-	tarea->nombreTarea = strdup("GENERAR_OXIGENO");
-	tarea->coordenadas.posX = 2;
-	tarea->coordenadas.posY = 2;
-	tarea->parametro = 27;
-	tarea->tiempo = 3;
+	tareaO->nombreTarea = strdup("GENERAR_OXIGENO");
+	tareaO->coordenadas.posX = 2;
+	tareaO->coordenadas.posY = 2;
+	tareaO->parametro = 32;
+	tareaO->tiempo = 3;
 
-	generarOxigeno(tarea,NULL);
+	t_tarea* tareaOA = malloc(sizeof(t_tarea));
+
+	tareaOA->nombreTarea = strdup("GENERAR_OXIGENO");
+	tareaOA->coordenadas.posX = 2;
+	tareaOA->coordenadas.posY = 2;
+	tareaOA->parametro = 16;
+	tareaOA->tiempo = 3;
+
+	t_tarea* tareaC = malloc(sizeof(t_tarea));
+
+	tareaC->nombreTarea = strdup("GENERAR_COMIDA");
+	tareaC->coordenadas.posX = 2;
+	tareaC->coordenadas.posY = 2;
+	tareaC->parametro = 5;
+	tareaC->tiempo = 3;
+
+	t_tarea* tareaB = malloc(sizeof(t_tarea));
+
+	tareaB->nombreTarea = strdup("GENERAR_BASURA");
+	tareaB->coordenadas.posX = 2;
+	tareaB->coordenadas.posY = 2;
+	tareaB->parametro = 12;
+	tareaB->tiempo = 3;
+
+	generarOxigeno(tareaO,NULL);
+
+	generarOxigeno(tareaOA,NULL);
+
+	generarOxigeno(tareaOA,NULL);
+
+	generarOxigeno(tareaOA,NULL);
+
+	generarComida(tareaC,NULL);
+
+	generarBasura(tareaB,NULL);
 
 	sincronizarMemoriaSecundaria();
 
