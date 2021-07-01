@@ -14,6 +14,7 @@
 #include <string.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/collections/list.h>
 #include <stdbool.h>
 
 
@@ -34,13 +35,13 @@
 		EXPULSAR,
 		ESTADO_TRIPULANTE,
 		SIGUIENTE_TAREA,
-		TAREA, // t_tarea
+		TAREA, // id tripulante con t_tarea
 		DESPLAZAMIENTO,// id tripulante con t_coordenada x 2
-		INICIO_TAREA, // id tripulante  y nombre tarea solamente (char*)
-		FIN_TAREA, // id tripulante y nombre tarea solamente (char*)
+		INICIO_TAREA, // id tripulante  y nombre tarea solamente (char)
+		FIN_TAREA, // id tripulante y nombre tarea solamente (char)
 		ID_SABOTAJE, // id tripulante
 		FIN_SABOTAJE,// id tripulante
-		STRING// "OK" si la tarea se guardo en disco secundario o "ERROR" si no hubo espacio
+		STRING
 
 	} tipoDeDato;
 
@@ -58,7 +59,6 @@
 		READY,
 		EXEC,
 		BLOCKED,
-		END,
 		SABOTAJE
 	}t_estado;
 
@@ -80,6 +80,7 @@
 		t_tarea* instruccionAejecutar;
 		sem_t semaforoInicio;
 		sem_t semaforoFin;
+		bool estaVivo;
 	} t_tripulante;
 
 	typedef struct{
@@ -99,9 +100,25 @@
 		sem_t semaforoTerminoSabotaje;
 	} t_sabotaje;
 
-	void lock(pthread_mutex_t);
+	typedef struct{
+		uint32_t idTripulante;
+		t_coordenadas inicio;
+		t_coordenadas fin;
+	} t_desplazamiento;
 
-	void unlock(pthread_mutex_t);
+	typedef struct{
+		uint32_t idTripulante;
+		char* nombreTarea;
+	} t_avisoTarea;
+
+	typedef struct{
+		pthread_mutex_t mutex;
+		t_list* elementos;
+	}t_lista;
+
+	void lock(pthread_mutex_t*);
+
+	void unlock(pthread_mutex_t*);
 
 	int iniciarConexionDesdeServidor(int);
 
@@ -118,7 +135,13 @@
 	void* serializarTripulante(void*, void*, int);
 	void* serializarSolicitudSiguienteTarea(void*, void* , int);
 	void* serializarString(void*, void*, int);
+	void* serializarSolicitudSiguienteTarea(void*, void*, int);
+	void* serializarDesplazamiento(void*, void*, int);
+	void* serializarAvisoTarea(void*, void*, int);
+	void* serializarAvisoSabotaje(void*, void*, int);
 	t_tarea* deserializarTarea(void*);
+	void liberarDoblesPunterosAChar(char** );
+
 
 
 	/**

@@ -15,7 +15,7 @@ void leerConsola(){
 
 		if(strcmp(comandoYparametros[cursor], "INICIAR_PATOTA") == 0){
 
-			log_info(logDiscordiador, "\nSe ingreso el comando iniciar patota");
+			log_info(logDiscordiador, "Se ingreso el comando iniciar patota");
 			cursor ++;
 
 			uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
@@ -29,45 +29,37 @@ void leerConsola(){
 			}
 
 			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
+
+			free(coordenadasTripulantes);
+//			free(tareas);
+
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
+			modificarPlanificacion(CORRIENDO);
+			log_info(logDiscordiador, "Se inicio la planificacion");
 
-			if(leerPlanificacion() == PAUSADA){
-							modificarPlanificacion(CORRIENDO);
-							log_info(logDiscordiador, "Se inicio la planificacion");
-							sleep(1);
-						}
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-
-			if(leerPlanificacion() == CORRIENDO){
-							modificarPlanificacion(PAUSADA);
-							log_info(logDiscordiador, "Se pauso la planificacion");
-							sleep(1);
-						}
-						else{
-							log_error(logDiscordiador, "La planificacion no esta corriendo");
-						}
-
-
+			modificarPlanificacion(PAUSADA);
+			log_info(logDiscordiador, "Se pauso la planificacion");
 		}
 
 		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){
-
-			if(leerPlanificacion() == CORRIENDO){
-					modificarPlanificacion(PAUSADA);
-				}
-							listarTripulantes();
-							sleep(1);
+			listarTripulantes();
 		}
 		else if (strcmp(comandoYparametros[cursor], "ELIMINAR_TRIPULANTE") == 0){
 			log_info(logDiscordiador, "Se ingreso el comando ELIMINAR_TRIPULANTE");
-							if(leerPlanificacion() == CORRIENDO){
-								modificarPlanificacion(PAUSADA);
-							}
-								cursor ++;
-								uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
-								eliminarTripulante(idTripulante);
+			cursor ++;
+			uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
+			eliminarTripulante(idTripulante);
+
+		}
+		else if (strcmp(comandoYparametros[cursor], "SABOTAJE") == 0){
+			log_info(logDiscordiador, "Se ingreso el comando SABOTAJE");
+			cursor ++;
+			sabotaje->coordenadas.posX = 6;
+			sabotaje->coordenadas.posY = 6;
+			sabotaje->haySabotaje = 1;
 
 		}
 		else{
@@ -125,7 +117,7 @@ t_coordenadas* procesarPosicionesTripulantes(char** parametros, int cantidadTrip
 
 	if(parametros[*cursor] != NULL){
 		log_info(logDiscordiador,"Se ingresaron coordenadas de mas, solo se tendran en cuenta "
-				"las primeras %d coordenadas \n", cantidadTripulantes);
+				"las primeras %d coordenadas", cantidadTripulantes);
 	}
 
 	return coordenadasTripulantes;
@@ -148,14 +140,16 @@ void liberarStringSplit(char** arrayParametros) {
 char* procesarPathTareas(char** parametros, int* cursor){
 
 	if(parametros[*cursor] == NULL){
-		log_error(logDiscordiador,"\n Faltan parametros en el comando INICIAR_PATOTA, no se ingreso el path de las tareas");
+		log_error(logDiscordiador,"Faltan parametros en el comando INICIAR_PATOTA, "
+				"no se ingreso el path de las tareas");
 					//break se tiene q romper el leer consola
 		}
 
 	FILE* archivo = fopen(parametros[*cursor], "r");
 
 	if(archivo == NULL){
-		log_error(logDiscordiador,"\n No se encontro el archivo con las tareas, revise la direccion ingresada %s", parametros[*cursor]);
+		log_error(logDiscordiador,"No se encontro el archivo con las tareas, "
+				"revise la direccion ingresada %s", parametros[*cursor]);
 	}
 
 	char* unaTarea = malloc(sizeof(char) * 50);

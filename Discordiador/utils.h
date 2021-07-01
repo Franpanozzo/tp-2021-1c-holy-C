@@ -1,66 +1,71 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
-#include "discordiador.h"
-#include "variables.h"
-
-#define NO_HAY_TRIPULANTE_BLOQUEADO -1
-#define SIN_QUANTUM -1
-#define CORRIENDO 1
-#define PAUSADA 0
-#define SIN_EMPEZAR -1
-
-void iniciarTareasIO();
-void iniciarColas();
-void iniciarSemaforos();
-void iniciarMutex();
-void cargarDatosConfig();
-char * pathLog();
-
-int leerTotalTripus();
-void modificarTripulanteBlocked(uint32_t);
-int leerPlanificacion();
-void modificarPlanificacion(int);
-uint32_t leerTripulanteBlocked();
-void crearConfig();
+  #include "discordiador.h"
+	#include "variables.h"
 
 
-t_patota* asignarDatosAPatota(char*);
+	void iniciarTareasIO();
+	void iniciarListas();
+	void iniciarMutex();
+	void cargarConfiguracion();
+	char * pathLog();
 
-t_tripulante* elTripulanteMasCerca(t_coordenadas);
-void esperarTerminarTripulante(t_tripulante*);
-void avisarTerminoPlanificacion(t_tripulante*);
+	void modificarTripulanteBlocked(int);
+	int leerTripulanteBlocked();
+	void modificarPlanificacion(int);
+	int leerPlanificacion();
+	void crearConfig();
 
-void casoBlocked();
-void iterarCola(t_queue*, t_estado);
-void pasarDeCola(t_tripulante*);
+	t_patota* asignarDatosAPatota(char*);
 
-void siguienteTarea(t_tripulante* tripulante, int* ciclosExec);
-char* deserializarString (t_paquete*);
-void mandarTareaAejecutar(t_tripulante*,int);
-void actualizarEstadoEnRAM(t_tripulante*);
-int enviarA(puertoEIP* puerto, void* informacion, tipoDeDato codigoOperacion);
-bool tripulanteDeMenorId(void*, void*);
-t_tripulante* elTripuMasCerca(t_coordenadas lugarSabotaje);
+	void esperarTerminarTripulante(t_tripulante*);
+	void avisarTerminoPlanificacion(t_tripulante*);
 
-void recibirPrimerTareaDeMiRAM(t_tripulante*);
-void recibirProximaTareaDeMiRAM(t_tripulante*);
-void recibirTareaDeMiRAM(int ,t_tripulante*);
-void recibirConfirmacionDeMongo(int, t_tarea*);
-void esperarConfirmacionDeRAM(int);
-char* esperarConfirmacionDePatotaEnRAM(int);
+	void elegirTripulanteAbloquear();
 
-int esIO(char*);
-uint32_t calculoCiclosExec(t_tripulante*);
-void desplazarse(t_tripulante*, t_coordenadas);
-uint32_t diferencia(uint32_t, uint32_t);
+	void comunicarseConTripulantes(t_lista*, void(*closure)(void*));
 
-void listarTripulantes();
-char* traducirEstado(t_estado);
+	void pasarDeLista(t_tripulante*);
+	void meterEnLista(t_tripulante* , t_lista*);
+	void* sacarDeLista(t_lista*);
+	void ponerEnSabotaje(t_tripulante*);
+	void elegirTripulanteSabotaje();
+	void ponerEnReady(t_tripulante*);
+	uint32_t distancia(t_coordenadas, t_coordenadas);
 
-void eliminarTripulante(uint32_t);
-void eliminarPatota(t_patota*);
-void liberarTripulante(t_tripulante*);
-void liberarColaEnd();
+	void sacarDeColas(t_tripulante*);
+
+	char* deserializarString (t_paquete*);
+	void actualizarEstadoEnRAM(t_tripulante*);
+	void pasarAlistaSabotaje(t_lista*);
+	int enviarA(puertoEIP*, void*, tipoDeDato);
+	bool tripulanteDeMenorId(t_tripulante*, t_tripulante*);
+	t_tripulante* elTripuMasCerca(t_coordenadas);
+
+	void recibirPrimerTareaDeMiRAM(t_tripulante*);
+	void recibirProximaTareaDeMiRAM(t_tripulante*);
+	void recibirTareaDeMiRAM(int, t_tripulante*);
+	bool confirmacion(int);
+
+	int esIO(char*);
+	uint32_t calculoCiclosExec(t_tripulante*);
+	void desplazarse(t_tripulante*, t_coordenadas);
+	uint32_t diferencia(uint32_t, uint32_t);
+
+//	void imprimirTripulante(void*);
+	void listarLista(t_lista* lista);
+	void listarTripulantes();
+	char* traducirEstado(t_estado);
+
+	void cambiarDeEstado(t_tripulante*, t_estado);
+	bool tieneDistintoEstado(t_tripulante*);
+	bool tieneIgualEstado(t_tripulante*);
+	int totalTripulantes();
+
+	void eliminarTripulante(int);
+	void eliminarPatota(t_patota*);
+	void liberarTripulante(t_tripulante*);
+
 
 #endif

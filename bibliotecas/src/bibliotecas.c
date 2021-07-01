@@ -33,7 +33,7 @@ int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon llev
 	}
 
 	free(serverAddress);
-	printf("Cliente conectado del puerto %d y IP %s \n",puertoEIPAConectar->puerto,puertoEIPAConectar->IP);
+	//printf("Cliente conectado del puerto %d y IP %s \n",puertoEIPAConectar->puerto,puertoEIPAConectar->IP);
 	return server_sock;
 
 }
@@ -66,7 +66,7 @@ int iniciarConexionDesdeServidor(int puerto) {
 	free(serverAddress);
 	free(localAddress);
 
-	printf("Servidor conectado \n");
+	//printf("Servidor conectado \n");
 	return server_sock;
 
 }
@@ -82,8 +82,8 @@ t_log* iniciarLogger(char* archivoLog, char* nombrePrograma, int flagConsola){
 	t_log* logger = log_create(archivoLog, nombrePrograma, flagConsola, LOG_LEVEL_INFO);
 	//hay q hacer un chequeo de q el programa q se paso es correcto?
 	if(logger == NULL){
-		printf("No se pudo iniciar el logger del archivo %s perteneciente al programa %s \n"
-				, archivoLog, nombrePrograma);
+		//printf("No se pudo iniciar el logger del archivo %s perteneciente al programa %s \n"
+		//		, archivoLog, nombrePrograma);
 		exit(1);
 	}
 	else
@@ -147,6 +147,34 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			return sizeof(uint32_t) * 2;
 		}
 
+
+		case DESPLAZAMIENTO:
+		{
+			return sizeof(uint32_t) + sizeof(t_coordenadas)*2;
+		}
+
+		case INICIO_TAREA:
+		{
+			t_avisoTarea* aviso = (t_avisoTarea*) estructura;
+			return sizeof(uint32_t)*2 + strlen(aviso->nombreTarea) + 1;
+		}
+
+		case FIN_TAREA:
+		{
+			t_avisoTarea* aviso = (t_avisoTarea*) estructura;
+			return sizeof(uint32_t)*2 + strlen(aviso->nombreTarea) + 1;
+		}
+
+		case ID_SABOTAJE:
+		{
+			return sizeof(uint32_t);
+		}
+
+		case FIN_SABOTAJE:
+		{
+			return sizeof(uint32_t);
+		}
+
 		case STRING:
 		{
 			char * string = (char *) estructura;
@@ -154,7 +182,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		}
 
 		default:
-				printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
+				//printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
 				exit(1);
 	}
 
@@ -240,11 +268,49 @@ void* serializarString(void* stream, void* estructura, int offset){
 	return stream;
 }
 
+
 void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offset){
 	t_tripulante* tripulante = (t_tripulante*) estructura;
 	memcpy(stream + offset, &(tripulante->idPatota),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, &(tripulante->idTripulante),sizeof(uint32_t));
+
+	return stream;
+}
+
+void* serializarDesplazamiento(void* stream, void* estructura, int offset){
+	t_desplazamiento* desplazamiento = (t_desplazamiento*) estructura;
+	memcpy(stream + offset, &(desplazamiento->idTripulante),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(desplazamiento->inicio.posX),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(desplazamiento->inicio.posY),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(desplazamiento->fin.posX),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(desplazamiento->fin.posY),sizeof(uint32_t));
+
+	return stream;
+}
+
+
+void* serializarAvisoTarea(void* stream, void* estructura, int offset){
+	t_avisoTarea* avisoTarea = (t_avisoTarea*) estructura;
+	uint32_t tamanioNombreTarea = strlen(avisoTarea->nombreTarea) + 1;
+
+	memcpy(stream + offset, &(avisoTarea->idTripulante),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &tamanioNombreTarea , sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, avisoTarea->nombreTarea , tamanioNombreTarea);
+
+	return stream;
+}
+
+
+void* serializarAvisoSabotaje(void* stream, void* estructura, int offset){
+	int* id = (int*) estructura;
+	memcpy(stream, id, sizeof(uint32_t));
 
 	return stream;
 }
@@ -278,13 +344,28 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperaci
 				return serializarSolicitudSiguienteTarea(stream,estructura,offset);
 
 		case TAREA:
-
 				return serializarTarea(stream,estructura,offset);
+
+
+		case DESPLAZAMIENTO:
+				return serializarDesplazamiento(stream, estructura, offset);
+
+		case INICIO_TAREA:
+			return serializarAvisoTarea(stream, estructura, offset);
+
+		case FIN_TAREA:
+			return serializarAvisoTarea(stream, estructura, offset);
+
+		case ID_SABOTAJE:
+			return serializarAvisoSabotaje(stream, estructura, offset);
+
+		case FIN_SABOTAJE:
+			return serializarAvisoSabotaje(stream, estructura, offset);
+
 		case STRING:
 				return serializarString(stream,estructura,offset);
-
 		default:
-				printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
+				//printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
 				exit(1);
 	}
 
@@ -297,7 +378,7 @@ t_paquete* armarPaqueteCon(void* estructura,tipoDeDato cod_op){
 	paquete->buffer->size = tamanioEstructura(estructura,paquete->codigoOperacion);
 	paquete->buffer->stream = serializarEstructura(estructura,paquete->buffer->size,paquete->codigoOperacion);
 
-	printf("Paquete %d creado \n", paquete->codigoOperacion);
+	//printf("Paquete %d creado \n", paquete->codigoOperacion);
 
 	return  paquete;
 
@@ -311,7 +392,7 @@ void enviarPaquete(t_paquete* paquete, int socket) {
 	void* a_enviar = serializarPaquete(paquete,tamanioTotal);
 	send(socket, a_enviar, tamanioTotal,0);
 
-	printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
+	//printf("Paquete de %d bytes enviado con exito\n", tamanioTotal);
 
 	free(a_enviar);
 	eliminarPaquete(paquete);
@@ -335,15 +416,13 @@ void* serializarPaquete(t_paquete* paquete, int bytes){
 }
 
 
-void lock(pthread_mutex_t mutex){
-
-    pthread_mutex_lock(&mutex);
+void lock(pthread_mutex_t* mutex){
+    pthread_mutex_lock(mutex);
 }
 
 
-void unlock(pthread_mutex_t mutex){
-
-    pthread_mutex_unlock(&mutex);
+void unlock(pthread_mutex_t* mutex){
+    pthread_mutex_unlock(mutex);
 }
 
 
@@ -370,5 +449,19 @@ void eliminarPaquete(t_paquete* paquete){
 	free(paquete);
 }
 
+
+
+void liberarDoblesPunterosAChar(char** arrayParametros) {
+
+	char** liberadorDeStrings = arrayParametros;
+
+	while((*liberadorDeStrings) != NULL) {
+
+		free(*liberadorDeStrings);
+		liberadorDeStrings++;
+		//if((*liberadorDeStrings) == NULL) free(arrayParametros);
+	}
+	free(arrayParametros);
+}
 
 
