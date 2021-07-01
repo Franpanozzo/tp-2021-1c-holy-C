@@ -168,10 +168,10 @@ void crearMemoria(int fd){
 
 	memoriaSecundaria = mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
 
-	lock(&mutexMemoriaSecundaria);
+	//lock(&mutexMemoriaSecundaria);
 	copiaMemoriaSecundaria= malloc(size);
 	memcpy(copiaMemoriaSecundaria,memoriaSecundaria, size);
-	unlock(&mutexMemoriaSecundaria);
+	//unlock(&mutexMemoriaSecundaria);
 
 	log_info(logImongo,"Se ha creado la memoria secundaria con la capacidad %d con su copia para sincronizar", size);
 
@@ -212,9 +212,9 @@ bool bloquesLibres(int bloquesAocupar){
 
 	for(int i=0; i<superBloque->blocks;i++){
 
-		lock(&mutexBitMap);
+		//lock(&mutexBitMap);
 		flag = bitarray_test_bit(superBloque->bitmap,i);
-		unlock(&mutexBitMap);
+		//unlock(&mutexBitMap);
 
 		if(flag == 0){
 
@@ -248,9 +248,9 @@ int* obtenerArrayDePosiciones(int bloquesAocupar){
 
 	for(int i=0; i<superBloque->blocks;i++){
 
-		lock(&mutexBitMap);
+		//lock(&mutexBitMap);
 		flag = bitarray_test_bit(superBloque->bitmap,i);
-		unlock(&mutexBitMap);
+		//unlock(&mutexBitMap);
 
 		if(flag == 0){
 
@@ -281,9 +281,9 @@ char* bitmap = malloc(sizeBitArray + 1);
 
   for(int i=0; i<sizeBitArray;i++){
 
-	  	lock(&mutexBitMap);
+	  	//lock(&mutexBitMap);
     	int valor =  bitarray_test_bit(superBloque->bitmap, i);
-    	unlock(&mutexBitMap);
+    	//unlock(&mutexBitMap);
 
     	bitmap[i] = valor + '0';
 
@@ -304,11 +304,11 @@ char* bitmap = malloc(sizeBitArray + 1);
 
   bitmap[sizeBitArray] = '\0';
 
-  lock(&mutexSuperBloque);
+  //lock(&mutexSuperBloque);
   config_set_value(configSuperBloque,"BITMAP",bitmap);
 
   config_save(configSuperBloque);
-  unlock(&mutexSuperBloque);
+  //unlock(&mutexSuperBloque);
 
   free(bitmap);
 
@@ -317,13 +317,13 @@ char* bitmap = malloc(sizeBitArray + 1);
 
 void actualizarEstructurasFile(t_file* file, t_config* config){
 
-	lock(&mutexEstructurasFile);
+	//lock(&mutexEstructurasFile);
 	file->bloquesQueOcupa = config_get_string_value(config,"BLOCKS");
 	file->cantidadBloques = config_get_int_value(config,"BLOCK_COUNT");
 	file->caracterLlenado = config_get_string_value(config,"CARACTER_LLENADO");
 	file->md5_archivo = config_get_string_value(config,"MD5_ARCHIVO");
 	file->tamanioArchivo = config_get_int_value(config,"SIZE");
-	unlock(&mutexEstructurasFile);
+	//unlock(&mutexEstructurasFile);
 
 }
 
@@ -439,11 +439,11 @@ void sincronizarMemoriaSecundaria(){
 
 		sleep(tiempoEspera);
 
-		lock(&mutexMemoriaSecundaria);
+		//lock(&mutexMemoriaSecundaria);
 
 		memcpy(memoriaSecundaria,copiaMemoriaSecundaria,size);
 
-		unlock(&mutexMemoriaSecundaria);
+		//unlock(&mutexMemoriaSecundaria);
 
 		msync(memoriaSecundaria,size,MS_SYNC);
 
@@ -455,9 +455,9 @@ void actualizarBitArray(int* posicionesQueOcupa, int bloquesAocupar){
 
 	for(int i=0; i<bloquesAocupar; i++){
 
-		lock(&mutexBitMap);
+		//lock(&mutexBitMap);
 		bitarray_set_bit(superBloque->bitmap, posicionesQueOcupa[i]);
-		unlock(&mutexBitMap);
+		//unlock(&mutexBitMap);
 
 	}
 
@@ -493,9 +493,9 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 
 		printf("offset = %d \n", offset);
 
-		lock(&mutexMemoriaSecundaria);
+		//lock(&mutexMemoriaSecundaria);
 		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i], superBloque->block_size);
-		lock(&mutexMemoriaSecundaria);
+		//lock(&mutexMemoriaSecundaria);
 
 		printf("Lo que termino guardando fue %d ", superBloque->block_size);
 	}
@@ -510,13 +510,15 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 	int bloquesAocupar = (int) ceil((float) tarea->parametro / (float) superBloque->block_size);
 
+	log_info(logImongo, "Los bloues a ocupar de la tarea: %s son: %d ", tarea->nombreTarea, bloquesAocupar);
+
 	if(bloquesLibres(bloquesAocupar)){
 
 		log_info(logImongo,"Se comprobó que hay espacio en el disco para la tarea %s",tarea->nombreTarea);
 
 		if(verificarSiExiste(pathOxigeno)){
 
-			lock(&mutexOxigeno);
+			//lock(&mutexOxigeno);
 
 			crearConfig(&configOxigeno,pathOxigeno);
 
@@ -530,13 +532,13 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 			config_set_value(configOxigeno,"SIZE",string_itoa(oxigeno->cantidadBloques*superBloque->block_size));
 			config_save(configOxigeno);
 
-			unlock(&mutexOxigeno);
+			//unlock(&mutexOxigeno);
 
 		}
 
 		else{
 
-			lock(&mutexOxigeno);
+			//lock(&mutexOxigeno);
 
 			FILE* archivoOxigeno = fopen(pathOxigeno,"wb");
 			fclose(archivoOxigeno);
@@ -550,7 +552,7 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 			config_set_value(configOxigeno,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
 			config_save(configOxigeno);
 
-			unlock(&mutexOxigeno);
+			//unlock(&mutexOxigeno);
 
 			actualizarEstructurasFile(oxigeno, configOxigeno);
 
@@ -559,9 +561,9 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
 
-		lock(&mutexEstructuraOxigeno);
+		//lock(&mutexEstructuraOxigeno);
 		actualizarPosicionesFile(oxigeno,posicionesQueOcupa,configOxigeno,bloquesAocupar);
-		unlock(&mutexEstructuraOxigeno);
+		//unlock(&mutexEstructuraOxigeno);
 
 		guardarEnMemoriaSecundaria(tarea,posicionesQueOcupa,oxigeno->caracterLlenado,bloquesAocupar);
 
