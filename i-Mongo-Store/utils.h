@@ -34,6 +34,7 @@ void mallocTareas();
 void liberarStructTareas(t_file*);
 void liberarTodosLosStructTareas();
 void sincronizarMemoriaSecundaria();
+void iniciarMutex();
 
 
 #endif

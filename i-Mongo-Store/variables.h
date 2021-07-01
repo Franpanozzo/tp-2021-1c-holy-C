@@ -35,6 +35,18 @@ typedef struct{
 }t_datosConfig;
 
 
+pthread_mutex_t mutexSuperBloque;
+pthread_mutex_t mutexMemoriaSecundaria;
+pthread_mutex_t mutexBitMap;
+pthread_mutex_t mutexEstructurasFile;
+pthread_mutex_t mutexOxigeno;
+pthread_mutex_t mutexComida;
+pthread_mutex_t mutexBasura;
+pthread_mutex_t mutexEstructuraOxigeno;
+pthread_mutex_t mutexEstructuraComida;
+pthread_mutex_t mutexEstructuraBasura;
+pthread_t manejoTripulante;
+pthread_t hiloSincronizador;
 t_config* configImongo;
 t_config* configSuperBloque;
 t_config* configOxigeno;
