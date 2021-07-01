@@ -260,8 +260,6 @@ void hiloTripulante(t_tripulante* tripulante){
 				break;
 		}
 	}
-	int socket = enviarA(puertoEIPRAM, tripulante, EXPULSAR);
-	close(socket);
 	liberarTripulante(tripulante);
 }
 

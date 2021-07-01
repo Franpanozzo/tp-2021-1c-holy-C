@@ -340,6 +340,18 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 		recorredorPagina = pagina;
 		recorredorPagina += desplazamiento;
 
+		memcpy(aux,recorredorPagina,1);
+
+		log_info(logMemoria, "VALOR DE PROXIMA A LEER: %s", aux);
+
+		if(*aux == '|' && !string_is_empty(tarea))
+		{
+			log_info(logMemoria, "LLEGUE", aux);
+			break;
+		}
+
+		log_info(logMemoria, "ME CHUPO UN HUEVO", proximoALeer);
+
 			while(desplazamiento != configRam.tamanioPagina && *proximoALeer != '|'  && *proximoALeer != '\0')
 				{
 					memcpy(aux,recorredorPagina,1);
@@ -351,12 +363,6 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 					{
 						memcpy(proximoALeer,recorredorPagina,1);
 					}
-
-					/*
-					if(recorredorPagina != NULL)
-					{
-						memcpy(proximoALeer,recorredorPagina,1);
-					}*/
 
 					log_info(logMemoria,"Sacando tarea: %s",tarea);
 					log_info(logMemoria,"Proximo a leer: %s",proximoALeer);
@@ -374,6 +380,16 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 		if(*proximoALeer == '|' || *proximoALeer == '\0') break;
 	}
 	unlock(&mutexTablaPaginasPatota);
+
+	if(*aux == '|' && !string_is_empty(tarea))
+	{
+
+		log_info(logMemoria, "SE VUELVE A CARGAR LA DL");
+		log_info(logMemoria,"Asignando al TCB prox a ejecutar - indice: %d - desplazamiento: %d ", info_pagina->indice, desplazamiento);
+
+		tcbAGuardar->proximaAEjecutar = info_pagina->indice * 100 + desplazamiento;
+	}
+
 
 	actualizarTripulanteEnMemPag(tablaPaginasPatotaActual, tcbAGuardar);
 

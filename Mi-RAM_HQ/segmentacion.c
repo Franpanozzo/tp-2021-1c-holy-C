@@ -427,9 +427,17 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 		}
 
 		t_lugarLibre* primerLugarLibre = list_get_minimum(lugaresQueEntra, (void*) empiezaAntes);
+		inicio = primerLugarLibre->inicio;
+		primerLugarLibre->inicio += aMeter;
+		primerLugarLibre->bytesAlojados -= aMeter;
+
+		if(primerLugarLibre->bytesAlojados == 0)
+		{
+			borrarLugarLibre(primerLugarLibre);
+		}
 
 		list_destroy(lugaresQueEntra);
-		return primerLugarLibre->inicio;
+		return inicio;
 	}
 	else
 	{
@@ -510,8 +518,10 @@ void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivo
 
 		  //char* posEnHexa = mem_hexstring(memoria_principal, info_segmento->deslazamientoInicial);
 
-		char* dumpMarco = string_from_format("Proceso:%d   Segmento:%d	 Inicio:0x%04X	 Tam:%db \n",
+		char* dumpMarco = string_from_format("Proceso:%d   Segmento:%d	 Inicio:%d	 Tam:%db \n",
 				tablaSegPatota->idPatota, info_segmento->indice, info_segmento->deslazamientoInicial, info_segmento->bytesAlojados);
+
+		//FORMATO HEXA: 0x%04X
 
 		txt_write_in_file(archivoDump, dumpMarco);
 		free(dumpMarco);
@@ -520,7 +530,17 @@ void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivo
 	list_iterate(tablaSegPatota->tablaDeSegmentos, (void*) imprimirSegmento);
 }
 
+/*
+void compactarMemoria() {
 
+	int offset = 0;
+	t_info_segmento* info_segmento = proximoMasCercano(offset);
+
+	//if(info_segmento->deslazamientoInicial != 0)
+
+
+}
+*/
 
 
 

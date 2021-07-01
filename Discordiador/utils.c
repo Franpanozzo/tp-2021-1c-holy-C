@@ -484,6 +484,8 @@ void eliminarTripulante(int id){
 	lock(&listaAeliminar->mutex);
 	list_add(listaAeliminar->elementos, tripulanteAeliminar);
 	unlock(&listaAeliminar->mutex);
+	int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
+	close(socket);
 }
 
 
