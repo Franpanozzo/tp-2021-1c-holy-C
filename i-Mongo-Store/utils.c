@@ -168,10 +168,10 @@ void crearMemoria(int fd){
 
 	memoriaSecundaria = mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
 
-	//lock(&mutexMemoriaSecundaria);
+	lock(&mutexMemoriaSecundaria);
 	copiaMemoriaSecundaria= malloc(size);
 	memcpy(copiaMemoriaSecundaria,memoriaSecundaria, size);
-	//unlock(&mutexMemoriaSecundaria);
+	unlock(&mutexMemoriaSecundaria);
 
 	log_info(logImongo,"Se ha creado la memoria secundaria con la capacidad %d con su copia para sincronizar", size);
 
@@ -212,9 +212,9 @@ bool bloquesLibres(int bloquesAocupar){
 
 	for(int i=0; i<superBloque->blocks;i++){
 
-		//lock(&mutexBitMap);
+		lock(&mutexBitMap);
 		flag = bitarray_test_bit(superBloque->bitmap,i);
-		//unlock(&mutexBitMap);
+		unlock(&mutexBitMap);
 
 		if(flag == 0){
 
@@ -248,9 +248,9 @@ int* obtenerArrayDePosiciones(int bloquesAocupar){
 
 	for(int i=0; i<superBloque->blocks;i++){
 
-		//lock(&mutexBitMap);
+		lock(&mutexBitMap);
 		flag = bitarray_test_bit(superBloque->bitmap,i);
-		//unlock(&mutexBitMap);
+		unlock(&mutexBitMap);
 
 		if(flag == 0){
 
@@ -281,9 +281,9 @@ char* bitmap = malloc(sizeBitArray + 1);
 
   for(int i=0; i<sizeBitArray;i++){
 
-	  	//lock(&mutexBitMap);
+	  	lock(&mutexBitMap);
     	int valor =  bitarray_test_bit(superBloque->bitmap, i);
-    	//unlock(&mutexBitMap);
+    	unlock(&mutexBitMap);
 
     	bitmap[i] = valor + '0';
 
@@ -439,14 +439,19 @@ void sincronizarMemoriaSecundaria(){
 
 		sleep(tiempoEspera);
 
-		//lock(&mutexMemoriaSecundaria);
+		lock(&mutexMemoriaSecundaria);
 
 		memcpy(memoriaSecundaria,copiaMemoriaSecundaria,size);
 
-		//unlock(&mutexMemoriaSecundaria);
+		unlock(&mutexMemoriaSecundaria);
 
-		msync(memoriaSecundaria,size,MS_SYNC);
-
+		int flag = msync(memoriaSecundaria,size,MS_SYNC);
+		if(flag ==0)
+			log_info(logImongo, "Se sincronizo la memoria con éxito");
+		else if(flag == -1)
+			log_error(logImongo, "No se sincronizo bien la memoria");
+		else
+			log_error(logImongo, "La sincronizacion esta arrojando cualquier valor");
 	}
 }
 
@@ -455,9 +460,9 @@ void actualizarBitArray(int* posicionesQueOcupa, int bloquesAocupar){
 
 	for(int i=0; i<bloquesAocupar; i++){
 
-		//lock(&mutexBitMap);
+		lock(&mutexBitMap);
 		bitarray_set_bit(superBloque->bitmap, posicionesQueOcupa[i]);
-		//unlock(&mutexBitMap);
+		unlock(&mutexBitMap);
 
 	}
 
@@ -493,9 +498,9 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 
 		printf("offset = %d \n", offset);
 
-		//lock(&mutexMemoriaSecundaria);
+		lock(&mutexMemoriaSecundaria);
 		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i], superBloque->block_size);
-		//lock(&mutexMemoriaSecundaria);
+		unlock(&mutexMemoriaSecundaria);
 
 		printf("Lo que termino guardando fue %d ", superBloque->block_size);
 	}
@@ -636,12 +641,12 @@ void generarComida(t_tarea* tarea, int* tripulanteSock){
 
 			guardarEnMemoriaSecundaria(tarea,posicionesQueOcupa,comida->caracterLlenado,bloquesAocupar);
 
-			//mandarOKAdiscordiador(tripulanteSock);
+			mandarOKAdiscordiador(tripulanteSock);
 
 		}
 		else{
 
-			//mandarErrorAdiscordiador(tripulanteSock);
+			mandarErrorAdiscordiador(tripulanteSock);
 
 			log_info(logImongo,"No hay mas espacio en el disco para la tarea %s", tarea->nombreTarea);
 

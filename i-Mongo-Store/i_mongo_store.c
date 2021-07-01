@@ -31,6 +31,7 @@ int main(void) {
 	pthread_join(manejoTripulante, (void*) NULL);
 
 
+
 	liberarConfiguracion();
 
 	liberarTareas();
