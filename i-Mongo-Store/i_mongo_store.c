@@ -21,6 +21,7 @@ int main(void) {
 
 	iniciarFileSystem();
 
+
 	pthread_create(&hiloSincronizador, NULL, (void*) sincronizarMemoriaSecundaria, NULL);
 	pthread_detach(hiloSincronizador);
 
@@ -28,6 +29,7 @@ int main(void) {
 
 	pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	pthread_join(manejoTripulante, (void*) NULL);
+
 
 	liberarConfiguracion();
 
@@ -260,6 +262,15 @@ void crearFileSystemExistente(){
 
 	int fd = open(pathBloque,O_RDWR,S_IRWXU|S_IRWXG|S_IRWXO);
 	memoriaSecundaria = mmap(NULL,superBloque->block_size * superBloque->blocks, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
+
+	lock(&mutexMemoriaSecundaria);
+	copiaMemoriaSecundaria= malloc(superBloque->block_size * superBloque->blocks);
+	memcpy(copiaMemoriaSecundaria,memoriaSecundaria, superBloque->block_size * superBloque->blocks);
+	unlock(&mutexMemoriaSecundaria);
+
+	log_info(logImongo,"Se ha creado la memoria secundaria con la capacidad %d con su copia para sincronizar", superBloque->block_size * superBloque->blocks);
+
+	detallesArchivo(fd);
 
 }//
 

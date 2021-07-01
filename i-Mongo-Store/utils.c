@@ -168,8 +168,10 @@ void crearMemoria(int fd){
 
 	memoriaSecundaria = mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
 
+	lock(&mutexMemoriaSecundaria);
 	copiaMemoriaSecundaria= malloc(size);
 	memcpy(copiaMemoriaSecundaria,memoriaSecundaria, size);
+	unlock(&mutexMemoriaSecundaria);
 
 	log_info(logImongo,"Se ha creado la memoria secundaria con la capacidad %d con su copia para sincronizar", size);
 
