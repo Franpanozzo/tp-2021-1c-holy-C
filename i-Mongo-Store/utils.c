@@ -611,7 +611,9 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 		//unlock(&mutexEstructuraOxigeno);
 
 		guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar);
-
+		actualizarMD5(structTarea);
+		config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
+		config_save(structTarea->config);
 		mandarOKAdiscordiador(tripulanteSock);
 
 
@@ -627,6 +629,41 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 	}
 	unlock(structTarea->mutex);
+}
+
+void actualizarMD5(tarea* structTarea){
+	// arrayBloques = ["1","3"]  array de strings
+	char ** arrayBloques = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
+	char * copiaFile = malloc(structTarea->file->tamanioArchivo);
+
+	for(int i=0; i<structTarea->file->cantidadBloques;i++){
+		int offsetMemoria = atoi(*(arrayBloques + i)) * superBloque->block_size;
+		int offsetFile = i * superBloque->block_size;
+		printf("%d\n",offsetMemoria);
+		printf("%d\n",offsetFile);
+		memcpy(copiaFile+offsetFile,memoriaSecundaria + offsetMemoria ,superBloque->block_size);
+
+
+	}
+	char* nombreFile = string_from_format("%s.md5.tmp",structTarea->file->caracterLlenado);
+	FILE * file = fopen(nombreFile,"w");
+	fputs(copiaFile, file);
+	fclose(file);
+
+	char * comando = string_from_format("md5sum %s", nombreFile);
+	//md5sum
+
+
+	int md5Size = 32;
+	char * md5 = malloc(md5Size);
+	file = popen(comando, "r");
+	//fscanf(file,"%s",md5);
+
+	fgets(md5, md5Size, file);
+	log_info(logImongo,"md5: %s \n",md5);
+	structTarea->file->md5_archivo = md5;
+
+
 }
 
 
