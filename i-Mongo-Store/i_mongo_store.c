@@ -32,15 +32,15 @@ int main(void) {
 
 
 
-	liberarConfiguracion();
+	//liberarConfiguracion();
 
-	liberarTareas();
+	//liberarTareas();
 
 	//log_destroy(logImongo); PREGUNTAR AYUDANTE DIOS MIO
 
 	//config_destroy(configImongo); PREGUNTAR AYUDANTE DIOS MIO
 
-	liberarTodosLosStructTareas();
+	//liberarTodosLosStructTareas();
 
 	free(path);
 
@@ -89,6 +89,7 @@ void manejarTripulante(int *tripulanteSock) {
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
     deserializarSegun(paquete,tripulanteSock);
+    free(tripulanteSock);
 }
 
 
@@ -107,6 +108,8 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 					seleccionarTarea(tarea,tripulanteSock);
 
+					free(tarea->nombreTarea);
+					free(tarea);
 					break;
 
 					}
@@ -141,7 +144,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 	}
 
 	eliminarPaquete(paquete);
-
+	close(*tripulanteSock);
 }
 
 
@@ -155,7 +158,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 						{
 									log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO \n");
 
-									generarOxigeno(tarea,tripulanteSock);
+									generarTarea(oxigeno, tarea,tripulanteSock);
 
 									break;
 						}
@@ -174,7 +177,8 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 						{
 									log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA \n");
 
-									generarComida(tarea,tripulanteSock);
+									//generarComida(tarea,tripulanteSock);
+									generarTarea(comida, tarea,tripulanteSock);
 
 									break;
 
@@ -195,8 +199,8 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 						{
 									log_info(logImongo,"Recibi una tarea de GENERAR_BASURA \n");
 
-									generarBasura(tarea,tripulanteSock);
-
+									//generarBasura(tarea,tripulanteSock);
+									generarTarea(basura, tarea,tripulanteSock);
 									break;
 
 						}

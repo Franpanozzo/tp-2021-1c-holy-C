@@ -77,9 +77,9 @@ void cargarPaths(){
 	pathSuperBloque = crearDestinoApartirDeRaiz("SuperBloque.ims");
 	pathBloque = crearDestinoApartirDeRaiz("Blocks.ims");
 	pathFiles = crearDestinoApartirDeRaiz("Files");
-	pathOxigeno = crearDestinoApartirDeRaiz("Files/Oxigeno.ims");
-	pathComida = crearDestinoApartirDeRaiz("Files/Comida.ims");
-	pathBasura = crearDestinoApartirDeRaiz("Files/Basura.ims");
+	oxigeno->path = crearDestinoApartirDeRaiz("Files/Oxigeno.ims");
+	comida->path = crearDestinoApartirDeRaiz("Files/Comida.ims");
+	basura->path = crearDestinoApartirDeRaiz("Files/Basura.ims");
 	pathBitacora = crearDestinoApartirDeRaiz("Files/Bitacora");
 
 }//
@@ -99,9 +99,29 @@ void cargarDatosConfig(){
 void mallocTareas(){
 
 	int tamanio = sizeof(t_file);
-	oxigeno = malloc(tamanio);
-	comida = malloc(tamanio);
-	basura = malloc(tamanio);
+
+	oxigeno = malloc(sizeof(tarea));
+	oxigeno->configSeCreo = 0;
+	oxigeno->mutex = malloc(sizeof(pthread_mutex_t));
+	oxigeno->file= malloc(sizeof(t_file));
+	oxigeno->file->caracterLlenado = "O";
+	pthread_mutex_init(oxigeno->mutex, NULL);
+
+	comida = malloc(sizeof(tarea));
+	comida->configSeCreo = 0;
+	comida->mutex = malloc(sizeof(pthread_mutex_t));
+	comida->file= malloc(sizeof(t_file));
+	comida->file->caracterLlenado = "C";
+	pthread_mutex_init(comida->mutex, NULL);
+
+	basura = malloc(sizeof(tarea));
+	basura->configSeCreo = 0;
+	basura->mutex = malloc(sizeof(pthread_mutex_t));
+	basura->file= malloc(sizeof(t_file));
+	basura->file->caracterLlenado = "B";
+	pthread_mutex_init(basura->mutex, NULL);
+	//comida = malloc(tamanio);
+	//basura = malloc(tamanio);
 }
 
 
@@ -315,15 +335,13 @@ char* bitmap = malloc(sizeBitArray + 1);
 
 }
 
-void actualizarEstructurasFile(t_file* file, t_config* config){
+void actualizarEstructurasFile(t_file* file, t_config* config, pthread_mutex_t* mutex){
 
-	//lock(&mutexEstructurasFile);
 	file->bloquesQueOcupa = config_get_string_value(config,"BLOCKS");
 	file->cantidadBloques = config_get_int_value(config,"BLOCK_COUNT");
 	file->caracterLlenado = config_get_string_value(config,"CARACTER_LLENADO");
 	file->md5_archivo = config_get_string_value(config,"MD5_ARCHIVO");
 	file->tamanioArchivo = config_get_int_value(config,"SIZE");
-	//unlock(&mutexEstructurasFile);
 
 }
 
@@ -378,7 +396,8 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 
 
 		printf("%s \n", bloquesActuales);
-		string_append(&bloquesActuales,string_itoa(*(arrayDePosiciones + i)));
+		char * posicion = string_itoa(*(arrayDePosiciones + i));
+		string_append(&bloquesActuales,posicion);
 		printf("%s \n", bloquesActuales);
 		i++;
 
@@ -507,59 +526,80 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 
 	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
 
+	for(int i = 0; i < bloquesAocupar;i++){
+		free(palabraAguardar[i]);
+	}
+	free(palabraAguardar);
 
 }
+void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
+	int bloquesAocupar = (int) ceil((float) _tarea->parametro / (float) superBloque->block_size);
 
-void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
-
-	int bloquesAocupar = (int) ceil((float) tarea->parametro / (float) superBloque->block_size);
-
-	log_info(logImongo, "Los bloues a ocupar de la tarea: %s son: %d ", tarea->nombreTarea, bloquesAocupar);
-
+	log_info(logImongo, "Los bloues a ocupar de la tarea: %s son: %d ",_tarea->nombreTarea, bloquesAocupar);
+	lock(structTarea->mutex);
 	if(bloquesLibres(bloquesAocupar)){
 
-		log_info(logImongo,"Se comprobó que hay espacio en el disco para la tarea %s",tarea->nombreTarea);
+		log_info(logImongo,"Se comprobó que hay espacio en el disco para la tarea %s",_tarea->nombreTarea);
 
-		if(verificarSiExiste(pathOxigeno)){
+		if(verificarSiExiste(structTarea->path)){
 
-			//lock(&mutexOxigeno);
 
-			crearConfig(&configOxigeno,pathOxigeno);
+			if(structTarea->configSeCreo != true){
 
-			actualizarEstructurasFile(oxigeno, configOxigeno);
+				structTarea->configSeCreo = true;
+				structTarea->config  = config_create(structTarea->path);
 
-			log_info(logImongo,"Los bloques que ocupa al momento son: %s \n", oxigeno->bloquesQueOcupa);
+				if(structTarea->config == NULL){
 
-			oxigeno->cantidadBloques += bloquesAocupar;
+					log_error(logImongo, "La ruta es incorrecta ");
 
-			config_set_value(configOxigeno,"BLOCK_COUNT",string_itoa(oxigeno->cantidadBloques));
-			config_set_value(configOxigeno,"SIZE",string_itoa(oxigeno->cantidadBloques*superBloque->block_size));
-			config_save(configOxigeno);
+					exit(1);
+				}
+			}
 
-			//unlock(&mutexOxigeno);
+
+			actualizarEstructurasFile(structTarea->file, structTarea->config, structTarea->mutex);
+
+			log_info(logImongo,"Los bloques que ocupa al momento son: %s \n", structTarea->file->bloquesQueOcupa);
+
+
+			structTarea->file->cantidadBloques += bloquesAocupar;
+			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
+			config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->cantidadBloques*superBloque->block_size));
+			config_save(structTarea->config);
+
 
 		}
 
 		else{
 
-			//lock(&mutexOxigeno);
-
-			FILE* archivoOxigeno = fopen(pathOxigeno,"wb");
+			FILE* archivoOxigeno = fopen(structTarea->path,"wb");
 			fclose(archivoOxigeno);
 
-			crearConfig(&configOxigeno,pathOxigeno);
+			if(structTarea->configSeCreo != true){
+				structTarea->configSeCreo = true;
 
-			config_set_value(configOxigeno,"CARACTER_LLENADO","O");
-			config_set_value(configOxigeno,"BLOCKS","");
-			config_set_value(configOxigeno,"MD5_ARCHIVO","");
-			config_set_value(configOxigeno,"BLOCK_COUNT",string_itoa(bloquesAocupar));
-			config_set_value(configOxigeno,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
-			config_save(configOxigeno);
+				structTarea->config  = config_create(structTarea->path);
 
-			//unlock(&mutexOxigeno);
+				if(structTarea->config == NULL){
 
-			actualizarEstructurasFile(oxigeno, configOxigeno);
+					log_error(logImongo, "La ruta es incorrecta ");
+
+					exit(1);
+				}
+			}
+
+			config_set_value(structTarea->config,"CARACTER_LLENADO",structTarea->file->caracterLlenado);
+			config_set_value(structTarea->config,"BLOCKS","");
+			config_set_value(structTarea->config,"MD5_ARCHIVO","");
+			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(bloquesAocupar));
+			config_set_value(structTarea->config,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
+			config_save(structTarea->config);
+
+
+
+			actualizarEstructurasFile(structTarea->file, structTarea->config, structTarea->mutex);
 
 		}
 
@@ -567,22 +607,124 @@ void generarOxigeno(t_tarea* tarea, int* tripulanteSock){
 		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
 
 		//lock(&mutexEstructuraOxigeno);
-		actualizarPosicionesFile(oxigeno,posicionesQueOcupa,configOxigeno,bloquesAocupar);
+		actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
 		//unlock(&mutexEstructuraOxigeno);
 
-		guardarEnMemoriaSecundaria(tarea,posicionesQueOcupa,oxigeno->caracterLlenado,bloquesAocupar);
+		guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar);
 
 		mandarOKAdiscordiador(tripulanteSock);
 
+
+		free(posicionesQueOcupa);
+
 	}
+
 	else{
 
 		mandarErrorAdiscordiador(tripulanteSock);
 
-		log_info(logImongo,"No hay mas espacio en el disco para la tarea %s", tarea->nombreTarea);
+		log_info(logImongo,"No hay mas espacio en el disco para la tarea %s", _tarea->nombreTarea);
+
+	}
+	unlock(structTarea->mutex);
+}
+
+
+void generarOxigeno(t_tarea* _tarea, int* tripulanteSock){
+
+	int bloquesAocupar = (int) ceil((float) _tarea->parametro / (float) superBloque->block_size);
+
+	log_info(logImongo, "Los bloues a ocupar de la tarea: %s son: %d ",_tarea->nombreTarea, bloquesAocupar);
+	lock(oxigeno->mutex);
+	if(bloquesLibres(bloquesAocupar)){
+
+		log_info(logImongo,"Se comprobó que hay espacio en el disco para la tarea %s",_tarea->nombreTarea);
+
+		if(verificarSiExiste(pathOxigeno)){
+
+
+			if(oxigeno->configSeCreo != true){
+
+				oxigeno->configSeCreo = true;
+				oxigeno->config  = config_create(pathOxigeno);
+
+				if(oxigeno->config == NULL){
+
+					log_error(logImongo, "La ruta es incorrecta ");
+
+					exit(1);
+				}
+			}
+
+
+			actualizarEstructurasFile(oxigeno->file, oxigeno->config, oxigeno->mutex);
+
+			log_info(logImongo,"Los bloques que ocupa al momento son: %s \n", oxigeno->file->bloquesQueOcupa);
+
+
+			oxigeno->file->cantidadBloques += bloquesAocupar;
+			config_set_value(oxigeno->config,"BLOCK_COUNT",string_itoa(oxigeno->file->cantidadBloques));
+			config_set_value(oxigeno->config,"SIZE",string_itoa(oxigeno->file->cantidadBloques*superBloque->block_size));
+			config_save(oxigeno->config);
+
+
+		}
+
+		else{
+
+			FILE* archivoOxigeno = fopen(pathOxigeno,"wb");
+			fclose(archivoOxigeno);
+
+			if(oxigeno->configSeCreo != true){
+				oxigeno->configSeCreo = true;
+
+				oxigeno->config  = config_create(pathOxigeno);
+
+				if(oxigeno->config == NULL){
+
+					log_error(logImongo, "La ruta es incorrecta ");
+
+					exit(1);
+				}
+			}
+
+			config_set_value(oxigeno->config,"CARACTER_LLENADO","O");
+			config_set_value(oxigeno->config,"BLOCKS","");
+			config_set_value(oxigeno->config,"MD5_ARCHIVO","");
+			config_set_value(oxigeno->config,"BLOCK_COUNT",string_itoa(bloquesAocupar));
+			config_set_value(oxigeno->config,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
+			config_save(oxigeno->config);
+
+
+
+			actualizarEstructurasFile(oxigeno->file, oxigeno->config, oxigeno->mutex);
+
+		}
+
+
+		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+
+		//lock(&mutexEstructuraOxigeno);
+		actualizarPosicionesFile(oxigeno->file,posicionesQueOcupa,oxigeno->config,bloquesAocupar);
+		//unlock(&mutexEstructuraOxigeno);
+
+		guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,oxigeno->file->caracterLlenado,bloquesAocupar);
+
+		mandarOKAdiscordiador(tripulanteSock);
+
+
+		free(posicionesQueOcupa);
 
 	}
 
+	else{
+
+		mandarErrorAdiscordiador(tripulanteSock);
+
+		log_info(logImongo,"No hay mas espacio en el disco para la tarea %s", _tarea->nombreTarea);
+
+	}
+	unlock(oxigeno->mutex);
 }
 
 
@@ -590,7 +732,7 @@ void consumirOxigeno(t_tarea* tarea, int* tripulanteSock){
 
 }
 
-
+/*
 void generarComida(t_tarea* tarea, int* tripulanteSock){
 
 	int bloquesAocupar = (int) ceil((float) tarea->parametro / (float) superBloque->block_size);
@@ -603,7 +745,7 @@ void generarComida(t_tarea* tarea, int* tripulanteSock){
 
 				crearConfig(&configComida,pathComida);
 
-				actualizarEstructurasFile(comida, configComida);
+				//actualizarEstructurasFile(comida, configComida);
 
 				printf("Los bloques que ocupa al momento son: %s \n", comida->bloquesQueOcupa);
 
@@ -628,7 +770,7 @@ void generarComida(t_tarea* tarea, int* tripulanteSock){
 				config_set_value(configComida,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
 				config_save(configComida);
 
-				actualizarEstructurasFile(comida, configComida);
+				//actualizarEstructurasFile(comida, configComida);
 
 			}
 
@@ -653,13 +795,13 @@ void generarComida(t_tarea* tarea, int* tripulanteSock){
 		}
 
 }
-
+*/
 
 void consumirComida(t_tarea* tarea, int* tripulanteSock){
 
 }
 
-
+/*
 void generarBasura(t_tarea* tarea, int* tripulanteSock){
 
 	int bloquesAocupar = (int) ceil((float) tarea->parametro / (float) superBloque->block_size);
@@ -672,7 +814,7 @@ void generarBasura(t_tarea* tarea, int* tripulanteSock){
 
 					crearConfig(&configBasura,pathBasura);
 
-					actualizarEstructurasFile(basura, configBasura);
+					//actualizarEstructurasFile(basura, configBasura);
 
 					printf("Los bloques que ocupa al momento son: %s \n", basura->bloquesQueOcupa);
 
@@ -697,7 +839,7 @@ void generarBasura(t_tarea* tarea, int* tripulanteSock){
 					config_set_value(configBasura,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
 					config_save(configBasura);
 
-					actualizarEstructurasFile(basura, configBasura);
+					//actualizarEstructurasFile(basura, configBasura);
 
 				}
 
@@ -722,7 +864,7 @@ void generarBasura(t_tarea* tarea, int* tripulanteSock){
 			}
 
 }
-
+*/
 
 void descartarBasura(t_tarea* tarea, int* tripulanteSock){
 
@@ -749,9 +891,9 @@ void liberarStructTareas(t_file* file){
 
 void liberarTodosLosStructTareas(){
 
-	liberarStructTareas(oxigeno);
-	liberarStructTareas(comida);
-	liberarStructTareas(basura);
+	//liberarStructTareas(oxigeno);
+	//liberarStructTareas(comida);
+	//liberarStructTareas(basura);
 
 }
 

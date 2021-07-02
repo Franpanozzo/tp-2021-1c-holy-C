@@ -34,6 +34,13 @@ typedef struct{
 
 }t_datosConfig;
 
+typedef struct {
+	t_config* config;
+	t_file* file;
+	pthread_mutex_t* mutex;
+	char * path;
+	bool configSeCreo;
+}tarea;
 
 pthread_mutex_t mutexSuperBloque;
 pthread_mutex_t mutexMemoriaSecundaria;
@@ -56,9 +63,9 @@ t_log* logImongo;
 t_datosConfig* datosConfig;
 t_superBloque* superBloque;
 char* bitArray;
-t_file* oxigeno;
-t_file* comida;
-t_file* basura;
+tarea* oxigeno;
+tarea* comida;
+tarea* basura;
 char* memoriaSecundaria;
 char* copiaMemoriaSecundaria;
 char** tareas;
