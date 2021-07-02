@@ -208,6 +208,7 @@ void iniciarMemoria() {
 	}
 
     signal(SIGUSR1, hacerDump);
+    signal(SIGUSR2, compactarMemoria);
     log_info(logMemoria,"PID: %d",process_getpid());
 
     pthread_mutex_init(&mutexMemoria, NULL);

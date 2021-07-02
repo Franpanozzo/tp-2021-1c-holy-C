@@ -530,17 +530,94 @@ void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivo
 	list_iterate(tablaSegPatota->tablaDeSegmentos, (void*) imprimirSegmento);
 }
 
-/*
+
 void compactarMemoria() {
 
-	int offset = 0;
-	t_info_segmento* info_segmento = proximoMasCercano(offset);
+	log_info(logMemoria, "SE PROCEDE A HACER LA COMPACTACION");
 
-	//if(info_segmento->deslazamientoInicial != 0)
+	t_lugarLibre* lugarLibre = primerLugarLibre();
 
+	while(lugarLibre->inicio + lugarLibre->bytesAlojados != configRam.tamanioMemoria)
+	{
+		int inicioProximoSegmento = lugarLibre->inicio + lugarLibre->bytesAlojados;
+
+		log_info(logMemoria, "EL PRIMER LUGAR LIBRE ARRANCA EN %d - EL INICIO DEL PROX SEG. A BUSCAR ES EN: %d",
+				lugarLibre->inicio, inicioProximoSegmento);
+
+		t_info_segmento* info_segmento = encontrarSegmentoQueArrancaEn(lugarLibre->inicio + lugarLibre->bytesAlojados);
+
+		log_info(logMemoria, "MOVIENDO BLOQUE QUE ARRANCE EN %d HACIA %d", info_segmento->deslazamientoInicial, lugarLibre->inicio);
+
+		info_segmento->deslazamientoInicial = lugarLibre->inicio;
+		lugarLibre->inicio += info_segmento->bytesAlojados;
+
+		//CHEQUEAMOS SI HAY UN LUGAR LIBRE LUEGO DEL SWITCHEO PARA UNIRLOS
+	t_lugarLibre* lugarLibre2 = buscarLugarLibre(lugarLibre->inicio + lugarLibre->bytesAlojados);
+
+		if(lugarLibre != NULL)
+		{
+			log_info(logMemoria, "SE UNE EL ESPACIO LIBRE QUE TERMINA EN %d CON EL QUE ARRANCA EN %d",
+					lugarLibre->inicio + lugarLibre->bytesAlojados, lugarLibre2->inicio);
+
+		lugarLibre->bytesAlojados += lugarLibre2->bytesAlojados;
+		borrarLugarLibre(lugarLibre2);
+		}
+
+		lugarLibre = primerLugarLibre();
+	}
+}
+
+
+t_lugarLibre* primerLugarLibre() {
+
+	t_lugarLibre* inicioMasCercano(t_lugarLibre* lugarLibre1, t_lugarLibre* lugarLibre2) {
+		if(lugarLibre1->inicio < lugarLibre2->inicio) return lugarLibre1;
+		return lugarLibre2;
+	}
+
+	return list_get_minimum(lugaresLibres, (void*)inicioMasCercano);
+}
+
+
+t_lugarLibre* buscarLugarLibre(int inicioABuscar) {
+
+	bool empiezaEn(t_lugarLibre* lugarLibre)
+	{
+		return lugarLibre->inicio == inicioABuscar;
+	}
+	return list_find(lugaresLibres, (void*) empiezaEn);
+}
+
+
+t_info_segmento* encontrarSegmentoQueArrancaEn(int inicioABuscar) {
+
+	bool segmentoMasCercano(t_tablaSegmentosPatota* tablaSegmentosPatota) {
+
+		t_info_segmento* info_segmento = tieneInicioEnTabla(tablaSegmentosPatota->tablaDeSegmentos,inicioABuscar);
+
+		return info_segmento != NULL;
+	}
+
+	 t_tablaSegmentosPatota* tablaSegmentosPatota = list_find(tablasSegmentosPatotas, (void*) segmentoMasCercano);
+
+	 return tieneInicioEnTabla(tablaSegmentosPatota->tablaDeSegmentos, inicioABuscar);
 
 }
-*/
+
+
+t_info_segmento* tieneInicioEnTabla(t_list* tablaSegmentos, int inicioABuscar) {
+
+	bool tieneInicioEnSegmentos(t_info_segmento* info_segmento) {
+		return info_segmento->deslazamientoInicial == inicioABuscar;
+	}
+
+	return list_find(tablaSegmentos, (void*) tieneInicioEnSegmentos);
+}
+
+
+
+
+
 
 
 
