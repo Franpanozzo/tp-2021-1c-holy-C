@@ -308,7 +308,8 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 
 	char* tarea = string_new();
 	char* aux = malloc(2);
-	*(aux+1) = '\0';
+	memset(aux,'\0',2);
+	//*(aux+1) = '\0';
 	char* proximoALeer = malloc(2);
 	*(proximoALeer+1) = '\0';
 	void* pagina;
@@ -316,6 +317,7 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 	int indicePagina = (int) floor((double) tcbAGuardar->proximaAEjecutar / 100.0);
 	int desplazamiento = tcbAGuardar->proximaAEjecutar % 100;
 	t_info_pagina* info_pagina;
+	int salidaPorPipeEnOtraPag = 0;
 
 	lock(&mutexTablaPaginasPatota);
 	log_info(logMemoria, "PAGINAS EN TABLA: %d - ME MUEVO %d PAGINAS",
@@ -325,7 +327,7 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 	t_list_iterator* iteradorTablaPaginas = iterarHastaIndice(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
 
 	// info_pagina = list_get(tablaPaginasPatotaActual->tablaDePaginas, indicePagina);
-	*proximoALeer = '0';
+	*aux = '0';
 
 	log_info(logMemoria,"Sacando tarea arrancando de indice: %d - desplazamiento: %d ", indicePagina, desplazamiento);
 
@@ -346,26 +348,36 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 
 		if(*aux == '|' && !string_is_empty(tarea))
 		{
-			log_info(logMemoria, "LLEGUE", aux);
+			salidaPorPipeEnOtraPag = 1;
+			free(pagina);
 			break;
 		}
 
-		log_info(logMemoria, "ME CHUPO UN HUEVO", proximoALeer);
 
-			while(desplazamiento != configRam.tamanioPagina && *proximoALeer != '|'  && *proximoALeer != '\0')
+		if(*aux == '|' && string_is_empty(tarea)){
+			recorredorPagina++;
+			desplazamiento++;
+			memcpy(aux,recorredorPagina,1);
+		}
+
+		log_info(logMemoria, "AHORA EL AUX QUEDO CON: %s", aux);
+
+			while(desplazamiento < configRam.tamanioPagina && *aux != '|'  && *aux != '\0')
 				{
-					memcpy(aux,recorredorPagina,1);
+				if(desplazamiento < configRam.tamanioPagina)
+				{
 					string_append(&tarea,aux);
 					recorredorPagina++;
 					desplazamiento++;
 
-					if(desplazamiento != configRam.tamanioPagina)
-					{
-						memcpy(proximoALeer,recorredorPagina,1);
+					if(desplazamiento < configRam.tamanioPagina) {
+						memcpy(aux,recorredorPagina,1);
 					}
+						//memcpy(proximoALeer,recorredorPagina,1);
+				}
 
 					log_info(logMemoria,"Sacando tarea: %s",tarea);
-					log_info(logMemoria,"Proximo a leer: %s",proximoALeer);
+					log_info(logMemoria,"Proximo a leer: %s",aux);
 				}
 
 
@@ -377,11 +389,14 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 		free(pagina);
 		}
 
-		if(*proximoALeer == '|' || *proximoALeer == '\0') break;
+		if(*aux == '|' || *aux == '\0') {
+			log_info(logMemoria,"NO SACO MAS PAGINAS YA QUE EL PROXIMA ERA: %s",aux);
+			break;
+		}
 	}
 	unlock(&mutexTablaPaginasPatota);
 
-	if(*aux == '|' && !string_is_empty(tarea))
+	if(*aux == '|' && !string_is_empty(tarea) && salidaPorPipeEnOtraPag)
 	{
 
 		log_info(logMemoria, "SE VUELVE A CARGAR LA DL");

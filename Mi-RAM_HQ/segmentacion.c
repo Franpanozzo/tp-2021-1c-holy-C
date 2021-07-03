@@ -329,12 +329,12 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 
 	if(inicioSegmentoLibre == -1)
 	{
-		log_info(logMemoria, "Sin espacio, se va a compactar");
+		log_info(logMemoria, "SIN ESPACIO EN MEMORIA PRINCIPAL - SE PROCEDE A COMPACTAR");
 		compactarMemoria();
 		inicioSegmentoLibre = buscarSegmentoSegunAjuste(aMeter);
 		if(inicioSegmentoLibre == -1)
 		{
-		log_info(logMemoria, "Memoria principal llena, no se puede crear la segmento");
+		log_info(logMemoria, "MEMORIA PRINCIPAL LLENA - NO SE PUEDE CREAR EL SEGMENTO");
 		return 0;
 		}
 	}
