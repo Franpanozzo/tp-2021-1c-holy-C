@@ -44,13 +44,8 @@ void hacerDump(int);
 void expulsarTripulante(int,int);
 t_tarea* asignarProxTarea(int, int);
 int actualizarTripulante(tcb* , int);
-
-
-
-
-
-
-
+char* pathLogRam();
+char* pathLogMemoria();
 
 
 #endif

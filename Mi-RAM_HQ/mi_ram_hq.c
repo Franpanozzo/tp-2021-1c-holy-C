@@ -5,9 +5,11 @@ sem_t habilitarPatotaEnRam;
 
 int main(void) {
 
-	logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);
+	char* pathDelLogRam = pathLogRam();
+	logMiRAM = iniciarLogger(pathDelLogRam,"Mi-Ram",1);
 
-	logMemoria = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMemoria.log","Memoria",1);
+	char* pathDelLogMemoria = pathLogMemoria();
+	logMemoria = iniciarLogger(pathDelLogMemoria,"Memoria",1);
 
 	cargar_configuracion();
 	iniciarMemoria();
@@ -102,7 +104,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			log_info(logMiRAM,"Voy a deserializar un tripulante");
 			t_tarea* tarea = deserializarTripulante(paquete);
 			log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
-			if(tarea)
+			if(tarea != NULL)
 				mandarTarea(tarea, tripulanteSock);
 			else
 			{
@@ -673,6 +675,28 @@ void hacerDump(int signal) {
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);
 	}
+}
+
+char * pathLogRam(){
+	char *pathLog = string_new();
+	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
+	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logsRam/");
+	string_append(&pathLog, "logRam_ ");
+	string_append(&pathLog, fecha);
+	string_append(&pathLog, ".log");
+	free(fecha);
+	return pathLog;
+}
+
+char * pathLogMemoria(){
+	char *pathLog = string_new();
+	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
+	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logsMemoria/");
+	string_append(&pathLog, "logMemoria_ ");
+	string_append(&pathLog, fecha);
+	string_append(&pathLog, ".log");
+	free(fecha);
+	return pathLog;
 }
 
 

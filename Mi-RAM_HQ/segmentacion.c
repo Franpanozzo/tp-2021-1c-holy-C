@@ -12,7 +12,10 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 	unlock(&mutexTablaSegmentosPatota);
 
 	int res = asignarSegmentosEnTabla((void*) tcbAGuardar, tablaSegmentosPatotaActual,TCB);
-	if(res == 0) return NULL;
+	if(res == 0){
+		log_info(logMemoria,"No se pudo crear el tripulante %d por memoria llena", tcbAGuardar->idTripulante);
+		return NULL;
+	}
 
 	t_tarea* tarea = irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcbAGuardar);
 
@@ -194,9 +197,24 @@ int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 	pcbAGuardar->dlTareas = 1;
 	pcbGuardado = asignarSegmentosEnTabla((void*) pcbAGuardar, tablaSegmentosPatotaActual,PCB);
 
+	if(pcbGuardado == 0)
+	{
+		log_info(logMemoria,"No se pudo crear la patota por memoria llena");
+		eliminarTablaPatota(tablaSegmentosPatotaActual);
+		free(pcbAGuardar);
+		return 0;
+	}
+
 	log_info(logMemoria, "La direccion logica de las tareas es: %d", pcbAGuardar->dlTareas);
 
 	tareasGuardadas = asignarSegmentosEnTabla((void*) stringTareas, tablaSegmentosPatotaActual,TAREAS);
+
+	if(pcbGuardado == 0)
+	{
+		log_info(logMemoria,"No se pudieron crear las tareas por memoria llena");
+		free(stringTareas);
+		return 0;
+	}
 
 	free(pcbAGuardar);
 	free(stringTareas);
@@ -278,26 +296,7 @@ void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
 
 		log_info(logMemoria,"LA PATOTA %d NO TIENE MAS TRIPULANTES. SE PROCEDE A BORRARLA DE MEMORIA", tablaSegmentosPatota->idPatota);
 
-		void borrarSegmento(t_info_segmento* info_segmento)
-		{
-			free(info_segmento);
-		}
-
-		bool tablaConID(t_tablaSegmentosPatota* tablaPatota2)
-		{
-			return tablaPatota2->idPatota == tablaSegmentosPatota->idPatota;
-		}
-
-		log_info(logMemoria,"La patota tiene %d segmentos", list_size(tablaSegmentosPatota->tablaDeSegmentos));
-
-		lock(&mutexTablasSegmentos);
-		list_remove_by_condition(tablasSegmentosPatotas, (void*) tablaConID);
-		unlock(&mutexTablasSegmentos);
-		lock(&mutexTablaSegmentosPatota);
-		list_destroy_and_destroy_elements(tablaSegmentosPatota->tablaDeSegmentos, (void*) borrarSegmento);
-		unlock(&mutexTablaSegmentosPatota);
-
-		free(tablaSegmentosPatota);
+		eliminarTablaPatota(tablaSegmentosPatota);
 	}
 	else {
 		unlock(&mutexTablaSegmentosPatota);
@@ -328,9 +327,16 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 	int inicioSegmentoLibre = buscarSegmentoSegunAjuste(aMeter);
 	unlock(&mutexBuscarLugarLibre);
 
-	if(inicioSegmentoLibre == -1) {
-		log_info(logMemoria, "Memoria principal llena");
+	if(inicioSegmentoLibre == -1)
+	{
+		log_info(logMemoria, "Sin espacio, se va a compactar");
+		compactarMemoria();
+		inicioSegmentoLibre = buscarSegmentoSegunAjuste(aMeter);
+		if(inicioSegmentoLibre == -1)
+		{
+		log_info(logMemoria, "Memoria principal llena, no se puede crear la segmento");
 		return 0;
+		}
 	}
 
 	lock(&mutexTablaSegmentosPatota);
@@ -388,8 +394,7 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 
 	if(list_size(lugaresQueEntra) == 0)
 	{
-		//ACA HAY QUE COMPACTAR
-		log_info(logMemoria, "No hay lugares libres en donde entren %d bytes, se procede a compactar", aMeter);
+		log_info(logMemoria, "No hay lugares libres en donde entren %d bytes, se compactara", aMeter);
 		list_destroy(lugaresQueEntra);
 		return -1;
 	}
@@ -475,7 +480,7 @@ void* leer_memoria_seg(t_info_segmento* info_Segmento) {
 
 void dumpSeg() {
 
-	char* nombreArchivo = temporal_get_string_time("DUMP_%y%m%d%H%M%S%MS.dmp");
+	char* nombreArchivo = temporal_get_string_time("DUMP_%y-%m-%d_%H%M%S%MS.dmp");
 	char* rutaAbsoluta = string_from_format("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/Dump/%s",nombreArchivo);
 
 	FILE* archivoDump = txt_open_for_append(rutaAbsoluta);
@@ -516,7 +521,6 @@ void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivo
 
 	void imprimirSegmento(t_info_segmento* info_segmento) {
 
-		  //char* posEnHexa = mem_hexstring(memoria_principal, info_segmento->deslazamientoInicial);
 
 		char* dumpMarco = string_from_format("Proceso:%d   Segmento:%d	 Inicio:%d	 Tam:%db \n",
 				tablaSegPatota->idPatota, info_segmento->indice, info_segmento->deslazamientoInicial, info_segmento->bytesAlojados);
@@ -554,7 +558,7 @@ void compactarMemoria() {
 		//CHEQUEAMOS SI HAY UN LUGAR LIBRE LUEGO DEL SWITCHEO PARA UNIRLOS
 	t_lugarLibre* lugarLibre2 = buscarLugarLibre(lugarLibre->inicio + lugarLibre->bytesAlojados);
 
-		if(lugarLibre != NULL)
+		if(lugarLibre2 != NULL) //Antes decia "lugarlibre != NULL"
 		{
 			log_info(logMemoria, "SE UNE EL ESPACIO LIBRE QUE TERMINA EN %d CON EL QUE ARRANCA EN %d",
 					lugarLibre->inicio + lugarLibre->bytesAlojados, lugarLibre2->inicio);
@@ -614,6 +618,28 @@ t_info_segmento* tieneInicioEnTabla(t_list* tablaSegmentos, int inicioABuscar) {
 	return list_find(tablaSegmentos, (void*) tieneInicioEnSegmentos);
 }
 
+void eliminarTablaPatota(t_tablaSegmentosPatota* tablaSegmentosPatota) {
+	void borrarSegmento(t_info_segmento* info_segmento)
+	{
+		free(info_segmento);
+	}
+
+	bool tablaConID(t_tablaSegmentosPatota* tablaPatota2)
+	{
+		return tablaPatota2->idPatota == tablaSegmentosPatota->idPatota;
+	}
+
+	log_info(logMemoria,"La patota tiene %d segmentos", list_size(tablaSegmentosPatota->tablaDeSegmentos));
+
+	lock(&mutexTablasSegmentos);
+	list_remove_by_condition(tablasSegmentosPatotas, (void*) tablaConID);
+	unlock(&mutexTablasSegmentos);
+	lock(&mutexTablaSegmentosPatota);
+	list_destroy_and_destroy_elements(tablaSegmentosPatota->tablaDeSegmentos, (void*) borrarSegmento);
+	unlock(&mutexTablaSegmentosPatota);
+
+	free(tablaSegmentosPatota);
+}
 
 
 
