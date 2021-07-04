@@ -610,10 +610,17 @@ int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
 
 	tareasGuardadas = asignarPaginasEnTabla((void*) stringTareas, tablaPaginasPatotaActual,TAREAS);
 
+	if(!pcbGuardado || !tareasGuardadas) {
+		chequearUltimoTripulante(tablaPaginasPatotaActual);
+		free(pcbAGuardar);
+		free(stringTareas);
+		return 0;
+	}
+
 	free(pcbAGuardar);
 	free(stringTareas);
 
-	return pcbGuardado && tareasGuardadas;
+	return 1;
 }
 
 

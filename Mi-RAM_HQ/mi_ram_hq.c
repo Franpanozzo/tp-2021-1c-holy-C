@@ -47,11 +47,11 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		pthread_detach(t);
+		//pthread_detach(t);
 		//free(t);
 		//Para hacerle free hay que pasarlo por parametro en pthread_create
 
-		//pthread_join(t, (void**) NULL);
+		pthread_join(t, (void**) NULL);
     }
 }
 
@@ -103,11 +103,14 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		{
 			log_info(logMiRAM,"Voy a deserializar un tripulante");
 			t_tarea* tarea = deserializarTripulante(paquete);
-			log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
 			if(tarea != NULL)
+			{
+				log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
 				mandarTarea(tarea, tripulanteSock);
+			}
 			else
 			{
+				log_info(logMiRAM,"Se procede a enviar la TAREA ERROR");
 				t_tarea* tareaError = tarea_error();
 				mandarTarea(tareaError, tripulanteSock);
 			}
