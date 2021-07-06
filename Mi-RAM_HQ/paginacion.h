@@ -14,7 +14,7 @@
 #define PAGINACION 0;
 #define SEGMENTACION 1;
 
-#define FRAME_INVALIDO 2147483646
+#define FRAME_INVALIDO -1
 
 #define TAM_TCB 21
 #define TAM_PCB 8

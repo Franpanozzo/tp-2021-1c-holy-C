@@ -511,7 +511,6 @@ int actualizarTripulantePag(tcb* tcbAGuardar, int idPatota) {
 			t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
 			unlock(&mutexAlojados);
 
-
 			lock(&mutexTablaPaginasPatota);
 			void* pagina = leer_memoria_pag(info_pagina->frame_m_ppal, MEM_PPAL);
 			unlock(&mutexTablaPaginasPatota);
