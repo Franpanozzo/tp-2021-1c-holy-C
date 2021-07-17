@@ -34,7 +34,7 @@ void* leer_memoria_pag(int frame, int mem) {
 
 int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, int* aMeter, tipoEstructura tipo, int datoAdicional, int* bytesEscribidos) {
     // printf("frame %d -> %d\n",frame, get_frame(frame,mem));
-    if(!get_frame(info_pagina->frame_m_ppal,mem)) // no hay nada en el frame
+    if(!get_frame(info_pagina->frame_m_ppal,mem)) // hay lugar en el frame
     {
 
         int despDesdePagina = configRam.tamanioPagina - info_pagina->bytesDisponibles;
@@ -360,8 +360,6 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 			memcpy(aux,recorredorPagina,1);
 		}
 
-		log_info(logMemoria, "AHORA EL AUX QUEDO CON: %s", aux);
-
 			while(desplazamiento < configRam.tamanioPagina && *aux != '|'  && *aux != '\0')
 				{
 				if(desplazamiento < configRam.tamanioPagina)
@@ -550,7 +548,7 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 
 			if(cantPaginasConTripu == 0) {
 				log_error(logMemoria, "No hay paginas que contengan al tripulante %d en memoria" , idTripulante);
-				return 0;
+				return NULL;
 			}
 
 			log_info(logMemoria, "La cantidad de paginas que contienen al tripulante %d son %d", idTripulante, cantPaginasConTripu);
@@ -754,7 +752,6 @@ t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* tablaPaginasPa
 uint32_t estimarDLTareasPag(){
 
 	int nroPagina;
-    //HAY QUE HACER OTRA CUENTA
 	int desplazamiento;
 
 	if(configRam.tamanioPagina > 8)

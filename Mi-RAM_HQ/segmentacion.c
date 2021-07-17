@@ -413,7 +413,7 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 
 	if(list_size(lugaresQueEntra) == 0)
 	{
-		log_info(logMemoria, "No hay lugares libres en donde entren %d bytes, se compactara", aMeter);
+		log_info(logMemoria, "No hay lugares libres en donde entren %d bytes", aMeter);
 		list_destroy(lugaresQueEntra);
 		return -1;
 	}
@@ -570,7 +570,7 @@ void compactarMemoria() {
 
 		t_info_segmento* info_segmento = encontrarSegmentoQueArrancaEn(lugarLibre->inicio + lugarLibre->bytesAlojados);
 
-		log_info(logMemoria, "MOVIENDO BLOQUE QUE ARRANCE EN %d HACIA %d", info_segmento->deslazamientoInicial, lugarLibre->inicio);
+		log_info(logMemoria, "MOVIENDO BLOQUE QUE ARRANCA EN %d HACIA %d", info_segmento->deslazamientoInicial, lugarLibre->inicio);
 
 		info_segmento->deslazamientoInicial = lugarLibre->inicio;
 		lugarLibre->inicio += info_segmento->bytesAlojados;
