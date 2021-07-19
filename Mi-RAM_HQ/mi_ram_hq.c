@@ -218,6 +218,7 @@ void iniciarMemoria() {
 
     pthread_mutex_init(&mutexMemoria, NULL);
     pthread_mutex_init(&mutexEscribirMemoria, NULL);
+    pthread_mutex_init(&mutexEscribirMemoriaVirtual, NULL);
     pthread_mutex_init(&mutexTablasPaginas, NULL);
     pthread_mutex_init(&mutexTablasSegmentos, NULL);
     pthread_mutex_init(&mutexBuscarLugarLibre, NULL);
@@ -226,6 +227,7 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexTablaPaginasPatota, NULL);
     pthread_mutex_init(&mutexBitarray, NULL);
     pthread_mutex_init(&mutexAlojados, NULL);
+    pthread_mutex_init(&mutexTiempo, NULL);
 
 
 	sem_init(&habilitarExpulsionEnRam,0,1);

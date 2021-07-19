@@ -74,6 +74,7 @@ t_list* tablasPaginasPatotas;
 
 pthread_mutex_t mutexMemoria;
 pthread_mutex_t mutexEscribirMemoria;
+pthread_mutex_t mutexEscribirMemoriaVirtual;
 pthread_mutex_t mutexBuscarLugarLibre;
 pthread_mutex_t mutexTablasSegmentos;
 pthread_mutex_t mutexTablasPaginas;
@@ -82,6 +83,8 @@ pthread_mutex_t mutexTablaSegmentosPatota;
 pthread_mutex_t mutexTablaPaginasPatota;
 pthread_mutex_t mutexBitarray;
 pthread_mutex_t mutexAlojados;
+pthread_mutex_t mutexTiempo;
+
 
 
 
@@ -92,7 +95,7 @@ void* leer_memoria_pag(int,int);
 int insertar_en_memoria_pag(t_info_pagina*, void*, int, int*, tipoEstructura, int, int*);
 void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura,int);
 uint32_t buscar_frame_disponible(int );
-void* buscar_pagina(t_info_pagina* );
+void* buscar_pagina(t_info_pagina*, int);
 t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
 int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
@@ -121,7 +124,8 @@ t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
 void expulsarTripulantePag(int ,int);
 void dumpPag();
 int obtener_tiempo();
-int ejecutar_reemplazo(void*, t_info_pagina*);
+void ejecutar_reemplazo(void*, t_info_pagina*, int);
+t_list* buscarInfosPaginasEnRam();
 
 
 
