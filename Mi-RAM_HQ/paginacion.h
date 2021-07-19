@@ -43,8 +43,8 @@ typedef struct {
 
 typedef struct {
     int indice;
-    //uint32_t frame_m_virtual;
-    int frame_m_ppal;
+    int frame;
+    int bitPresencia;
     int bytesDisponibles; // COMO IDENTIFICAMOS SI ES UN PCB, TCB O TAREAS ??
     t_list* estructurasAlojadas;
     //double tiempo_uso;
@@ -65,7 +65,9 @@ t_configRam configRam;
 
 void* memoria_principal;
 t_bitarray* frames_ocupados_ppal;
+t_bitarray* frames_ocupados_virtual;
 int cant_frames_ppal;
+int cant_frames_virtual;
 
 t_list* tablasPaginasPatotas;
 
@@ -103,7 +105,7 @@ bool tieneEstructuraAlojada(t_list* , tipoEstructura);
 bool tieneTripulanteAlojado(t_list* , int);
 t_alojado* obtenerAlojadoPagina(t_list* , int);
 int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* , tcb*);
-int frameTotalmenteLibre(int );
+int frameTotalmenteLibre(int, int);
 t_list* paginasConTripu(t_list*, uint32_t );
 int sobreescribirTripu(t_list* , tcb* );
 int actualizarTripulantePag(tcb* , int);

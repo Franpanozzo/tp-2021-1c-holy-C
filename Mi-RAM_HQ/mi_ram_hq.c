@@ -245,6 +245,16 @@ void iniciarMemoria() {
 
     frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
 
+
+    cant_frames_virtual = configRam.tamanioSwap / configRam.tamanioPagina;
+
+    log_info(logMemoria, "SWAP FRAMES: %d\n",cant_frames_virtual);
+
+    char* data2 = asignar_bytes(cant_frames_virtual);
+
+    frames_ocupados_virtual = bitarray_create_with_mode(data2, cant_frames_virtual/8, MSB_FIRST);
+
+
     lugaresLibres = list_create();
 
     t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
