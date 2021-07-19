@@ -230,6 +230,7 @@ void iniciarMemoria() {
 
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
+	tiempo = 0;
 
 	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
 
@@ -238,27 +239,17 @@ void iniciarMemoria() {
 	//memset(memoria_principal,'$',configRam.tamanioMemoria);
 
 	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
-
     log_info(logMemoria, "RAM FRAMES: %d", cant_frames_ppal);
-
     char* data = asignar_bytes(cant_frames_ppal);
-
     frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
 
-
     cant_frames_virtual = configRam.tamanioSwap / configRam.tamanioPagina;
-
     log_info(logMemoria, "SWAP FRAMES: %d\n",cant_frames_virtual);
-
     char* data2 = asignar_bytes(cant_frames_virtual);
-
     frames_ocupados_virtual = bitarray_create_with_mode(data2, cant_frames_virtual/8, MSB_FIRST);
 
-
     lugaresLibres = list_create();
-
     t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
-
     lugarInicial->inicio = 0;
     lugarInicial->bytesAlojados = configRam.tamanioMemoria;
     list_add(lugaresLibres,lugarInicial);

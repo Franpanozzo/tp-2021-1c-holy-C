@@ -47,7 +47,7 @@ typedef struct {
     int bitPresencia;
     int bytesDisponibles; // COMO IDENTIFICAMOS SI ES UN PCB, TCB O TAREAS ??
     t_list* estructurasAlojadas;
-    //double tiempo_uso;
+    int tiempo_uso;
     //otros datos..
 } t_info_pagina;
 
@@ -68,6 +68,7 @@ t_bitarray* frames_ocupados_ppal;
 t_bitarray* frames_ocupados_virtual;
 int cant_frames_ppal;
 int cant_frames_virtual;
+int tiempo;
 
 t_list* tablasPaginasPatotas;
 
@@ -119,6 +120,9 @@ t_tablaPaginasPatota* patotaConFrame(int);
 t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
 void expulsarTripulantePag(int ,int);
 void dumpPag();
+int obtener_tiempo();
+int ejecutar_reemplazo(void*, t_info_pagina*);
+
 
 
 
