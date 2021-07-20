@@ -631,6 +631,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 	unlock(structTarea->mutex);
 }
 
+
 void actualizarMD5(tarea* structTarea){
 	// arrayBloques = ["1","3"]  array de strings
 	char ** arrayBloques = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
