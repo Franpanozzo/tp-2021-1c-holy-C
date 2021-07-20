@@ -29,6 +29,7 @@
 	} puertoEIP;
 
 	typedef enum{
+
 		PATOTA,
 		TRIPULANTE,
 		EXPULSAR,
@@ -41,6 +42,7 @@
 		ID_SABOTAJE, // id tripulante
 		FIN_SABOTAJE,// id tripulante
 		STRING
+
 	} tipoDeDato;
 
 	typedef struct {
@@ -57,7 +59,8 @@
 		READY,
 		EXEC,
 		BLOCKED,
-		SABOTAJE
+		SABOTAJE,
+		EXIT
 	}t_estado;
 
 	typedef struct {
