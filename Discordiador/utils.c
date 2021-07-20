@@ -651,6 +651,7 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_ERROR") == 0){
 			tripulante->idTripulante = EXIT;
+
 			log_info(logDiscordiador,"El tripulante %d no ha podido ser alocado en memoria "
 					"porque no hay espacio", tripulante->idTripulante);
 		}

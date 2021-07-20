@@ -5,9 +5,11 @@ sem_t habilitarPatotaEnRam;
 
 int main(void) {
 
-	logMiRAM = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMiRAM.log","Mi-Ram",1);
+	char* pathDelLogRam = pathLogRam();
+	logMiRAM = iniciarLogger(pathDelLogRam,"Mi-Ram",1);
 
-	logMemoria = iniciarLogger("/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logMemoria.log","Memoria",1);
+	char* pathDelLogMemoria = pathLogMemoria();
+	logMemoria = iniciarLogger(pathDelLogMemoria,"Memoria",1);
 
 	cargar_configuracion();
 	iniciarMemoria();
@@ -45,11 +47,11 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		pthread_detach(t);
+		//pthread_detach(t);
 		//free(t);
 		//Para hacerle free hay que pasarlo por parametro en pthread_create
 
-		//pthread_join(t, (void**) NULL);
+		pthread_join(t, (void**) NULL);
     }
 }
 
@@ -101,11 +103,14 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		{
 			log_info(logMiRAM,"Voy a deserializar un tripulante");
 			t_tarea* tarea = deserializarTripulante(paquete);
-			log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
-			if(tarea)
+			if(tarea != NULL)
+			{
+				log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
 				mandarTarea(tarea, tripulanteSock);
+			}
 			else
 			{
+				log_info(logMiRAM,"Se procede a enviar la TAREA ERROR");
 				t_tarea* tareaError = tarea_error();
 				mandarTarea(tareaError, tripulanteSock);
 			}
@@ -208,10 +213,12 @@ void iniciarMemoria() {
 	}
 
     signal(SIGUSR1, hacerDump);
+    signal(SIGUSR2, compactarMemoria);
     log_info(logMemoria,"PID: %d",process_getpid());
 
     pthread_mutex_init(&mutexMemoria, NULL);
     pthread_mutex_init(&mutexEscribirMemoria, NULL);
+    pthread_mutex_init(&mutexEscribirMemoriaVirtual, NULL);
     pthread_mutex_init(&mutexTablasPaginas, NULL);
     pthread_mutex_init(&mutexTablasSegmentos, NULL);
     pthread_mutex_init(&mutexBuscarLugarLibre, NULL);
@@ -220,10 +227,12 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexTablaPaginasPatota, NULL);
     pthread_mutex_init(&mutexBitarray, NULL);
     pthread_mutex_init(&mutexAlojados, NULL);
+    pthread_mutex_init(&mutexTiempo, NULL);
 
 
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
+	tiempo = 0;
 
 	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
 
@@ -232,17 +241,17 @@ void iniciarMemoria() {
 	//memset(memoria_principal,'$',configRam.tamanioMemoria);
 
 	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
-
     log_info(logMemoria, "RAM FRAMES: %d", cant_frames_ppal);
-
     char* data = asignar_bytes(cant_frames_ppal);
-
     frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
 
+    cant_frames_virtual = configRam.tamanioSwap / configRam.tamanioPagina;
+    log_info(logMemoria, "SWAP FRAMES: %d\n",cant_frames_virtual);
+    char* data2 = asignar_bytes(cant_frames_virtual);
+    frames_ocupados_virtual = bitarray_create_with_mode(data2, cant_frames_virtual/8, MSB_FIRST);
+
     lugaresLibres = list_create();
-
     t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
-
     lugarInicial->inicio = 0;
     lugarInicial->bytesAlojados = configRam.tamanioMemoria;
     list_add(lugaresLibres,lugarInicial);
@@ -672,6 +681,28 @@ void hacerDump(int signal) {
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);
 	}
+}
+
+char * pathLogRam(){
+	char *pathLog = string_new();
+	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
+	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logsRam/");
+	string_append(&pathLog, "logRam_ ");
+	string_append(&pathLog, fecha);
+	string_append(&pathLog, ".log");
+	free(fecha);
+	return pathLog;
+}
+
+char * pathLogMemoria(){
+	char *pathLog = string_new();
+	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
+	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logsMemoria/");
+	string_append(&pathLog, "logMemoria_ ");
+	string_append(&pathLog, fecha);
+	string_append(&pathLog, ".log");
+	free(fecha);
+	return pathLog;
 }
 
 
