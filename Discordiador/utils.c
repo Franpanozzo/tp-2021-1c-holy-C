@@ -484,8 +484,13 @@ void eliminarTripulante(int id){
 	lock(&listaAeliminar->mutex);
 	list_add(listaAeliminar->elementos, tripulanteAeliminar);
 	unlock(&listaAeliminar->mutex);
+	if(enviarRam == 0){
 	int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
 	close(socket);
+	}
+	if(enviarRam == 1) {
+		enviarRam = 0;
+	}
 }
 
 
@@ -637,7 +642,8 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 		}
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_ERROR") == 0){
-			//eliminarTripulante(tripulante->idTripulante);
+			enviarRam = 1;
+			eliminarTripulante(tripulante->idTripulante);
 			log_info(logDiscordiador,"El tripulante %d no ha podido ser alocado en memoria "
 					"porque no hay espacio", tripulante->idTripulante);
 		}

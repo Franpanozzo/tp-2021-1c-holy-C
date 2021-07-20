@@ -23,10 +23,9 @@ void* leer_memoria_pag(int frame, int mem) {
 		FILE * file = fopen(configRam.pathSwap, "rb");
 		// printf("reading\n");
 		fseek(file, desp, SEEK_SET);
-		int sz = fread(pagina, 1, configRam.tamanioPagina, file);
+		fread(pagina, 1, configRam.tamanioPagina, file);
 		fclose(file);
 		unlock(&mutexEscribirMemoriaVirtual);
-		log_info(logMemoria, "bytes read %d\n",sz);
 	}
 
 	return pagina;
@@ -38,7 +37,6 @@ int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, i
     // printf("frame %d -> %d\n",frame, get_frame(frame,mem));
     if(!get_frame(info_pagina->frame,mem)) // hay lugar en el frame
     {
-
         int despDesdePagina = configRam.tamanioPagina - info_pagina->bytesDisponibles;
 
         int desp = info_pagina->frame * configRam.tamanioPagina + despDesdePagina;
@@ -71,12 +69,11 @@ int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, i
         else if(mem == MEM_VIRT)
         {
     		lock(&mutexEscribirMemoriaVirtual);
-            FILE * file = fopen(configRam.pathSwap, "rb+");
+            FILE * file = fopen(configRam.pathSwap, "r+");
             fseek(file, desp, SEEK_SET);
-            int sz = fwrite(pagina, bytesAEscribir , 1, file);
+            fwrite(pagina, bytesAEscribir , 1, file);
             fclose(file);
     		unlock(&mutexEscribirMemoriaVirtual);
-    		log_info(logMemoria, "bytes written %d\n",sz);
 
     		log_info(logMemoria, "Se inserto en SWAP: FRAME: %d | DESDE: %d | HASTA: %d | TIPO: %d", info_pagina->frame,
     			despDesdePagina, despDesdePagina + bytesAEscribir - 1, tipo);
@@ -109,7 +106,6 @@ void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicialDen
 		lock(&mutexEscribirMemoria);
 		memcpy(memoria_principal+desp, buffer, bytesAEscribir);
 		unlock(&mutexEscribirMemoria);
-
 		log_info(logMemoria, "Se sobreescribio en RAM: FRAME: %d | DESDE: %d | HASTA: %d ", frame,
 				desplInicialDentroPagina, bytesAEscribir + desplInicialDentroPagina -1);
 	}
@@ -118,15 +114,13 @@ void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicialDen
 		lock(&mutexEscribirMemoriaVirtual);
 		FILE * file = fopen(configRam.pathSwap, "rb+");
 		fseek(file, desp, SEEK_SET);
-		int sz = fwrite(buffer, configRam.tamanioPagina , 1, file);
+		fwrite(buffer, configRam.tamanioPagina , 1, file);
 		fclose(file);
 		unlock(&mutexEscribirMemoriaVirtual);
-		log_info(logMemoria, "bytes written %d\n",sz);
 
 		log_info(logMemoria, "Se sobreescribio en SWAP: FRAME: %d | DESDE: %d | HASTA: %d ", frame,
 			desplInicialDentroPagina, bytesAEscribir + desplInicialDentroPagina -1);
 	}
-
 
 }
 
@@ -151,13 +145,15 @@ bool get_frame(int frame, int mem) {
     	bool a = bitarray_test_bit(frames_ocupados_ppal, frame);
         return a;
     }
-
     else if(mem == MEM_VIRT)
+    {
         return bitarray_test_bit(frames_ocupados_virtual, frame);
-
-        else
-        log_error(logMemoria, "El frame que se quiere acceder es invalido");
-    	exit(1);
+    }
+	else
+	{
+		log_error(logMemoria, "El frame que se quiere acceder es invalido");
+		exit(1);
+	}
 }
 
 
@@ -165,10 +161,10 @@ void set_frame(int frame, int mem) {
     if(mem == MEM_PPAL) {
         bitarray_set_bit(frames_ocupados_ppal, frame);
     }
-
-
-    /*else if (mem == MEM_VIRT)
-        bitarray_set_bit(frames_ocupados_virtual, frame);*/
+    else if (mem == MEM_VIRT)
+    {
+        bitarray_set_bit(frames_ocupados_virtual, frame);
+    }
     else
     {
     	log_error(logMemoria, "El frame que se quiere acceder es invalido");
@@ -185,8 +181,10 @@ void clear_frame(int frame, int mem)
         unlock(&mutexBitarray);
     }
 
-    /*else if (mem == MEM_VIRT)
-        bitarray_clean_bit(frames_ocupados_virtual, frame); */
+    else if (mem == MEM_VIRT)
+    {
+        bitarray_clean_bit(frames_ocupados_virtual, frame);
+    }
     else
        {
        	log_error(logMemoria, "El frame que se quiere acceder es invalido");
@@ -224,7 +222,10 @@ uint32_t buscar_frame_disponible(int mem) {
         }
     }
 
-    log_info(logMemoria, "No se encontro un frame disponible");
+    if(mem == MEM_PPAL)
+    log_info(logMemoria, "No se encontro un frame disponible en RAM");
+    if(mem == MEM_VIRT)
+    log_info(logMemoria, "No se encontro un frame disponible en SWAP");
     return FRAME_INVALIDO;
 }
 
@@ -306,9 +307,10 @@ void ejecutar_reemplazo(void* pagina, t_info_pagina* info_pagina, int idPatota) 
 	if(string_equals_ignore_case(configRam.algoritmoReemplazo, "LRU"))
 	{
 		//ordeno las info_pagina por tiempo de uso (la que tenga el menor tiempo sera la victima)
-		int _LRU(t_info_pagina* pag1, t_info_pagina* pag2)
+		t_info_pagina* _LRU(t_info_pagina* pag1, t_info_pagina* pag2)
 		{
-			return pag2->tiempo_uso > pag1->tiempo_uso;
+			if(pag2->tiempo_uso > pag1->tiempo_uso) return pag1;
+			else return pag2;
 		}
 		// obtengo la pagina LRU
 		t_info_pagina* info_pagina_lru = list_get_minimum(paginas_ppal, (void*) _LRU);
@@ -345,6 +347,7 @@ t_list* buscarInfosPaginasEnRam() {
 
 			if(info_pagina->bitPresencia == 1)
 			{
+				log_info(logMemoria, "La pagina %d de la patota %d esta en RAM", info_pagina->indice, tablaPaginasPatota->idPatota);
 				list_add(listaInfoPagsEnRam, info_pagina);
 			}
 		}
@@ -454,9 +457,7 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 
 		if(tieneEstructuraAlojada(info_pagina->estructurasAlojadas, TAREAS))
 		{
-		lock(&mutexTablaPaginasPatota);
 		pagina = buscar_pagina(info_pagina, tablaPaginasPatotaActual->idPatota);
-		unlock(&mutexTablaPaginasPatota);
 		recorredorPagina = pagina;
 		recorredorPagina += desplazamiento;
 
@@ -756,6 +757,7 @@ t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* tablaPaginasPatotaActual
 	info_pagina->estructurasAlojadas = list_create();
 	info_pagina->bitPresencia = 0;
 
+
 	log_info(logMemoria, "Se creo el t_info_pagina de tipo: %d", tipo);
 
 	list_add(tablaPaginasPatotaActual->tablaDePaginas, info_pagina);
@@ -785,8 +787,16 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 
 			if(info_pagina != NULL)
 			{
-				log_info(logMemoria, "La pagina en el frame %d tiene lugar y se va a aprovechar", info_pagina->frame);
-				insertar_en_memoria_pag(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
+				if(info_pagina->bitPresencia == 1)
+				{
+					log_info(logMemoria, "La pagina en el frame %d de RAM tiene lugar y se va a aprovechar", info_pagina->frame);
+					insertar_en_memoria_pag(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
+				}
+				else
+				{
+					log_info(logMemoria, "La pagina en el frame %d de SWAP tiene lugar y se va a aprovechar", info_pagina->frame);
+					insertar_en_memoria_pag(info_pagina, copiaBuffer, MEM_VIRT, &aMeter, tipo, datoAdicional, &bytesEscritos);
+				}
 			} else
 			{
 				log_info(logMemoria, "No se encontro una pagina con espacio restante");
@@ -798,6 +808,7 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 				if(info_pagina->frame != FRAME_INVALIDO)
 				{
 					info_pagina->bitPresencia = 1;
+					info_pagina->tiempo_uso = obtener_tiempo();
 					log_info(logMemoria,"Hay un frame disponible en RAM, el %d", info_pagina->frame);
 					insertar_en_memoria_pag(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
 				}
@@ -828,7 +839,8 @@ int asignarPaginasEnTabla(void* aGuardar, t_tablaPaginasPatota* tablaPaginasPato
 					if(info_pagina->frame != FRAME_INVALIDO)
 					{
 						info_pagina->bitPresencia = 1;
-						log_info(logMemoria,"Hay un frame disponible, el %d", info_pagina->frame);
+						info_pagina->tiempo_uso = obtener_tiempo();
+						log_info(logMemoria,"Hay un frame disponible en RAM, el %d", info_pagina->frame);
 						insertar_en_memoria_pag(info_pagina, copiaBuffer, MEM_PPAL, &aMeter, tipo, datoAdicional, &bytesEscritos);
 					}
 					else
@@ -1051,7 +1063,15 @@ void expulsarTripulantePag(int idTripulante,int idPatota) {
 			{
 				unlock(&mutexTablaPaginasPatota);
 				log_info(logMemoria,"Pagina %d vacia se procede a liberar el frame y borrarla de tabla",paginaActual->indice);
-				clear_frame(paginaActual->frame, MEM_PPAL);
+
+				if(paginaActual->bitPresencia == 1)
+				{
+					clear_frame(paginaActual->frame, MEM_PPAL);
+				}
+				if(paginaActual->bitPresencia == 0)
+				{
+					clear_frame(paginaActual->frame, MEM_VIRT);
+				}
 
 				bool paginaConID(t_alojado* pagina)
 				{
@@ -1088,17 +1108,22 @@ void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 
 		void borrarProceso(t_info_pagina* info_pagina)
 		{
-
 			void borrarAlojados(t_alojado* alojado)
 			{
 				free(alojado);
 			}
-
 			lock(&mutexAlojados);
 			list_destroy_and_destroy_elements(info_pagina->estructurasAlojadas, (void*) borrarAlojados);
 			unlock(&mutexAlojados);
 			log_info(logMemoria,"SE LIBERA  EL FRAME: %d",info_pagina->frame);
-			clear_frame(info_pagina->frame, MEM_PPAL);
+			if(info_pagina->bitPresencia == 1)
+			{
+				clear_frame(info_pagina->frame, MEM_PPAL);
+			}
+			if(info_pagina->bitPresencia == 0)
+			{
+				clear_frame(info_pagina->frame, MEM_VIRT);
+			}
 			free(info_pagina);
 		}
 

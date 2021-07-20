@@ -4,6 +4,7 @@
 	#include "discordiador.h"
 	#include "variables.h"
 
+	int enviarRam;
 
 	void iniciarTareasIO();
 	void iniciarListas();

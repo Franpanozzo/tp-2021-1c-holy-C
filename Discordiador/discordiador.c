@@ -5,7 +5,7 @@ int main() {
 	char * path = pathLog();
 	logDiscordiador = iniciarLogger(path,"Discordiador",1);
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
-
+	enviarRam = 0;
 
 	iniciarMutex();
 	iniciarListas();

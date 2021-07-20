@@ -111,7 +111,7 @@ t_alojado* obtenerAlojadoPagina(t_list* , int);
 int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* , tcb*);
 int frameTotalmenteLibre(int, int);
 t_list* paginasConTripu(t_list*, uint32_t );
-int sobreescribirTripu(t_list* , tcb* );
+int sobreescribirTripu(t_list* , tcb*, int);
 int actualizarTripulantePag(tcb* , int);
 tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
 t_tarea* asignarProxTareaPag(int , int);

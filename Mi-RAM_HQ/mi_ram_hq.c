@@ -194,7 +194,7 @@ char* asignar_bytes(int cant_frames)
         double c = (double) cant_frames;
         bytes = (int) ceil(c/8.0);
     }
-    log_info(logMemoria,"BYTES: %d\n", bytes);
+    //log_info(logMemoria,"BYTES: %d\n", bytes);
     buf = malloc(bytes);
     memset(buf,0,bytes);
     return buf;
