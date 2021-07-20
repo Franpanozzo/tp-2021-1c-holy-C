@@ -21,7 +21,7 @@ void iniciarListas(){
 	listaExec = malloc(sizeof(t_lista));
 	listaBlocked = malloc(sizeof(t_lista));
 	listaSabotaje = malloc(sizeof(t_lista));
-	listaAeliminar = malloc(sizeof(t_lista));
+	listaExit = malloc(sizeof(t_lista));
 
 
 	listaNew->elementos = list_create();
@@ -29,7 +29,7 @@ void iniciarListas(){
 	listaExec->elementos = list_create();
 	listaBlocked->elementos = list_create();
 	listaSabotaje->elementos = list_create();
-	listaAeliminar->elementos = list_create();
+	listaExit->elementos = list_create();
 
 
 	pthread_mutex_init(&listaNew->mutex, NULL);
@@ -37,7 +37,7 @@ void iniciarListas(){
 	pthread_mutex_init(&listaExec->mutex, NULL);
 	pthread_mutex_init(&listaBlocked->mutex, NULL);
 	pthread_mutex_init(&listaSabotaje->mutex, NULL);
-	pthread_mutex_init(&listaAeliminar->mutex, NULL);
+	pthread_mutex_init(&listaExit->mutex, NULL);
 
 }
 
@@ -175,7 +175,8 @@ void* sacarDeLista(t_lista* lista){
 
 
 void cambiarDeEstado(t_tripulante* tripulante, t_estado estado){
-	tripulante->estado = estado;
+	if(tripulante->estado != EXIT)
+		tripulante->estado = estado;
 }
 
 void esperarTerminarTripulante(t_tripulante* unTripulante){
@@ -229,6 +230,8 @@ char* traducirEstado(t_estado estado){
 			return "Blocked";
 		case SABOTAJE:
 			return "Sabotaje";
+		case EXIT:
+			return "Exit";
 	}
 	return "ERROR";
 }
@@ -293,9 +296,57 @@ void pasarDeLista(t_tripulante* tripulante){
 			log_info(logDiscordiador,"El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
 			break;
 
+		case EXIT:
+			meterEnLista(tripulante, listaExit);
+			log_info(logDiscordiador,"El tripulante %d paso a COLA EXIT", tripulante->idTripulante);
+			if(patotaSinTripulantes(tripulante->idPatota))
+				eliminiarPatota(tripulante->idPatota);
+			break;
+
 		default:
 			log_error(logDiscordiador,"No se reconoce el estado", tripulante->idTripulante);
 			exit(1);
+	}
+}
+
+
+bool patotaSinTripulantes(uint32_t idPatota){
+
+	t_list* listaAux = list_create();
+
+	void agregarAlista(t_lista* lista){
+		lock(&lista->mutex);
+		list_add_all(listaAux, lista->elementos);
+		unlock(&lista->mutex);
+	}
+
+	bool esDeLaPatota(t_tripulante* tripulante){
+		return idPatota == tripulante->idPatota;
+	}
+
+	agregarAlista(listaNew);
+	agregarAlista(listaReady);
+	agregarAlista(listaExec);
+	agregarAlista(listaBlocked);
+	agregarAlista(listaSabotaje);
+	if(sabotaje->tripulanteSabotaje != NULL)
+		list_add(listaAux, sabotaje->tripulanteSabotaje);
+
+	return !list_any_satisfy(listaAux, (void*)esDeLaPatota);
+}
+
+
+void eliminiarPatota(uint32_t idPatota){
+	bool esDeLaPatota(t_tripulante* tripulante){
+		return idPatota == tripulante->idPatota;
+	}
+
+	t_list_iterator* iterator = list_iterator_create(listaExit->elementos);
+	while(list_iterator_has_next(iterator)){
+		lock(&listaExit->mutex);
+		t_tripulante* tripulante = list_remove(listaExit->elementos, 0);
+		unlock(&listaExit->mutex);
+		liberarTripulante(tripulante);
 	}
 }
 
@@ -399,74 +450,38 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 }
 
 
-void listarLista(t_lista* lista){
+void listarTripulantes(){
 
-	void imprimirTripulante(t_tripulante* tripulante){
+	t_list* listaAux = list_create();
+
+	void agregarAlista(t_lista* lista){
+		lock(&lista->mutex);
+		list_add_all(listaAux, lista->elementos);
+		unlock(&lista->mutex);
+	}
+
+ 	void imprimirTripulante(t_tripulante* tripulante){
 		log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Estado: %s",
 				tripulante->idTripulante, tripulante->idPatota, traducirEstado(tripulante->estado));
 	}
 
-	bool estaVivo(t_tripulante* tripulante){
-		bool hayQueSacarlo(t_tripulante* otroTripulante){
-				return tripulante == otroTripulante;
-			}
-		return !list_any_satisfy(listaAeliminar->elementos, (void*) hayQueSacarlo);
-	}
-
-	lock(&lista->mutex);
-	t_list* listaAux = list_filter(lista->elementos, (void*) estaVivo);
-	unlock(&lista->mutex);
-	list_iterate(listaAux, (void*)imprimirTripulante);
-	list_destroy(listaAux);
-}
-
-
-void listarTripulantes(){
-
- 	void imprimirTripulante(t_tripulante* tripulante){
-		bool estaVivo(t_tripulante* tripulante){
-			bool hayQueSacarlo(t_tripulante* otroTripulante){
-					return tripulante == otroTripulante;
-				}
-			return !list_any_satisfy(listaAeliminar->elementos, (void*) hayQueSacarlo);
-		}
-
- 		if(estaVivo(tripulante)){
-			log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Estado: %s",
-					tripulante->idTripulante, tripulante->idPatota, traducirEstado(tripulante->estado));
- 		}
-	}
-
-
-
 	log_info(logDiscordiador,"Estado de la nave: %s", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
 
-	t_list* listaAux = list_create();
 
-	lock(&listaNew->mutex);
-	list_add_all(listaAux, listaNew->elementos);
-	unlock(&listaNew->mutex);
+	agregarAlista(listaNew);
+	agregarAlista(listaReady);
+	agregarAlista(listaExec);
+	agregarAlista(listaBlocked);
+	agregarAlista(listaSabotaje);
+	if(sabotaje->tripulanteSabotaje != NULL){
+		imprimirTripulante(sabotaje->tripulanteSabotaje);
+	}
+	agregarAlista(listaExit);
 
-	lock(&listaReady->mutex);
-	list_add_all(listaAux, listaReady->elementos);
-	unlock(&listaReady->mutex);
-
-	lock(&listaExec->mutex);
-	list_add_all(listaAux, listaExec->elementos);
-	unlock(&listaExec->mutex);
-
-	lock(&listaBlocked->mutex);
-	list_add_all(listaAux, listaBlocked->elementos);
-	unlock(&listaBlocked->mutex);
-
-	lock(&listaSabotaje->mutex);
-	list_add_all(listaAux, listaSabotaje->elementos);
-	unlock(&listaSabotaje->mutex);
 
 	list_iterate(listaAux, (void*)imprimirTripulante);
 	list_destroy(listaAux);
 }
-
 
 
 void eliminarTripulante(int id){
@@ -481,10 +496,10 @@ void eliminarTripulante(int id){
 		tripulanteAeliminar = (t_tripulante*)list_find(arrayListas[i]->elementos, (void*)esElBuscado);
 	}
 
-	log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
-	lock(&listaAeliminar->mutex);
-	list_add(listaAeliminar->elementos, tripulanteAeliminar);
-	unlock(&listaAeliminar->mutex);
+	//log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
+	tripulanteAeliminar->estado = EXIT;
+	int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
+	close(socket);
 }
 
 
@@ -492,20 +507,17 @@ void eliminarTripulante(int id){
  * bool esElBuscado(t_tripulante* tripulante){
 		return tripulante->idTripulante == id;
 	}
-
 	t_list* listaAux = list_create();
 	list_add_all(listaAux, listaReady->elementos);
 	list_add_all(listaAux, listaExec->elementos);
 	list_add_all(listaAux, listaBlocked->elementos);
 	list_add_all(listaAux, listaNew->elementos);
 	list_add_all(listaAux, listaSabotaje->elementos);
-
 	t_tripulante* tripulanteAeliminar = (t_tripulante*)list_find(listaAux, (void*)esElBuscado);
 	log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
 	lock(&listaAeliminar->mutex);
 	list_add(listaAeliminar->elementos, tripulanteAeliminar);
 	unlock(&listaAeliminar->mutex);
-
 	list_clean(listaAux);
 	list_destroy(listaAux);
  */
@@ -631,12 +643,14 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
-			eliminarTripulante(tripulante->idTripulante);
+			tripulante->idTripulante = EXIT;
+			int socket = enviarA(puertoEIPRAM, tripulante, EXPULSAR);
+			close(socket);
 			log_info(logDiscordiador,"El tripulante %d ya no le quedan tareas por hacer", tripulante->idTripulante);
 		}
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_ERROR") == 0){
-			eliminarTripulante(tripulante->idTripulante);
+			tripulante->idTripulante = EXIT;
 			log_info(logDiscordiador,"El tripulante %d no ha podido ser alocado en memoria "
 					"porque no hay espacio", tripulante->idTripulante);
 		}

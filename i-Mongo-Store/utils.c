@@ -532,6 +532,8 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 	free(palabraAguardar);
 
 }
+
+
 void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 	int bloquesAocupar = (int) ceil((float) _tarea->parametro / (float) superBloque->block_size);
