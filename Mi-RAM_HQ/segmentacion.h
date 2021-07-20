@@ -55,6 +55,18 @@ t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* ,tcb*);
 t_tarea* asignarProxTareaSeg(int, int);
 void dumpSeg();
 void imprimirDatosSegmento(t_tablaSegmentosPatota*, FILE*);
+void compactarMemoria();
+t_info_segmento* encontrarSegmentoQueArrancaEn(int);
+t_info_segmento* tieneInicioEnTabla(t_list*, int);
+t_lugarLibre* primerLugarLibre();
+t_lugarLibre* buscarLugarLibre(int);
+void eliminarTablaPatota(t_tablaSegmentosPatota*);
+void mostrarLugaresLibres();
+void liberarSegmento(t_info_segmento*);
+
+
+
+
 
 
 

@@ -532,6 +532,8 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 	free(palabraAguardar);
 
 }
+
+
 void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 	int caracteresAOcupar = _tarea->parametro;
 	int bloquesAocupar = (int) ceil((float) caracteresAOcupar / (float) superBloque->block_size);
@@ -639,6 +641,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 	}
 	unlock(structTarea->mutex);
 }
+
 
 void actualizarMD5(tarea* structTarea){
 	// arrayBloques = ["1","3"]  array de strings

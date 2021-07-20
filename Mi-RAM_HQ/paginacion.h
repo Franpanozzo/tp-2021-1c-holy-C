@@ -14,7 +14,7 @@
 #define PAGINACION 0;
 #define SEGMENTACION 1;
 
-#define FRAME_INVALIDO 2147483646
+#define FRAME_INVALIDO -1
 
 #define TAM_TCB 21
 #define TAM_PCB 8
@@ -43,11 +43,11 @@ typedef struct {
 
 typedef struct {
     int indice;
-    //uint32_t frame_m_virtual;
-    int frame_m_ppal;
+    int frame;
+    int bitPresencia;
     int bytesDisponibles; // COMO IDENTIFICAMOS SI ES UN PCB, TCB O TAREAS ??
     t_list* estructurasAlojadas;
-    //double tiempo_uso;
+    int tiempo_uso;
     //otros datos..
 } t_info_pagina;
 
@@ -65,12 +65,16 @@ t_configRam configRam;
 
 void* memoria_principal;
 t_bitarray* frames_ocupados_ppal;
+t_bitarray* frames_ocupados_virtual;
 int cant_frames_ppal;
+int cant_frames_virtual;
+int tiempo;
 
 t_list* tablasPaginasPatotas;
 
 pthread_mutex_t mutexMemoria;
 pthread_mutex_t mutexEscribirMemoria;
+pthread_mutex_t mutexEscribirMemoriaVirtual;
 pthread_mutex_t mutexBuscarLugarLibre;
 pthread_mutex_t mutexTablasSegmentos;
 pthread_mutex_t mutexTablasPaginas;
@@ -79,6 +83,8 @@ pthread_mutex_t mutexTablaSegmentosPatota;
 pthread_mutex_t mutexTablaPaginasPatota;
 pthread_mutex_t mutexBitarray;
 pthread_mutex_t mutexAlojados;
+pthread_mutex_t mutexTiempo;
+
 
 
 
@@ -89,7 +95,7 @@ void* leer_memoria_pag(int,int);
 int insertar_en_memoria_pag(t_info_pagina*, void*, int, int*, tipoEstructura, int, int*);
 void agregarEstructAdminTipo(t_info_pagina*, int, int, tipoEstructura,int);
 uint32_t buscar_frame_disponible(int );
-void* buscar_pagina(t_info_pagina* );
+void* buscar_pagina(t_info_pagina*, int);
 t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
 int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
@@ -103,7 +109,7 @@ bool tieneEstructuraAlojada(t_list* , tipoEstructura);
 bool tieneTripulanteAlojado(t_list* , int);
 t_alojado* obtenerAlojadoPagina(t_list* , int);
 int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* , tcb*);
-int frameTotalmenteLibre(int );
+int frameTotalmenteLibre(int, int);
 t_list* paginasConTripu(t_list*, uint32_t );
 int sobreescribirTripu(t_list* , tcb* );
 int actualizarTripulantePag(tcb* , int);
@@ -117,6 +123,10 @@ t_tablaPaginasPatota* patotaConFrame(int);
 t_info_pagina* paginaConFrame(int ,t_tablaPaginasPatota*);
 void expulsarTripulantePag(int ,int);
 void dumpPag();
+int obtener_tiempo();
+void ejecutar_reemplazo(void*, t_info_pagina*, int);
+t_list* buscarInfosPaginasEnRam();
+
 
 
 
