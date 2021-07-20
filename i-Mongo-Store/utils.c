@@ -404,7 +404,7 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 	}
 	string_append(&bloquesActuales,"]");
 	printf("%s \n", bloquesActuales);
-
+/*
 	int j = 0;
 	int cantidadComas = 0;
 
@@ -419,13 +419,13 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 
 		j++;
 	}
-
+*/
 	archivo->bloquesQueOcupa = bloquesActuales;
-	archivo->cantidadBloques = cantidadComas + 1;
-	archivo->tamanioArchivo = (cantidadComas + 1) * superBloque->block_size;
+	//archivo->cantidadBloques = cantidadComas + 1;
+	//archivo->tamanioArchivo = (cantidadComas + 1) * superBloque->block_size;
 
-	config_set_value(config,"BLOCK_COUNT",string_itoa(archivo->cantidadBloques));
-	config_set_value(config,"SIZE",string_itoa(archivo->tamanioArchivo));
+	//config_set_value(config,"BLOCK_COUNT",string_itoa(archivo->cantidadBloques));
+	//config_set_value(config,"SIZE",string_itoa(archivo->tamanioArchivo));
 	config_set_value(config,"BLOCKS",archivo->bloquesQueOcupa);
 	config_save(config);
 
@@ -533,8 +533,8 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 
 }
 void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
-
-	int bloquesAocupar = (int) ceil((float) _tarea->parametro / (float) superBloque->block_size);
+	int caracteresAOcupar = _tarea->parametro;
+	int bloquesAocupar = (int) ceil((float) caracteresAOcupar / (float) superBloque->block_size);
 
 	log_info(logImongo, "Los bloues a ocupar de la tarea: %s son: %d ",_tarea->nombreTarea, bloquesAocupar);
 	lock(structTarea->mutex);
@@ -565,8 +565,13 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 
 			structTarea->file->cantidadBloques += bloquesAocupar;
-			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
-			config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->cantidadBloques*superBloque->block_size));
+			char*cantidadBloques = string_itoa(structTarea->file->cantidadBloques);
+			config_set_value(structTarea->config,"BLOCK_COUNT",cantidadBloques);
+			free(cantidadBloques);
+			structTarea->file->tamanioArchivo += caracteresAOcupar;
+			char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
+			config_set_value(structTarea->config,"SIZE",tamanioArchivo);
+			free(tamanioArchivo);
 			config_save(structTarea->config);
 
 
@@ -593,8 +598,12 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			config_set_value(structTarea->config,"CARACTER_LLENADO",structTarea->file->caracterLlenado);
 			config_set_value(structTarea->config,"BLOCKS","");
 			config_set_value(structTarea->config,"MD5_ARCHIVO","");
-			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(bloquesAocupar));
-			config_set_value(structTarea->config,"SIZE",string_itoa(bloquesAocupar*superBloque->block_size));
+			char* cantidadBloques =  string_itoa(bloquesAocupar);
+			config_set_value(structTarea->config,"BLOCK_COUNT",cantidadBloques);
+			free(cantidadBloques);
+			char* tamanioArchivo = string_itoa(caracteresAOcupar);
+			config_set_value(structTarea->config,"SIZE",tamanioArchivo);
+			free(tamanioArchivo);
 			config_save(structTarea->config);
 
 
