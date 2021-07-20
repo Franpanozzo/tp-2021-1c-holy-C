@@ -47,11 +47,11 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		//pthread_detach(t);
+		pthread_detach(t);
 		//free(t);
 		//Para hacerle free hay que pasarlo por parametro en pthread_create
 
-		pthread_join(t, (void**) NULL);
+		//pthread_join(t, (void**) NULL);
     }
 }
 
@@ -137,6 +137,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			log_info(logMiRAM, "Se le asigna la prox tarea a un tripulante");
 			t_tarea* tarea = deserializarSolicitudTarea(paquete);
 			log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
+
 			if(tarea)
 				mandarTarea(tarea, tripulanteSock);
 			else
@@ -308,7 +309,14 @@ t_tarea* deserializarSolicitudTarea(t_paquete* paquete) {
 	offset += sizeof(uint32_t);
 	memcpy(&(idTripulante), stream + offset, sizeof(uint32_t));
 
-	return asignarProxTarea(idPatota, idTripulante);
+	t_tarea* tarea = asignarProxTarea(idPatota, idTripulante);
+
+	if(strcmp(tarea->nombreTarea, "TAREA_NULA") == 0)
+	{
+		expulsarTripulante(idTripulante, idPatota);
+	}
+
+	return tarea;
 }
 
 
@@ -641,6 +649,7 @@ void expulsarTripulante(int idTripu,int idPatota) {
 
 
 t_tarea* asignarProxTarea(int idPatota, int idTripu) {
+
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		return asignarProxTareaPag(idPatota, idTripu);
@@ -649,6 +658,7 @@ t_tarea* asignarProxTarea(int idPatota, int idTripu) {
 	{
 		return asignarProxTareaSeg(idPatota, idTripu);
 	}
+
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);
 }

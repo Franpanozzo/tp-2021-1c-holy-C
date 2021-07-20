@@ -637,12 +637,12 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
+			enviarRam = 1;
 			eliminarTripulante(tripulante->idTripulante);
 			log_info(logDiscordiador,"El tripulante %d ya no le quedan tareas por hacer", tripulante->idTripulante);
 		}
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_ERROR") == 0){
-			enviarRam = 1;
 			eliminarTripulante(tripulante->idTripulante);
 			log_info(logDiscordiador,"El tripulante %d no ha podido ser alocado en memoria "
 					"porque no hay espacio", tripulante->idTripulante);

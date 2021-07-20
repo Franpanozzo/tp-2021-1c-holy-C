@@ -112,7 +112,7 @@ void sobreescribir_memoria(int frame, void* buffer, int mem, int desplInicialDen
 
 	else if(mem == MEM_VIRT){
 		lock(&mutexEscribirMemoriaVirtual);
-		FILE * file = fopen(configRam.pathSwap, "rb+");
+		FILE * file = fopen(configRam.pathSwap, "r+");
 		fseek(file, desp, SEEK_SET);
 		fwrite(buffer, configRam.tamanioPagina , 1, file);
 		fclose(file);
@@ -281,6 +281,7 @@ void* buscar_pagina(t_info_pagina* info_pagina, int idPatota) {
             info_pagina->frame = frame;
             info_pagina->bitPresencia = 1;
             info_pagina->tiempo_uso = obtener_tiempo();
+            set_frame(frame, MEM_PPAL);
             sobreescribir_memoria(frame, pagina, MEM_PPAL, 0, configRam.tamanioPagina);
 
             return pagina;
@@ -315,7 +316,7 @@ void ejecutar_reemplazo(void* pagina, t_info_pagina* info_pagina, int idPatota) 
 		// obtengo la pagina LRU
 		t_info_pagina* info_pagina_lru = list_get_minimum(paginas_ppal, (void*) _LRU);
 
-		log_info(logMemoria, "Victima %s: frame:%d - tiempo: %d", configRam.algoritmoReemplazo, info_pagina_lru->frame, info_pagina_lru->tiempo_uso);
+		log_info(logMemoria, "Victima %s: pagina:%d - frame:%d - tiempo: %d", configRam.algoritmoReemplazo, info_pagina_lru->indice, info_pagina_lru->frame, info_pagina_lru->tiempo_uso);
 
 		int frame = info_pagina_lru->frame;
 
@@ -332,6 +333,7 @@ void ejecutar_reemplazo(void* pagina, t_info_pagina* info_pagina, int idPatota) 
 		log_info(logMemoria, "Guardando en frame %d de RAM la pagina: %d de la patota: %d", frame, info_pagina->indice, idPatota);
 		sobreescribir_memoria(frame, pagina, MEM_PPAL, 0, configRam.tamanioPagina);
 
+		free(pagina_lru);
 		list_destroy(paginas_ppal);
 	}
 }
@@ -377,7 +379,6 @@ t_tarea* asignarProxTareaPag(int idPatota,int idTripulante) {
 			tcb->idTripulante, tcb->estado, tcb->posX, tcb->posY, tcb->proximaAEjecutar, tcb->dlPatota);
 
 	t_tarea* tarea = irABuscarSiguienteTareaPag(tablaPaginasPatotaActual, tcb);
-
 
 	free(tcb);
 	return tarea;
@@ -574,11 +575,14 @@ int sobreescribirTripu(t_list* paginasConTripu, tcb* tcbAGuardar, int idPatota) 
 
 		//ANTES DE ESCRIBIR TAMBIEN VOY A BUSCAR LAS PAGINAS POR SI ALGUN OTRO PROCESO LAS DESALOJO DE RAM
 		lock(&mutexTablaPaginasPatota);
-		buscar_pagina(info_pagina, idPatota);
+		void* pagina = buscar_pagina(info_pagina, idPatota);
 		sobreescribir_memoria(info_pagina->frame, bufferAMeter + offset, MEM_PPAL, alojado->desplazamientoInicial, alojado->bytesAlojados);
 		unlock(&mutexTablaPaginasPatota);
 		offset += alojado->bytesAlojados;
 		i++;
+
+		//SE LE ASIGNA UNA PAGINA A buscar_pagina PARA DESPUES PODER LIBERARLA, PERO EL FIN ES QUE TRAIGA LAS PAGINAS A MEMORIA.
+		free(pagina);
 	}
 
 	list_destroy(paginasConTripu);
@@ -975,9 +979,7 @@ bool tieneEstructuraAlojada(t_list* listaAlojados, tipoEstructura tipo) {
 	    	return estructuraAlojada->tipo == tipo;
 	    }
 
-	//lock(&mutexAlojados);
 	t_alojado* alojadoConTarea = list_find(listaAlojados, (void*) contieneTipo);
-	//unlock(&mutexAlojados);
 
 	return alojadoConTarea != NULL;
 }
@@ -1115,13 +1117,14 @@ void chequearUltimoTripulante(t_tablaPaginasPatota* tablaPatota) {
 			lock(&mutexAlojados);
 			list_destroy_and_destroy_elements(info_pagina->estructurasAlojadas, (void*) borrarAlojados);
 			unlock(&mutexAlojados);
-			log_info(logMemoria,"SE LIBERA  EL FRAME: %d",info_pagina->frame);
 			if(info_pagina->bitPresencia == 1)
 			{
+				log_info(logMemoria,"SE LIBERA  EL FRAME EN RAM: %d",info_pagina->frame);
 				clear_frame(info_pagina->frame, MEM_PPAL);
 			}
 			if(info_pagina->bitPresencia == 0)
 			{
+				log_info(logMemoria,"SE LIBERA  EL FRAME EN SWAP: %d",info_pagina->frame);
 				clear_frame(info_pagina->frame, MEM_VIRT);
 			}
 			free(info_pagina);
@@ -1204,6 +1207,7 @@ void dumpPag() {
 	txt_close_file(archivoDump);
 	free(rutaAbsoluta);
 	free(dump);
+	free(fechaYHora);
 }
 
 
@@ -1215,7 +1219,7 @@ t_tablaPaginasPatota* patotaConFrame(int frame) {
 			while(list_iterator_has_next(iteradorTablaPaginas))
 			{
 				t_info_pagina* infoPagina = list_iterator_next(iteradorTablaPaginas);
-				if(infoPagina->frame == frame) return 1;
+				if(infoPagina->frame == frame && infoPagina->bitPresencia == 1) return 1;
 			}
 
 			list_iterator_destroy(iteradorTablaPaginas);
@@ -1238,7 +1242,7 @@ t_info_pagina* paginaConFrame(int frame,t_tablaPaginasPatota* tablaPaginasPatota
 	while(list_iterator_has_next(iteradorTablaPaginas))
 	{
 		t_info_pagina* infoPagina = list_iterator_next(iteradorTablaPaginas);
-		if(infoPagina->frame == frame) return infoPagina;
+		if(infoPagina->frame == frame && infoPagina->bitPresencia == 1) return infoPagina;
 	}
 
 	log_error(logMemoria,"No hay pagina con ese frame (?");
