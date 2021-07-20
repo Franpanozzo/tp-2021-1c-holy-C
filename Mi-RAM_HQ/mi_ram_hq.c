@@ -383,7 +383,7 @@ char* delimitarTareas(char* stringTareas) {
         string_append(&tareasDelimitadas, arrayDeTareas[i]);
     }
 
-    string_append(&tareasDelimitadas,"TAREA_NULA 0;0;0;0");
+    tareasDelimitadas = string_substring_until(tareasDelimitadas, strlen(tareasDelimitadas) - 1);
 
     liberarDoblesPunterosAChar(arrayDeTareas);
 
@@ -468,6 +468,17 @@ void mandarTarea(t_tarea* tarea, int socketTrip) {
 t_tarea* tarea_error() {
 	t_tarea* tareaError = malloc(sizeof(t_tarea));
 	tareaError->nombreTarea = strdup("TAREA_ERROR");
+	tareaError->parametro = 0;
+	tareaError->coordenadas.posX = 0;
+	tareaError->coordenadas.posY = 0;
+	tareaError->tiempo = 0;
+
+	return tareaError;
+}
+
+t_tarea* tarea_nula() {
+	t_tarea* tareaError = malloc(sizeof(t_tarea));
+	tareaError->nombreTarea = strdup("TAREA_NULA");
 	tareaError->parametro = 0;
 	tareaError->coordenadas.posX = 0;
 	tareaError->coordenadas.posY = 0;

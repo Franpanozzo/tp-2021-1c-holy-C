@@ -509,6 +509,12 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 
 		if(*aux == '|' || *aux == '\0') {
 			log_info(logMemoria,"NO SACO MAS PAGINAS YA QUE EL PROXIMA ERA: %s",aux);
+
+			if(*aux == '\0')
+			{
+				tcbAGuardar->proximaAEjecutar = info_pagina->indice * 100 + desplazamiento - 1;
+			}
+
 			break;
 		}
 	}
@@ -529,7 +535,18 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 
 	if(*tarea == '|') tarea = string_substring_from(tarea,1);
 
-	t_tarea* tareaAMandar = armarTarea(tarea);
+
+	t_tarea* tareaAMandar;
+
+	if(*aux == '\0' && string_is_empty(tarea))
+	{
+		tareaAMandar = tarea_nula();
+	}
+	else
+	{
+		tareaAMandar = armarTarea(tarea);
+	}
+
 	free(aux);
 	free(proximoALeer);
 	list_iterator_destroy(iteradorTablaPaginas);
