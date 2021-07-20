@@ -76,14 +76,11 @@ void hiloPlanificador(){
 
 			log_info(logDiscordiador,"----- TERMINA LA PLANI -----");
 
-			if(!list_is_empty(listaExec->elementos))
-				list_iterate(listaExec->elementos, (void*)avisarTerminoPlanificacion);
-			if(!list_is_empty(listaBlocked->elementos))
-				list_iterate(listaBlocked->elementos, (void*)avisarTerminoPlanificacion);
-			if(!list_is_empty(listaNew->elementos))
-				list_iterate(listaNew->elementos, (void*)avisarTerminoPlanificacion);
-			if(!list_is_empty(listaReady->elementos))
-				list_iterate(listaReady->elementos, (void*)avisarTerminoPlanificacion);
+			comunicarseConTripulantes(listaExec, (void*)avisarTerminoPlanificacion);
+			comunicarseConTripulantes(listaBlocked, (void*)avisarTerminoPlanificacion);
+			comunicarseConTripulantes(listaNew, (void*)avisarTerminoPlanificacion);
+			comunicarseConTripulantes(listaReady, (void*)avisarTerminoPlanificacion);
+			comunicarseConTripulantes(listaExit, (void*)avisarTerminoPlanificacion);
 		}
 	}
 }
@@ -155,7 +152,6 @@ void hiloTripulante(t_tripulante* tripulante){
 				recibirPrimerTareaDeMiRAM(tripulante);
 				//sem_post(&semUltimoTripu);
 				sem_post(&tripulante->semaforoFin);
-				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case READY:
@@ -169,7 +165,6 @@ void hiloTripulante(t_tripulante* tripulante){
 						distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas));
 
 				sem_post(&tripulante->semaforoFin);
-				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case EXEC:
@@ -216,7 +211,6 @@ void hiloTripulante(t_tripulante* tripulante){
 					}
 				}
 				sem_post(&tripulante->semaforoFin);
-				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case BLOCKED:
@@ -233,7 +227,6 @@ void hiloTripulante(t_tripulante* tripulante){
 					}
 				}
 				sem_post(&tripulante->semaforoFin);
-				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case SABOTAJE:
@@ -263,8 +256,12 @@ void hiloTripulante(t_tripulante* tripulante){
 				log_error(logDiscordiador,"el tripulante %d no deberia estar aca", tripulante->idTripulante);
 				break;
 		}
+		if(tripulante->estado != SABOTAJE && tripulante->estado != EXIT){
+			sem_wait(&tripulante->semaforoInicio);
+		}
 	}
-	//liberarTripulante(tripulante);
+	log_info(logDiscordiador,"el tripulante %d con estado %s esta por terminar el hilo", tripulante->idTripulante,
+											traducirEstado(tripulante->estado));
 }
 
 
@@ -294,24 +291,6 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 
 	eliminarPatota(patota);
 	close(miRAMsocket);
-}
-
-
-void mandarTripulanteNulo() {
-	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
-
-	tripulante->coordenadas.posX = 0;
-	tripulante->coordenadas.posY = 0;
-	tripulante->idTripulante = -1;
-	tripulante->idPatota = 0;
-	tripulante->estado = NEW;
-
-	int socket =iniciarConexionDesdeClienteHacia(puertoEIPRAM);
-	enviarPaquete(armarPaqueteCon((void*) tripulante, TRIPULANTE), socket);
-
-	recibirTareaDeMiRAM(socket, tripulante);
-
-	close(socket);
 }
 
 
@@ -409,13 +388,15 @@ void actualizarListaEyB(t_lista* lista, t_estado estado){
 
 	log_info(logDiscordiador,"------Planficando cola de %s con %d tripulantes-----",
 				traducirEstado(estado), list_size(lista->elementos));
-
+/*
 	t_list* listaAux = list_filter(lista->elementos, (void*)tieneDistintoEstado);
 	list_iterate(listaAux, (void*)pasarDeLista);
 	list_destroy(listaAux);
-
+*/
 	while(list_any_satisfy(lista->elementos, (void*)tieneDistintoEstado)){
-		list_remove_by_condition(lista->elementos, (void*)tieneDistintoEstado);
+		t_tripulante* tripulante = (t_tripulante*)list_remove_by_condition
+				(lista->elementos, (void*)tieneDistintoEstado);
+		pasarDeLista(tripulante);
 	}
 
 

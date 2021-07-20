@@ -686,7 +686,7 @@ void hacerDump(int signal) {
 char * pathLogRam(){
 	char *pathLog = string_new();
 	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
-	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logsRam/");
+	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logs/");
 	string_append(&pathLog, "logRam_ ");
 	string_append(&pathLog, fecha);
 	string_append(&pathLog, ".log");
@@ -697,7 +697,7 @@ char * pathLogRam(){
 char * pathLogMemoria(){
 	char *pathLog = string_new();
 	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
-	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logsMemoria/");
+	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logs/");
 	string_append(&pathLog, "logMemoria_ ");
 	string_append(&pathLog, fecha);
 	string_append(&pathLog, ".log");

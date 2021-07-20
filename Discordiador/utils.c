@@ -272,26 +272,29 @@ void pasarAlistaSabotaje(t_lista* lista){
 
 
 void pasarDeLista(t_tripulante* tripulante){
-	actualizarEstadoEnRAM(tripulante);
 
 	switch(tripulante->estado){
 		case READY:
+			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaReady);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA READY", tripulante->idTripulante);
 			sem_post(&tripulante->semaforoInicio);
 			break;
 
 		case EXEC:
+			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaExec);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA EXEC", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
+			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaBlocked);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
 			break;
 
 		case SABOTAJE:
+			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaSabotaje);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
 			break;
@@ -299,8 +302,10 @@ void pasarDeLista(t_tripulante* tripulante){
 		case EXIT:
 			meterEnLista(tripulante, listaExit);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA EXIT", tripulante->idTripulante);
-			if(patotaSinTripulantes(tripulante->idPatota))
+			if(patotaSinTripulantes(tripulante->idPatota)){
+				log_info(logDiscordiador,"Ya no quedan tripus de la patota %d", tripulante->idPatota);
 				eliminiarPatota(tripulante->idPatota);
+			}
 			break;
 
 		default:
@@ -315,14 +320,17 @@ bool patotaSinTripulantes(uint32_t idPatota){
 	t_list* listaAux = list_create();
 
 	void agregarAlista(t_lista* lista){
-		lock(&lista->mutex);
+		//lock(&lista->mutex);
 		list_add_all(listaAux, lista->elementos);
-		unlock(&lista->mutex);
+		//unlock(&lista->mutex);
 	}
 
 	bool esDeLaPatota(t_tripulante* tripulante){
+		log_info(logDiscordiador,"El tripu %d es de la patota %d", tripulante->idTripulante, tripulante->idPatota);
 		return idPatota == tripulante->idPatota;
 	}
+
+	//log_info(logDiscordiador,"Me voy a fijar si hay algun tripu en la patota");
 
 	agregarAlista(listaNew);
 	agregarAlista(listaReady);
@@ -332,7 +340,11 @@ bool patotaSinTripulantes(uint32_t idPatota){
 	if(sabotaje->tripulanteSabotaje != NULL)
 		list_add(listaAux, sabotaje->tripulanteSabotaje);
 
-	return !list_any_satisfy(listaAux, (void*)esDeLaPatota);
+	//log_info(logDiscordiador,"Me voy a fijar si hay algun tripu en la patota");
+
+	bool result = list_any_satisfy(listaAux, (void*)esDeLaPatota) == 0;
+	list_destroy(listaAux);
+	return result;
 }
 
 
@@ -344,7 +356,7 @@ void eliminiarPatota(uint32_t idPatota){
 	t_list_iterator* iterator = list_iterator_create(listaExit->elementos);
 	while(list_iterator_has_next(iterator)){
 		lock(&listaExit->mutex);
-		t_tripulante* tripulante = list_remove(listaExit->elementos, 0);
+		t_tripulante* tripulante = list_remove_by_condition(listaExit->elementos, (void*)esDeLaPatota);
 		unlock(&listaExit->mutex);
 		liberarTripulante(tripulante);
 	}
@@ -493,13 +505,14 @@ void eliminarTripulante(int id){
 	t_lista* arrayListas[4] = {listaReady, listaExec, listaBlocked, listaNew};
 
 	for(int i=0; tripulanteAeliminar == NULL && i<4; i++){
-		tripulanteAeliminar = (t_tripulante*)list_find(arrayListas[i]->elementos, (void*)esElBuscado);
+		tripulanteAeliminar = (t_tripulante*)list_remove_by_condition(arrayListas[i]->elementos, (void*)esElBuscado);
 	}
 
 	//log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
 	tripulanteAeliminar->estado = EXIT;
 	int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
 	close(socket);
+	pasarDeLista(tripulanteAeliminar);
 }
 
 
@@ -643,7 +656,7 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
-			tripulante->idTripulante = EXIT;
+			tripulante->estado = EXIT;
 			int socket = enviarA(puertoEIPRAM, tripulante, EXPULSAR);
 			close(socket);
 			log_info(logDiscordiador,"El tripulante %d ya no le quedan tareas por hacer", tripulante->idTripulante);
