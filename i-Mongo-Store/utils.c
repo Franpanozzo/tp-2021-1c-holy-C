@@ -518,7 +518,7 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 		printf("offset = %d \n", offset);
 
 		lock(&mutexMemoriaSecundaria);
-		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i], superBloque->block_size);
+		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i],strlen(palabraAguardar[i]));
 		unlock(&mutexMemoriaSecundaria);
 
 		printf("Lo que termino guardando fue %d ", superBloque->block_size);
@@ -567,13 +567,13 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 
 			structTarea->file->cantidadBloques += bloquesAocupar;
-			char*cantidadBloques = string_itoa(structTarea->file->cantidadBloques);
-			config_set_value(structTarea->config,"BLOCK_COUNT",cantidadBloques);
-			free(cantidadBloques);
+			//char*cantidadBloques = string_itoa(structTarea->file->cantidadBloques);
+			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
+			//free(cantidadBloques);
 			structTarea->file->tamanioArchivo += caracteresAOcupar;
-			char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
-			config_set_value(structTarea->config,"SIZE",tamanioArchivo);
-			free(tamanioArchivo);
+			//char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
+			config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->tamanioArchivo));
+			//free(tamanioArchivo);
 			config_save(structTarea->config);
 
 
@@ -600,12 +600,12 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			config_set_value(structTarea->config,"CARACTER_LLENADO",structTarea->file->caracterLlenado);
 			config_set_value(structTarea->config,"BLOCKS","");
 			config_set_value(structTarea->config,"MD5_ARCHIVO","");
-			char* cantidadBloques =  string_itoa(bloquesAocupar);
-			config_set_value(structTarea->config,"BLOCK_COUNT",cantidadBloques);
-			free(cantidadBloques);
-			char* tamanioArchivo = string_itoa(caracteresAOcupar);
-			config_set_value(structTarea->config,"SIZE",tamanioArchivo);
-			free(tamanioArchivo);
+			//char* cantidadBloques =  string_itoa(bloquesAocupar);
+			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(bloquesAocupar));
+			//free(cantidadBloques);
+			//char* tamanioArchivo = string_itoa(caracteresAOcupar);
+			config_set_value(structTarea->config,"SIZE",string_itoa(caracteresAOcupar));
+			//free(tamanioArchivo);
 			config_save(structTarea->config);
 
 
@@ -654,11 +654,11 @@ void actualizarMD5(tarea* structTarea){
 		printf("%d\n",offsetMemoria);
 		printf("%d\n",offsetFile);
 		memcpy(copiaFile+offsetFile,memoriaSecundaria + offsetMemoria ,superBloque->block_size);
-
-
+		//memcpy(copiaFile+offsetFile,memoriaSecundaria + offsetMemoria ,min(superBloque->block_size,( structTarea->file->tamanioArchivo - offsetFile)));
 	}
 	char* nombreFile = string_from_format("%s.md5.tmp",structTarea->file->caracterLlenado);
 	FILE * file = fopen(nombreFile,"w");
+	log_info(logImongo,"-------------Archivo construido para md5: %s---------", copiaFile);
 	fputs(copiaFile, file);
 	fclose(file);
 
@@ -673,6 +673,7 @@ void actualizarMD5(tarea* structTarea){
 
 	fgets(md5, md5Size, file);
 	log_info(logImongo,"md5: %s \n",md5);
+	//remove(nombreFile);
 	structTarea->file->md5_archivo = md5;
 
 
