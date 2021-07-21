@@ -157,10 +157,10 @@ void detallesArchivo(int fileDescriptor){
 		        exit(EXIT_FAILURE);
 		    }
 
-		    printf("Tamanio total del archivo: %lu bytes\n", sb.st_size);
-		    printf("Ultimo estado:       %s", ctime(&sb.st_ctime));
-		    printf("Ultimo acceso:         %s", ctime(&sb.st_atime));
-		    printf("Ultima modificacion del archivo:   %s", ctime(&sb.st_mtime));
+		    log_info(logImongo, "Tamanio total del archivo: %lu bytes\n", sb.st_size);
+		    log_info(logImongo, "Ultimo estado:       %s", ctime(&sb.st_ctime));
+		    log_info(logImongo, "Ultimo acceso:         %s", ctime(&sb.st_atime));
+		    log_info(logImongo, "Ultima modificacion del archivo:   %s", ctime(&sb.st_mtime));
 }//
 
 
@@ -307,7 +307,7 @@ char* bitmap = malloc(sizeBitArray + 1);
 
     	bitmap[i] = valor + '0';
 
-    	//printf("%c ", bitmap[i]);
+    	//log_info(logImongo, "%c ", bitmap[i]);
 
    }
 
@@ -316,7 +316,7 @@ char* bitmap = malloc(sizeBitArray + 1);
 
 	  int valor =  bitarray_test_bit(superBloque->bitmap, i);
 
-	      	printf("%d ", valor);
+	      	log_info(logImongo, "%d ", valor);
 
   }
  PARA ANALIZAR LOS BLOQUES MUERTOS SI NO SON MULTIPLOS DE 8
@@ -350,11 +350,11 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 
 	char* bloquesQueTenia = archivo->bloquesQueOcupa;
 
-	printf("Los bloques que tenia son: %s \n", bloquesQueTenia);
+	log_info(logImongo, "Los bloques que tenia son: %s \n", bloquesQueTenia);
 
 	int tamanio = string_length(bloquesQueTenia);
 
-	printf("El tamanio de los bloques que tenia es: %d \n", tamanio);
+	log_info(logImongo, "El tamanio de los bloques que tenia es: %d \n", tamanio);
 
 	char* bloquesActuales;
 
@@ -375,7 +375,7 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 
 	}
 
-	printf("Ahora el bloque quedo como: %s \n", bloquesActuales);
+	log_info(logImongo, "Ahora el bloque quedo como: %s \n", bloquesActuales);
 
 	int i = 0;
 
@@ -395,15 +395,15 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 		}
 
 
-		printf("%s \n", bloquesActuales);
+		log_info(logImongo, "%s \n", bloquesActuales);
 		char * posicion = string_itoa(*(arrayDePosiciones + i));
 		string_append(&bloquesActuales,posicion);
-		printf("%s \n", bloquesActuales);
+		log_info(logImongo, "%s \n", bloquesActuales);
 		i++;
 
 	}
 	string_append(&bloquesActuales,"]");
-	printf("%s \n", bloquesActuales);
+	log_info(logImongo, "%s \n", bloquesActuales);
 /*
 	int j = 0;
 	int cantidadComas = 0;
@@ -494,34 +494,34 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 
 	int flag = tarea->parametro;
 
-	printf("flag = %d \n", flag);
+	log_info(logImongo, "flag = %d \n", flag);
 
 	char caracter = caracterLlenado[0];
 
-	printf("caracter = %c \n", caracter);
+	log_info(logImongo, "caracter = %c \n", caracter);
 
 	char** palabraAguardar = malloc(sizeof(char*) * bloquesAocupar);
 
 	for(int i = 0; i < bloquesAocupar;i++){
 
 		palabraAguardar[i] = string_repeat(caracter,min(superBloque->block_size,flag));
-		printf("Lo que pesa cada char es %d ", strlen(palabraAguardar[i]));
-		printf("palabra = %s \n", palabraAguardar[i]);
+		log_info(logImongo, "Lo que pesa cada char es %d ", strlen(palabraAguardar[i]));
+		log_info(logImongo, "palabra = %s \n", palabraAguardar[i]);
 		flag -= superBloque->block_size;
-		printf("flag = %d \n", flag);
+		log_info(logImongo, "flag = %d \n", flag);
 	}
 
 	for(int i=0; i<bloquesAocupar; i++){
 
 		int offset = posicionesQueOcupa[i] * superBloque->block_size;
 
-		printf("offset = %d \n", offset);
+		log_info(logImongo, "offset = %d \n", offset);
 
 		lock(&mutexMemoriaSecundaria);
 		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i],strlen(palabraAguardar[i]));
 		unlock(&mutexMemoriaSecundaria);
 
-		printf("Lo que termino guardando fue %d ", superBloque->block_size);
+		log_info(logImongo, "Lo que termino guardando fue %d ", superBloque->block_size);
 	}
 
 	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
@@ -651,8 +651,8 @@ void actualizarMD5(tarea* structTarea){
 	for(int i=0; i<structTarea->file->cantidadBloques;i++){
 		int offsetMemoria = atoi(*(arrayBloques + i)) * superBloque->block_size;
 		int offsetFile = i * superBloque->block_size;
-		printf("%d\n",offsetMemoria);
-		printf("%d\n",offsetFile);
+		log_info(logImongo, "%d\n",offsetMemoria);
+		log_info(logImongo, "%d\n",offsetFile);
 		memcpy(copiaFile+offsetFile,memoriaSecundaria + offsetMemoria ,superBloque->block_size);
 		//memcpy(copiaFile+offsetFile,memoriaSecundaria + offsetMemoria ,min(superBloque->block_size,( structTarea->file->tamanioArchivo - offsetFile)));
 	}
@@ -797,7 +797,7 @@ void generarComida(t_tarea* tarea, int* tripulanteSock){
 
 				//actualizarEstructurasFile(comida, configComida);
 
-				printf("Los bloques que ocupa al momento son: %s \n", comida->bloquesQueOcupa);
+				log_info(logImongo, "Los bloques que ocupa al momento son: %s \n", comida->bloquesQueOcupa);
 
 				comida->cantidadBloques += bloquesAocupar;
 
@@ -866,7 +866,7 @@ void generarBasura(t_tarea* tarea, int* tripulanteSock){
 
 					//actualizarEstructurasFile(basura, configBasura);
 
-					printf("Los bloques que ocupa al momento son: %s \n", basura->bloquesQueOcupa);
+					log_info(logImongo, "Los bloques que ocupa al momento son: %s \n", basura->bloquesQueOcupa);
 
 					basura->cantidadBloques += bloquesAocupar;
 
