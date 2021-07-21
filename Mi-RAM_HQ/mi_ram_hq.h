@@ -4,7 +4,7 @@
 #include "estructuras.h"
 #include "paginacion.h"
 
-t_log* logMiRAM;
+t_log* logMemoria;
 
 
 void cargar_configuracion();

@@ -5,9 +5,6 @@ sem_t habilitarPatotaEnRam;
 
 int main(void) {
 
-	char* pathDelLogRam = pathLogRam();
-	logMiRAM = iniciarLogger(pathDelLogRam,"Mi-Ram",1);
-
 	char* pathDelLogMemoria = pathLogMemoria();
 	logMemoria = iniciarLogger(pathDelLogMemoria,"Memoria",1);
 
@@ -22,6 +19,8 @@ int main(void) {
     pthread_t manejo_tripulante;
     pthread_create(&manejo_tripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
     pthread_join(manejo_tripulante, (void**) NULL);
+
+
 
     //falta hacer funcion para destruir las tareas de la lista de tareas del pcb
     //falta hacer funcion para destruir los pcb de las lista de pcbs
@@ -64,7 +63,7 @@ int esperarTripulante(int serverSock) {
 
     int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
 
-    log_info(logMiRAM, "Se conecto un cliente!\n");
+    log_info(logMemoria, "Se conecto un cliente!\n");
 
     return socket_tripulante;
 }
@@ -85,15 +84,15 @@ void manejarTripulante(int *tripulanteSock) {
 
 void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
-	log_info(logMiRAM,"Deserializando el cod_op %d", paquete->codigoOperacion);
+	log_info(logMemoria,"Deserializando el cod_op %d", paquete->codigoOperacion);
 
 	int res;
 
 	switch(paquete->codigoOperacion){
 		case PATOTA:
-			log_info(logMiRAM,"Voy a deserializar una patota");
+			log_info(logMemoria,"Voy a deserializar una patota");
 			res = deserializarInfoPCB(paquete);
-			log_info(logMiRAM,"El resultado de la operacion es: %d",res);
+			log_info(logMemoria,"El resultado de la operacion es: %d",res);
 			if(res)
 				mandarConfirmacionDisc("OK", tripulanteSock);
 			else
@@ -101,31 +100,31 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			break;
 		case TRIPULANTE:
 		{
-			log_info(logMiRAM,"Voy a deserializar un tripulante");
+			log_info(logMemoria,"Voy a deserializar un tripulante");
 			t_tarea* tarea = deserializarTripulante(paquete);
 			if(tarea != NULL)
 			{
-				log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
+				log_info(logMemoria,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
 				mandarTarea(tarea, tripulanteSock);
 			}
 			else
 			{
-				log_info(logMiRAM,"Se procede a enviar la TAREA ERROR");
+				log_info(logMemoria,"Se procede a enviar la TAREA ERROR");
 				t_tarea* tareaError = tarea_error();
 				mandarTarea(tareaError, tripulanteSock);
 			}
 			break;
 		}
 		case EXPULSAR:
-			log_info(logMiRAM,"SE VA A EXPULSAR UN TRIPULANTE");
+			log_info(logMemoria,"SE VA A EXPULSAR UN TRIPULANTE");
 			deserializarExpulsionTripulante(paquete);
 			break;
 
 		case ESTADO_TRIPULANTE:
 
-			log_info(logMiRAM,"Voy a actualizar un tripulante");
+			log_info(logMemoria,"Voy a actualizar un tripulante");
 			res = recibirActualizarTripulante(paquete);
-			log_info(logMiRAM,"El resultado de la operacion es: %d",res);
+			log_info(logMemoria,"El resultado de la operacion es: %d",res);
 			if(res)
 				mandarConfirmacionDisc("OK", tripulanteSock);
 			else
@@ -134,9 +133,9 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 
 		case SIGUIENTE_TAREA:
 		{
-			log_info(logMiRAM, "Se le asigna la prox tarea a un tripulante");
+			log_info(logMemoria, "Se le asigna la prox tarea a un tripulante");
 			t_tarea* tarea = deserializarSolicitudTarea(paquete);
-			log_info(logMiRAM,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
+			log_info(logMemoria,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
 
 			if(tarea)
 				mandarTarea(tarea, tripulanteSock);
@@ -147,7 +146,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 			break;
 		}
 		default:
-			log_info(logMiRAM,"No se puede deserializar ese tipo de estructura negro \n");
+			log_info(logMemoria,"No se puede deserializar ese tipo de estructura negro \n");
 			exit(1);
 		}
 	eliminarPaquete(paquete);
@@ -158,7 +157,7 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 void mandarConfirmacionDisc(char* aMandar, int socket) {
 
 	t_paquete* aEnviar = armarPaqueteCon((void*) aMandar, STRING);
-	log_info(logMiRAM,"Mandando confirmacion de %s a Discordiador",aMandar);
+	log_info(logMemoria,"Mandando confirmacion de %s a Discordiador",aMandar);
 	enviarPaquete(aEnviar,socket);
 }
 
@@ -230,10 +229,10 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexAlojados, NULL);
     pthread_mutex_init(&mutexTiempo, NULL);
 
-
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
 	tiempo = 0;
+	punteroClock = 0;
 
 	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
 
@@ -288,7 +287,7 @@ int recibirActualizarTripulante(t_paquete* paquete) {
 	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d en estado %c, en pos X: %d | pos Y: %d",
+	log_info(logMemoria,"Recibi el tribulante de id %d de la  patota %d en estado %c, en pos X: %d | pos Y: %d",
 			nuevoTCB->idTripulante, idPatota, nuevoTCB->estado, nuevoTCB->posX, nuevoTCB->posY);
 
 	int confirmacion = actualizarTripulante(nuevoTCB,idPatota);
@@ -334,7 +333,7 @@ void deserializarExpulsionTripulante(t_paquete* paquete) {
 
 	memcpy(&(idTripu),stream + offset,sizeof(uint32_t));
 
-	log_info(logMiRAM, "Se procede a eliminar de la memoria el tripulante %d de la patota %d", idTripu, idPatota);
+	log_info(logMemoria, "Se procede a eliminar de la memoria el tripulante %d de la patota %d", idTripu, idPatota);
 
 
 	sem_wait(&habilitarExpulsionEnRam);
@@ -387,7 +386,7 @@ char* delimitarTareas(char* stringTareas) {
 
     liberarDoblesPunterosAChar(arrayDeTareas);
 
-    log_info(logMiRAM, "Tareas delimitadas: %s", tareasDelimitadas);
+    log_info(logMemoria, "Tareas delimitadas: %s", tareasDelimitadas);
 
     return tareasDelimitadas;
 }
@@ -420,7 +419,7 @@ t_tarea* deserializarTripulante(t_paquete* paquete) {
 	memcpy(&(nuevoTCB->posY),stream + offset,sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 
-	log_info(logMiRAM,"Recibi el tribulante de id %d de la  patota %d en estado %c",nuevoTCB->idTripulante, idPatota, nuevoTCB->estado);
+	log_info(logMemoria,"Recibi el tribulante de id %d de la  patota %d en estado %c",nuevoTCB->idTripulante, idPatota, nuevoTCB->estado);
 
 	if(nuevoTCB->idTripulante == -1){
 		sem_post(&habilitarPatotaEnRam);
@@ -445,7 +444,7 @@ char asignarEstadoTripu(t_estado estado) {
 	if(estado == EXEC) return 'E';
 	if(estado == BLOCKED) return 'B';
 	else{
-		log_error(logMiRAM, "El estado recibido del tripulante es invalido");
+		log_error(logMemoria, "El estado recibido del tripulante es invalido");
 		exit(1);
 	}
 
@@ -456,7 +455,7 @@ void mandarTarea(t_tarea* tarea, int socketTrip) {
 
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) tarea, TAREA);
 
-	log_info(logMiRAM,"Tarea enviada\n");
+	log_info(logMemoria,"Tarea enviada\n");
 
 	enviarPaquete(paqueteEnviado, socketTrip);
 
@@ -704,16 +703,6 @@ void hacerDump(int signal) {
 	}
 }
 
-char * pathLogRam(){
-	char *pathLog = string_new();
-	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
-	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logsRam/");
-	string_append(&pathLog, "logRam_ ");
-	string_append(&pathLog, fecha);
-	string_append(&pathLog, ".log");
-	free(fecha);
-	return pathLog;
-}
 
 char * pathLogMemoria(){
 	char *pathLog = string_new();
