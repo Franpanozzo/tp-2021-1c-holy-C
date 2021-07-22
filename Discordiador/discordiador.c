@@ -27,7 +27,7 @@ int main() {
 	sem_init(&sabotaje->semaforoCorrerSabotaje,0,0);
 	sem_init(&sabotaje->semaforoTerminoTripulante,0,0);
 	sem_init(&sabotaje->semaforoTerminoSabotaje,0,0);
-	sem_init(&semUltimoTripu,0,0);
+	sem_init(&semPlanificacion,0,0);
 
 
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
@@ -49,7 +49,10 @@ int main() {
 
 void hiloPlanificador(){
 	while(1){
-		if(leerPlanificacion() == CORRIENDO && totalTripulantes() > 0){
+		sem_wait(&semPlanificacion);
+		sem_post(&semPlanificacion);
+
+		if(totalTripulantes() > 0){
 
 			comunicarseConTripulantes(listaExec, (void*)esperarTerminarTripulante);
 			comunicarseConTripulantes(listaBlocked, (void*)esperarTerminarTripulante);
@@ -234,6 +237,8 @@ void hiloTripulante(t_tripulante* tripulante){
 				break;
 
 			case SABOTAJE:
+				sem_wait(&semPlanificacion);
+				sem_post(&semPlanificacion);
 				ciclosExec = 0;
 				if(distancia(tripulante->coordenadas, sabotaje->coordenadas) > 0){
 					desplazarse(tripulante, sabotaje->coordenadas);

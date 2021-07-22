@@ -35,13 +35,24 @@ void leerConsola(){
 
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
-			modificarPlanificacion(CORRIENDO);
-			log_info(logDiscordiador, "Se inicio la planificacion");
-
+			if(leerPlanificacion() == PAUSADA){
+				modificarPlanificacion(CORRIENDO);
+				log_info(logDiscordiador, "Se inicio la planificacion");
+				sem_post(&semPlanificacion);
+			}
+			else{
+				log_info(logDiscordiador, "La planificacion ya esta iniciada");
+			}
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-			modificarPlanificacion(PAUSADA);
-			log_info(logDiscordiador, "Se pauso la planificacion");
+			if(leerPlanificacion() == CORRIENDO){
+				modificarPlanificacion(PAUSADA);
+				log_info(logDiscordiador, "Se pauso la planificacion");
+				sem_wait(&semPlanificacion);
+			}
+			else{
+				log_info(logDiscordiador, "La planificacion ya esta pausada");
+			}
 		}
 
 		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){

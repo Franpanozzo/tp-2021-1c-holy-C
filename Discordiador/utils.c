@@ -77,11 +77,8 @@ void cargarConfiguracion(){
 void crearConfig(){
 
 	config  = config_create("/home/utnso/tp-2021-1c-holy-C/Discordiador/discordiador.config");
-
 	if(config == NULL){
-
 		log_error(logDiscordiador, "La ruta es incorrecta ");
-
 		exit(1);
 	}
 }
@@ -358,6 +355,8 @@ void eliminiarPatota(uint32_t idPatota){
 		if(tripulante != NULL)
 			liberarTripulante(tripulante);
 	}
+
+	list_iterator_destroy(iterator);
 }
 
 
@@ -500,15 +499,14 @@ void eliminarTripulante(int id){
 	}
 
 	t_tripulante* tripulanteAeliminar = NULL;
-	t_lista* arrayListas[4] = {listaReady, listaExec, listaBlocked, listaNew};
+	t_lista* arrayListas[5] = {listaReady, listaExec, listaBlocked, listaNew, listaSabotaje};
 
-	for(int i=0; tripulanteAeliminar == NULL && i<4; i++){
+	for(int i=0; tripulanteAeliminar == NULL && i<5; i++){
 		tripulanteAeliminar = (t_tripulante*)list_remove_by_condition(arrayListas[i]->elementos, (void*)esElBuscado);
 	}
 
-
 	if(tripulanteAeliminar == NULL){
-		log_info(logDiscordiador,"El se encontro al tripulante %d", id);
+		log_info(logDiscordiador,"No se encontro al tripulante %d", id);
 	}
 	else{
 		tripulanteAeliminar->estado = EXIT;
@@ -516,22 +514,6 @@ void eliminarTripulante(int id){
 		close(socket);
 		pasarDeLista(tripulanteAeliminar);
 	}
-}
-
-
-void sacarDeColas(t_tripulante* tripulante){
-	bool hayQueSacarlo(t_tripulante* otroTripulante){
-		return tripulante == otroTripulante;
-	}
-
-	list_remove_by_condition(listaReady->elementos, (void*)hayQueSacarlo);
-	list_remove_by_condition(listaExec->elementos, (void*)hayQueSacarlo);
-	list_remove_by_condition(listaBlocked->elementos, (void*)hayQueSacarlo);
-	list_remove_by_condition(listaNew->elementos, (void*)hayQueSacarlo);
-	list_remove_by_condition(listaSabotaje->elementos, (void*)hayQueSacarlo);
-
-	tripulante->estaVivo = 0;
-	avisarTerminoPlanificacion(tripulante);
 }
 
 // ----- ME QUEDE ACA EN LA ORGANIZACION DE LAS FUNCIONES
