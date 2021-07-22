@@ -152,6 +152,7 @@ void hiloTripulante(t_tripulante* tripulante){
 				recibirPrimerTareaDeMiRAM(tripulante);
 				//sem_post(&semUltimoTripu);
 				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case READY:
@@ -165,6 +166,7 @@ void hiloTripulante(t_tripulante* tripulante){
 						distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas));
 
 				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case EXEC:
@@ -211,6 +213,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					}
 				}
 				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case BLOCKED:
@@ -227,6 +230,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					}
 				}
 				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case SABOTAJE:
@@ -256,12 +260,16 @@ void hiloTripulante(t_tripulante* tripulante){
 				log_error(logDiscordiador,"el tripulante %d no deberia estar aca", tripulante->idTripulante);
 				break;
 		}
-		if(tripulante->estado != SABOTAJE && tripulante->estado != EXIT){
-			sem_wait(&tripulante->semaforoInicio);
-		}
 	}
+
 	log_info(logDiscordiador,"el tripulante %d con estado %s esta por terminar el hilo", tripulante->idTripulante,
 											traducirEstado(tripulante->estado));
+
+	if(patotaSinTripulantes(tripulante->idPatota)){
+		log_info(logDiscordiador,"Ya no quedan tripus de la patota %d", tripulante->idPatota);
+		eliminiarPatota(tripulante->idPatota);
+	}
+	log_info(logDiscordiador,"FIN");
 }
 
 

@@ -302,10 +302,7 @@ void pasarDeLista(t_tripulante* tripulante){
 		case EXIT:
 			meterEnLista(tripulante, listaExit);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA EXIT", tripulante->idTripulante);
-			if(patotaSinTripulantes(tripulante->idPatota)){
-				log_info(logDiscordiador,"Ya no quedan tripus de la patota %d", tripulante->idPatota);
-				eliminiarPatota(tripulante->idPatota);
-			}
+			sem_post(&tripulante->semaforoInicio);
 			break;
 
 		default:
@@ -358,7 +355,8 @@ void eliminiarPatota(uint32_t idPatota){
 		lock(&listaExit->mutex);
 		t_tripulante* tripulante = list_remove_by_condition(listaExit->elementos, (void*)esDeLaPatota);
 		unlock(&listaExit->mutex);
-		liberarTripulante(tripulante);
+		if(tripulante != NULL)
+			liberarTripulante(tripulante);
 	}
 }
 
@@ -516,25 +514,6 @@ void eliminarTripulante(int id){
 }
 
 
-/*
- * bool esElBuscado(t_tripulante* tripulante){
-		return tripulante->idTripulante == id;
-	}
-	t_list* listaAux = list_create();
-	list_add_all(listaAux, listaReady->elementos);
-	list_add_all(listaAux, listaExec->elementos);
-	list_add_all(listaAux, listaBlocked->elementos);
-	list_add_all(listaAux, listaNew->elementos);
-	list_add_all(listaAux, listaSabotaje->elementos);
-	t_tripulante* tripulanteAeliminar = (t_tripulante*)list_find(listaAux, (void*)esElBuscado);
-	log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
-	lock(&listaAeliminar->mutex);
-	list_add(listaAeliminar->elementos, tripulanteAeliminar);
-	unlock(&listaAeliminar->mutex);
-	list_clean(listaAux);
-	list_destroy(listaAux);
- */
-
 void sacarDeColas(t_tripulante* tripulante){
 	bool hayQueSacarlo(t_tripulante* otroTripulante){
 		return tripulante == otroTripulante;
@@ -559,11 +538,11 @@ void eliminarPatota(t_patota* patota){
 
 
 void liberarTripulante(t_tripulante* tripulante){
-	log_info(logDiscordiador, "Eliminando el tripulante: %d, y su ultima tarea fue: %s",tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	//log_info(logDiscordiador, "Eliminando el tripulante: %d, y su ultima tarea fue: %s",
+	//		tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 	free(tripulante->instruccionAejecutar->nombreTarea);
 	free(tripulante->instruccionAejecutar);
 	free(tripulante);
-
 }
 
 
