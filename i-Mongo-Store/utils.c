@@ -4,14 +4,11 @@
 void crearConfig(t_config** config, char* path){
 
 	*config  = config_create(path);
-
 	if(*config == NULL){
-
 		log_error(logImongo, "La ruta es incorrecta ");
-
 		exit(1);
 	}
-}//
+}
 
 
 
@@ -142,10 +139,8 @@ void iniciarMutex(){
 
 
 bool validarExistenciaFileSystem(char* superBloque, char* blocks, char* raiz){
-
 	return (access(superBloque, F_OK ) != -1) && (access(blocks, F_OK ) != -1) && (access(raiz, F_OK ) != -1);
-
-}//
+}
 
 
 void detallesArchivo(int fileDescriptor){
@@ -646,7 +641,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 void actualizarMD5(tarea* structTarea){
 	// arrayBloques = ["1","3"]  array de strings
 	char ** arrayBloques = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
-	char * copiaFile = malloc(structTarea->file->tamanioArchivo);
+	char * copiaFile = malloc(structTarea->file->cantidadBloques * superBloque->block_size);
 
 	for(int i=0; i<structTarea->file->cantidadBloques;i++){
 		int offsetMemoria = atoi(*(arrayBloques + i)) * superBloque->block_size;
@@ -676,7 +671,7 @@ void actualizarMD5(tarea* structTarea){
 	//remove(nombreFile);
 	structTarea->file->md5_archivo = md5;
 
-
+	free(copiaFile);
 }
 
 
