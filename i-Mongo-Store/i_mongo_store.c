@@ -62,7 +62,6 @@ int esperarTripulante(int serverSock) {
     int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
     //log_info(logImongo, "Se conecto un cliente! ");
     return socket_tripulante;
-
 }
 
 //CUANDO CREAS UN HILO HAY QUE PASAR SI O SI UN PUNTERO
@@ -223,7 +222,6 @@ void crearFileSystemExistente(){
 	log_info(logImongo,"Se ha creado la memoria secundaria con la capacidad %d con su copia para sincronizar", superBloque->block_size * superBloque->blocks);
 
 	detallesArchivo(fd);
-
 }
 
 
@@ -271,17 +269,14 @@ void crearFileSystemDesdeCero(){
 	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
 
 	if(mkdir(pathFiles,0777) != 0){
-
 		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
 	}
 
 	if(mkdir(pathBitacora,0777) != 0){
-
-			log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
-		}
+		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
+	}
 
 	crearMemoria(fd);
-
 }//
 
 
@@ -295,7 +290,7 @@ void iniciarFileSystem(){
 		mkdir(datosConfig->puntoMontaje,0777);
 	}
 	else if(flag == 0){
-			log_info(logImongo, "Existe el punto de montaje en el directorio %s, "
+		log_info(logImongo, "Existe el punto de montaje en el directorio %s, "
 					"se procedera a validar la existencia de SuperBloque.ims y Blocks.ims", datosConfig->puntoMontaje);
 	}
 	else{
