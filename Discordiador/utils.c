@@ -294,7 +294,7 @@ void pasarDeLista(t_tripulante* tripulante){
 			break;
 
 		case SABOTAJE:
-			actualizarEstadoEnRAM(tripulante);
+			//actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaSabotaje);
 			log_info(logDiscordiador,"El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
 			break;
@@ -506,11 +506,16 @@ void eliminarTripulante(int id){
 		tripulanteAeliminar = (t_tripulante*)list_remove_by_condition(arrayListas[i]->elementos, (void*)esElBuscado);
 	}
 
-	//log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
-	tripulanteAeliminar->estado = EXIT;
-	int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
-	close(socket);
-	pasarDeLista(tripulanteAeliminar);
+
+	if(tripulanteAeliminar == NULL){
+		log_info(logDiscordiador,"El se encontro al tripulante %d", id);
+	}
+	else{
+		tripulanteAeliminar->estado = EXIT;
+		int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
+		close(socket);
+		pasarDeLista(tripulanteAeliminar);
+	}
 }
 
 
