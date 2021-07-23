@@ -268,7 +268,6 @@ void pasarAlistaSabotaje(t_lista* lista){
 
 
 void pasarDeLista(t_tripulante* tripulante){
-	actualizarEstadoEnRAM(tripulante);
 
 	switch(tripulante->estado){
 		case READY:

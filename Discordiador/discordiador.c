@@ -363,6 +363,7 @@ void actualizarListaReady(){
 	int cantidadApasar = gradoMultiprocesamiento - list_size(listaExec->elementos);
 	t_list* listaAux = list_take_and_remove(listaReady->elementos, cantidadApasar);
 	list_iterate(listaAux, (void*)ponerEnExec);
+	list_iterate(listaAux, (void*)actualizarEstadoEnRAM);
 	list_iterate(listaAux, (void*)pasarDeLista);
 
 	log_info(logDiscordiador,"------Finalizando planficacion cola de ready con %d tripulantes-----",
@@ -379,8 +380,16 @@ void actualizarListaNew(){
 	log_info(logDiscordiador,"------Iniciando planficacion cola de new con %d tripulantes-----",
 				list_size(listaNew->elementos));
 
+	void actualizarYPedirTarea(t_tripulante* tripulante) {
+		actualizarEstadoEnRAM(tripulante);
+		recibirProximaTareaDeMiRAM(tripulante);
+	}
+
 	list_iterate(listaNew->elementos, (void*)ponerEnReady);
+	list_iterate(listaNew->elementos, (void*)actualizarYPedirTarea);
 	list_iterate(listaNew->elementos, (void*)pasarDeLista);
+
+
 	list_clean(listaNew->elementos);
 
 	log_info(logDiscordiador,"------Finalizando planficacion cola de new con %d tripulantes-----",
@@ -414,6 +423,7 @@ void actualizarListaEyB(t_lista* lista, t_estado estado){
 				traducirEstado(estado), list_size(lista->elementos));
 
 	t_list* listaAux = list_filter(lista->elementos, (void*)tieneDistintoEstado);
+	list_iterate(listaAux, (void*)actualizarEstadoEnRAM);
 	list_iterate(listaAux, (void*)pasarDeLista);
 	list_destroy(listaAux);
 
