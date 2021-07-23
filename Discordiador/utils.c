@@ -340,16 +340,14 @@ void eliminiarPatota(uint32_t idPatota){
 		return idPatota == tripulante->idPatota;
 	}
 
-	t_list_iterator* iterator = list_iterator_create(listaExit->elementos);
-	while(list_iterator_has_next(iterator)){
-		lock(&listaExit->mutex);
-		t_tripulante* tripulante = list_remove_by_condition(listaExit->elementos, (void*)esDeLaPatota);
-		unlock(&listaExit->mutex);
-		if(tripulante != NULL)
-			liberarTripulante(tripulante);
-	}
+	t_tripulante* tripulante = (t_tripulante*)list_remove_by_condition(listaExit->elementos, (void*)esDeLaPatota);;
 
-	list_iterator_destroy(iterator);
+	while(tripulante != NULL){
+		liberarTripulante(tripulante);
+		lock(&listaExit->mutex);
+		tripulante = (t_tripulante*)list_remove_by_condition(listaExit->elementos, (void*)esDeLaPatota);
+		unlock(&listaExit->mutex);
+	}
 }
 
 
@@ -469,8 +467,9 @@ void listarTripulantes(){
 				tripulante->idTripulante, tripulante->idPatota, traducirEstado(tripulante->estado));
 	}
 
-	log_info(logDiscordiador,"Estado de la nave: %s", temporal_get_string_time("%d-%m-%y %H:%M:%S"));
-
+ 	char* hora = temporal_get_string_time("%d-%m-%y %H:%M:%S");
+	log_info(logDiscordiador,"Estado de la nave: %s", hora);
+	free(hora);
 
 	agregarAlista(listaNew);
 	agregarAlista(listaReady);
@@ -497,13 +496,18 @@ void eliminarTripulante(int id){
 	t_lista* arrayListas[5] = {listaReady, listaExec, listaBlocked, listaNew, listaSabotaje};
 
 	for(int i=0; tripulanteAeliminar == NULL && i<5; i++){
+		lock(&arrayListas[i]->mutex);
 		tripulanteAeliminar = (t_tripulante*)list_remove_by_condition(arrayListas[i]->elementos, (void*)esElBuscado);
+		unlock(&arrayListas[i]->mutex);
 	}
 
 	if(tripulanteAeliminar == NULL){
 		log_info(logDiscordiador,"No se encontro al tripulante %d", id);
 	}
 	else{
+		if(tripulanteAeliminar->idTripulante == idTripulanteBlocked){
+			idTripulanteBlocked = NO_HAY_TRIPULANTE_BLOQUEADO;
+		}
 		tripulanteAeliminar->estado = EXIT;
 		int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
 		close(socket);
@@ -520,8 +524,8 @@ void eliminarPatota(t_patota* patota){
 
 
 void liberarTripulante(t_tripulante* tripulante){
-	log_info(logDiscordiador, "Eliminando el tripulante: %d, y su ultima tarea fue: %s",
-			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	log_info(logDiscordiador, "Se elimino el tripulante %d", tripulante->idTripulante);
+
 	free(tripulante->instruccionAejecutar->nombreTarea);
 	free(tripulante->instruccionAejecutar);
 	free(tripulante);
