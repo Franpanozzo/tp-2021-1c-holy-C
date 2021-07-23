@@ -45,7 +45,7 @@
 	bool tripulanteDeMenorId(t_tripulante*, t_tripulante*);
 	t_tripulante* elTripuMasCerca(t_coordenadas);
 
-	void recibirPrimerTareaDeMiRAM(t_tripulante*);
+	void mandarTCBaMiRAM(t_tripulante*);
 	void recibirProximaTareaDeMiRAM(t_tripulante*);
 	void recibirTareaDeMiRAM(int, t_tripulante*);
 	bool confirmacion(int);

@@ -48,7 +48,7 @@ typedef struct {
     int bytesDisponibles; // COMO IDENTIFICAMOS SI ES UN PCB, TCB O TAREAS ??
     t_list* estructurasAlojadas;
     int tiempo_uso;
-    //otros datos..
+    int bitDeUso;
 } t_info_pagina;
 
 typedef struct {
@@ -69,6 +69,7 @@ t_bitarray* frames_ocupados_virtual;
 int cant_frames_ppal;
 int cant_frames_virtual;
 int tiempo;
+int punteroClock;
 
 t_list* tablasPaginasPatotas;
 
@@ -100,7 +101,7 @@ t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
 int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
 t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* );
-t_tarea* guardarTCBPag(tcb*, int);
+int guardarTCBPag(tcb*, int);
 int guardarPCBPag(pcb*, char*);
 uint32_t estimarDLTareasPag();
 uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* );
@@ -111,7 +112,7 @@ t_alojado* obtenerAlojadoPagina(t_list* , int);
 int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* , tcb*);
 int frameTotalmenteLibre(int, int);
 t_list* paginasConTripu(t_list*, uint32_t );
-int sobreescribirTripu(t_list* , tcb* , int);
+int sobreescribirTripu(t_list* , tcb*, int);
 int actualizarTripulantePag(tcb* , int);
 tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
 t_tarea* asignarProxTareaPag(int , int);
@@ -126,24 +127,7 @@ void dumpPag();
 int obtener_tiempo();
 void ejecutar_reemplazo(void*, t_info_pagina*, int);
 t_list* buscarInfosPaginasEnRam();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+t_info_pagina* paginaAReemplazar();
 
 
 #endif /* PAGINACION_H_ */
-
-
-
-

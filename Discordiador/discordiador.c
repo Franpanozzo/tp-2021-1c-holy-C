@@ -142,8 +142,7 @@ void hiloTripulante(t_tripulante* tripulante){
 
 			case NEW:
 				log_info(logDiscordiador,"el tripulante %d esta en new", tripulante->idTripulante);
-				recibirPrimerTareaDeMiRAM(tripulante);
-				//sem_post(&semUltimoTripu);
+				mandarTCBaMiRAM(tripulante);
 				sem_post(&tripulante->semaforoFin);
 				sem_wait(&tripulante->semaforoInicio);
 				break;
@@ -325,10 +324,16 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 
 void actualizarListaNew(){
 
+	void actualizarYPedirTarea(t_tripulante* tripulante) {
+			actualizarEstadoEnRAM(tripulante);
+			recibirProximaTareaDeMiRAM(tripulante);
+	}
+
 	log_info(logDiscordiador,"------Iniciando planficacion cola de new con %d tripulantes-----",
 				list_size(listaNew->elementos));
 
 	list_iterate(listaNew->elementos, (void*)ponerEnReady);
+	list_iterate(listaNew->elementos, (void*)actualizarYPedirTarea);
 	list_iterate(listaNew->elementos, (void*)pasarDeLista);
 	list_clean(listaNew->elementos);
 
@@ -352,6 +357,7 @@ void actualizarListaReady(){
 	int cantidadApasar = gradoMultiprocesamiento - list_size(listaExec->elementos);
 	t_list* listaAux = list_take_and_remove(listaReady->elementos, cantidadApasar);
 	list_iterate(listaAux, (void*)ponerEnExec);
+	list_iterate(listaAux, (void*)actualizarEstadoEnRAM);
 	list_iterate(listaAux, (void*)pasarDeLista);
 
 	log_info(logDiscordiador,"------Finalizando planficacion cola de ready con %d tripulantes-----",
@@ -389,6 +395,7 @@ void actualizarListaEyB(t_lista* lista, t_estado estado){
 	while(list_any_satisfy(lista->elementos, (void*)tieneDistintoEstado)){
 		t_tripulante* tripulante = (t_tripulante*)list_remove_by_condition
 				(lista->elementos, (void*)tieneDistintoEstado);
+		actualizarEstadoEnRAM(tripulante);
 		pasarDeLista(tripulante);
 	}
 

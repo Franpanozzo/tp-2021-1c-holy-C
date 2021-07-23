@@ -1,7 +1,7 @@
 #include "segmentacion.h"
 
 
-t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
+int guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
 	tcbAGuardar->dlPatota = 0;
@@ -15,12 +15,10 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 	if(res == 0){
 		log_info(logMemoria,"No se pudo crear el tripulante %d por memoria llena", tcbAGuardar->idTripulante);
 		chequearUltimoTripulanteSeg(tablaSegmentosPatotaActual);
-		return NULL;
+		return 0;
 	}
 
-	t_tarea* tarea = irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcbAGuardar);
-
-	return tarea;
+	return 1;
 }
 
 
@@ -74,7 +72,11 @@ t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* tablaSegmentosPatota
 		log_info(logMemoria,"Sacando tarea: %s",tarea);
 		log_info(logMemoria,"Proximo a leer: %s",aux);
 	}
-	tcbAGuardar->proximaAEjecutar++;
+
+	if(*aux != '\0')
+	{
+		tcbAGuardar->proximaAEjecutar++;
+	}
 
 	log_info(logMemoria,"TCB prox a ejecutar quedo en: %d", tcbAGuardar->proximaAEjecutar);
 
@@ -86,11 +88,20 @@ t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* tablaSegmentosPatota
 
 	if(*tarea == '|') tarea = string_substring_from(tarea,1);
 
-	t_tarea* tareaAMandar = armarTarea(tarea);
+	t_tarea* tareaAMandar;
+
+	if(*aux == '\0' && string_is_empty(tarea))
+	{
+		tareaAMandar = tarea_nula();
+	}
+	else
+	{
+		tareaAMandar = armarTarea(tarea);
+	}
+
 	free(aux);
 	free(segmentoConTarea);
 	free(tarea);
-
 	return tareaAMandar;
 }
 

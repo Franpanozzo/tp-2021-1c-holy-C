@@ -270,26 +270,22 @@ void pasarDeLista(t_tripulante* tripulante){
 
 	switch(tripulante->estado){
 		case READY:
-			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaReady);
 			log_info(logDiscordiador,"------El tripulante %d paso a COLA READY", tripulante->idTripulante);
 			sem_post(&tripulante->semaforoInicio);
 			break;
 
 		case EXEC:
-			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaExec);
 			log_info(logDiscordiador,"------El tripulante %d paso a COLA EXEC", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
-			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaBlocked);
 			log_info(logDiscordiador,"------El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
 			break;
 
 		case SABOTAJE:
-			//actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaSabotaje);
 			log_info(logDiscordiador,"------El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
 			break;
@@ -301,7 +297,7 @@ void pasarDeLista(t_tripulante* tripulante){
 			break;
 
 		default:
-			log_error(logDiscordiador,"------No se reconoce el estado", tripulante->idTripulante);
+			log_error(logDiscordiador,"No se reconoce el estado", tripulante->idTripulante);
 			exit(1);
 	}
 }
@@ -367,11 +363,13 @@ char* deserializarString (t_paquete* paquete){
 
 
 void actualizarEstadoEnRAM(t_tripulante* tripulante){
-	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE);
-	if(!confirmacion(miRAMsocket))
-		log_error(logDiscordiador,"No se pudo actalizar en miRam el estado "
-				"del tripulante %d", tripulante->idTripulante);
-	close(miRAMsocket);
+	if(tripulante->estado != EXIT){
+		int miRAMsocket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE);
+		if(!confirmacion(miRAMsocket))
+			log_error(logDiscordiador,"No se pudo actalizar en miRam el estado "
+					"del tripulante %d", tripulante->idTripulante);
+		close(miRAMsocket);
+	}
 }
 
 
@@ -578,18 +576,12 @@ void ponerEnSabotaje(t_tripulante* unTripulante){
 }
 
 
-// FUNCION 2
-void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
-
+void mandarTCBaMiRAM(t_tripulante* tripulante){
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, TRIPULANTE);
-
-	recibirTareaDeMiRAM(miRAMsocket, tripulante);
-
-
 	close(miRAMsocket);
 }
 
-// FUNCION 3
+
 void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, SIGUIENTE_TAREA);
@@ -602,7 +594,7 @@ void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 	close(miRAMsocket);
 }
 
-//FUNCION 4
+
 void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 	t_paquete* paqueteRecibido = recibirPaquete(socketMiRAM);
@@ -617,8 +609,6 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
 			tripulante->estado = EXIT;
-			int socket = enviarA(puertoEIPRAM, tripulante, EXPULSAR);
-			close(socket);
 			log_info(logDiscordiador,"El tripulante %d ya no le quedan tareas por hacer", tripulante->idTripulante);
 		}
 
