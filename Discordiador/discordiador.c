@@ -149,7 +149,6 @@ void hiloSabotaje(){
 void hiloTripulante(t_tripulante* tripulante){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
-	int primeraVez = 1;
 	int quantumPendiente = quantum;
 	t_avisoTarea* avisoTarea = NULL;
 
@@ -163,13 +162,6 @@ void hiloTripulante(t_tripulante* tripulante){
 				sem_wait(&tripulante->semaforoInicio);
 				break;
 			case READY:
-				if(primeraVez == 1) {
-					recibirProximaTareaDeMiRAM(tripulante);
-					primeraVez = 0;
-				}
-				if(ciclosExec == 0){
-					ciclosExec = calculoCiclosExec(tripulante);
-				}
 				quantumPendiente = quantum;
         
 				log_info(logDiscordiador,"el tripulante %d esta en ready con %d ciclos exec",
