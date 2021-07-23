@@ -46,11 +46,11 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		pthread_detach(t);
+		//pthread_detach(t);
 		//free(t);
 		//Para hacerle free hay que pasarlo por parametro en pthread_create
 
-		//pthread_join(t, (void**) NULL);
+		pthread_join(t, (void**) NULL);
     }
 }
 
@@ -101,18 +101,12 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		case TRIPULANTE:
 		{
 			log_info(logMemoria,"Voy a deserializar un tripulante");
-			t_tarea* tarea = deserializarTripulante(paquete);
-			if(tarea != NULL)
-			{
-				log_info(logMemoria,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
-				mandarTarea(tarea, tripulanteSock);
-			}
+			res = deserializarTripulante(paquete);
+			log_info(logMemoria,"El resultado de la operacion es: %d",res);
+			if(res)
+				mandarConfirmacionDisc("OK", tripulanteSock);
 			else
-			{
-				log_info(logMemoria,"Se procede a enviar la TAREA ERROR");
-				t_tarea* tareaError = tarea_error();
-				mandarTarea(tareaError, tripulanteSock);
-			}
+				mandarConfirmacionDisc("ERROR", tripulanteSock);
 			break;
 		}
 		case EXPULSAR:
@@ -363,7 +357,6 @@ int deserializarInfoPCB(t_paquete* paquete) {
 
 	free(stringTareas);
 
-	//sem_wait(&habilitarPatotaEnRam);
 	return guardarPCB(nuevoPCB,tareasDelimitadas);
 
 }
@@ -392,7 +385,7 @@ char* delimitarTareas(char* stringTareas) {
 }
 
 
-t_tarea* deserializarTripulante(t_paquete* paquete) {
+int deserializarTripulante(t_paquete* paquete) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
 
@@ -421,16 +414,17 @@ t_tarea* deserializarTripulante(t_paquete* paquete) {
 
 	log_info(logMemoria,"Recibi el tribulante de id %d de la  patota %d en estado %c",nuevoTCB->idTripulante, idPatota, nuevoTCB->estado);
 
+	/*
 	if(nuevoTCB->idTripulante == -1){
 		sem_post(&habilitarPatotaEnRam);
 		return tarea_error();
-	}
+	}*/
 
-	t_tarea* tarea = guardarTCB(nuevoTCB,idPatota);
+	int confirmacion = guardarTCB(nuevoTCB,idPatota);
 
 	free(nuevoTCB);
 
-	return tarea;
+	return confirmacion;
 
 	//NOS QUEDAMOS ACA
 	//BUSCAR EN RAM LA TAREA A DARLE, YA ENTRA EN JUEGO EL TEMA DE IR A BUSCAR A LAS PAGINAS SEGUN DESPLAZ ETC.
@@ -540,11 +534,15 @@ t_tarea* armarTarea(char* string){
 
 	    } else {
 	        tarea->nombreTarea = strdup(arrayParametros[0]);
+	        tarea->parametro = 0;
 	    }
 	    tarea->coordenadas.posX = (uint32_t) atoi(arrayParametros[1]);
 	    tarea->coordenadas.posY = (uint32_t) atoi(arrayParametros[2]);
 	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 	    liberarDoblesPunterosAChar(arrayParametros);
+
+	    log_info(logMemoria, "TAREA - NOMBRE: %s - PARAMETRO: %d - POSX: %d - POSY: %d - TIEMPO: %d",
+	    		tarea->nombreTarea, tarea->parametro, tarea->coordenadas.posX, tarea->coordenadas.posY, tarea->tiempo);
 
 	    return tarea;
 }
@@ -627,7 +625,7 @@ int guardarPCB(pcb* pcbAGuardar, char* stringTareas) {
 }
 
 
-t_tarea* guardarTCB(tcb* tcbAGuardar, int idPatota) {
+int guardarTCB(tcb* tcbAGuardar, int idPatota) {
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		return guardarTCBPag(tcbAGuardar, idPatota);

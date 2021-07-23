@@ -1,7 +1,7 @@
 #include "segmentacion.h"
 
 
-t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
+int guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
 	tcbAGuardar->dlPatota = 0;
@@ -15,12 +15,10 @@ t_tarea* guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 	if(res == 0){
 		log_info(logMemoria,"No se pudo crear el tripulante %d por memoria llena", tcbAGuardar->idTripulante);
 		chequearUltimoTripulanteSeg(tablaSegmentosPatotaActual);
-		return NULL;
+		return 0;
 	}
 
-	t_tarea* tarea = irABuscarSiguienteTareaSeg(tablaSegmentosPatotaActual, tcbAGuardar);
-
-	return tarea;
+	return 1;
 }
 
 

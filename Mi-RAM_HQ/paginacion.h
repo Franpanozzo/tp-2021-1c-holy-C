@@ -101,7 +101,7 @@ t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
 int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
 t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* );
-t_tarea* guardarTCBPag(tcb*, int);
+int guardarTCBPag(tcb*, int);
 int guardarPCBPag(pcb*, char*);
 uint32_t estimarDLTareasPag();
 uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* );
@@ -127,6 +127,7 @@ void dumpPag();
 int obtener_tiempo();
 void ejecutar_reemplazo(void*, t_info_pagina*, int);
 t_list* buscarInfosPaginasEnRam();
+t_info_pagina* paginaAReemplazar();
 
 
 

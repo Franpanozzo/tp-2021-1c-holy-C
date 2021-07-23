@@ -602,10 +602,17 @@ void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, TRIPULANTE);
 
 	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal",
-			tripulante->idTripulante);
+				tripulante->idTripulante);
 
-	recibirTareaDeMiRAM(miRAMsocket, tripulante);
+	bool a = confirmacion(miRAMsocket);
 
+	if(!a) {
+		eliminarTripulante(tripulante->idTripulante);
+		log_error(logDiscordiador,"El tripulante %d no ha podido ser alocado en memoria "
+				"porque no hay espacio", tripulante->idTripulante);
+	}else {
+		log_info(logDiscordiador, "El tripulante fue guardado en memoria correctamente");
+	}
 
 	close(miRAMsocket);
 }
