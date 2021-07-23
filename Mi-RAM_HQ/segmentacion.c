@@ -74,7 +74,11 @@ t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* tablaSegmentosPatota
 		log_info(logMemoria,"Sacando tarea: %s",tarea);
 		log_info(logMemoria,"Proximo a leer: %s",aux);
 	}
-	tcbAGuardar->proximaAEjecutar++;
+
+	if(*aux != '\0')
+	{
+		tcbAGuardar->proximaAEjecutar++;
+	}
 
 	log_info(logMemoria,"TCB prox a ejecutar quedo en: %d", tcbAGuardar->proximaAEjecutar);
 
@@ -86,11 +90,20 @@ t_tarea* irABuscarSiguienteTareaSeg(t_tablaSegmentosPatota* tablaSegmentosPatota
 
 	if(*tarea == '|') tarea = string_substring_from(tarea,1);
 
-	t_tarea* tareaAMandar = armarTarea(tarea);
+	t_tarea* tareaAMandar;
+
+	if(*aux == '\0' && string_is_empty(tarea))
+	{
+		tareaAMandar = tarea_nula();
+	}
+	else
+	{
+		tareaAMandar = armarTarea(tarea);
+	}
+
 	free(aux);
 	free(segmentoConTarea);
 	free(tarea);
-
 	return tareaAMandar;
 }
 

@@ -48,7 +48,7 @@ typedef struct {
     int bytesDisponibles; // COMO IDENTIFICAMOS SI ES UN PCB, TCB O TAREAS ??
     t_list* estructurasAlojadas;
     int tiempo_uso;
-    //otros datos..
+    int bitDeUso;
 } t_info_pagina;
 
 typedef struct {
@@ -69,6 +69,7 @@ t_bitarray* frames_ocupados_virtual;
 int cant_frames_ppal;
 int cant_frames_virtual;
 int tiempo;
+int punteroClock;
 
 t_list* tablasPaginasPatotas;
 
@@ -111,7 +112,9 @@ t_alojado* obtenerAlojadoPagina(t_list* , int);
 int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* , tcb*);
 int frameTotalmenteLibre(int, int);
 t_list* paginasConTripu(t_list*, uint32_t );
-int sobreescribirTripu(t_list* , tcb* , int);
+
+int sobreescribirTripu(t_list* , tcb*, int);
+
 int actualizarTripulantePag(tcb* , int);
 tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
 t_tarea* asignarProxTareaPag(int , int);

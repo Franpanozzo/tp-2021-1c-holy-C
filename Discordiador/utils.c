@@ -508,11 +508,19 @@ void eliminarTripulante(int id){
 		tripulanteAeliminar = (t_tripulante*)list_remove_by_condition(arrayListas[i]->elementos, (void*)esElBuscado);
 	}
 
-	//log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
-	tripulanteAeliminar->estado = EXIT;
+
+	log_info(logDiscordiador, "Se aniadio al tripulante %d", tripulanteAeliminar->idTripulante);
+	lock(&listaAeliminar->mutex);
+	list_add(listaAeliminar->elementos, tripulanteAeliminar);
+	unlock(&listaAeliminar->mutex);
+	if(enviarRam == 0){
 	int socket = enviarA(puertoEIPRAM, tripulanteAeliminar, EXPULSAR);
 	close(socket);
-	pasarDeLista(tripulanteAeliminar);
+	}
+	if(enviarRam == 1) {
+		enviarRam = 0;
+	}
+
 }
 
 
@@ -656,14 +664,16 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 	    			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
-			tripulante->estado = EXIT;
-			int socket = enviarA(puertoEIPRAM, tripulante, EXPULSAR);
-			close(socket);
+
+			enviarRam = 1;
+			eliminarTripulante(tripulante->idTripulante);
+
 			log_info(logDiscordiador,"El tripulante %d ya no le quedan tareas por hacer", tripulante->idTripulante);
 		}
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_ERROR") == 0){
-			tripulante->idTripulante = EXIT;
+
+			eliminarTripulante(tripulante->idTripulante);
 
 			log_info(logDiscordiador,"El tripulante %d no ha podido ser alocado en memoria "
 					"porque no hay espacio", tripulante->idTripulante);

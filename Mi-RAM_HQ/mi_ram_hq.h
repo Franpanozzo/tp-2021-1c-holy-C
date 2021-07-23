@@ -4,7 +4,7 @@
 #include "estructuras.h"
 #include "paginacion.h"
 
-t_log* logMiRAM;
+t_log* logMemoria;
 
 
 void cargar_configuracion();
@@ -46,6 +46,7 @@ t_tarea* asignarProxTarea(int, int);
 int actualizarTripulante(tcb* , int);
 char* pathLogRam();
 char* pathLogMemoria();
+t_tarea* tarea_nula();
 
 
 #endif
