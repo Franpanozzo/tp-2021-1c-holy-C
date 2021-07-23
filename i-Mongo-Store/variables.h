@@ -35,11 +35,13 @@ typedef struct{
 }t_datosConfig;
 
 typedef struct {
+
 	t_config* config;
 	t_file* file;
 	pthread_mutex_t* mutex;
 	char * path;
 	bool configSeCreo;
+
 }tarea;
 
 pthread_mutex_t mutexSuperBloque;

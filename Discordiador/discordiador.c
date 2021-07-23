@@ -5,7 +5,7 @@ int main() {
 	char * path = pathLog();
 	logDiscordiador = iniciarLogger(path,"Discordiador",1);
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
-	enviarRam = 0;
+
 
 	iniciarMutex();
 	iniciarListas();
@@ -27,7 +27,7 @@ int main() {
 	sem_init(&sabotaje->semaforoCorrerSabotaje,0,0);
 	sem_init(&sabotaje->semaforoTerminoTripulante,0,0);
 	sem_init(&sabotaje->semaforoTerminoSabotaje,0,0);
-	sem_init(&semUltimoTripu,0,0);
+	sem_init(&semPlanificacion,0,0);
 
 
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
@@ -49,7 +49,10 @@ int main() {
 
 void hiloPlanificador(){
 	while(1){
-		if(leerPlanificacion() == CORRIENDO && totalTripulantes() > 0){
+		sem_wait(&semPlanificacion);
+		sem_post(&semPlanificacion);
+
+		if(totalTripulantes() > 0){
 
 			comunicarseConTripulantes(listaExec, (void*)esperarTerminarTripulante);
 			comunicarseConTripulantes(listaBlocked, (void*)esperarTerminarTripulante);
@@ -152,6 +155,7 @@ void hiloTripulante(t_tripulante* tripulante){
 				recibirPrimerTareaDeMiRAM(tripulante);
 				//sem_post(&semUltimoTripu);
 				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case READY:
@@ -165,6 +169,7 @@ void hiloTripulante(t_tripulante* tripulante){
 						distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas));
 
 				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case EXEC:
@@ -211,6 +216,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					}
 				}
 				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case BLOCKED:
@@ -227,9 +233,12 @@ void hiloTripulante(t_tripulante* tripulante){
 					}
 				}
 				sem_post(&tripulante->semaforoFin);
+				sem_wait(&tripulante->semaforoInicio);
 				break;
 
 			case SABOTAJE:
+				sem_wait(&semPlanificacion);
+				sem_post(&semPlanificacion);
 				ciclosExec = 0;
 				if(distancia(tripulante->coordenadas, sabotaje->coordenadas) > 0){
 					desplazarse(tripulante, sabotaje->coordenadas);
@@ -256,12 +265,16 @@ void hiloTripulante(t_tripulante* tripulante){
 				log_error(logDiscordiador,"el tripulante %d no deberia estar aca", tripulante->idTripulante);
 				break;
 		}
-		if(tripulante->estado != SABOTAJE && tripulante->estado != EXIT){
-			sem_wait(&tripulante->semaforoInicio);
-		}
 	}
+
 	log_info(logDiscordiador,"el tripulante %d con estado %s esta por terminar el hilo", tripulante->idTripulante,
 											traducirEstado(tripulante->estado));
+
+	if(patotaSinTripulantes(tripulante->idPatota)){
+		log_info(logDiscordiador,"Ya no quedan tripus de la patota %d", tripulante->idPatota);
+		eliminiarPatota(tripulante->idPatota);
+	}
+	log_info(logDiscordiador,"FIN");
 }
 
 

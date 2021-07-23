@@ -23,7 +23,7 @@ void generarBasura(t_tarea*,int*);
 void actualizarEstructurasFile(t_file*, t_config*, pthread_mutex_t *);
 void descartarBasura(t_tarea*,int*);
 void mandarErrorAdiscordiador(int*);
-int* obtenerArrayDePosiciones(int);
+int* obtenerArrayDePosiciones(int , tarea*);
 bool bloquesLibres(int);
 void actualizarPosicionesFile(t_file*, int*, t_config*,int);
 int min(int ,int );

@@ -30,7 +30,7 @@
 	t_estado estadoAcomparar;
 	t_sabotaje* sabotaje;
 
-	sem_t semUltimoTripu;
+	sem_t semPlanificacion;
 
 	char** todasLasTareasIO;
 

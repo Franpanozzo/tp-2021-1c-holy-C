@@ -168,7 +168,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 						{
 									log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO \n");
 
-									consumirOxigeno(tarea,tripulanteSock);
+									//consumirOxigeno(tarea,tripulanteSock);
 
 									break;
 						}
@@ -188,7 +188,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 						{
 									log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA \n");
 
-									consumirComida(tarea,tripulanteSock);
+									//consumirComida(tarea,tripulanteSock);
 
 									break;
 
@@ -210,7 +210,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 						{
 									log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
 
-									descartarBasura(tarea,tripulanteSock);
+									//descartarBasura(tarea,tripulanteSock);
 
 									break;
 
@@ -303,6 +303,7 @@ void crearFileSystemDesdeCero(){
 
 	}
 
+
 	for(int i=superBloque->blocks; i<cantidadPosicionesBitArray ; i++){
 
 		bitarray_set_bit(superBloque->bitmap, i);
@@ -327,11 +328,6 @@ void crearFileSystemDesdeCero(){
 
 		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
 	}
-
-	if(mkdir(pathBitacora,0777) != 0){
-
-			log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
-		}
 
 	crearMemoria(fd);
 
