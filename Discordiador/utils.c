@@ -38,7 +38,6 @@ void iniciarListas(){
 	pthread_mutex_init(&listaBlocked->mutex, NULL);
 	pthread_mutex_init(&listaSabotaje->mutex, NULL);
 	pthread_mutex_init(&listaExit->mutex, NULL);
-
 }
 
 
@@ -205,7 +204,6 @@ t_patota* asignarDatosAPatota(char* tareasString){
 	patota->ID = idPatota;
 	patota->tareas = tareasString;
 
-	log_info(logDiscordiador,"Se creo la patota numero %d",idPatota);
 	return patota;
 }
 
@@ -249,7 +247,7 @@ void elegirTripulanteAbloquear(){
 	t_tripulante* tripulanteBlocked = (t_tripulante*) list_get(listaBlocked->elementos, 0);
 	unlock(&listaBlocked->mutex);
 	idTripulanteBlocked = tripulanteBlocked->idTripulante;
-	log_info(logDiscordiador,"------EL TRIPU BLOQUEADO ES %d-----", idTripulanteBlocked);
+	log_info(logDiscordiador,"------EL TRIPULANTE BLOQUEADO ES EL %d-----", idTripulanteBlocked);
 }
 
 
@@ -274,36 +272,36 @@ void pasarDeLista(t_tripulante* tripulante){
 		case READY:
 			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaReady);
-			log_info(logDiscordiador,"El tripulante %d paso a COLA READY", tripulante->idTripulante);
+			log_info(logDiscordiador,"------El tripulante %d paso a COLA READY", tripulante->idTripulante);
 			sem_post(&tripulante->semaforoInicio);
 			break;
 
 		case EXEC:
 			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaExec);
-			log_info(logDiscordiador,"El tripulante %d paso a COLA EXEC", tripulante->idTripulante);
+			log_info(logDiscordiador,"------El tripulante %d paso a COLA EXEC", tripulante->idTripulante);
 			break;
 
 		case BLOCKED:
 			actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaBlocked);
-			log_info(logDiscordiador,"El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
+			log_info(logDiscordiador,"------El tripulante %d paso a COLA BLOCKED", tripulante->idTripulante);
 			break;
 
 		case SABOTAJE:
 			//actualizarEstadoEnRAM(tripulante);
 			meterEnLista(tripulante, listaSabotaje);
-			log_info(logDiscordiador,"El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
+			log_info(logDiscordiador,"------El tripulante %d paso a COLA SABOTAJE", tripulante->idTripulante);
 			break;
 
 		case EXIT:
 			meterEnLista(tripulante, listaExit);
-			log_info(logDiscordiador,"El tripulante %d paso a COLA EXIT", tripulante->idTripulante);
+			log_info(logDiscordiador,"------El tripulante %d paso a COLA EXIT", tripulante->idTripulante);
 			sem_post(&tripulante->semaforoInicio);
 			break;
 
 		default:
-			log_error(logDiscordiador,"No se reconoce el estado", tripulante->idTripulante);
+			log_error(logDiscordiador,"------No se reconoce el estado", tripulante->idTripulante);
 			exit(1);
 	}
 }
@@ -320,7 +318,6 @@ bool patotaSinTripulantes(uint32_t idPatota){
 	}
 
 	bool esDeLaPatota(t_tripulante* tripulante){
-		log_info(logDiscordiador,"El tripu %d es de la patota %d", tripulante->idTripulante, tripulante->idPatota);
 		return idPatota == tripulante->idPatota;
 	}
 
@@ -525,8 +522,8 @@ void eliminarPatota(t_patota* patota){
 
 
 void liberarTripulante(t_tripulante* tripulante){
-	//log_info(logDiscordiador, "Eliminando el tripulante: %d, y su ultima tarea fue: %s",
-	//		tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+	log_info(logDiscordiador, "Eliminando el tripulante: %d, y su ultima tarea fue: %s",
+			tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 	free(tripulante->instruccionAejecutar->nombreTarea);
 	free(tripulante->instruccionAejecutar);
 	free(tripulante);
@@ -586,9 +583,6 @@ void recibirPrimerTareaDeMiRAM(t_tripulante* tripulante){
 
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, TRIPULANTE);
 
-	log_info(logDiscordiador, "tripulanteId: %d envie a MIRAM mi info principal",
-			tripulante->idTripulante);
-
 	recibirTareaDeMiRAM(miRAMsocket, tripulante);
 
 
@@ -600,7 +594,7 @@ void recibirProximaTareaDeMiRAM(t_tripulante* tripulante){
 
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, SIGUIENTE_TAREA);
 
-	log_info(logDiscordiador, "TRIPULANTE: %d - VOY A BUSCAR PROX TAREA A MI RAM",
+	log_info(logDiscordiador, "el tripulante %d va a buscar su proxima tarea a ram",
 		    			tripulante->idTripulante);
 
 	recibirTareaDeMiRAM(miRAMsocket,tripulante);
