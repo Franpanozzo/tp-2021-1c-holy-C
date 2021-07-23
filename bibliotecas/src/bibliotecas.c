@@ -1,6 +1,6 @@
 #include "bibliotecas.h"
 
-// anda
+
 int iniciarConexionDesdeClienteHacia(void* port){ //Este iniciarConexionCon lleva parametro porque puede elegir si conectarse con Mongo o RAM
 
 	puertoEIP* puertoEIPAConectar = (puertoEIP*) port; // Castear parámetro que recibo por referencia
@@ -277,7 +277,6 @@ void* serializarSolicitudSiguienteTarea(void* stream, void* estructura, int offs
 
 	return stream;
 }
-
 
 void* serializarDesplazamiento(void* stream, void* estructura, int offset){
 	t_desplazamiento* desplazamiento = (t_desplazamiento*) estructura;
