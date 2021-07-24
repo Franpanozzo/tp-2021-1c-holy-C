@@ -684,6 +684,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			structTarea->file->tamanioArchivo += caracteresAOcupar;
 			char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
 			config_set_value(structTarea->config,"SIZE",tamanioArchivo);
+			config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
 			free(tamanioArchivo);
 			config_save(structTarea->config);
 
