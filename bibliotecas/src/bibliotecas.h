@@ -81,7 +81,7 @@
 		t_tarea* instruccionAejecutar;
 		sem_t semaforoInicio;
 		sem_t semaforoFin;
-		bool estaVivo;
+		pthread_mutex_t mutexEstado;
 	} t_tripulante;
 
 	typedef struct{

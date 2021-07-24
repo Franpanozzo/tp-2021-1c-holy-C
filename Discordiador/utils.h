@@ -11,6 +11,8 @@
 	void cargarConfiguracion();
 	char * pathLog();
 
+	t_estado leerEstado(t_tripulante*);
+	void modificarEstado(t_tripulante*, t_estado);
 	void modificarTripulanteBlocked(int);
 	int leerTripulanteBlocked();
 	void modificarPlanificacion(int);

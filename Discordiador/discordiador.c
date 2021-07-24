@@ -20,7 +20,7 @@ int main() {
 
 	idTripulante = 0;
 	idPatota = 0;
-	idTripulanteBlocked = NO_HAY_TRIPULANTE_BLOQUEADO;
+	modificarTripulanteBlocked(NO_HAY_TRIPULANTE_BLOQUEADO);
 	modificarPlanificacion(PAUSADA);
 
 	sem_init(&sabotaje->semaforoIniciarSabotaje,0,0);
@@ -137,8 +137,8 @@ void hiloTripulante(t_tripulante* tripulante){
 	int quantumPendiente = quantum;
 	t_avisoTarea* avisoTarea = NULL;
 
-	while(tripulante->estado != EXIT){
-		switch(tripulante->estado){
+	while(leerEstado(tripulante) != EXIT){
+		switch(leerEstado(tripulante)){
 
 			case NEW:
 				log_info(logDiscordiador,"el tripulante %d esta en new", tripulante->idTripulante);
@@ -192,7 +192,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					ciclosExec --;
 				}
 				if(quantumPendiente == 0){
-					tripulante->estado = READY;
+					modificarEstado(tripulante, READY);
 				}
 				if(ciclosExec <= 0){
 
@@ -205,7 +205,7 @@ void hiloTripulante(t_tripulante* tripulante){
 						int socketMongo = enviarA(puertoEIPMongo, tripulante->instruccionAejecutar, TAREA);
 						close(socketMongo);
 						ciclosBlocked = tripulante->instruccionAejecutar->tiempo;
-						tripulante->estado = BLOCKED;
+						modificarEstado(tripulante, BLOCKED);
 					}
 					else{
 						recibirProximaTareaDeMiRAM(tripulante);
@@ -224,7 +224,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					ciclosBlocked --;
 					if(ciclosBlocked == 0){
 						modificarTripulanteBlocked(NO_HAY_TRIPULANTE_BLOQUEADO);
-						tripulante->estado = READY;
+						modificarEstado(tripulante, READY);
 						recibirProximaTareaDeMiRAM(tripulante);
 						ciclosExec = calculoCiclosExec(tripulante);
 					}
@@ -302,12 +302,12 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	tripulante->coordenadas.posY = coordenada.posY;
 	tripulante->idTripulante = idTripulante;
 	tripulante->idPatota = idPatota;
-	tripulante->estado = NEW;
+	pthread_mutex_init(&tripulante->mutexEstado, NULL);
+	modificarEstado(tripulante, NEW);
 	tripulante->instruccionAejecutar = malloc(sizeof(t_tarea*));
 	tripulante->instruccionAejecutar->nombreTarea = malloc(sizeof(char*));
 	sem_init(&tripulante->semaforoInicio, 0, 0);
 	sem_init(&tripulante->semaforoFin, 0, 0);
-	tripulante->estaVivo = 1;
 
 	if(sabotaje->haySabotaje)
 		meterEnLista(tripulante, listaSabotaje);
@@ -328,6 +328,8 @@ void actualizarListaNew(){
 			actualizarEstadoEnRAM(tripulante);
 			recibirProximaTareaDeMiRAM(tripulante);
 	}
+
+	lock(&listaNew->mutex);
 
 	log_info(logDiscordiador,"------Iniciando planficacion cola de new con %d tripulantes-----",
 				list_size(listaNew->elementos));
@@ -376,7 +378,7 @@ void actualizarListaExec(){
 
 void actualizarListaBlocked(){
 	actualizarListaEyB(listaBlocked, BLOCKED);
-	if(idTripulanteBlocked == NO_HAY_TRIPULANTE_BLOQUEADO && list_size(listaBlocked->elementos) > 0)
+	if(leerTripulanteBlocked() == NO_HAY_TRIPULANTE_BLOQUEADO && list_size(listaBlocked->elementos) > 0)
 		elegirTripulanteAbloquear();
 }
 
@@ -384,7 +386,7 @@ void actualizarListaBlocked(){
 void actualizarListaEyB(t_lista* lista, t_estado estado){
 
 	bool tieneDistintoEstado(t_tripulante* tripulante){
-		return estado != tripulante->estado;
+		return estado != leerEstado(tripulante);
 	}
 
 	lock(&lista->mutex);
