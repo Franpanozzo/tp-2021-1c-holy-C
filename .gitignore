@@ -50,11 +50,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-/Debug/
 
-/Discordiador/Debug/
-/i-Mongo-Store/Debug/
-/Mi-RAM_HQ/Debug
 *.log
 *.tmp
 
