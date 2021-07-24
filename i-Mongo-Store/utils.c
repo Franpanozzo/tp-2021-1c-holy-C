@@ -603,7 +603,9 @@ int fragmentacionInterna(tarea* structTarea,t_tarea* _tarea){
 
 			}
 
+			lock(&mutexMemoriaSecundaria);
 			memcpy(copiaMemoriaSecundaria + (ultimoBloqueDeLaTarea * superBloque->block_size),bloque,superBloque->block_size);
+			unlock(&mutexMemoriaSecundaria);
 
 			free(bloque);
 
@@ -634,8 +636,9 @@ int fragmentacionInterna(tarea* structTarea,t_tarea* _tarea){
 
 
 	}
-
+		lock(&mutexMemoriaSecundaria);
 		memcpy(copiaMemoriaSecundaria + (ultimoBloqueDeLaTarea * superBloque->block_size),bloque,superBloque->block_size);
+		unlock(&mutexMemoriaSecundaria);
 
 		free(bloque);
 
@@ -726,7 +729,9 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		}
 
+
 		bloquesAocupar = fragmentacionInterna(structTarea,_tarea);
+
 
 		if(bloquesAocupar > 0){
 

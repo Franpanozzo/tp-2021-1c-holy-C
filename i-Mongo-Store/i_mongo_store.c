@@ -22,7 +22,7 @@ int main(void) {
 	iniciarFileSystem();
 
 	pthread_create(&hiloSincronizador, NULL, (void*) sincronizarMemoriaSecundaria, NULL);
-	pthread_join(hiloSincronizador,(void*) NULL);
+	pthread_detach(hiloSincronizador);
 
 	int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
