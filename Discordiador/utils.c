@@ -456,8 +456,8 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 
 //	desplazamiento.fin = tripulante->coordenadas;
 
-	enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE); // FALTA EL CLOSE
-  close(puertoEIPRAM);
+	int socket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE); // FALTA EL CLOSE
+    close(socket);
 //	enviarA(puertoEIPMongo, tripulante, DESPLAZAMIENTO);
 //	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",
 //			tripulante->coordenadas.posX, tripulante->coordenadas.posY);
