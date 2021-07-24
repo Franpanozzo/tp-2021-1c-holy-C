@@ -19,14 +19,9 @@ void leerConsola(){
 			cursor ++;
 
 			uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
-			log_info(logDiscordiador, "La cantidad de tripulantes es: %d",cantidadTripulantes);
 			char* tareas = procesarPathTareas(comandoYparametros, &cursor);
-			log_info(logDiscordiador, "Las tareas son: %s\n",tareas);
+			log_info(logDiscordiador, "Las tareas son: %s",tareas);
 			t_coordenadas* coordenadasTripulantes= procesarPosicionesTripulantes(comandoYparametros, cantidadTripulantes, &cursor);
-			log_info(logDiscordiador, "Las coordenadas son:");
-			for(int i=0; i<cantidadTripulantes; i++){
-				log_info(logDiscordiador,"---posx:%d;posy:%d---",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
-			}
 
 			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
 
@@ -35,13 +30,24 @@ void leerConsola(){
 
 		}
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
-			modificarPlanificacion(CORRIENDO);
-			log_info(logDiscordiador, "Se inicio la planificacion");
-
+			if(leerPlanificacion() == PAUSADA){
+				modificarPlanificacion(CORRIENDO);
+				log_info(logDiscordiador, "Se inicio la planificacion");
+				sem_post(&semPlanificacion);
+			}
+			else{
+				log_info(logDiscordiador, "La planificacion ya esta iniciada");
+			}
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
-			modificarPlanificacion(PAUSADA);
-			log_info(logDiscordiador, "Se pauso la planificacion");
+			if(leerPlanificacion() == CORRIENDO){
+				modificarPlanificacion(PAUSADA);
+				log_info(logDiscordiador, "Se pauso la planificacion");
+				sem_wait(&semPlanificacion);
+			}
+			else{
+				log_info(logDiscordiador, "La planificacion ya esta pausada");
+			}
 		}
 
 		else if (strcmp(comandoYparametros[cursor], "LISTAR_TRIPULANTES") == 0){

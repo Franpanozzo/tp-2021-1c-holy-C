@@ -46,11 +46,11 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		pthread_detach(t);
+		//pthread_detach(t);
 		//free(t);
 		//Para hacerle free hay que pasarlo por parametro en pthread_create
 
-		//pthread_join(t, (void**) NULL);
+		pthread_join(t, (void**) NULL);
     }
 }
 
@@ -197,13 +197,37 @@ char* asignar_bytes(int cant_frames)
 
 void iniciarMemoria() {
 
+	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
+
+	memoria_principal = malloc(configRam.tamanioMemoria);
+
+	log_info(logMemoria,"El esquema usado es %s", configRam.esquemaMemoria);
+
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		tablasPaginasPatotas = list_create();
+
+		cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
+		log_info(logMemoria, "RAM FRAMES: %d", cant_frames_ppal);
+		char* data = asignar_bytes(cant_frames_ppal);
+		frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
+
+		cant_frames_virtual = configRam.tamanioSwap / configRam.tamanioPagina;
+		log_info(logMemoria, "SWAP FRAMES: %d\n",cant_frames_virtual);
+		char* data2 = asignar_bytes(cant_frames_virtual);
+		frames_ocupados_virtual = bitarray_create_with_mode(data2, cant_frames_virtual/8, MSB_FIRST);
+
 	}
 	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
+		log_info(logMemoria,"El criterio de seleccion usado es %s", configRam.criterioSeleccion);
 		tablasSegmentosPatotas = list_create();
+
+	    lugaresLibres = list_create();
+	    t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
+	    lugarInicial->inicio = 0;
+	    lugarInicial->bytesAlojados = configRam.tamanioMemoria;
+	    list_add(lugaresLibres,lugarInicial);
 	}
 
     signal(SIGUSR1, hacerDump);
@@ -227,30 +251,6 @@ void iniciarMemoria() {
 
 	tiempo = 0;
 	punteroClock = 0;
-
-	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
-
-	memoria_principal = malloc(configRam.tamanioMemoria);
-
-	//memset(memoria_principal,'$',configRam.tamanioMemoria);
-
-	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
-    log_info(logMemoria, "RAM FRAMES: %d", cant_frames_ppal);
-    char* data = asignar_bytes(cant_frames_ppal);
-    frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
-
-    cant_frames_virtual = configRam.tamanioSwap / configRam.tamanioPagina;
-    log_info(logMemoria, "SWAP FRAMES: %d\n",cant_frames_virtual);
-    char* data2 = asignar_bytes(cant_frames_virtual);
-    frames_ocupados_virtual = bitarray_create_with_mode(data2, cant_frames_virtual/8, MSB_FIRST);
-
-    lugaresLibres = list_create();
-    t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
-    lugarInicial->inicio = 0;
-    lugarInicial->bytesAlojados = configRam.tamanioMemoria;
-    list_add(lugaresLibres,lugarInicial);
-
-	log_info(logMemoria,"El esquema usado es %s", configRam.esquemaMemoria);
 
 }
 

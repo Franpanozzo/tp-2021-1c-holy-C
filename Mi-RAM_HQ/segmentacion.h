@@ -63,6 +63,10 @@ t_lugarLibre* buscarLugarLibre(int);
 void eliminarTablaPatota(t_tablaSegmentosPatota*);
 void mostrarLugaresLibres();
 void liberarSegmento(t_info_segmento*);
+void mostrarLugaresLibresEnArchivo(FILE*);
+void unificarLugaresLibres();
+bool contieneLugarLibre(t_list*, t_lugarLibre*);
+
 
 
 

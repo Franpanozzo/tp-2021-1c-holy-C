@@ -1,10 +1,9 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
-	#include "discordiador.h"
+  #include "discordiador.h"
 	#include "variables.h"
 
-	int enviarRam;
 
 	void iniciarTareasIO();
 	void iniciarListas();
@@ -28,6 +27,8 @@
 	void comunicarseConTripulantes(t_lista*, void(*closure)(void*));
 
 	void pasarDeLista(t_tripulante*);
+	bool patotaSinTripulantes(uint32_t);
+	void eliminiarPatota(uint32_t idPatota);
 	void meterEnLista(t_tripulante* , t_lista*);
 	void* sacarDeLista(t_lista*);
 	void ponerEnSabotaje(t_tripulante*);
@@ -44,7 +45,7 @@
 	bool tripulanteDeMenorId(t_tripulante*, t_tripulante*);
 	t_tripulante* elTripuMasCerca(t_coordenadas);
 
-	void recibirPrimerTareaDeMiRAM(t_tripulante*);
+	void mandarTCBaMiRAM(t_tripulante*);
 	void recibirProximaTareaDeMiRAM(t_tripulante*);
 	void recibirTareaDeMiRAM(int, t_tripulante*);
 	bool confirmacion(int);
@@ -54,8 +55,6 @@
 	void desplazarse(t_tripulante*, t_coordenadas);
 	uint32_t diferencia(uint32_t, uint32_t);
 
-//	void imprimirTripulante(void*);
-	void listarLista(t_lista* lista);
 	void listarTripulantes();
 	char* traducirEstado(t_estado);
 

@@ -1,3 +1,4 @@
+
 #ifndef DISCORDIADOR_H_
 #define DISCORDIADOR_H_
 
@@ -36,6 +37,5 @@ void actualizarListaReady();
 void actualizarListaNew();
 void actualizarListaExec();
 void actualizarListaBlocked();
-void mandarTripulanteNulo();
 
 #endif
