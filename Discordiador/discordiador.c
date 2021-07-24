@@ -199,7 +199,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					}
 					ciclosExec --;
 				}
-				if(quantumPendiente == 0){
+				if(quantumPendiente == 0 && leerEstado(tripulante) != EXIT){
 					modificarEstado(tripulante, READY);
 				}
 				if(ciclosExec <= 0){
@@ -213,7 +213,9 @@ void hiloTripulante(t_tripulante* tripulante){
 						int socketMongo = enviarA(puertoEIPMongo, tripulante->instruccionAejecutar, TAREA);
 						close(socketMongo);
 						ciclosBlocked = tripulante->instruccionAejecutar->tiempo;
-						modificarEstado(tripulante, BLOCKED);
+						if(leerEstado(tripulante) != EXIT){
+							modificarEstado(tripulante, BLOCKED);
+						}
 					}
 					else{
 						recibirProximaTareaDeMiRAM(tripulante);
@@ -232,7 +234,9 @@ void hiloTripulante(t_tripulante* tripulante){
 					ciclosBlocked --;
 					if(ciclosBlocked == 0){
 						modificarTripulanteBlocked(NO_HAY_TRIPULANTE_BLOQUEADO);
-						modificarEstado(tripulante, READY);
+						if(leerEstado(tripulante) != EXIT){
+							modificarEstado(tripulante, READY);
+						}
 						recibirProximaTareaDeMiRAM(tripulante);
 						ciclosExec = calculoCiclosExec(tripulante);
 					}
@@ -266,7 +270,7 @@ void hiloTripulante(t_tripulante* tripulante){
 				break;
 
 			case EXIT:
-				log_error(logDiscordiador,"el tripulante %d no deberia estar aca", tripulante->idTripulante);
+				//log_error(logDiscordiador,"el tripulante %d no deberia estar aca", tripulante->idTripulante);
 				break;
 		}
 	}
