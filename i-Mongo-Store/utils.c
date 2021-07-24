@@ -548,6 +548,8 @@ int fragmentacionDe(int ultimoBloqueTarea){
 
 int ultimoBloqueDeLa(tarea* structTarea){
 
+	if(structTarea->file->cantidadBloques != 0){
+
 	char** bloquesQueOcupa = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
 
 	for(int i=0; i<structTarea->file->cantidadBloques;i++){
@@ -572,7 +574,16 @@ int ultimoBloqueDeLa(tarea* structTarea){
 
 	free(bloquesQueOcupa);
 
+
 	return ultimoBloque;
+
+	}
+
+	else{
+
+		return 0;
+
+	}
 }
 
 
