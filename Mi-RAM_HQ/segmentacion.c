@@ -248,62 +248,21 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 
 	chequearUltimoTripulanteSeg(tablaSegmentosBuscada);
 
+	lock(&mutexBuscarLugarLibre);
 	mostrarLugaresLibres();
+	unlock(&mutexBuscarLugarLibre);
 }
 
 
 void liberarSegmento(t_info_segmento* info_segmento) {
 
-	bool despuesQueSeg(t_lugarLibre* lugarLibre)
-		{
-			int finSegmento = info_segmento->deslazamientoInicial + info_segmento->bytesAlojados;
-			return lugarLibre->inicio == finSegmento;
-		}
-
-		bool antesQueSeg(t_lugarLibre* lugarLibre)
-		{
-			int fin = lugarLibre->inicio + lugarLibre->bytesAlojados;
-			return fin == info_segmento->deslazamientoInicial;
-		}
-
-		lock(&mutexBuscarLugarLibre);
-		t_lugarLibre* lugarLibreAntes = list_find(lugaresLibres, (void*) antesQueSeg);
-		t_lugarLibre* lugarLibreDespues = list_find(lugaresLibres, (void*) despuesQueSeg);
-		unlock(&mutexBuscarLugarLibre);
-
-		if(lugarLibreAntes!= NULL)
-		{
-			log_info(logMemoria, "HAY LUGAR LIBRE ANTES: INICIO:%d ", lugarLibreAntes->inicio);
-
-			if(lugarLibreDespues != NULL)
-			{
-				log_info(logMemoria, "HAY LUGAR LIBRE DESPUES TAMBIEN: INICIO:%d ", lugarLibreDespues->inicio);
-
-				lugarLibreAntes->bytesAlojados += info_segmento->bytesAlojados + lugarLibreDespues->bytesAlojados;
-				borrarLugarLibre(lugarLibreDespues);
-			}
-			else
-			{
-				lugarLibreAntes->bytesAlojados += info_segmento->bytesAlojados;
-			}
-		}
-		else if(lugarLibreDespues != NULL)
-		{
-			log_info(logMemoria, "HAY LUGAR LIBRE DESPUES SOLO: INICIO:%d ", lugarLibreDespues->inicio);
-
-			lugarLibreDespues->inicio = info_segmento->deslazamientoInicial;
-			lugarLibreDespues->bytesAlojados += info_segmento->bytesAlojados;
-		}
-		else // NO TIENE UN LUGAR ANTES NI UNO DESPUES, CREO UN NUEVO LUGAR LIBRE
-		{
-			t_lugarLibre* lugarLibre = malloc(sizeof(t_lugarLibre));
-			lugarLibre->inicio = info_segmento->deslazamientoInicial;
-			lugarLibre->bytesAlojados = info_segmento->bytesAlojados;
-			lock(&mutexBuscarLugarLibre);
-			list_add(lugaresLibres,lugarLibre);
-			unlock(&mutexBuscarLugarLibre);
-		}
-		free(info_segmento);
+	t_lugarLibre* lugarLibre = malloc(sizeof(t_lugarLibre));
+	lugarLibre->inicio = info_segmento->deslazamientoInicial;
+	lugarLibre->bytesAlojados = info_segmento->bytesAlojados;
+	lock(&mutexBuscarLugarLibre);
+	list_add(lugaresLibres,lugarLibre);
+	unlock(&mutexBuscarLugarLibre);
+	free(info_segmento);
 }
 
 
@@ -315,9 +274,7 @@ void mostrarLugaresLibres() {
 
 	}
 
-	lock(&mutexBuscarLugarLibre);
 	list_iterate(lugaresLibres, (void*) imprimirLugarLibre);
-	unlock(&mutexBuscarLugarLibre);
 }
 
 
@@ -367,6 +324,7 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 		if(inicioSegmentoLibre == -1)
 		{
 		log_info(logMemoria, "MEMORIA PRINCIPAL LLENA - NO SE PUEDE CREAR EL SEGMENTO");
+		free(bufferAMeter);
 		return 0;
 		}
 	}
@@ -407,6 +365,7 @@ void borrarLugarLibre(t_lugarLibre* lugarAEliminar) {
 		return lugarLibre->inicio == lugarAEliminar->inicio;
 	}
 	list_remove_by_condition(lugaresLibres, (void*) empiezaEn);
+
 	free(lugarAEliminar);
 }
 
@@ -417,7 +376,7 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 
 	bool entraAMeter(t_lugarLibre* lugarLibre)
 	{
-		return (lugarLibre->bytesAlojados - aMeter) > 0;
+		return (lugarLibre->bytesAlojados - aMeter) >= 0;
 	}
 
 	t_list* lugaresQueEntra = list_filter(lugaresLibres, (void*) entraAMeter);
@@ -536,8 +495,11 @@ void dumpSeg() {
 	list_iterate(tablasSegmentosPatotas,(void*) imprimirTabla);
 	unlock(&mutexTablasSegmentos);
 
-
 	txt_write_in_file(archivoDump, "--------------------------------------------------------------------------\n");
+
+	mostrarLugaresLibresEnArchivo(archivoDump);
+
+	txt_write_in_file(archivoDump, "\n--------------------------------------------------------------------------");
 
 	txt_close_file(archivoDump);
 	free(rutaAbsoluta);
@@ -545,6 +507,22 @@ void dumpSeg() {
 	free(dump);
 	free(nombreArchivo);
 }
+
+void mostrarLugaresLibresEnArchivo(FILE* archivoDump) {
+
+	void imprimirLugarLibre(t_lugarLibre* lugarLibre) {
+
+		char* dumpMarco = string_from_format("LUGAR LIBRE: INICIO: %d - BYTES ALOJADOS: %d\n",lugarLibre->inicio, lugarLibre->bytesAlojados);
+
+		txt_write_in_file(archivoDump, dumpMarco);
+		free(dumpMarco);
+	}
+
+	lock(&mutexBuscarLugarLibre);
+	list_iterate(lugaresLibres, (void*) imprimirLugarLibre);
+	unlock(&mutexBuscarLugarLibre);
+}
+
 
 
 void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivoDump) {
@@ -567,13 +545,17 @@ void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivo
 
 void compactarMemoria() {
 
-	log_info(logMemoria, "SE PROCEDE A HACER LA COMPACTACION");
+	log_info(logMemoria, " --------SE PROCEDE A HACER LA COMPACTACION----------");
 
 	lock(&mutexBuscarLugarLibre);
+
+	unificarLugaresLibres();
+
 	t_lugarLibre* lugarLibre = primerLugarLibre();
 
 	while(lugarLibre->inicio + lugarLibre->bytesAlojados != configRam.tamanioMemoria)
 	{
+
 		int inicioProximoSegmento = lugarLibre->inicio + lugarLibre->bytesAlojados;
 
 		log_info(logMemoria, "EL PRIMER LUGAR LIBRE ARRANCA EN %d - EL INICIO DEL PROX SEG. A BUSCAR ES EN: %d",
@@ -587,7 +569,7 @@ void compactarMemoria() {
 		lugarLibre->inicio += info_segmento->bytesAlojados;
 
 		//CHEQUEAMOS SI HAY UN LUGAR LIBRE LUEGO DEL SWITCHEO PARA UNIRLOS
-	t_lugarLibre* lugarLibre2 = buscarLugarLibre(lugarLibre->inicio + lugarLibre->bytesAlojados);
+		t_lugarLibre* lugarLibre2 = buscarLugarLibre(lugarLibre->inicio + lugarLibre->bytesAlojados);
 
 		if(lugarLibre2 != NULL) //Antes decia "lugarlibre != NULL"
 		{
@@ -602,6 +584,47 @@ void compactarMemoria() {
 	}
 
 	unlock(&mutexBuscarLugarLibre);
+}
+
+
+void unificarLugaresLibres() {
+
+	t_list* lugaresASacar = list_create();
+
+	void unificar(t_lugarLibre* lugarLibre) {
+
+		if(!contieneLugarLibre(lugaresASacar,lugarLibre))
+		{
+			int inicioProximoLugarLibre = lugarLibre->inicio + lugarLibre->bytesAlojados;
+			log_info(logMemoria, "SE BUSCA LUGAR LIBRE PARA UNIFICAR QUE ARRANQUE EN: %d", inicioProximoLugarLibre);
+			t_lugarLibre* lugarLibre2 = buscarLugarLibre(inicioProximoLugarLibre);
+
+			while(lugarLibre2)
+			{
+				log_info(logMemoria, "SE UNE LUGAR LIBRE QUE ARRANCA EN: %d - CON EL QUE ARRANCA EN: %d", lugarLibre->inicio, lugarLibre2->inicio);
+				lugarLibre->bytesAlojados += lugarLibre2->bytesAlojados;
+				list_add(lugaresASacar,lugarLibre2);
+
+				inicioProximoLugarLibre = lugarLibre->inicio + lugarLibre->bytesAlojados;
+				log_info(logMemoria, "SE VUELVE BUSCA LUGAR LIBRE PARA UNIFICAR QUE ARRANQUE EN: %d", inicioProximoLugarLibre);
+				lugarLibre2 = buscarLugarLibre(inicioProximoLugarLibre);
+			}
+		}
+	}
+	list_iterate(lugaresLibres, (void*) unificar);
+
+	list_iterate(lugaresASacar, (void*) borrarLugarLibre);
+	list_destroy(lugaresASacar);
+}
+
+
+bool contieneLugarLibre(t_list* lugaresASacar, t_lugarLibre* lugarLibre) {
+
+	bool tieneLugarLibre(t_lugarLibre* lugarLibre2) {
+		return lugarLibre->inicio == lugarLibre2->inicio;
+	}
+
+	return list_any_satisfy(lugaresASacar, (void*) tieneLugarLibre);
 }
 
 

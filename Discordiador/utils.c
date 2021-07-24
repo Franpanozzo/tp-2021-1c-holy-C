@@ -351,7 +351,7 @@ void eliminiarPatota(uint32_t idPatota){
 		return idPatota == tripulante->idPatota;
 	}
 
-	t_tripulante* tripulante = (t_tripulante*)list_remove_by_condition(listaExit->elementos, (void*)esDeLaPatota);;
+  t_tripulante* tripulante = (t_tripulante*)list_remove_by_condition(listaExit->elementos, (void*)esDeLaPatota);;
 
 	while(tripulante != NULL){
 		liberarTripulante(tripulante);
@@ -372,7 +372,8 @@ char* deserializarString (t_paquete* paquete){
 
 
 void actualizarEstadoEnRAM(t_tripulante* tripulante){
-	if(leerEstado(tripulante) != EXIT){
+  
+	if(leerEstado(tripulante) != EXIT && leerEstado(tripulante) != SABOTAJE) {
 		int miRAMsocket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE);
 		if(!confirmacion(miRAMsocket))
 			log_error(logDiscordiador,"No se pudo actalizar en miRam el estado "
@@ -455,7 +456,8 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 
 //	desplazamiento.fin = tripulante->coordenadas;
 
-//	enviarA(puertoEIPRAM, tripulante, MOVIMIENTO); // FALTA EL CLOSE
+	enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE); // FALTA EL CLOSE
+  close(puertoEIPRAM);
 //	enviarA(puertoEIPMongo, tripulante, DESPLAZAMIENTO);
 //	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",
 //			tripulante->coordenadas.posX, tripulante->coordenadas.posY);
@@ -593,6 +595,13 @@ void ponerEnSabotaje(t_tripulante* unTripulante){
 
 void mandarTCBaMiRAM(t_tripulante* tripulante){
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, TRIPULANTE);
+
+	if(!confirmacion(miRAMsocket)) {
+		tripulante->estado = EXIT;
+
+		log_info(logDiscordiador, "NO HAY ESPACIO EN MEMORIA PARA GUARDAR AL TRIPULANTE DE ID: %d",
+				    			tripulante->idTripulante);
+	}
 	close(miRAMsocket);
 }
 
@@ -624,6 +633,7 @@ void recibirTareaDeMiRAM(int socketMiRAM, t_tripulante* tripulante){
 
 		if(strcmp(tripulante->instruccionAejecutar->nombreTarea,"TAREA_NULA") == 0){
 			modificarEstado(tripulante, EXIT);
+      
 			log_info(logDiscordiador,"El tripulante %d ya no le quedan tareas por hacer", tripulante->idTripulante);
 		}
 

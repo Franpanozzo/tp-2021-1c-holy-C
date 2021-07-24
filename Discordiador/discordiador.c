@@ -48,7 +48,11 @@ int main() {
 
 
 void hiloPlanificador(){
+
+	int contadorCiclos = 0;
+
 	while(1){
+
 		sem_wait(&semPlanificacion);
 		sem_post(&semPlanificacion);
 
@@ -57,6 +61,8 @@ void hiloPlanificador(){
 			comunicarseConTripulantes(listaExec, (void*)esperarTerminarTripulante);
 			comunicarseConTripulantes(listaBlocked, (void*)esperarTerminarTripulante);
 			comunicarseConTripulantes(listaNew, (void*)esperarTerminarTripulante);
+
+			log_info(logDiscordiador, "####----CONTADOR CICLOS----####: %d", contadorCiclos);
 
 			log_info(logDiscordiador,"----- TOTAL TRIPUS: %d ----", totalTripulantes());
 			log_info(logDiscordiador,"----- COMIENZA LA PLANI ----");
@@ -84,6 +90,8 @@ void hiloPlanificador(){
 			comunicarseConTripulantes(listaNew, (void*)avisarTerminoPlanificacion);
 			comunicarseConTripulantes(listaReady, (void*)avisarTerminoPlanificacion);
 			comunicarseConTripulantes(listaExit, (void*)avisarTerminoPlanificacion);
+
+			contadorCiclos++;
 		}
 	}
 }

@@ -254,12 +254,18 @@ void* serializarTripulante(void* stream, void* estructura, int offset){
 	}
 
 	t_tripulante* tripulante = (t_tripulante*) estructura;
-	t_estado estado = leerEstado(tripulante);
+
+	t_estado estadoAMandar = leerEstado(tripulante);
+	if(estadoAMandar == SABOTAJE || estadoAMandar == EXIT)
+	{
+		estadoAMandar = EXEC;
+	}
+
 	memcpy(stream + offset, &(tripulante->idPatota),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, &(tripulante->idTripulante),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(estado),sizeof(t_estado));
+	memcpy(stream + offset, &(estadoAMandar),sizeof(t_estado));
 	offset += sizeof(t_estado);
 	memcpy(stream + offset, &(tripulante->coordenadas.posX),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
