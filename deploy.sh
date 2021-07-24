@@ -1,18 +1,19 @@
-
-cd ./bibliotecas/Debug
+PUNTO_MONTAJE=~
+TP=tp-2021-1c-holy-C
+cd ${PUNTO_MONTAJE}/${TP}/bibliotecas/Debug
 echo "Compilando Bibliotecas"
 make
-cd ../../Mi-RAM_HQ/Debug
+cd ${PUNTO_MONTAJE}/${TP}/bibliotecas/Debug/Mi-RAM_HQ/Debug
 echo "Compilando Mi-RAM"
 make
-cd ../../Discordiador/Debug
+cd ${PUNTO_MONTAJE}/${TP}/Discordiador/Debug
 echo "Compilando Discordiador"
 make
-cd ../../i-Mongo-Store/Debug
+cd ${PUNTO_MONTAJE}/${TP}/i-Mongo-Store/Debug
 echo "Compilando i-Mongo"
 make
 
 cd ~
 echo "agregando LD_LIBRARY_PATH"
-echo "export LD_LIBRARY_PATH=~/tp-2021-1c-holy-C/bibliotecas/Debug/" >> ~/.bashrc
+echo "export LD_LIBRARY_PATH=${PUNTO_MONTAJE}/${TP}/bibliotecas/Debug/" >> ~/.bashrc
 
