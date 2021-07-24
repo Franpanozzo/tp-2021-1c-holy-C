@@ -25,7 +25,7 @@ endif
 all: Discordiador
 
 dependents:
-	-cd /home/utnso/tp-2021-1c-holy-C/bibliotecas/Debug && $(MAKE) all
+	-cd /home/utnso/tp-2021-1c-holy-C/bibliotecas/Debug && $(MAKE) clean all
 
 # Tool invocations
 Discordiador: $(OBJS) $(USER_OBJS) /home/utnso/tp-2021-1c-holy-C/bibliotecas/Debug/libbibliotecas.so

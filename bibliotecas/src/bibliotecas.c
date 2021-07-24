@@ -51,7 +51,7 @@ int iniciarConexionDesdeServidor(int puerto) {
 	struct sockaddr_in* localAddress = malloc(sizeof(struct sockaddr_in));
 	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
 
-	localAddress->sin_addr.s_addr = inet_addr("127.0.0.1");
+	localAddress->sin_addr.s_addr = inet_addr("0.0.0.0");
 	localAddress->sin_port = htons(puerto);
 	localAddress->sin_family = AF_INET;
 
