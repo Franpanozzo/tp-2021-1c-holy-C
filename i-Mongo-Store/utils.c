@@ -681,10 +681,6 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			log_info(logImongo,"Los bloques que ocupa al momento son: %s \n", structTarea->file->bloquesQueOcupa);
 
 
-			structTarea->file->cantidadBloques += bloquesAocupar;
-			char*cantidadBloques = string_itoa(structTarea->file->cantidadBloques);
-			config_set_value(structTarea->config,"BLOCK_COUNT",cantidadBloques);
-			free(cantidadBloques);
 			structTarea->file->tamanioArchivo += caracteresAOcupar;
 			char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
 			config_set_value(structTarea->config,"SIZE",tamanioArchivo);
@@ -716,7 +712,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			config_set_value(structTarea->config,"BLOCKS","");
 			config_set_value(structTarea->config,"MD5_ARCHIVO","");
 			char* cantidadBloques =  string_itoa(bloquesAocupar);
-			config_set_value(structTarea->config,"BLOCK_COUNT",cantidadBloques);
+			config_set_value(structTarea->config,"BLOCK_COUNT","0");
 			free(cantidadBloques);
 			char* tamanioArchivo = string_itoa(caracteresAOcupar);
 			config_set_value(structTarea->config,"SIZE",tamanioArchivo);
@@ -729,25 +725,35 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		}
 
+				if(structTarea->file->cantidadBloques > 0){
 
-		bloquesAocupar = fragmentacionInterna(structTarea,_tarea);
+						bloquesAocupar = fragmentacionInterna(structTarea,_tarea);
 
+							if(bloquesAocupar == 0){
 
-		if(bloquesAocupar > 0){
+							//actualizarMD5(structTarea);
+							//config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
+							config_save(structTarea->config);
+							mandarOKAdiscordiador(tripulanteSock);
 
-		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
-		actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
-		guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar);
+													}
 
-		}
-
-		actualizarMD5(structTarea);
-		config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
-		config_save(structTarea->config);
-		mandarOKAdiscordiador(tripulanteSock);
+				}
 
 
-		//free(posicionesQueOcupa);
+				structTarea->file->cantidadBloques = bloquesAocupar;
+				config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(bloquesAocupar));
+				int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+				actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
+				guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar);
+
+				//actualizarMD5(structTarea);
+				//config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
+				config_save(structTarea->config);
+				mandarOKAdiscordiador(tripulanteSock);
+
+
+				//free(posicionesQueOcupa);
 
 	}
 
