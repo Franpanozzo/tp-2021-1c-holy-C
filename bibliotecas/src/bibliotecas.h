@@ -29,6 +29,7 @@
 	} puertoEIP;
 
 	typedef enum{
+
 		PATOTA,
 		TRIPULANTE,
 		EXPULSAR,
@@ -41,6 +42,7 @@
 		ID_SABOTAJE, // id tripulante
 		FIN_SABOTAJE,// id tripulante
 		STRING
+
 	} tipoDeDato;
 
 	typedef struct {
@@ -79,7 +81,7 @@
 		t_tarea* instruccionAejecutar;
 		sem_t semaforoInicio;
 		sem_t semaforoFin;
-		bool estaVivo;
+		pthread_mutex_t mutexEstado;
 	} t_tripulante;
 
 	typedef struct{

@@ -69,30 +69,4 @@ bool contieneLugarLibre(t_list*, t_lugarLibre*);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif /* SEGMENTACION_H_ */

@@ -131,21 +131,4 @@ t_info_pagina* paginaAReemplazar();
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif /* PAGINACION_H_ */
-
-
-
-

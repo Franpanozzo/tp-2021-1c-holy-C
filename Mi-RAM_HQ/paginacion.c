@@ -584,7 +584,6 @@ t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActu
 
 		if(*aux == '|' || *aux == '\0') {
 			//log_info(logMemoria,"NO SACO MAS PAGINAS YA QUE EL PROXIMA ERA: %s",aux);
-
 			break;
 		}
 	}
@@ -635,7 +634,6 @@ int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* tablaPaginasPatotaActual,
 
 int sobreescribirTripu(t_list* paginasConTripu, tcb* tcbAGuardar, int idPatota) {
 
-
 	int aMeter, relleno, offset = 0;
 	void* bufferAMeter = meterEnBuffer(tcbAGuardar, TCB, &aMeter, &relleno);
 
@@ -656,6 +654,8 @@ int sobreescribirTripu(t_list* paginasConTripu, tcb* tcbAGuardar, int idPatota) 
 		lock(&mutexAlojados);
 		t_alojado* alojado = obtenerAlojadoPagina(info_pagina->estructurasAlojadas, tcbAGuardar->idTripulante);
 		unlock(&mutexAlojados);
+
+		log_info(logMemoria, "DL PROX A EJECUTAR 2: %d", tcbAGuardar->proximaAEjecutar);
 
 		log_info(logMemoria, "Se va a sobreescrbir el tripulante: ID: %d | ESTADO: %c | POS_X: %d | POS_Y: %d | DL_TAREA: %d | DL_PATOTA: %d",
 				tcbAGuardar->idTripulante, tcbAGuardar->estado, tcbAGuardar->posX, tcbAGuardar->posY, tcbAGuardar->proximaAEjecutar, tcbAGuardar->dlPatota);
@@ -1377,11 +1377,3 @@ t_info_pagina* paginaConFrame(int frame,t_tablaPaginasPatota* tablaPaginasPatota
 	list_iterator_destroy(iteradorTablaPaginas);
 	return NULL;
 }
-
-
-
-
-
-
-
-
