@@ -21,15 +21,13 @@ int main(void) {
 
 	iniciarFileSystem();
 
-
 	pthread_create(&hiloSincronizador, NULL, (void*) sincronizarMemoriaSecundaria, NULL);
-	pthread_detach(hiloSincronizador);
+	pthread_join(hiloSincronizador,(void*) NULL);
 
 	int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
 	pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	pthread_join(manejoTripulante, (void*) NULL);
-
 
 
 	//liberarConfiguracion();

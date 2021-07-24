@@ -254,8 +254,8 @@ bool verificarSiExiste(char* pathArchivo){
 
 }//
 
-/*
-int* obtenerArrayDePosiciones(int cantidadCaracteres, tarea* _tarea){
+
+int* obtenerArrayDePosiciones(int bloquesAocupar){
 
 	int flag = 0;
 
@@ -288,7 +288,7 @@ int* obtenerArrayDePosiciones(int cantidadCaracteres, tarea* _tarea){
 	return cadaBloqueAocupar;
 
 }//
-*/
+
 
 void actualizarStringBitMap(){
 
@@ -512,6 +512,128 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 }
 
 
+char* datosBloque(int numeroBloque){
+
+	int offset = (numeroBloque * superBloque->block_size);
+
+	log_info(logImongo,"El corrimiento para guardar es: %d", offset);
+
+	char* bloque = malloc(superBloque->block_size + 1);
+
+	memcpy(bloque,copiaMemoriaSecundaria + offset,(int)superBloque->block_size);
+
+	bloque[superBloque->block_size] = '\0';
+
+	return bloque;
+}
+
+
+int fragmentacionDe(int ultimoBloqueTarea){
+
+	char* bloque = datosBloque(ultimoBloqueTarea);
+
+	int tamanioBloque = string_length(bloque);
+
+	log_info(logImongo,"El tamanio del bloque es: %d", tamanioBloque);
+
+	int fragmentacion = ((int) superBloque->block_size) - tamanioBloque;
+
+	log_info(logImongo,"La fragmentacion del bloque es: %d", fragmentacion);
+
+	//free(bloque);
+
+	return fragmentacion;
+}
+
+
+int ultimoBloqueDeLa(tarea* structTarea){
+
+	char** bloquesQueOcupa = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
+
+	for(int i=0; i<structTarea->file->cantidadBloques;i++){
+
+		log_info(logImongo,"Los bloques que ocupaba antes son: %s",bloquesQueOcupa[i]);
+
+	}
+
+	int ultimoBloque = atoi(*(bloquesQueOcupa + (structTarea->file->cantidadBloques - 1)));
+
+	log_info(logImongo,"El numero del ultimo bloque es: %d",ultimoBloque);
+
+	int i = 0;
+
+	while(bloquesQueOcupa[i] != NULL){
+
+	free(bloquesQueOcupa[i]);
+
+	i++;
+
+	}
+
+	free(bloquesQueOcupa);
+
+	return ultimoBloque;
+}
+
+
+int fragmentacionInterna(tarea* structTarea,t_tarea* _tarea){
+
+	int ultimoBloqueDeLaTarea = ultimoBloqueDeLa(structTarea);
+
+	int fragmentacionInterna = fragmentacionDe(ultimoBloqueDeLaTarea);
+
+	char* bloque = malloc(superBloque->block_size);
+
+	if(_tarea->parametro > fragmentacionInterna){
+
+			for(int i=0; i<superBloque->block_size;i++){
+
+			bloque[i] = structTarea->file->caracterLlenado[0];
+
+			}
+
+			memcpy(copiaMemoriaSecundaria + (ultimoBloqueDeLaTarea * superBloque->block_size),bloque,superBloque->block_size);
+
+			free(bloque);
+
+			int bloquesAocupar = (int) ceil((float) (_tarea->parametro - fragmentacionInterna) / (float) superBloque->block_size);
+
+			return bloquesAocupar;
+
+		}
+
+	else if(_tarea->parametro == fragmentacionInterna){
+
+			for(int i=0; i<superBloque->block_size;i++){
+
+			bloque[i] = structTarea->file->caracterLlenado[0];
+
+			}
+
+	}
+
+	 else{
+
+
+			for(int i=0; i<(superBloque->block_size - fragmentacionInterna + _tarea->parametro);i++){
+
+			bloque[i] = structTarea->file->caracterLlenado[0];
+	        }
+
+
+
+	}
+
+		memcpy(copiaMemoriaSecundaria + (ultimoBloqueDeLaTarea * superBloque->block_size),bloque,superBloque->block_size);
+
+		free(bloque);
+
+		return 0;
+
+
+}
+
+
 void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 	int caracteresAOcupar = _tarea->parametro;
@@ -593,13 +715,16 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		}
 
-		//int* posicionesQueOcupa = obtenerArrayDePosiciones(_tarea->parametro,structTarea);
+		bloquesAocupar = fragmentacionInterna(structTarea,_tarea);
 
+		if(bloquesAocupar > 0){
 
-		//actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
+		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+		actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
+		guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar);
 
+		}
 
-		//guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar);
 		actualizarMD5(structTarea);
 		config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
 		config_save(structTarea->config);
