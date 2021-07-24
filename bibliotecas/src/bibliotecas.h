@@ -14,6 +14,7 @@
 #include <string.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/collections/list.h>
 #include <stdbool.h>
 
 
@@ -28,19 +29,27 @@
 	} puertoEIP;
 
 	typedef enum{
+
 		PATOTA,
 		TRIPULANTE,
-		SIGUIENTETAREA,
-		TAREA,
+		EXPULSAR,
+		ESTADO_TRIPULANTE,
+		SIGUIENTE_TAREA,
+		TAREA, // id tripulante con t_tarea
+		DESPLAZAMIENTO,// id tripulante con t_coordenada x 2
+		INICIO_TAREA, // id tripulante  y nombre tarea solamente (char)
+		FIN_TAREA, // id tripulante y nombre tarea solamente (char)
+		ID_SABOTAJE, // id tripulante
+		FIN_SABOTAJE,// id tripulante
 		STRING
+
 	} tipoDeDato;
 
 	typedef struct {
 
 	    char* nombreTarea;
 	    uint32_t parametro;
-	    uint32_t posX;
-	    uint32_t posY;
+	    t_coordenadas coordenadas;
 	    uint32_t tiempo;
 
 	} t_tarea;
@@ -49,7 +58,9 @@
 		NEW,
 		READY,
 		EXEC,
-		BLOCKED
+		BLOCKED,
+		SABOTAJE,
+		EXIT
 	}t_estado;
 
 	typedef struct {
@@ -58,7 +69,7 @@
 	} t_buffer;
 
 	typedef struct {
-		tipoDeDato codigo_operacion;
+		tipoDeDato codigoOperacion;
 		t_buffer* buffer;
 	} t_paquete;
 
@@ -66,10 +77,11 @@
 		uint32_t idPatota;
 		uint32_t idTripulante;
 		t_estado estado;
-		uint32_t posX;
-		uint32_t posY;
+		t_coordenadas coordenadas;
 		t_tarea* instruccionAejecutar;
-		sem_t semaforo;
+		sem_t semaforoInicio;
+		sem_t semaforoFin;
+		pthread_mutex_t mutexEstado;
 	} t_tripulante;
 
 	typedef struct{
@@ -78,10 +90,36 @@
 		char* tareas;
 	}t_patota;
 
+	typedef struct{
+		t_tripulante* tripulanteSabotaje;
+		t_coordenadas coordenadas;
+		int haySabotaje;
+		int tiempo;
+		sem_t semaforoIniciarSabotaje;
+		sem_t semaforoCorrerSabotaje;
+		sem_t semaforoTerminoTripulante;
+		sem_t semaforoTerminoSabotaje;
+	} t_sabotaje;
 
-	void lock(pthread_mutex_t);
+	typedef struct{
+		uint32_t idTripulante;
+		t_coordenadas inicio;
+		t_coordenadas fin;
+	} t_desplazamiento;
 
-	void unlock(pthread_mutex_t);
+	typedef struct{
+		uint32_t idTripulante;
+		char* nombreTarea;
+	} t_avisoTarea;
+
+	typedef struct{
+		pthread_mutex_t mutex;
+		t_list* elementos;
+	}t_lista;
+
+	void lock(pthread_mutex_t*);
+
+	void unlock(pthread_mutex_t*);
 
 	int iniciarConexionDesdeServidor(int);
 
@@ -98,7 +136,13 @@
 	void* serializarTripulante(void*, void*, int);
 	void* serializarSolicitudSiguienteTarea(void*, void* , int);
 	void* serializarString(void*, void*, int);
+	void* serializarSolicitudSiguienteTarea(void*, void*, int);
+	void* serializarDesplazamiento(void*, void*, int);
+	void* serializarAvisoTarea(void*, void*, int);
+	void* serializarAvisoSabotaje(void*, void*, int);
 	t_tarea* deserializarTarea(void*);
+	void liberarDoblesPunterosAChar(char** );
+
 
 
 	/**

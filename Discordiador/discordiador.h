@@ -1,3 +1,4 @@
+
 #ifndef DISCORDIADOR_H_
 #define DISCORDIADOR_H_
 
@@ -17,52 +18,24 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <commons/string.h>
+#include <commons/temporal.h>
 #include <stdbool.h>
 #include "consola.h"
+#include "utils.h"
+#include "variables.h"
+#include <math.h>
 
+void hiloPlanificador();
+void hiloSabotaje();
+void hiloTripulante(t_tripulante*);
 
-t_config* config;
-
-t_log* logDiscordiador;
- // Puntero a config donde se va a almacenar el puerto y la IP de Ram y Mongo
-
-puertoEIP* puertoEIPRAM;
-puertoEIP* puertoEIPMongo;
-
-int idTripulante;
-int idPatota;
-int planificacion_pausada;
-
-t_list* listaDeNew;
-
-t_queue* colaDeReady;
-
-t_list* listaExec;
-
-t_queue* colaES;
-
-t_list* listaDeFinish;
-
-pthread_mutex_t mutexListaNew;
-pthread_mutex_t mutexColaReady;
-pthread_mutex_t mutexListaExec;
-
-sem_t semPlanificacion;
-
-
-
-void crearConfig();
-void eliminarPatota(t_patota*);
 void iniciarTripulante(t_coordenadas, uint32_t);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
-void pasarDeEstado(t_tripulante*, t_estado);
-void hiloTripulante(t_tripulante* );
-t_patota* asignarDatosAPatota(char*);
-char* deserializarString (t_paquete*);
-void mandarTareaAejecutar(t_tripulante*,int);
-void recibirConfirmacionDeMongo(int,t_tarea*);
-void recibirPrimerTareaDeMiRAM(t_tripulante*);
-void recibirProximaTareaDeMiRAM(t_tripulante*);
-void cpuPlanificacion();
-void sacarDeNew(t_tripulante*);
+
+void actualizarListaEyB(t_lista*, t_estado);
+void actualizarListaReady();
+void actualizarListaNew();
+void actualizarListaExec();
+void actualizarListaBlocked();
+
 #endif
