@@ -16,7 +16,7 @@ bool validarExistenciaFileSystem(char*, char*,char*);
 void crearMemoria(int);
 int ultimoBloqueDeLa(tarea*);
 void generarTarea(tarea*, t_tarea*, int*);
-void actualizarEstructurasFile(t_file*, t_config*, pthread_mutex_t *);
+void actualizarEstructurasFile(t_file*, t_config*);
 void descartarBasura(t_tarea*,int*);
 void mandarErrorAdiscordiador(int*);
 int* obtenerArrayDePosiciones(int);

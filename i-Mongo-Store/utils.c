@@ -332,7 +332,7 @@ char* bitmap = malloc(sizeBitArray + 1);
 
 }
 
-void actualizarEstructurasFile(t_file* file, t_config* config, pthread_mutex_t* mutex){
+void actualizarEstructurasFile(t_file* file, t_config* config){
 
 	file->bloquesQueOcupa = config_get_string_value(config,"BLOCKS");
 	file->cantidadBloques = config_get_int_value(config,"BLOCK_COUNT");
@@ -519,8 +519,8 @@ void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* ca
 		printf("offset = %d \n", offset);
 
 		lock(&mutexMemoriaSecundaria);
-																	//strlen(palabraAguardar[i])
-		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i], superBloque->block_size);
+
+		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i], strlen(palabraAguardar[i]));
 		unlock(&mutexMemoriaSecundaria);
 
 		printf("Lo que termino guardando fue %d ", superBloque->block_size);
@@ -699,7 +699,8 @@ t_capacidad*  nuevosBloquesAocupar(tarea* structTarea,t_tarea* _tarea){
 
 }
 void crearConfigTarea(tarea* structTarea){
-	if(structTarea->configSeCreo != true){// si el config no se creo? existe el caso en que oxigeno.ims exista y el config no?
+
+	if(structTarea->configSeCreo != true){
 
 		structTarea->configSeCreo = true;
 		structTarea->config  = config_create(structTarea->path);
@@ -741,7 +742,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			crearConfigTarea(structTarea);
 
-			actualizarEstructurasFile(structTarea->file, structTarea->config, structTarea->mutex); // PORQUE TIENE MUTEX COMO PARAMETRO SI NO SE USA?
+			actualizarEstructurasFile(structTarea->file, structTarea->config);
 
 			log_info(logImongo,"Los bloques que ocupaba antes son: %s que serian %d bloques \n", structTarea->file->bloquesQueOcupa, bloquesAocupar);
 
@@ -799,7 +800,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			inicializarTarea(structTarea, bloquesAocupar, caracteresAOcupar);
 
-			actualizarEstructurasFile(structTarea->file, structTarea->config, structTarea->mutex);
+			actualizarEstructurasFile(structTarea->file, structTarea->config);
 
 			log_info(logImongo,"La tarea %s es la primera vez que ingresa, los bloques que va a ocupar son: %d \n", _tarea->nombreTarea,bloquesAocupar);
 
