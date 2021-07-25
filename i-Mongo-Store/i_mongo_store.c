@@ -3,6 +3,8 @@
 
 int main(void) {
 
+	sem_init(&semTarea,0,0);
+
 	char* path = pathLog();
 
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
@@ -98,46 +100,46 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 	switch(paquete->codigoOperacion){
 
 		case TAREA:
-					{
+		{
 
-					t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
+			t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
 
-					log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
+			log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
 
-					seleccionarTarea(tarea,tripulanteSock);
+			seleccionarTarea(tarea,tripulanteSock);
 
-					free(tarea->nombreTarea);
-					free(tarea);
-					break;
+			free(tarea->nombreTarea);
+			free(tarea);
+			break;
 
-					}
+		}
 
 		case DESPLAZAMIENTO:
-					{
-					break;
-					}
+		{
+			break;
+		}
 
 		case INICIO_TAREA:
-					{
-					break;
-					}
+		{
+			break;
+		}
 
 		case FIN_TAREA:
-					{
-					break;
-					}
+		{
+			break;
+		}
 
 		case ID_SABOTAJE:
-					{
-					break;
-					}
+		{
+			break;
+		}
 		case FIN_SABOTAJE:
-					{
-					break;
-					}
+		{
+			break;
+		}
 
 		default:
-				log_info(logImongo,"i-Mongo-Store no entiende esa tarea");
+			log_info(logImongo,"i-Mongo-Store no entiende esa tarea");
 
 	}
 
@@ -149,77 +151,90 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 
-				switch(indiceTarea(tarea)){
+	switch(indiceTarea(tarea)){
 
-						case 0:
+	//sem_wait(&semTarea);
 
-						{
-									log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO \n");
+		case 0:
 
-									generarTarea(oxigeno, tarea,tripulanteSock);
+		{
+			log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO \n");
 
-									break;
-						}
+			generarTarea(oxigeno, tarea,tripulanteSock);
 
-						case 1:
+			//sem_post(&semTarea);
 
-						{
-									log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO \n");
+			break;
+		}
 
-									//consumirOxigeno(tarea,tripulanteSock);
+		case 1:
 
-									break;
-						}
-						case 2:
+		{
+			log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO \n");
 
-						{
-									log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA \n");
+			//consumirOxigeno(tarea,tripulanteSock);
 
-									//generarComida(tarea,tripulanteSock);
-									generarTarea(comida, tarea,tripulanteSock);
+			//sem_post(&semTarea);
 
-									break;
+			break;
+		}
+		case 2:
 
-						}
-						case 3:
+		{
+			log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA \n");
 
-						{
-									log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA \n");
+			//generarComida(tarea,tripulanteSock);
+			generarTarea(comida, tarea,tripulanteSock);
 
-									//consumirComida(tarea,tripulanteSock);
+			//sem_post(&semTarea);
 
-									break;
+			break;
 
-						}
+		}
+		case 3:
 
-						case 4:
+		{
+			log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA \n");
 
-						{
-									log_info(logImongo,"Recibi una tarea de GENERAR_BASURA \n");
+			//consumirComida(tarea,tripulanteSock);
 
-									//generarBasura(tarea,tripulanteSock);
-									generarTarea(basura, tarea,tripulanteSock);
-									break;
+			//sem_post(&semTarea);
 
-						}
+			break;
 
-						case 5:
+		}
 
-						{
-									log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
+		case 4:
 
-									//descartarBasura(tarea,tripulanteSock);
+		{
+			log_info(logImongo,"Recibi una tarea de GENERAR_BASURA \n");
 
-									break;
+			generarTarea(basura, tarea,tripulanteSock);
 
-						}
+			//sem_post(&semTarea);
+			break;
 
-						default:
+		}
 
-								log_info(logImongo,"No existe ese tipo de tarea negro \n");
-								exit(1);
+		case 5:
 
-					}
+		{
+			log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
+
+			descartarBasura(tarea,tripulanteSock);
+
+			//sem_post(&semTarea);
+
+			break;
+
+		}
+
+		default:
+
+			log_info(logImongo,"No existe ese tipo de tarea negro \n");
+			exit(1);
+
+	}
 
 }
 
@@ -308,7 +323,7 @@ void crearFileSystemDesdeCero(){
 
 		//PONER EN 1 BLOQUES MUERTOS CUANDO NO SON MULTIPLOS DE 8
 
-		}
+	}
 
     FILE* elSuperBloque = fopen(pathSuperBloque,"wb");
 

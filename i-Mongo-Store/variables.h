@@ -34,6 +34,13 @@ typedef struct{
 
 }t_datosConfig;
 
+typedef struct{
+
+	int bloquesNuevosAocupar;
+	int caracteresAguardar;
+
+}t_capacidad;
+
 typedef struct {
 
 	t_config* config;
@@ -44,6 +51,7 @@ typedef struct {
 
 }tarea;
 
+sem_t semTarea;
 pthread_mutex_t mutexSuperBloque;
 pthread_mutex_t mutexMemoriaSecundaria;
 pthread_mutex_t mutexBitMap;

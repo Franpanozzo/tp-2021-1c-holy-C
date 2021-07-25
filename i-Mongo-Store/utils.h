@@ -23,6 +23,7 @@ int* obtenerArrayDePosiciones(int);
 bool bloquesLibres(int);
 void actualizarPosicionesFile(t_file*, int*, t_config*,int);
 int min(int ,int );
+int max(int, int);
 void actualizarStringBitMap();
 void cargarPaths();
 void detallesArchivo(int);
@@ -36,6 +37,12 @@ void actualizarMD5(tarea* );
 char* datosBloque(int);
 int fragmentacionDe(int);
 int ultimoBloqueDeLa(tarea*);
-int fragmentacionInterna(tarea*,t_tarea*);
+t_capacidad*  nuevosBloquesAocupar(tarea*,t_tarea*);
+void guardarEnMemoriaSecundaria(t_tarea*, int*,char* , int, int);
+bool hayCaracteresParaConsumir(int,int);
+void consumirTarea(tarea*, t_tarea*, int*);
+void limpiarBitArray(int*, int);
+void crearConfigTarea(tarea*);
+void inicializarTarea(tarea*, int, int);
 
 #endif
