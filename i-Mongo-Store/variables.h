@@ -76,6 +76,7 @@ char* pathComida;
 char* pathBasura;
 char* pathFiles;
 char* pathBitacora;
+int cantTripulantes;
 
 
 #endif

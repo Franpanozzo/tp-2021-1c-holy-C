@@ -27,6 +27,25 @@ int main(void) {
 
 	int serverSock = iniciarConexionDesdeServidor(datosConfig->puerto);
 
+
+
+	//------- LOGS PARA PROBAR SI ANDAN ALGUNAS FUNCIONES --------
+	//log_info(logImongo,"Cantidad bloques segun blocks.ims %d", cantBloquesEnBlocks());
+	char** arrayStrings = config_get_array_value(configSuperBloque, "LISTA_BLOQUES");
+
+	log_info(logImongo,"El primero es %s", *arrayStrings);
+	log_info(logImongo,"El segundo es %s", *(arrayStrings + 1));
+
+	t_list* lista = convertirEnLista(arrayStrings);
+
+	log_info(logImongo,"El primero despues de funcion es %d", 	*(long int*)(list_get(lista, 0)));
+
+	log_info(logImongo,"La lista en formato string es %s", convertirEnString(lista));
+
+
+
+	//--------- FIN LOSGS -------------
+
 	pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	pthread_join(manejoTripulante, (void*) NULL);
 
@@ -36,6 +55,9 @@ int main(void) {
 	//log_destroy(logImongo); PREGUNTAR AYUDANTE DIOS MIO
 	//config_destroy(configImongo); PREGUNTAR AYUDANTE DIOS MIO
 	//liberarTodosLosStructTareas();
+
+
+
 	free(path);
 	return EXIT_SUCCESS;
 
@@ -95,11 +117,13 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 		case DESPLAZAMIENTO:
 		{
+			//una bitacora se puede crear aca
 			break;
 		}
 
 		case INICIO_TAREA:
 		{
+			//una bitacora se puede crear aca
 			break;
 		}
 
@@ -110,6 +134,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 		case ID_SABOTAJE:
 		{
+			//una bitacora se puede crear aca
 			break;
 		}
 		case FIN_SABOTAJE:

@@ -5,14 +5,17 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../i_mongo_store.c \
+../sabotajes.c \
 ../utils.c 
 
 OBJS += \
 ./i_mongo_store.o \
+./sabotajes.o \
 ./utils.o 
 
 C_DEPS += \
 ./i_mongo_store.d \
+./sabotajes.d \
 ./utils.d 
 
 

@@ -2,6 +2,7 @@
 #define IMONGOSTORE_H_
 
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -20,8 +21,9 @@
 #include <commons/bitarray.h>
 #include <commons/temporal.h>
 #include <stdbool.h>
-#include "utils.h"
 #include "variables.h"
+#include "utils.h"
+#include "sabotajes.h"
 #include <math.h>
 #include <unistd.h>
 #include <sys/stat.h>

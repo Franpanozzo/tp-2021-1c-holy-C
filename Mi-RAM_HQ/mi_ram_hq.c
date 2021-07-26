@@ -13,7 +13,7 @@ int main(void) {
 
 	sem_init(&habilitarPatotaEnRam,0,1);
 
-    int serverSock = iniciarConexionDesdeServidor(configRam.puerto,"10.108.32.3");
+    int serverSock = iniciarConexionDesdeServidor(configRam.puerto);
 
     //Abro un thread manejar las conexiones
     pthread_t manejo_tripulante;
