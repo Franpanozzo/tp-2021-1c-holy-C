@@ -3,8 +3,6 @@
 
 int main(void) {
 
-	sem_init(&semTarea,0,0);
-
 	char* path = pathLog();
 
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
@@ -153,7 +151,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 	switch(indiceTarea(tarea)){
 
-	sem_wait(&semTarea);
+
 
 		case 0:
 
@@ -162,7 +160,6 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 			generarTarea(oxigeno, tarea,tripulanteSock);
 
-			sem_post(&semTarea);
 
 			break;
 		}
@@ -174,7 +171,6 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 			consumirTarea(oxigeno,tarea,tripulanteSock);
 
-			sem_post(&semTarea);
 
 			break;
 		}
@@ -185,7 +181,6 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 			generarTarea(comida, tarea,tripulanteSock);
 
-			sem_post(&semTarea);
 
 			break;
 
@@ -197,7 +192,6 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 			consumirTarea(comida,tarea,tripulanteSock);
 
-			sem_post(&semTarea);
 
 			break;
 
@@ -210,7 +204,6 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 			generarTarea(basura, tarea,tripulanteSock);
 
-			sem_post(&semTarea);
 
 			break;
 
@@ -222,8 +215,6 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 			log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
 
 			descartarBasura(tarea,tripulanteSock);
-
-			sem_post(&semTarea);
 
 			break;
 

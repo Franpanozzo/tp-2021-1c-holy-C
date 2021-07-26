@@ -543,8 +543,9 @@ char* datosBloque(int numeroBloque){
 	log_info(logImongo,"El corrimiento para guardar es: %d", offset);
 
 	char* bloque = malloc(superBloque->block_size + 1);
-
+	lock(&mutexMemoriaSecundaria);
 	memcpy(bloque,copiaMemoriaSecundaria + offset,(int)superBloque->block_size);
+	unlock(&mutexMemoriaSecundaria);
 
 	bloque[superBloque->block_size] = '\0';
 
@@ -912,26 +913,6 @@ int saberUltimoBloqueTarea(tarea* structTarea){
 	return numeroUltimoBloque;
 }
 
-char* suprimirCaracteres(int cantidadAsuprimir, char caracterLlenado){
-
-	char* stringAguardar = malloc(superBloque->block_size);
-
-	for(int i=0; i<superBloque->block_size; i++){
-
-		stringAguardar[i] = '\0';
-	}
-
-	for(int i=0; i<cantidadAsuprimir;i++){
-		stringAguardar[i] = caracterLlenado;
-	}
-
-	for(int i=0; i<cantidadAsuprimir;i++){
-			stringAguardar[i] = '\0';
-		}
-
-	return stringAguardar;
-
-}
 
 
 void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
@@ -986,20 +967,39 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			int i=0;
 
-			while(caracteresAconsumir >= 0){
+			int caracteresParaConsumir = caracteresAconsumir;
+
+			while(caracteresAconsumir >0){
 
 				log_info(logImongo,"Los caracteres a consumir son: %d", caracteresAconsumir);
 				char* datos = datosBloque(posicionesEnNumero[i]);
 				log_info(logImongo,"Los datos que estan en la posicion %d actualmente son: %s: ", posicionesEnNumero[i],datos);
 				int cantidadCaracteres = string_length(datos);
 				log_info(logImongo,"La cantidad de caracteres de %s es: %d", datos,cantidadCaracteres);
-				free(datos);
-				if(caracteresAconsumir < cantidadCaracteres){
+				char* datosAguardar;
+				if(caracteresAconsumir > cantidadCaracteres){
 
-					cantidadCaracteres = caracteresAconsumir;
+					caracteresAconsumir = cantidadCaracteres;
+					datosAguardar = string_repeat('\0',superBloque->block_size);
+					log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
 
 				}
-				char* datosAguardar = suprimirCaracteres(cantidadCaracteres,structTarea->file->caracterLlenado[0]);
+				else if((caracteresAconsumir == cantidadCaracteres)){
+
+					datosAguardar = string_repeat('\0',superBloque->block_size);
+					log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
+
+				}
+				else{
+
+					datosAguardar = string_repeat(structTarea->file->caracterLlenado[0],cantidadCaracteres - caracteresAconsumir);
+					log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
+					char* relleno = string_repeat('\0',superBloque->block_size-(cantidadCaracteres - caracteresAconsumir));
+					log_info(logImongo,"El tamaño del relleno es : %d", string_length(relleno));
+					string_append(&datosAguardar, relleno);
+					log_info(logImongo,"Los datos a guardar FINALMENTE son: ---- %s ----", datosAguardar);
+				}
+
 				log_info(logImongo,"El bloque que voy a guardar en memoria es %s ", datosAguardar);
 				int offset = posicionesEnNumero[i] * superBloque->block_size;
 				log_info(logImongo,"El offset para guardar en memoria es %d ", offset);
@@ -1008,7 +1008,7 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 				unlock(&mutexMemoriaSecundaria);
 				free(datosAguardar);
 				caracteresAconsumir-=cantidadCaracteres;
-				log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", caracteresAconsumir);
+				log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", max(0,caracteresAconsumir));
 				posicionesAlimpiar[i] = posicionesEnNumero[i];
 				log_info(logImongo,"Las posiciones que no estan mas son: %d",posicionesAlimpiar[i]);
 				i++;
@@ -1017,7 +1017,7 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			char* bloquesMetaData = strdup("[");
 
-			for(int j=i; j<structTarea->file->cantidadBloques;i++){
+			for(int j=i; j<structTarea->file->cantidadBloques;j++){
 
 				if(j!=i){
 					string_append(&bloquesMetaData,", ");
@@ -1026,15 +1026,15 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			}
 			string_append(&bloquesMetaData,"]");
 
-			char* bloquesAguardarArchivo = string_reverse(bloquesMetaData);
+
 
 			limpiarBitArray(posicionesAlimpiar,bloquesAconsumir);
 
-			structTarea->file->bloquesQueOcupa = bloquesAguardarArchivo;
+			structTarea->file->bloquesQueOcupa = bloquesMetaData;
 			log_info(logImongo,"Ahora los bloques que ocupa son: %s ", structTarea->file->bloquesQueOcupa);
 			structTarea->file->cantidadBloques -= bloquesAconsumir;
 			log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
-			structTarea->file->tamanioArchivo -= caracteresAconsumir;
+			structTarea->file->tamanioArchivo -= caracteresParaConsumir;
 			log_info(logImongo,"El tamanio del archivo ahora es: %d ", structTarea->file->tamanioArchivo);
 
 			config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
@@ -1042,7 +1042,6 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
 			config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->tamanioArchivo));
 			free(bloquesMetaData);
-			free(bloquesAguardarArchivo);
 			config_save(structTarea->config);
 
 		mandarOKAdiscordiador(tripulanteSock);

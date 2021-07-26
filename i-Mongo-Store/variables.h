@@ -52,7 +52,7 @@ typedef struct {
 
 }tarea;
 
-sem_t semTarea;
+
 pthread_mutex_t mutexSuperBloque;
 pthread_mutex_t mutexMemoriaSecundaria;
 pthread_mutex_t mutexBitMap;

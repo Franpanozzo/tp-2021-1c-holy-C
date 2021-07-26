@@ -45,6 +45,5 @@ void limpiarBitArray(int*, int);
 void crearConfigTarea(tarea*);
 void inicializarTarea(tarea*, int, int);
 int saberUltimoBloqueTarea(tarea*);
-char* suprimirCaracteres(int, char);
 
 #endif
