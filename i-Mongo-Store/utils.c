@@ -103,6 +103,8 @@ void mallocTareas(){
 	oxigeno->mutex = malloc(sizeof(pthread_mutex_t));
 	oxigeno->file= malloc(sizeof(t_file));
 	oxigeno->file->caracterLlenado = "O";
+	oxigeno->file->md5_archivo = malloc(sizeof(char));
+	//oxigeno->file->bloques= list_create();
 	pthread_mutex_init(oxigeno->mutex, NULL);
 
 	comida = malloc(sizeof(tarea));
@@ -110,6 +112,8 @@ void mallocTareas(){
 	comida->mutex = malloc(sizeof(pthread_mutex_t));
 	comida->file= malloc(sizeof(t_file));
 	comida->file->caracterLlenado = "C";
+	comida->file->md5_archivo = malloc(sizeof(char));
+	//comida->file->bloques= list_create();
 	pthread_mutex_init(comida->mutex, NULL);
 
 	basura = malloc(sizeof(tarea));
@@ -117,7 +121,10 @@ void mallocTareas(){
 	basura->mutex = malloc(sizeof(pthread_mutex_t));
 	basura->file= malloc(sizeof(t_file));
 	basura->file->caracterLlenado = "B";
+	basura->file->md5_archivo = malloc(sizeof(char));
+	//basura->file->bloques= list_create();
 	pthread_mutex_init(basura->mutex, NULL);
+
 
 }
 
@@ -778,9 +785,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 					log_info(logImongo,"Se porcede a guardar en memoria secundaria %d bloques", bloquesAocupar);
 					guardarEnMemoriaSecundaria(posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,capacidad->caracteresAguardar);
 
-					//actualizarMD5(structTarea);
-					//config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
-					//config_save(structTarea->config);
+					actualizarMD5(structTarea);
 				}
 
 				mandarOKAdiscordiador(tripulanteSock);
@@ -819,8 +824,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			log_info(logImongo,"Se procede a guardar en memoria secundaria %d bloques", bloquesAocupar);
 			guardarEnMemoriaSecundaria(posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,_tarea->parametro);
 
-			//actualizarMD5(structTarea);
-			//config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
+			actualizarMD5(structTarea);
 			config_save(structTarea->config);
 			mandarOKAdiscordiador(tripulanteSock);
 
@@ -842,36 +846,38 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 
 void actualizarMD5(tarea* structTarea){
-    // arrayBloques = ["1","3"]  array de strings
-    char ** arrayBloques = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
-    void* copiaFile = malloc(structTarea->file->cantidadBloques * superBloque->block_size);
+	// arrayBloques = ["1","3"]  array de strings
+	 	char ** arrayBloques = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
+	 	char * copiaFile = malloc(structTarea->file->tamanioArchivo + 1);
 
-    for(int i=0; i<structTarea->file->cantidadBloques;i++){
-        int offsetMemoria = atoi(*(arrayBloques + i)) * superBloque->block_size;
-        int offsetFile = i * superBloque->block_size;
-        memcpy(copiaFile + offsetFile,memoriaSecundaria + offsetMemoria ,superBloque->block_size);
-        //memcpy(copiaFile+offsetFile,memoriaSecundaria + offsetMemoria ,min(superBloque->block_size,( structTarea->file->tamanioArchivo - offsetFile)));
-    }
-    char* nombreFile = string_from_format("%s.md5.tmp",structTarea->file->caracterLlenado);
-    FILE * file = fopen(nombreFile,"w");
-    log_info(logImongo,"Archivo construido para md5: %s", (char*) copiaFile);
-    fputs((char*) copiaFile, file);
-    fclose(file);
+	 	for(int i=0; i<structTarea->file->cantidadBloques;i++){
+	 		int offsetMemoria = atoi(*(arrayBloques + i)) * superBloque->block_size;
+	 		int offsetFile = i * superBloque->block_size;
+	 		log_info(logImongo,"offset memoria %d",offsetMemoria);
+	 		log_info(logImongo,"offset file %d",offsetFile);
+	 		memcpy(copiaFile+offsetFile,copiaMemoriaSecundaria + offsetMemoria ,min(superBloque->block_size, structTarea->file->tamanioArchivo - offsetFile));
+	 	}
+	 	copiaFile[structTarea->file->tamanioArchivo] = '\0';
+	 	char * comando = string_from_format("echo -n \"%s\" | md5sum", copiaFile);
+	 	int md5Size = 32;
+	 	char * md5 = malloc(md5Size +2);
+	 	FILE * file = popen(comando, "r");
 
-    char * comando = string_from_format("md5sum %s", nombreFile);
-    //md5sum
-
-    int md5Size = 32;
-    char * md5 = malloc(md5Size);
-    file = popen(comando, "r");
-    fscanf(file,"%s",md5);
-
-    fgets(md5, md5Size, file);
-    log_info(logImongo,"md5: %s \n",md5);
-    remove(nombreFile);
-    structTarea->file->md5_archivo = md5;
-
-    free(copiaFile);
+	 	fgets(md5, md5Size+1, file);
+	 	char * freemd5 = structTarea->file->md5_archivo;
+	 	structTarea->file->md5_archivo = md5;
+	 	log_info(logImongo,"md5:%s contenido:%s ", structTarea->file->md5_archivo,copiaFile);
+	 	fclose(file);
+	 	free(comando);
+	 	//free(structTarea->file->md5_archivo);
+	 	//free(freemd5);
+	 	free(copiaFile);
+	 	for(int i=0;i<structTarea->file->cantidadBloques; i++){
+	 		free(arrayBloques[i]);
+	 	}
+	 	free(arrayBloques);
+	 	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
+	 	config_save(structTarea->config);
 
 }
 
