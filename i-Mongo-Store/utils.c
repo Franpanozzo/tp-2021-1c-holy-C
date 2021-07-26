@@ -879,21 +879,8 @@ bool alcanzanCaracteresParaConsumir(int caracteresEnDisco, int caracteresAremove
 	return caracteresEnDisco > caracteresAremover;
 
 }
-void eliminarCaracteres(tarea* structTarea,int cantidadBorrar){
-	int nuevoTamanio = max(0,structTarea->file->tamanioArchivo - cantidadBorrar);
-	int nuevaCantidadBloques = (int) ceil((float) (nuevoTamanio) / (float) superBloque->block_size);
-	char ** bloques = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
-	int cantidadBloquesALimpiar = nuevaCantidadBloques - structTarea->file->cantidadBloques;
-	int* bloquesAlimpiar= malloc(sizeof(int) * cantidadBloquesALimpiar);
-
-	for(int i = 0; i<cantidadBloquesALimpiar; i++){
-		bloquesAlimpiar[i]=atoi(bloques[i+nuevoTamanio]);
-	}
-
-	limpiarBitArray(bloquesAlimpiar,cantidadBloquesALimpiar);
 
 
-}
 void limpiarBitArray(int* bloquesAlimpiar, int cantidadBloquesALimpiar){
 
 	for(int i=0; i<cantidadBloquesALimpiar; i++){
@@ -925,6 +912,27 @@ int saberUltimoBloqueTarea(tarea* structTarea){
 	return numeroUltimoBloque;
 }
 
+char* suprimirCaracteres(int cantidadAsuprimir, char caracterLlenado){
+
+	char* stringAguardar = malloc(superBloque->block_size);
+
+	for(int i=0; i<superBloque->block_size; i++){
+
+		stringAguardar[i] = '\0';
+	}
+
+	for(int i=0; i<cantidadAsuprimir;i++){
+		stringAguardar[i] = caracterLlenado;
+	}
+
+	for(int i=0; i<cantidadAsuprimir;i++){
+			stringAguardar[i] = '\0';
+		}
+
+	return stringAguardar;
+
+}
+
 
 void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
@@ -934,103 +942,92 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		log_info(logImongo,"Existe la tarea: %s, se procede a realizarla",_tarea->nombreTarea);
 
+		int caracteresAconsumir = 0;
+
+		int bloquesAconsumir = 0;
+
 		if(alcanzanCaracteresParaConsumir(structTarea->file->tamanioArchivo, _tarea->parametro)){
 
-			int cantidadCaracteresAconsumir = _tarea->parametro;
+			log_info(logImongo,"Los caracteres a suprimir son menores que los que estan actualmente en disco, se procede a operar");
 
-			//int cantidadBloquesAconsumir = (int) ceil((float) cantidadCaracteresAconsumir / (float) superBloque->block_size);
+			caracteresAconsumir = _tarea->parametro;
 
-			int ultimoBloque = saberUltimoBloqueTarea(structTarea);
-
-			int fragmentacionUltimoBloque = fragmentacionDe(ultimoBloque);
-
-			int caracteresExistentesUltimoBloque = superBloque->block_size - fragmentacionUltimoBloque;
-
-			if(cantidadCaracteresAconsumir < caracteresExistentesUltimoBloque){
-
-				int caracteresAguardar = caracteresExistentesUltimoBloque - cantidadCaracteresAconsumir;
-
-				char* bloqueAguardar = string_repeat(structTarea->file->caracterLlenado[0], caracteresAguardar);
-
-				memcpy(copiaMemoriaSecundaria + (ultimoBloque*superBloque->block_size),bloqueAguardar,superBloque->block_size);
-
-				structTarea->file->tamanioArchivo = caracteresAguardar;
-				char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
-				config_set_value(structTarea->config,"SIZE",tamanioArchivo);
-				config_save(structTarea->config);
-				free(bloqueAguardar);
-				free(tamanioArchivo);
-
-			}
-			else if(cantidadCaracteresAconsumir == caracteresExistentesUltimoBloque){
-
-				char* bloqueAguardar = string_repeat('\0', superBloque->block_size);
-
-				memcpy(copiaMemoriaSecundaria + (ultimoBloque*superBloque->block_size),bloqueAguardar,superBloque->block_size);
-
-				char* bloquesQueOcupabaLaTarea = structTarea->file->bloquesQueOcupa;
-
-				int longitudString = string_length(bloquesQueOcupabaLaTarea);
-
-				int posicionComa = 0;
-
-				while(longitudString >= 0){
-
-					if(bloquesQueOcupabaLaTarea[longitudString] == ','){
-
-						posicionComa = longitudString;
-
-						break;
-
-					}
-
-					longitudString--;
-
-				}
-
-				char* nuevosBloquesQueOcupa = string_substring_until(bloquesQueOcupabaLaTarea, posicionComa + 1);
-				int tamanioNuevo = string_length(nuevosBloquesQueOcupa);
-				nuevosBloquesQueOcupa[tamanioNuevo - 1] = ']';
-				nuevosBloquesQueOcupa[tamanioNuevo] = '\0';
-
-				structTarea->file->bloquesQueOcupa = nuevosBloquesQueOcupa;
-				structTarea->file->cantidadBloques -= 1;
-				structTarea->file->tamanioArchivo -= caracteresExistentesUltimoBloque;
-
-				char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
-				config_set_value(structTarea->config,"SIZE",tamanioArchivo);
-
-				char* cantidadDeBloques = string_itoa(structTarea->file->cantidadBloques);
-				config_set_value(structTarea->config,"BLOCK_COUNT",cantidadDeBloques);
-
-				config_set_value(structTarea->config,"BLOCKS",nuevosBloquesQueOcupa);
-
-				config_save(structTarea->config);
-				free(bloqueAguardar);
-				free(bloquesQueOcupabaLaTarea);
-				free(nuevosBloquesQueOcupa);
-				free(tamanioArchivo);
-				free(cantidadDeBloques);
-
-
-			}
-
-			else{
-
-
-
-
-
-			}
-
+			bloquesAconsumir = (int) ceil((float) caracteresAconsumir / (float) superBloque->block_size);
 
 		}
 
 		else{
 
+			log_info(logImongo,"Los caracteres a suprimir son mayores que los que estan actualmente en disco, se procede a suprimir todos los que hay en disco");
 
+			caracteresAconsumir = structTarea->file->tamanioArchivo;
+
+			bloquesAconsumir = structTarea->file->cantidadBloques;
 
 		}
+
+			char** posiciones = string_get_string_as_array(string_reverse(structTarea->file->bloquesQueOcupa));
+
+			int* posicionesEnNumero = malloc(sizeof(int)* structTarea->file->cantidadBloques);
+
+			for(int i=0; i<structTarea->file->cantidadBloques;i++){
+
+				posicionesEnNumero[i] = atoi(*(posiciones) + i);
+
+				free(posiciones[i]);
+
+			}
+
+			free(posiciones);
+
+			int* posicionesAlimpiar = malloc(sizeof(int)* bloquesAconsumir);
+
+			int i=0;
+
+			while(caracteresAconsumir >= 0){
+
+				char* datos = datosBloque(posicionesEnNumero[i]);
+				int cantidadCaracteres = string_length(datos);
+				if(caracteresAconsumir < cantidadCaracteres){
+
+					cantidadCaracteres = caracteresAconsumir;
+
+				}
+				char* datosAguardar = suprimirCaracteres(cantidadCaracteres,structTarea->file->caracterLlenado[0]);
+				int offset = posicionesEnNumero[i] * superBloque->block_size;
+				lock(&mutexMemoriaSecundaria);
+				memcpy(copiaMemoriaSecundaria + offset, datosAguardar,superBloque->block_size);
+				unlock(&mutexMemoriaSecundaria);
+				caracteresAconsumir-=cantidadCaracteres;
+				posicionesAlimpiar[i] = posicionesEnNumero[i];
+				i++;
+
+			}
+
+			char* bloquesMetaData = strdup("[");
+
+			for(int j=i; j<structTarea->file->cantidadBloques;i++){
+
+				if(j!=i){
+					string_append(&bloquesMetaData,", ");
+				}
+				string_append(&bloquesMetaData,string_itoa(posicionesEnNumero[j]));
+			}
+			string_append(&bloquesMetaData,"]");
+
+			char* bloquesAguardarArchivo = string_reverse(bloquesMetaData);
+
+			limpiarBitArray(posicionesAlimpiar,bloquesAconsumir);
+
+			structTarea->file->bloquesQueOcupa = bloquesAguardarArchivo;
+			structTarea->file->cantidadBloques -= bloquesAconsumir;
+			structTarea->file->tamanioArchivo -= caracteresAconsumir;
+
+			config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
+			//config_set_value(structTarea->config,"MD5_ARCHIVO","");
+			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
+			config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->tamanioArchivo));
+			config_save(structTarea->config);
 
 		mandarOKAdiscordiador(tripulanteSock);
 
@@ -1043,10 +1040,6 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 	}
 
 	unlock(structTarea->mutex);
-
-
-
-
 
 }
 
