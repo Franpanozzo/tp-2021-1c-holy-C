@@ -153,7 +153,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 	switch(indiceTarea(tarea)){
 
-	//sem_wait(&semTarea);
+	sem_wait(&semTarea);
 
 		case 0:
 
@@ -162,7 +162,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 			generarTarea(oxigeno, tarea,tripulanteSock);
 
-			//sem_post(&semTarea);
+			sem_post(&semTarea);
 
 			break;
 		}
@@ -172,9 +172,9 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO \n");
 
-			//consumirOxigeno(tarea,tripulanteSock);
+			consumirTarea(oxigeno,tarea,tripulanteSock);
 
-			//sem_post(&semTarea);
+			sem_post(&semTarea);
 
 			break;
 		}
@@ -183,10 +183,9 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA \n");
 
-			//generarComida(tarea,tripulanteSock);
 			generarTarea(comida, tarea,tripulanteSock);
 
-			//sem_post(&semTarea);
+			sem_post(&semTarea);
 
 			break;
 
@@ -196,9 +195,9 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA \n");
 
-			//consumirComida(tarea,tripulanteSock);
+			consumirTarea(comida,tarea,tripulanteSock);
 
-			//sem_post(&semTarea);
+			sem_post(&semTarea);
 
 			break;
 
@@ -211,7 +210,8 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 			generarTarea(basura, tarea,tripulanteSock);
 
-			//sem_post(&semTarea);
+			sem_post(&semTarea);
+
 			break;
 
 		}
@@ -223,7 +223,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 
 			descartarBasura(tarea,tripulanteSock);
 
-			//sem_post(&semTarea);
+			sem_post(&semTarea);
 
 			break;
 

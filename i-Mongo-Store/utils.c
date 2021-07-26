@@ -970,10 +970,12 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			int* posicionesEnNumero = malloc(sizeof(int)* structTarea->file->cantidadBloques);
 
+			log_info(logImongo,"El reverse de los bloques que ocupa es: ");
+
 			for(int i=0; i<structTarea->file->cantidadBloques;i++){
 
 				posicionesEnNumero[i] = atoi(*(posiciones) + i);
-
+				log_info(logImongo,"%d ",posicionesEnNumero[i]);
 				free(posiciones[i]);
 
 			}
@@ -986,20 +988,29 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			while(caracteresAconsumir >= 0){
 
+				log_info(logImongo,"Los caracteres a consumir son: %d", caracteresAconsumir);
 				char* datos = datosBloque(posicionesEnNumero[i]);
+				log_info(logImongo,"Los datos que estan en la posicion %d actualmente son: %s: ", posicionesEnNumero[i],datos);
 				int cantidadCaracteres = string_length(datos);
+				log_info(logImongo,"La cantidad de caracteres de %s es: %d", datos,cantidadCaracteres);
+				free(datos);
 				if(caracteresAconsumir < cantidadCaracteres){
 
 					cantidadCaracteres = caracteresAconsumir;
 
 				}
 				char* datosAguardar = suprimirCaracteres(cantidadCaracteres,structTarea->file->caracterLlenado[0]);
+				log_info(logImongo,"El bloque que voy a guardar en memoria es %s ", datosAguardar);
 				int offset = posicionesEnNumero[i] * superBloque->block_size;
+				log_info(logImongo,"El offset para guardar en memoria es %d ", offset);
 				lock(&mutexMemoriaSecundaria);
 				memcpy(copiaMemoriaSecundaria + offset, datosAguardar,superBloque->block_size);
 				unlock(&mutexMemoriaSecundaria);
+				free(datosAguardar);
 				caracteresAconsumir-=cantidadCaracteres;
+				log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", caracteresAconsumir);
 				posicionesAlimpiar[i] = posicionesEnNumero[i];
+				log_info(logImongo,"Las posiciones que no estan mas son: %d",posicionesAlimpiar[i]);
 				i++;
 
 			}
@@ -1020,13 +1031,18 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			limpiarBitArray(posicionesAlimpiar,bloquesAconsumir);
 
 			structTarea->file->bloquesQueOcupa = bloquesAguardarArchivo;
+			log_info(logImongo,"Ahora los bloques que ocupa son: %s ", structTarea->file->bloquesQueOcupa);
 			structTarea->file->cantidadBloques -= bloquesAconsumir;
+			log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
 			structTarea->file->tamanioArchivo -= caracteresAconsumir;
+			log_info(logImongo,"El tamanio del archivo ahora es: %d ", structTarea->file->tamanioArchivo);
 
 			config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
 			//config_set_value(structTarea->config,"MD5_ARCHIVO","");
 			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
 			config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->tamanioArchivo));
+			free(bloquesMetaData);
+			free(bloquesAguardarArchivo);
 			config_save(structTarea->config);
 
 		mandarOKAdiscordiador(tripulanteSock);
@@ -1047,11 +1063,11 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 void descartarBasura(t_tarea* tarea, int* tripulanteSock){
 	lock(basura->mutex);
 	if(verificarSiExiste(basura->path)){
-		log_info(logImongo,"Elimninado basura.ims");
+		log_info(logImongo,"Elimninado Basura.ims");
 		mandarOKAdiscordiador(tripulanteSock);
 	}
 	else{
-		log_info(logImongo,"No se puede eliminar basura.ims porque no existes");
+		log_info(logImongo,"No se puede eliminar Basura.ims porque no existe");
 		mandarErrorAdiscordiador(tripulanteSock);
 	}
 	unlock(basura->mutex);
