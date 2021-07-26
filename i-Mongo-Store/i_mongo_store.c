@@ -31,6 +31,7 @@ int main(void) {
 
 	//------- LOGS PARA PROBAR SI ANDAN ALGUNAS FUNCIONES --------
 	//log_info(logImongo,"Cantidad bloques segun blocks.ims %d", cantBloquesEnBlocks());
+	/*
 	char** arrayStrings = config_get_array_value(configSuperBloque, "LISTA_BLOQUES");
 
 	log_info(logImongo,"El primero es %s", *arrayStrings);
@@ -38,10 +39,13 @@ int main(void) {
 
 	t_list* lista = convertirEnLista(arrayStrings);
 
-	log_info(logImongo,"El primero despues de funcion es %d", 	*(long int*)(list_get(lista, 0)));
+	if(!list_is_empty(lista)){
+		log_info(logImongo,"Entra igual");
+		log_info(logImongo,"El primero despues de funcion es %d", 	*(long int*)(list_get(lista, 0)));
+	}
 
 	log_info(logImongo,"La lista en formato string es %s", convertirEnString(lista));
-
+	*/
 
 
 	//--------- FIN LOSGS -------------

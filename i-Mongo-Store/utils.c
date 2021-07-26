@@ -399,6 +399,10 @@ void sincronizarMemoriaSecundaria(){
 			log_error(logImongo, "No se sincronizo bien la memoria");
 		else
 			log_error(logImongo, "La sincronizacion esta arrojando cualquier valor");
+
+
+		log_info(logImongo,"La cant de bloques de oxigeno es %d", cantBloquesSegunLista(oxigeno));
+
 	}
 }
 

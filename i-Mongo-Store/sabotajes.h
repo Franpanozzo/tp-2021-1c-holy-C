@@ -18,10 +18,11 @@ void arreglarSabotajeCantBloquesEnFile(tarea*);
 bool haySabotajeBloquesEnFile(tarea*);
 void arreglarSabotajeBloquesEnFile(tarea*);
 
+uint32_t max(long int, long int);
 uint32_t cantBloquesEnBlocks();
 uint32_t sizeSegunBlocks(tarea*);
 uint32_t tamanioUltimoBloque(tarea*);
-uint32_t cantBloquesSegunLista(char*);
+uint32_t cantBloquesSegunLista(tarea*);
 t_list* obtenerBloquesOcupadosSegunFiles();
 char* convertirEnString(t_list*);
 t_list* convertirEnLista(char**);
