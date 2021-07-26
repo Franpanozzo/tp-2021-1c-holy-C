@@ -491,7 +491,7 @@ void actualizarBitArray(int* posicionesQueOcupa, int bloquesAocupar){
 }
 
 
-void guardarEnMemoriaSecundaria(t_tarea* tarea, int* posicionesQueOcupa,char* caracterLlenado, int bloquesAocupar, int caracteresAguardar){
+void guardarEnMemoriaSecundaria(int* posicionesQueOcupa,char* caracterLlenado, int bloquesAocupar, int caracteresAguardar){
 
 	int flag = caracteresAguardar;
 
@@ -602,9 +602,9 @@ int ultimoBloqueDeLa(tarea* structTarea){
 }
 
 
-t_capacidad*  nuevosBloquesAocupar(tarea* structTarea,t_tarea* _tarea){
+t_info*  nuevosBloquesAocupar(tarea* structTarea,t_tarea* _tarea){
 
-	t_capacidad* capacidad = malloc(sizeof(t_capacidad));
+	t_info* capacidad = malloc(sizeof(t_info));
 
 	int ultimoBloqueDeLaTarea = ultimoBloqueDeLa(structTarea);
 
@@ -753,7 +753,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			if(structTarea->file->cantidadBloques > 0){
 
-				t_capacidad* capacidad;
+				t_info* capacidad;
 
 				capacidad = nuevosBloquesAocupar(structTarea,_tarea);
 
@@ -775,7 +775,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 					actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
 
 					log_info(logImongo,"Se porcede a guardar en memoria secundaria %d bloques", bloquesAocupar);
-					guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,capacidad->caracteresAguardar);
+					guardarEnMemoriaSecundaria(posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,capacidad->caracteresAguardar);
 
 					//actualizarMD5(structTarea);
 					//config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
@@ -816,7 +816,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
 
 			log_info(logImongo,"Se procede a guardar en memoria secundaria %d bloques", bloquesAocupar);
-			guardarEnMemoriaSecundaria(_tarea,posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,_tarea->parametro);
+			guardarEnMemoriaSecundaria(posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,_tarea->parametro);
 
 			//actualizarMD5(structTarea);
 			//config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
@@ -874,8 +874,7 @@ void actualizarMD5(tarea* structTarea){
 
 }
 
-bool hayCaracteresParaConsumir(int caracteresEnDisco, int caracteresAremover){
-
+bool alcanzanCaracteresParaConsumir(int caracteresEnDisco, int caracteresAremover){
 
 	return caracteresEnDisco > caracteresAremover;
 
@@ -909,30 +908,146 @@ void limpiarBitArray(int* bloquesAlimpiar, int cantidadBloquesALimpiar){
 
 }
 
-void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
-	lock(structTarea->mutex);
-	if(verificarSiExiste(structTarea->path)){
-		log_info(logImongo,"Existe la tarea: %s",_tarea->nombreTarea);
 
-		eliminarCaracteres(structTarea,_tarea->parametro);
+int saberUltimoBloqueTarea(tarea* structTarea){
 
-		//mandarOKAdiscordiador(tripulanteSock);
+	char** ultimoBloqueTarea = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
+
+	int numeroUltimoBloque = atoi(*(ultimoBloqueTarea + structTarea->file->cantidadBloques));
+
+	for(int i=0; i<structTarea->file->cantidadBloques;i++){
+
+		free(ultimoBloqueTarea[i]);
 	}
+
+	free(ultimoBloqueTarea);
+
+	return numeroUltimoBloque;
+}
+
+
+void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
+
+	lock(structTarea->mutex);
+
+	if(verificarSiExiste(structTarea->path)){
+
+		log_info(logImongo,"Existe la tarea: %s, se procede a realizarla",_tarea->nombreTarea);
+
+		if(alcanzanCaracteresParaConsumir(structTarea->file->tamanioArchivo, _tarea->parametro)){
+
+			int cantidadCaracteresAconsumir = _tarea->parametro;
+
+			//int cantidadBloquesAconsumir = (int) ceil((float) cantidadCaracteresAconsumir / (float) superBloque->block_size);
+
+			int ultimoBloque = saberUltimoBloqueTarea(structTarea);
+
+			int fragmentacionUltimoBloque = fragmentacionDe(ultimoBloque);
+
+			int caracteresExistentesUltimoBloque = superBloque->block_size - fragmentacionUltimoBloque;
+
+			if(cantidadCaracteresAconsumir < caracteresExistentesUltimoBloque){
+
+				int caracteresAguardar = caracteresExistentesUltimoBloque - cantidadCaracteresAconsumir;
+
+				char* bloqueAguardar = string_repeat(structTarea->file->caracterLlenado[0], caracteresAguardar);
+
+				memcpy(copiaMemoriaSecundaria + (ultimoBloque*superBloque->block_size),bloqueAguardar,superBloque->block_size);
+
+				structTarea->file->tamanioArchivo = caracteresAguardar;
+				char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
+				config_set_value(structTarea->config,"SIZE",tamanioArchivo);
+				config_save(structTarea->config);
+				free(bloqueAguardar);
+				free(tamanioArchivo);
+
+			}
+			else if(cantidadCaracteresAconsumir == caracteresExistentesUltimoBloque){
+
+				char* bloqueAguardar = string_repeat('\0', superBloque->block_size);
+
+				memcpy(copiaMemoriaSecundaria + (ultimoBloque*superBloque->block_size),bloqueAguardar,superBloque->block_size);
+
+				char* bloquesQueOcupabaLaTarea = structTarea->file->bloquesQueOcupa;
+
+				int longitudString = string_length(bloquesQueOcupabaLaTarea);
+
+				int posicionComa = 0;
+
+				while(longitudString >= 0){
+
+					if(bloquesQueOcupabaLaTarea[longitudString] == ','){
+
+						posicionComa = longitudString;
+
+						break;
+
+					}
+
+					longitudString--;
+
+				}
+
+				char* nuevosBloquesQueOcupa = string_substring_until(bloquesQueOcupabaLaTarea, posicionComa + 1);
+				int tamanioNuevo = string_length(nuevosBloquesQueOcupa);
+				nuevosBloquesQueOcupa[tamanioNuevo - 1] = ']';
+				nuevosBloquesQueOcupa[tamanioNuevo] = '\0';
+
+				structTarea->file->bloquesQueOcupa = nuevosBloquesQueOcupa;
+				structTarea->file->cantidadBloques -= 1;
+				structTarea->file->tamanioArchivo -= caracteresExistentesUltimoBloque;
+
+				char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
+				config_set_value(structTarea->config,"SIZE",tamanioArchivo);
+
+				char* cantidadDeBloques = string_itoa(structTarea->file->cantidadBloques);
+				config_set_value(structTarea->config,"BLOCK_COUNT",cantidadDeBloques);
+
+				config_set_value(structTarea->config,"BLOCKS",nuevosBloquesQueOcupa);
+
+				config_save(structTarea->config);
+				free(bloqueAguardar);
+				free(bloquesQueOcupabaLaTarea);
+				free(nuevosBloquesQueOcupa);
+				free(tamanioArchivo);
+				free(cantidadDeBloques);
+
+
+			}
+
+			else{
+
+
+
+
+
+			}
+
+
+		}
+
+		else{
+
+
+
+		}
+
+		mandarOKAdiscordiador(tripulanteSock);
+
+	}
+
 	else{
-		log_info(logImongo,"No existe la tarea: %s",_tarea->nombreTarea);
+
+		log_info(logImongo,"No existe la tarea: %s, se procede a mandar mensaje de error a Discordiador",_tarea->nombreTarea);
 		mandarErrorAdiscordiador(tripulanteSock);
 	}
+
 	unlock(structTarea->mutex);
 
 
-	/*
-	if(hayCaracteresParaConsumir(structTarea->file->tamanioArchivo, _tarea->parametro)){
-	}
-	else{
-		log_info(logImongo,"No hay caracteres para consumir lo pedido por la tarea %s", _tarea->nombreTarea);
-		mandarErrorAdiscordiador(tripulanteSock);
-	}
-	*/
+
+
+
 }
 
 

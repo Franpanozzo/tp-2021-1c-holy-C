@@ -39,7 +39,8 @@ typedef struct{
 	int bloquesNuevosAocupar;
 	int caracteresAguardar;
 
-}t_capacidad;
+}t_info;
+
 
 typedef struct {
 
