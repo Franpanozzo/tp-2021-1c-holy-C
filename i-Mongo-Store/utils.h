@@ -17,7 +17,6 @@ void crearMemoria(int);
 int ultimoBloqueDeLa(tarea*);
 void generarTarea(tarea*, t_tarea*, int*);
 void actualizarEstructurasFile(tarea*);
-void descartarBasura(t_tarea*,int*);
 void mandarErrorAdiscordiador(int*);
 int* obtenerArrayDePosiciones(int);
 bool bloquesLibres(int);

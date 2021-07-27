@@ -867,8 +867,6 @@ char* convertirEnString(t_list* listaEnteros){
 }
 
 
-
-
 void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 	lock(structTarea->mutex);
@@ -881,7 +879,7 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		int bloquesAconsumir = 0;
 
-		if(alcanzanCaracteresParaConsumir(structTarea->file->tamanioArchivo, _tarea->parametro)){
+		if(alcanzanCaracteresParaConsumir(structTarea->file->tamanioArchivo, _tarea->parametro) && strcmp(_tarea->nombreTarea,"DESCARTAR_BASURA") != 0){
 
 			log_info(logImongo,"Los caracteres a suprimir son menores que los que estan actualmente en disco, se procede a operar");
 
@@ -996,12 +994,11 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			free(posicionesAlimpiarBitArray);
 		}
 
-		structTarea->file->bloquesQueOcupa = bloquesMetaData;
-		log_info(logImongo,"Ahora los bloques que ocupa son: %s ", structTarea->file->bloquesQueOcupa);
+		log_info(logImongo,"Ahora los bloques que ocupa son: %s ", bloquesMetaData);
 		structTarea->file->tamanioArchivo -= caracteresParaConsumir;
 		log_info(logImongo,"El tamanio del archivo ahora es: %d ", structTarea->file->tamanioArchivo);
 		log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
-		config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
+		config_set_value(structTarea->config,"BLOCKS",bloquesMetaData);
 		config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
 		config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->tamanioArchivo));
 		//free(bloquesMetaData);
@@ -1029,19 +1026,6 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 }
 
-
-void descartarBasura(t_tarea* tarea, int* tripulanteSock){
-	lock(basura->mutex);
-	if(verificarSiExiste(basura->path)){
-		log_info(logImongo,"Elimninado Basura.ims");
-		mandarOKAdiscordiador(tripulanteSock);
-	}
-	else{
-		log_info(logImongo,"No se puede eliminar Basura.ims porque no existe");
-		mandarErrorAdiscordiador(tripulanteSock);
-	}
-	unlock(basura->mutex);
-}
 t_desplazamiento* deserializarDesplazamiento(void* stream){
 
 	t_desplazamiento* desplazamiento = malloc(sizeof(t_desplazamiento));

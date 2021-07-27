@@ -115,29 +115,78 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 		case DESPLAZAMIENTO:
 		{
 
+			t_desplazamiento* desplazamiento = deserializarDesplazamiento(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el desplazamiento del tripulante de ID %d", despĺazamiento->idTripulante);
+
+
+
+			free(desplazamiento);
+
 			break;
+
 		}
 
 		case INICIO_TAREA:
 		{
+
+			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el inicio de tarea del tripulante de ID %d", despĺazamiento->idTripulante);
+
+
+
+			free(avisoTarea->nombreTarea);
+			free(avisoTarea);
+
 			break;
+
 		}
 
 		case FIN_TAREA:
 		{
+
+			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", despĺazamiento->idTripulante);
+
+
+
+			free(avisoTarea->nombreTarea);
+			free(avisoTarea);
+
 			break;
+
 		}
 
 		case ID_SABOTAJE:
 		{
+
+			int idTripulante = deserializarAvisoSabotaje(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
+
+
+
 			break;
+
 		}
+
 		case FIN_SABOTAJE:
 		{
+
+			int idTripulante = deserializarAvisoSabotaje(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
+
+
+
 			break;
+
 		}
 
 		default:
+
 			log_info(logImongo,"i-Mongo-Store no entiende esa tarea");
 
 	}
@@ -215,8 +264,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA \n");
 
-			descartarBasura(tarea,tripulanteSock);
-
+			consumirTarea(basura,tarea,tripulanteSock);
 			break;
 
 		}
