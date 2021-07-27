@@ -18,6 +18,7 @@ int main() {
 
 	cargarConfiguracion();
 
+	chequeoMemoria = 0;
 	idTripulante = 0;
 	idPatota = 0;
 	modificarTripulanteBlocked(NO_HAY_TRIPULANTE_BLOQUEADO);
@@ -28,6 +29,8 @@ int main() {
 	sem_init(&sabotaje->semaforoTerminoTripulante,0,0);
 	sem_init(&sabotaje->semaforoTerminoSabotaje,0,0);
 	sem_init(&semPlanificacion,0,0);
+	sem_init(&semMemoria,0,1);
+
 
 
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
@@ -291,6 +294,13 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 				patota->ID, cantidadTripulantes);
     
 		for (int i=0; i<cantidadTripulantes; i++){
+			sem_wait(&semMemoria);
+			if(chequeoMemoria)
+			{
+				log_info(logDiscordiador,"No hay espacio suficiente en memoria para ingresar mas tripulantes de la patota:%d - "
+						" Por lo tanto no se crean mas tripulantes",patota->ID);
+				break;
+			}
 			iniciarTripulante(*(coordenadas+i), patota->ID);
 		}
 	}

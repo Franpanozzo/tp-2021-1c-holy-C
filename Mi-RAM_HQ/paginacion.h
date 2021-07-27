@@ -85,6 +85,8 @@ pthread_mutex_t mutexTablaPaginasPatota;
 pthread_mutex_t mutexBitarray;
 pthread_mutex_t mutexAlojados;
 pthread_mutex_t mutexTiempo;
+pthread_mutex_t mutexMapa;
+
 
 
 
@@ -128,7 +130,7 @@ int obtener_tiempo();
 void ejecutar_reemplazo(void*, t_info_pagina*, int);
 t_list* buscarInfosPaginasEnRam();
 t_info_pagina* paginaAReemplazar();
-
+int asignarNuevaPagina(t_info_pagina*, t_tablaPaginasPatota*, tipoEstructura, void*, int, int*, int*);
 
 
 #endif /* PAGINACION_H_ */

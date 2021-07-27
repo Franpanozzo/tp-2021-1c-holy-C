@@ -6,14 +6,16 @@ sem_t habilitarPatotaEnRam;
 int main(void) {
 
 	char* pathDelLogMemoria = pathLogMemoria();
-	logMemoria = iniciarLogger(pathDelLogMemoria,"Memoria",1);
+	logMemoria = iniciarLogger(pathDelLogMemoria,"Memoria",0);
+
+	nave = nivel_crear("naveAmong");
 
 	cargar_configuracion();
 	iniciarMemoria();
 
 	sem_init(&habilitarPatotaEnRam,0,1);
 
-    int serverSock = iniciarConexionDesdeServidor(configRam.puerto,"10.108.32.3");
+    int serverSock = iniciarConexionDesdeServidor(configRam.puerto);
 
     //Abro un thread manejar las conexiones
     pthread_t manejo_tripulante;
@@ -246,11 +248,16 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexBitarray, NULL);
     pthread_mutex_init(&mutexAlojados, NULL);
     pthread_mutex_init(&mutexTiempo, NULL);
+    pthread_mutex_init(&mutexMapa, NULL);
+
 
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
 	tiempo = 0;
 	punteroClock = 0;
+
+	nivel_gui_inicializar();
+	nivel_gui_dibujar(nave);
 
 }
 
@@ -626,20 +633,44 @@ int guardarPCB(pcb* pcbAGuardar, char* stringTareas) {
 
 
 int guardarTCB(tcb* tcbAGuardar, int idPatota) {
+
+	int res;
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
-		return guardarTCBPag(tcbAGuardar, idPatota);
+		res = guardarTCBPag(tcbAGuardar, idPatota);
 	}
-	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	else if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
-		return guardarTCBSeg(tcbAGuardar, idPatota);
+		res = guardarTCBSeg(tcbAGuardar, idPatota);
 	}
-	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
-	exit(1);
+	else
+	{
+		log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+		exit(1);
+	}
+
+	if(res == 1) {
+		char idNumero = tcbAGuardar->idTripulante + '0';
+
+		lock(&mutexMapa);
+		int confirm = personaje_crear(nave, idNumero, tcbAGuardar->posX, tcbAGuardar->posY);
+
+		if(confirm != 0)
+		{
+			char* error = nivel_gui_string_error(confirm);
+			log_error(logMemoria, "Error en el mapa: %s", error);
+			exit(1);
+		}
+		nivel_gui_dibujar(nave);
+		unlock(&mutexMapa);
+	}
+
+	return res;
 }
 
 
 void expulsarTripulante(int idTripu,int idPatota) {
+
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		expulsarTripulantePag(idTripu, idPatota);
@@ -652,6 +683,19 @@ void expulsarTripulante(int idTripu,int idPatota) {
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);
 	}
+
+	char idNumero = idTripu + '0';
+	lock(&mutexMapa);
+	int confirm = item_borrar(nave, idNumero);
+	if(confirm != 0)
+	{
+		char* error = nivel_gui_string_error(confirm);
+		log_error(logMemoria, "Error en el mapa: %s", error);
+		exit(1);
+	}
+	nivel_gui_dibujar(nave);
+	unlock(&mutexMapa);
+
 	sem_post(&habilitarExpulsionEnRam);
 }
 
@@ -673,16 +717,38 @@ t_tarea* asignarProxTarea(int idPatota, int idTripu) {
 
 
 int actualizarTripulante(tcb* tcbAGuardar, int idPatota){
+
+	int res;
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
-		return actualizarTripulantePag(tcbAGuardar, idPatota);
+		res = actualizarTripulantePag(tcbAGuardar, idPatota);
 	}
-	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	else if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
-		return actualizarTripulanteSeg(tcbAGuardar, idPatota);
+		res = actualizarTripulanteSeg(tcbAGuardar, idPatota);
 	}
-	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
-	exit(1);
+	else
+	{
+		log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+		exit(1);
+	}
+
+	if(res == 1 ) {
+
+		char idNumero = tcbAGuardar->idTripulante + '0';
+		lock(&mutexMapa);
+		int confirm = item_mover(nave, idNumero, tcbAGuardar->posX, tcbAGuardar->posY);
+		if(confirm != 0)
+		{
+			char* error = nivel_gui_string_error(confirm);
+			log_error(logMemoria, "Error en el mapa: %s", error);
+			exit(1);
+		}
+		nivel_gui_dibujar(nave);
+		unlock(&mutexMapa);
+	}
+
+	return res;
 }
 
 

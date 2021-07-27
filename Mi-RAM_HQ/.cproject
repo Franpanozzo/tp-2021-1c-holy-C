@@ -36,6 +36,8 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.222552001" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug">
 								<option id="gnu.c.link.option.libs.1532053931" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="pthread"/>
+									<listOptionValue builtIn="false" value="nivel-gui"/>
+									<listOptionValue builtIn="false" value="ncurses"/>
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="bibliotecas"/>
 									<listOptionValue builtIn="false" value="commons"/>

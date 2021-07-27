@@ -5,6 +5,7 @@
 #include "paginacion.h"
 
 t_log* logMemoria;
+NIVEL* nave;
 
 
 void cargar_configuracion();

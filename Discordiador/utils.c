@@ -601,7 +601,10 @@ void mandarTCBaMiRAM(t_tripulante* tripulante){
 
 		log_info(logDiscordiador, "NO HAY ESPACIO EN MEMORIA PARA GUARDAR AL TRIPULANTE DE ID: %d",
 				    			tripulante->idTripulante);
+		chequeoMemoria = 1;
 	}
+
+	sem_post(&semMemoria);
 	close(miRAMsocket);
 }
 
