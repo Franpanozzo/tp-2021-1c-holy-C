@@ -117,10 +117,13 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			t_desplazamiento* desplazamiento = deserializarDesplazamiento(paquete->buffer->stream);
 
-			log_info(logImongo,"Se recibio el desplazamiento del tripulante de ID %d", despĺazamiento->idTripulante);
+			log_info(logImongo,"Se recibio el desplazamiento del tripulante de ID %d", desplazamiento->idTripulante);
 
+			char* mensaje = string_from_format("Se mueve de %d|%d a %d|%d", desplazamiento->inicio.posX, desplazamiento->inicio.posY, desplazamiento->fin.posX, desplazamiento->fin.posY);
 
+			escribirEnBitacora(mensaje,desplazamiento->idTripulante);
 
+			free(mensaje);
 			free(desplazamiento);
 
 			break;
@@ -132,10 +135,13 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
 
-			log_info(logImongo,"Se recibio el inicio de tarea del tripulante de ID %d", despĺazamiento->idTripulante);
+			log_info(logImongo,"Se recibio el inicio de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
+			char* mensaje = string_from_format("Comienza la ejecucion de la tarea %s", avisoTarea->nombreTarea);
 
+			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
 
+			free(mensaje);
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
 
@@ -148,9 +154,13 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
 
-			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", despĺazamiento->idTripulante);
+			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
+			char* mensaje = string_from_format("Se finaliza la tarea %s", avisoTarea->nombreTarea);
 
+			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
+
+			free(mensaje);
 
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
@@ -166,7 +176,11 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
 
+			char* mensaje = string_from_format("Se corre en panico hacia la ubicacion del sabotaje");
 
+			escribirEnBitacora(mensaje,idTripulante);
+
+			free(mensaje);
 
 			break;
 
@@ -179,7 +193,11 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
 
+			char* mensaje = string_from_format("Se resuelve el sabotaje");
 
+			escribirEnBitacora(mensaje,idTripulante);
+
+			free(mensaje);
 
 			break;
 

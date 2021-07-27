@@ -48,6 +48,7 @@ char* convertirEnString(t_list* listaEnteros);
 t_desplazamiento* deserializarDesplazamiento(void*);
 t_avisoTarea* deserializarAvisoTarea(void*);
 int deserializarAvisoSabotaje(void*);
+void escribirEnBitacora(char*, int);
 
 
 #endif

@@ -1072,6 +1072,12 @@ int deserializarAvisoSabotaje(void* stream){
 	return *id;
 }
 
+
+void escribirEnBitacora(char* mensaje, int idTripulante){
+
+}
+
+
 void liberarConfiguracion(){
 
 	free(datosConfig->puntoMontaje);
