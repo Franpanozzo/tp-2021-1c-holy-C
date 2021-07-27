@@ -47,6 +47,9 @@ void inicializarTarea(tarea*, int, int);
 int saberUltimoBloqueTarea(tarea*);
 t_list* convertirEnLista(char** arrayValores);
 char* convertirEnString(t_list* listaEnteros);
+t_desplazamiento* deserializarDesplazamiento(void*);
+t_avisoTarea* deserializarAvisoTarea(void*);
+int deserializarAvisoSabotaje(void*);
 
 
 #endif

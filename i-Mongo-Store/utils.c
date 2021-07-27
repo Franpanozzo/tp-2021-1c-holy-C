@@ -431,6 +431,7 @@ void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bl
 
 
 	//structTarea->file->bloquesQueOcupa = bloquesActuales;
+	char * freebloques=structTarea->file->bloquesQueOcupa;
 	structTarea->file->bloquesQueOcupa = bloques;
 	structTarea->file->cantidadBloques += bloquesAocupar;
 
@@ -440,7 +441,7 @@ void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bl
 	config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
 	config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
 	config_save(structTarea->config);
-
+	free(freebloques);
 }//
 
 int min(int a,int b){
@@ -885,9 +886,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 
 void actualizarMD5(tarea* structTarea){
-	/* arrayBloques = ["1","3"]  array de strings
-	 	char ** arrayBloques = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
-	*/
+
 	 	char * copiaFile = malloc(structTarea->file->tamanioArchivo + 1);
 
 	 	for(int i=0; i<structTarea->file->cantidadBloques;i++){
@@ -907,21 +906,14 @@ void actualizarMD5(tarea* structTarea){
 	 	FILE * file = popen(comando, "r");
 
 	 	fgets(md5, md5Size+1, file);
-
+	 	char * freemd5 = structTarea->file->md5_archivo;
 	 	structTarea->file->md5_archivo = md5;
 	 	log_info(logImongo,"md5:%s contenido:%s ", structTarea->file->md5_archivo,copiaFile);
-	 	fclose(file);
-	 	free(comando);
-	 	//char * freemd5 = structTarea->file->md5_archivo;
-	 	//free(structTarea->file->md5_archivo);
-	 	//free(freemd5);
-	 	free(copiaFile);
 
-	 	/*for(int i=0;i<structTarea->file->cantidadBloques; i++){
-	 		free(arrayBloques[i]);
-	 	}
-	 	free(arrayBloques);
-	 	*/
+	 	free(comando);
+	 	free(freemd5);
+	 	free(copiaFile);
+	 	fclose(file);
 	 	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
 	 	config_save(structTarea->config);
 
@@ -1144,7 +1136,41 @@ void descartarBasura(t_tarea* tarea, int* tripulanteSock){
 	}
 	unlock(basura->mutex);
 }
+t_desplazamiento* deserializarDesplazamiento(void* stream){
+	t_desplazamiento* desplazamiento = malloc(sizeof(t_desplazamiento));
+	int offset = 0;
+	memcpy(&(desplazamiento->idTripulante), stream + offset, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(desplazamiento->inicio.posX), stream + offset, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(desplazamiento->inicio.posY), stream + offset, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(desplazamiento->fin.posX), stream + offset, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(desplazamiento->fin.posY), stream + offset, sizeof(uint32_t));
 
+	return desplazamiento;
+}
+
+t_avisoTarea* deserializarAvisoTarea(void* stream){
+	t_avisoTarea* avisoTarea = malloc(sizeof(t_avisoTarea));
+	uint32_t tamanioNombreTarea;
+	int offset=0;
+	memcpy(&(avisoTarea->idTripulante), stream + offset, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&tamanioNombreTarea, stream + offset, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(avisoTarea->nombreTarea, stream + offset,  tamanioNombreTarea);
+
+	return avisoTarea;
+}
+
+int deserializarAvisoSabotaje(void* stream){
+	int *id = malloc(sizeof(uint32_t));
+	memcpy(id, stream, sizeof(uint32_t));
+
+	return *id;
+}
 
 void liberarConfiguracion(){
 

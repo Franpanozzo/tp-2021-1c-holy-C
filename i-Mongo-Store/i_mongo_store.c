@@ -114,6 +114,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 		case DESPLAZAMIENTO:
 		{
+
 			break;
 		}
 
