@@ -1,6 +1,6 @@
 #include "sabotajes.h"
 
-/*
+
 void buscarSabotaje(){
 
 	if(haySabotajeCantBloquesEnSuperBloque()){
@@ -12,7 +12,7 @@ void buscarSabotaje(){
 		//arreglarSabotajeBitmapEnSuperBloque();
 	}
 
-	tarea* arrayFilesConsumibles[3] = {oxigeno, comida, basura};
+	tarea** arrayFilesConsumibles[3] = {oxigeno, comida, basura};
 	for(int i=0; i<3; i++){
 
 		if(haySabotajeBloquesEnFile(arrayFilesConsumibles[i])){
@@ -31,7 +31,7 @@ void buscarSabotaje(){
 
 	log_info(logImongo,"No se detecto ningun sabotaje en el super bloque o en los files");
 }
-*/
+
 
 //HECHA
 bool haySabotajeCantBloquesEnSuperBloque(){
@@ -47,7 +47,6 @@ void arreglarSabotajeCantBloquesEnSuperBloque(){
 
 	config_set_value(configSuperBloque, "BLOCKS", string_itoa(cantBloquesEnBlocks()));
 }
-
 
 
 bool haySabotajeBitmapEnSuperBloque(){
@@ -85,14 +84,6 @@ bool haySabotajeBitmapEnSuperBloque(){
 }
 
 
-void agregarBloquesOcupados(t_list* listaBloques, t_config* config){
-
-	t_list* listaAux = convertirEnLista(config_get_array_value(config, "BLOCKS"));
-	list_add_all(listaBloques, listaAux);
-	list_destroy(listaAux);
-}
-
-
 void arreglarSabotajeBitmapEnSuperBloque(){
 
 	t_list* listaBloques = list_create();
@@ -120,6 +111,8 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 	char* stringMap = convertirBitmapEnString(bitmap);
 	config_set_value(configSuperBloque, "BITMAP", stringMap);
 
+	log_info(logImongo,"Ya se soluciono el sabotaje, el bitmap indicaba mal el estado de un bloque");
+
 	free(stringMap);
 	bitarray_destroy(bitmap);
 	list_destroy(listaBloques);
@@ -143,11 +136,13 @@ void arreglarSabotajeSizeEnFile(tarea* fileConsumible){
 	config_set_value(fileConsumible->config, "SIZE", string_itoa(sizeSegunBlocks(fileConsumible)));
 }
 
+
 //HECHA
 bool haySabotajeCantBloquesEnFile(tarea* fileConsumible){
 	return cantBloquesSegunLista(fileConsumible)
 			!= config_get_long_value(fileConsumible->config, "BLOCK_COUNT") ;
 }
+
 
 //HECHA
 void arreglarSabotajeCantBloquesEnFile(tarea* fileConsumible){
@@ -184,18 +179,38 @@ bool haySabotajeBloquesEnFile(tarea* fileConsumible){
 }
 
 
-
 void arreglarSabotajeBloquesEnFile(tarea* fileConsumible){
 
 	char** arrayPosiciones = config_get_array_value(fileConsumible->config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
 	char* md5calculado = calcularMd5(listaBloques);
-
 	config_set_value(fileConsumible->config, "MD5", md5calculado);
 
+	uint32_t cantCaracteresAescribir = config_get_long_value(fileConsumible->config, "SIZE");
+	char* stringCaracter = config_get_string_value(fileConsumible->config, "CARACTER_LLENADO");
+	char caracter = * stringCaracter;
+	uint32_t tamanioBloque = config_get_long_value(fileConsumible->config, "BLOCKS_SIZE");
 
+	for(uint32_t i = 0; i < list_size(listaBloques); i++){
+
+		consumirBloque(* (uint32_t *)list_get(listaBloques, i), tamanioBloque);
+		escribirBloque(* (uint32_t *)list_get(listaBloques, i),
+				string_repeat(caracter, min(cantCaracteresAescribir, tamanioBloque)));
+
+		cantCaracteresAescribir = max(cantCaracteresAescribir - tamanioBloque, 0);
+	}
+
+	char* md5anterior = config_get_string_value(fileConsumible->config, "MD5");
+
+	log_info(logImongo,"Ya se soluciono el sabotaje, se cambio el md5 de %s a %s "
+			"para el nuevo orden de bloques", md5anterior, md5calculado);
+
+	free(md5anterior);
+	free(stringCaracter);
 }
 
+// escribirBloque(uint32_t posicionDelBloque, char* contenido);
+// consumirBloque(uint32_t posicionDelBloque, uint32_t cant);
 
 // ------ FUNCIONAS AUXILIARES ------
 
@@ -310,7 +325,6 @@ char* convertirBitmapEnString(t_bitarray* bitmap){
 }
 
 
-
 // PROBADA
 t_list* convertirEnLista(char** arrayValores){
 
@@ -326,6 +340,7 @@ t_list* convertirEnLista(char** arrayValores){
 
 	return lista;
 }
+
 
 // PROBADA
 char* convertirListaEnString(t_list* listaEnteros){
@@ -348,4 +363,13 @@ char* convertirListaEnString(t_list* listaEnteros){
 	string_append(&stringLista, "]");
 
 	return stringLista;
+}
+
+
+// HECHA
+void agregarBloquesOcupados(t_list* listaBloques, t_config* config){
+
+	t_list* listaAux = convertirEnLista(config_get_array_value(config, "BLOCKS"));
+	list_add_all(listaBloques, listaAux);
+	list_destroy(listaAux);
 }
