@@ -829,9 +829,9 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 		log_info(logImongo,"Existe la tarea: %s, se procede a realizarla",_tarea->nombreTarea);
 
 		int caracteresAconsumir = 0;
-
 		int bloquesAconsumir = 0;
 
+		//ERROR 1 en la segunda condicion del if
 		if(alcanzanCaracteresParaConsumir(structTarea->file->tamanioArchivo, _tarea->parametro)
 				&& strcmp(_tarea->nombreTarea,"DESCARTAR_BASURA") != 0){
 
@@ -841,7 +841,6 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			caracteresAconsumir = _tarea->parametro;
 
 			bloquesAconsumir = (int) ceil((float) caracteresAconsumir / (float) superBloque->block_size);
-
 		}
 		else{
 
@@ -879,15 +878,16 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 				datosAguardar = string_repeat('\0',superBloque->block_size);
 				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
+				//ERROR 2, se remueve el elemento q esta en la posicion posiciones, pero posiciones es un contenido de la lista
 				list_remove(structTarea->file->bloques,posiciones);
 				list_add(posicionesAlimpiar,&posiciones);
 				structTarea->file->cantidadBloques -= 1;
 			}
 			else{//vos queres consumir 2 y hay 4
 
-				datosAguardar = string_repeat(structTarea->file->caracterLlenado[0],cantidadCaracteres - caracteresAconsumir);
+				datosAguardar = string_repeat(structTarea->file->caracterLlenado[0], cantidadCaracteres - caracteresAconsumir);
 				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
-				char* relleno = string_repeat('\0',superBloque->block_size-(cantidadCaracteres - caracteresAconsumir));
+				char* relleno = string_repeat('\0', superBloque->block_size-(cantidadCaracteres - caracteresAconsumir));
 				log_info(logImongo,"El tamaño del relleno es : %d", superBloque->block_size-(cantidadCaracteres - caracteresAconsumir));
 				string_append(&datosAguardar, relleno);
 				log_info(logImongo,"Los datos a guardar FINALMENTE son: ---- %s ----", datosAguardar);
@@ -915,6 +915,8 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		if(list_size(posicionesAlimpiar) > 0){
 
+		// SE PUEDE BORRAR
+		//DE ACA
 			int* posicionesAlimpiarBitArray = malloc(sizeof(int) * list_size(posicionesAlimpiar));
 
 			for(int i=0; i<list_size(posicionesAlimpiar);i++){
@@ -931,6 +933,7 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			}
 
+		//A ACA
 			limpiarBitArray(posicionesAlimpiarBitArray,bloquesAconsumir);
 			free(posicionesAlimpiarBitArray);
 		}
@@ -954,7 +957,6 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 		//list_iterate(posicionesAlimpiar, (void*) destruirPuntero);
 		list_destroy(posicionesAlimpiar);
 		mandarOKAdiscordiador(tripulanteSock);
-
 	}
 	else{
 
