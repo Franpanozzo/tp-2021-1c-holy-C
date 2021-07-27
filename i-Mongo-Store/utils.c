@@ -361,77 +361,12 @@ void actualizarEstructurasFile(tarea* structTarea){
 
 void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bloquesAocupar){
 
-	//char* bloquesQueTenia = structTarea->file->bloquesQueOcupa;
-	/*
-	log_info(logImongo,"Los bloques que tenia son: %s \n", bloquesQueTenia);
-
-	int tamanio = string_length(bloquesQueTenia);
-
-	log_info(logImongo,"El tamanio de los bloques que tenia es: %d \n", tamanio);
-
-	char* bloquesActuales;
-
-	if(tamanio > 0){
-
-		bloquesActuales = string_substring(bloquesQueTenia,0,tamanio - 1);
-
-		log_info(logImongo,"%s", bloquesActuales);
-	}
-
-	else if(tamanio == 0){
-
-		bloquesActuales = string_new();
-		log_info(logImongo,"%s", bloquesActuales);
-
-	}
-
-	else{
-
-		log_info(logImongo, "No puede tener tamanio negativo un string");
-
-	}
-
-	log_info(logImongo,"Ahora el bloque quedo como: %s \n", bloquesActuales);
-
-	int i = 0;
-
-	while ( i < bloquesAocupar){
-
-		if(tamanio != 0){
-
-		//CASO EN EL QUE EL STRING TE VIENE ASI: [2
-		string_append(&bloquesActuales,",");
-		log_info(logImongo,"%s", bloquesActuales);
-
-		}
-		else{
-		//CASO EN EL QUE EL STRING TE VIENE VACIO
-		string_append(&bloquesActuales,"[");
-		log_info(logImongo,"%s", bloquesActuales);
-		tamanio++;
-
-		}
-
-
-		log_info(logImongo,"%s \n", bloquesActuales);
-		char * posicion = string_itoa(*(arrayDePosiciones + i));
-		string_append(&bloquesActuales,posicion);
-		log_info(logImongo,"%s \n", bloquesActuales);
-		i++;
-
-	}
-	string_append(&bloquesActuales,"]");
-	log_info(logImongo,"%s \n", bloquesActuales);
-	*/
 	for(int i = 0; i<bloquesAocupar; i++){
 		int * bloque = (arrayDePosiciones+i);
 		list_add(structTarea->file->bloques,bloque);
 	}
 	char* bloques = convertirEnString(structTarea->file->bloques);
 
-
-	//structTarea->file->bloquesQueOcupa = bloquesActuales;
-	//char * freebloques=structTarea->file->bloquesQueOcupa;
 	structTarea->file->bloquesQueOcupa = bloques;
 	structTarea->file->cantidadBloques += bloquesAocupar;
 
@@ -600,56 +535,11 @@ int fragmentacionDe(int ultimoBloqueTarea){
 int ultimoBloqueDeLa(tarea* structTarea){
 
 	int indiceUltimoBloque = list_size( structTarea->file->bloques) - 1;
+
 	int * ultimoBloque = list_get( structTarea->file->bloques,indiceUltimoBloque);
+
 	return *ultimoBloque;
-	/*
-	char** bloquesQueOcupa = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
 
-	for(int i=0; i<structTarea->file->cantidadBloques;i++){
-
-		log_info(logImongo,"Los bloques que ocupaba antes son: %s",bloquesQueOcupa[i]);
-
-	}
-
-	int ultimoBloque = atoi(*(bloquesQueOcupa + (structTarea->file->cantidadBloques - 1))); // VER BIEN SI ESTA BIEN ESTO
-
-	log_info(logImongo,"El numero del ultimo bloque es: %d",ultimoBloque);
-
-	int i = 0;
-
-	while(bloquesQueOcupa[i] != NULL){
-
-	free(bloquesQueOcupa[i]);
-
-	i++;
-
-	}
-
-	free(bloquesQueOcupa);
-
-
-	return ultimoBloque;
-	*/
-
-}
-int saberUltimoBloqueTarea(tarea* structTarea){
-	/*
-	int indiceUltimoBloque = list_size( structTarea->file->bloques) - 1;
-	int * ultimoBloque = list_get( structTarea->file->bloques,indiceUltimoBloque);
-	return *ultimoBloque;
-	 */
-	char** ultimoBloqueTarea = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
-
-	int numeroUltimoBloque = atoi(*(ultimoBloqueTarea + structTarea->file->cantidadBloques));
-
-	for(int i=0; i<structTarea->file->cantidadBloques;i++){
-
-		free(ultimoBloqueTarea[i]);
-	}
-
-	free(ultimoBloqueTarea);
-
-	return numeroUltimoBloque;
 }
 
 
@@ -1011,50 +901,45 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		}
 
-		char** posiciones = string_get_string_as_array(string_reverse(structTarea->file->bloquesQueOcupa));
+		t_list* posicionesAlimpiar = list_create();
 
-		int* posicionesEnNumero = malloc(sizeof(int)* structTarea->file->cantidadBloques);
-
-		log_info(logImongo,"El reverse de los bloques que ocupa es: ");
-
-		for(int i=0; i<structTarea->file->cantidadBloques;i++){
-
-			posicionesEnNumero[i] = atoi(*(posiciones) + i);
-			log_info(logImongo,"%d ",posicionesEnNumero[i]);
-			free(posiciones[i]);
-
-		}
-
-		free(posiciones);
-
-		int* posicionesAlimpiar = malloc(sizeof(int)* bloquesAconsumir);
-
-		int i=0;
+		int i= list_size(structTarea->file->bloques) - 1;
 
 		int caracteresParaConsumir = caracteresAconsumir;
 
-		while(caracteresAconsumir >0){
+		while(caracteresAconsumir > 0){
+
+			if(i<0){
+
+				break;
+
+			}
 
 			log_info(logImongo,"Los caracteres a consumir son: %d", caracteresAconsumir);
-			char* datos = datosBloque(posicionesEnNumero[i]);
-			log_info(logImongo,"Los datos que estan en la posicion %d actualmente son: %s: ", posicionesEnNumero[i],datos);
+
+			int posiciones = *((int*)list_get(structTarea->file->bloques,i));
+
+			char* datos = datosBloque(posiciones);
+
+			log_info(logImongo,"Los datos que estan en la posicion %d actualmente son: %s: ", posiciones,datos);
+
 			int cantidadCaracteres = string_length(datos);
+
 			log_info(logImongo,"La cantidad de caracteres de %s es: %d", datos,cantidadCaracteres);
+
+			free(datos);
+
 			char* datosAguardar;
-			if(caracteresAconsumir > cantidadCaracteres){
 
-				caracteresAconsumir = cantidadCaracteres;
-				datosAguardar = string_repeat('\0',superBloque->block_size);
-				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
-
-			}
-			else if((caracteresAconsumir == cantidadCaracteres)){
+			if(caracteresAconsumir >= cantidadCaracteres){// vos queres consumir 13 caracteres y hay 8
 
 				datosAguardar = string_repeat('\0',superBloque->block_size);
 				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
+				list_remove(structTarea->file->bloques,posiciones);
 
 			}
-			else{
+
+			else{//vos queres consumir 2 y hay 4
 
 				datosAguardar = string_repeat(structTarea->file->caracterLlenado[0],cantidadCaracteres - caracteresAconsumir);
 				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
@@ -1065,34 +950,50 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			}
 
 			log_info(logImongo,"El bloque que voy a guardar en memoria es %s ", datosAguardar);
-			int offset = posicionesEnNumero[i] * superBloque->block_size;
+
+			int offset = posiciones * superBloque->block_size;
+
 			log_info(logImongo,"El offset para guardar en memoria es %d ", offset);
 			lock(&mutexMemoriaSecundaria);
 			memcpy(copiaMemoriaSecundaria + offset, datosAguardar,superBloque->block_size);
 			unlock(&mutexMemoriaSecundaria);
+
 			free(datosAguardar);
+
 			caracteresAconsumir-=cantidadCaracteres;
+
 			log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", max(0,caracteresAconsumir));
-			posicionesAlimpiar[i] = posicionesEnNumero[i];
-			log_info(logImongo,"Las posiciones que no estan mas son: %d",posicionesAlimpiar[i]);
-			i++;
+
+			list_add(posicionesAlimpiar,&posiciones);
+
+			log_info(logImongo,"Las posiciones que no estan mas son: %d",posiciones);
+
+
+			i--;
 
 		}
 
-		char* bloquesMetaData = strdup("[");
+		char* bloquesMetaData = convertirEnString(structTarea->file->bloques);
 
-		for(int j=i; j<structTarea->file->cantidadBloques;j++){
+		log_info(logImongo,"Se van a poner en metadata los bloques: %s",bloquesMetaData);
 
-			if(j!=i){
-				string_append(&bloquesMetaData,", ");
-			}
-			string_append(&bloquesMetaData,string_itoa(posicionesEnNumero[j]));
+		int* posicionesAlimpiarBitArray = malloc(sizeof(int) * list_size(posicionesAlimpiar));
+
+		for(int i=0; i<list_size(posicionesAlimpiar);i++){
+
+			posicionesAlimpiarBitArray[i] = *((int*) list_get(posicionesAlimpiar,i));
+
 		}
-		string_append(&bloquesMetaData,"]");
 
+		log_info(logImongo, "Se van a limpiar en el bitarray las posiciones: ");
 
+		for(int i=0; i<bloquesAconsumir; i++){
 
-		limpiarBitArray(posicionesAlimpiar,bloquesAconsumir);
+			log_info(logImongo, "%d ",posicionesAlimpiarBitArray[i]);
+
+		}
+
+		limpiarBitArray(posicionesAlimpiarBitArray,bloquesAconsumir);
 
 		structTarea->file->bloquesQueOcupa = bloquesMetaData;
 		log_info(logImongo,"Ahora los bloques que ocupa son: %s ", structTarea->file->bloquesQueOcupa);
@@ -1108,7 +1009,13 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 		//free(bloquesMetaData);
 		//actualizarMD5(structTarea);
 		config_save(structTarea->config);
+		free(posicionesAlimpiarBitArray);
 
+		void destruirPuntero(int* numero){
+			free(numero);
+		}
+
+		list_destroy_and_destroy_elements(posicionesAlimpiar, (void*) destruirPuntero);
 		mandarOKAdiscordiador(tripulanteSock);
 
 	}
@@ -1137,8 +1044,11 @@ void descartarBasura(t_tarea* tarea, int* tripulanteSock){
 	unlock(basura->mutex);
 }
 t_desplazamiento* deserializarDesplazamiento(void* stream){
+
 	t_desplazamiento* desplazamiento = malloc(sizeof(t_desplazamiento));
+
 	int offset = 0;
+
 	memcpy(&(desplazamiento->idTripulante), stream + offset, sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(&(desplazamiento->inicio.posX), stream + offset, sizeof(uint32_t));
@@ -1150,12 +1060,17 @@ t_desplazamiento* deserializarDesplazamiento(void* stream){
 	memcpy(&(desplazamiento->fin.posY), stream + offset, sizeof(uint32_t));
 
 	return desplazamiento;
+
 }
 
 t_avisoTarea* deserializarAvisoTarea(void* stream){
+
 	t_avisoTarea* avisoTarea = malloc(sizeof(t_avisoTarea));
+
 	uint32_t tamanioNombreTarea;
+
 	int offset=0;
+
 	memcpy(&(avisoTarea->idTripulante), stream + offset, sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(&tamanioNombreTarea, stream + offset, sizeof(uint32_t));
@@ -1163,9 +1078,11 @@ t_avisoTarea* deserializarAvisoTarea(void* stream){
 	memcpy(avisoTarea->nombreTarea, stream + offset,  tamanioNombreTarea);
 
 	return avisoTarea;
+
 }
 
 int deserializarAvisoSabotaje(void* stream){
+
 	int *id = malloc(sizeof(uint32_t));
 	memcpy(id, stream, sizeof(uint32_t));
 

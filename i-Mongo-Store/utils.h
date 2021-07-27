@@ -44,7 +44,6 @@ void consumirTarea(tarea*, t_tarea*, int*);
 void limpiarBitArray(int*, int);
 void crearConfigTarea(tarea*);
 void inicializarTarea(tarea*, int, int);
-int saberUltimoBloqueTarea(tarea*);
 t_list* convertirEnLista(char** arrayValores);
 char* convertirEnString(t_list* listaEnteros);
 t_desplazamiento* deserializarDesplazamiento(void*);
