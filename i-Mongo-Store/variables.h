@@ -54,6 +54,7 @@ typedef struct {
 }tarea;
 
 
+pthread_mutex_t mutexBitacora;
 pthread_mutex_t mutexSuperBloque;
 pthread_mutex_t mutexMemoriaSecundaria;
 pthread_mutex_t mutexBitMap;

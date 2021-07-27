@@ -138,6 +138,7 @@ void iniciarMutex(){
 	pthread_mutex_init(&mutexEstructuraOxigeno,NULL);
 	pthread_mutex_init(&mutexEstructuraComida,NULL);
 	pthread_mutex_init(&mutexEstructuraBasura,NULL);
+	pthread_mutex_init(&mutexBitacora,NULL);
 
 }
 
@@ -1073,7 +1074,88 @@ int deserializarAvisoSabotaje(void* stream){
 }
 
 
-void escribirEnBitacora(char* mensaje, int idTripulante){
+void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
+
+	lock(&mutexBitacora);
+
+	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
+
+	log_info(logImongo,"El archivo a crear tiene el path: %s",path);
+
+	t_config* config = config_create(path);
+
+	int bloquesAocupar = (int) ceil((float) string_length(mensaje)  / (float) superBloque->block_size);
+
+	log_info(logImongo,"Los bloques a ocupar de la bitacora del tripulante %d son: %d",idTripulante,bloquesAocupar);
+
+	if(bloquesLibres(bloquesAocupar)){
+
+		log_info(logImongo,"Existen bloques libres por ocupar, se procede a escribir en disco la bitacora del tripulante ID: %d", idTripulante);
+
+		if(!(verificarSiExiste(path))){
+
+			log_info(logImongo,"Es la primera vez que el tripulante ID: %d escribe en disco", idTripulante);
+
+			FILE* tripulante = fopen(path,"wb");
+
+			fclose(tripulante);
+
+			config_set_value(config,"BLOCKS","[]");
+
+			config_set_value(config,"SIZE","0");
+		}
+
+		log_info(logImongo,"Ya existia el archivo del tripulante de ID: %d", idTripulante);
+
+		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+
+		guardarEnMemoriaSecundaria(posicionesQueOcupa,mensaje,bloquesAocupar,string_length(mensaje));
+
+		int cantidadDeCaracteresQueHabia = config_get_int_value(config,"SIZE");
+
+		log_info(logImongo,"La cantidad de caracteres que habia en disco de la bitacora del tripulante %d eran: %d", idTripulante,cantidadDeCaracteresQueHabia);
+
+		config_set_value(config,"SIZE",string_itoa(string_length(mensaje) + cantidadDeCaracteresQueHabia));
+
+		log_info(logImongo,"La cantidad de caracteres que hay ahora del tripulante %d son: %d", idTripulante,cantidadDeCaracteresQueHabia);
+
+		char* bloquesQueOcupaba = config_get_string_value(config,"BLOCKS");
+
+		log_info(logImongo,"La posicion de los bloques que tenia antes el tripulante de ID %d eran: %s", idTripulante,bloquesQueOcupaba);
+
+		char* bloquesNuevos = string_substring_until(bloquesQueOcupaba, string_length(bloquesQueOcupaba) - 1);
+
+		log_info(logImongo,"Procesando... %s",bloquesNuevos);
+
+		for(int i=0; i<bloquesAocupar;i++){
+
+			string_append(&bloquesNuevos,",");
+			log_info(logImongo,"Procesando... %s",bloquesNuevos);
+			string_append(&bloquesNuevos, string_itoa(posicionesQueOcupa[i]));
+			log_info(logImongo,"Procesando... %s",bloquesNuevos);
+
+		}
+		string_append(&bloquesNuevos,"]");
+
+		log_info(logImongo,"Los bloques q %s",bloquesNuevos);
+
+		log_info(logImongo,"La posicion de los bloques actualizada del tripulante de ID %d es: %s", idTripulante,bloquesNuevos);
+
+		free(bloquesQueOcupaba);
+		free(bloquesNuevos);
+
+		mandarOKAdiscordiador(tripulanteSock);
+	}
+
+	else{
+
+		log_info(logImongo,"No hay mas espacio en el disco para escribir en bitacora");
+
+		mandarErrorAdiscordiador(tripulanteSock);
+
+	}
+
+	unlock(&mutexBitacora);
 
 }
 

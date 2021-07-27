@@ -121,7 +121,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Se mueve de %d|%d a %d|%d", desplazamiento->inicio.posX, desplazamiento->inicio.posY, desplazamiento->fin.posX, desplazamiento->fin.posY);
 
-			escribirEnBitacora(mensaje,desplazamiento->idTripulante);
+			escribirEnBitacora(mensaje,desplazamiento->idTripulante,tripulanteSock);
 
 			free(mensaje);
 			free(desplazamiento);
@@ -139,7 +139,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Comienza la ejecucion de la tarea %s", avisoTarea->nombreTarea);
 
-			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
+			escribirEnBitacora(mensaje,avisoTarea->idTripulante,tripulanteSock);
 
 			free(mensaje);
 			free(avisoTarea->nombreTarea);
@@ -158,7 +158,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Se finaliza la tarea %s", avisoTarea->nombreTarea);
 
-			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
+			escribirEnBitacora(mensaje,avisoTarea->idTripulante,tripulanteSock);
 
 			free(mensaje);
 
@@ -178,7 +178,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Se corre en panico hacia la ubicacion del sabotaje");
 
-			escribirEnBitacora(mensaje,idTripulante);
+			escribirEnBitacora(mensaje,idTripulante,tripulanteSock);
 
 			free(mensaje);
 
@@ -195,7 +195,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Se resuelve el sabotaje");
 
-			escribirEnBitacora(mensaje,idTripulante);
+			escribirEnBitacora(mensaje,idTripulante,tripulanteSock);
 
 			free(mensaje);
 
