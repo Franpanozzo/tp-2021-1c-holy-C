@@ -400,8 +400,18 @@ void sincronizarMemoriaSecundaria(){
 		else
 			log_error(logImongo, "La sincronizacion esta arrojando cualquier valor");
 
+		t_bitarray* bitmap = crearBitmap();
 
-		log_info(logImongo,"La cant de bloques de oxigeno es %d", cantBloquesSegunLista(oxigeno));
+		log_info(logImongo,"El bitmap tiene un tamanio de %d", bitarray_get_max_bit(bitmap));
+
+		for(int i=0; i < bitarray_get_max_bit(bitmap); i++){
+			if(bitarray_test_bit(bitmap, i)){
+				log_info(logImongo,"El bitmap esta ocupado en la posicion %d", i);
+			}
+		}
+
+		char* a = convertirBitmapEnString(crearBitmap());
+		log_info(logImongo,"El bitmap es el siguiente \n %s", a);
 
 	}
 }

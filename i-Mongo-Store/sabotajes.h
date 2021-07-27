@@ -24,8 +24,10 @@ uint32_t sizeSegunBlocks(tarea*);
 uint32_t tamanioUltimoBloque(tarea*);
 uint32_t cantBloquesSegunLista(tarea*);
 t_list* obtenerBloquesOcupadosSegunFiles();
-char* convertirEnString(t_list*);
+char* convertirListaEnString(t_list*);
 t_list* convertirEnLista(char**);
+t_bitarray* crearBitmap();
+char* convertirBitmapEnString(t_bitarray*);
 
 
 

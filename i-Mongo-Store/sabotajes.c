@@ -48,67 +48,83 @@ void arreglarSabotajeCantBloquesEnSuperBloque(){
 	config_set_value(configSuperBloque, "BLOCKS", string_itoa(cantBloquesEnBlocks()));
 }
 
-/*
+
 
 bool haySabotajeBitmapEnSuperBloque(){
 
+	char* stringBitmap = config_get_string_value(configSuperBloque, "BITMAP");
+	t_bitarray* bitmap = crearBitmap(stringBitmap);
+
+	bool compararConBitmap(int* n){
+		return bitarray_test_bit(bitmap, *n);
+	}
 
 	t_list* listaBloques = list_create();
 
-
 	//PARA CADA FILE
-	obtenerBloquesOcupadosSegunFiles(pathOxigeno, listaBloques);
-	obtenerBloquesOcupadosSegunFiles(pathComida, listaBloques);
-	obtenerBloquesOcupadosSegunFiles(pathBasura, listaBloques);
 
-	int idTripulante = 0;
-	char* pathBitacoraTripulante = obtenerPathBitacora(idTripulante);
-
-	while(pathBitacoraTripulante != NULL){
-
+	if(verificarSiExiste(pathOxigeno)){
+		agregarBloquesOcupados(listaBloques, oxigeno->config);
+	}
+	if(verificarSiExiste(pathBasura)){
+		agregarBloquesOcupados(listaBloques, basura->config);
+	}
+	if(verificarSiExiste(pathComida)){
+		agregarBloquesOcupados(listaBloques, comida->config);
 	}
 
+	// FALTA PARTE DE BITACORAS
 
+	bool result = list_any_satisfy(listaBloques, (void*)compararConBitmap);
 
-
-
+	list_destroy(listaBloques);
+	bitarray_destroy(bitmap);
+	free(stringBitmap);
 
 	return result;
 }
 
 
-void obtenerBloquesOcupadosSegunFiles(t_file* archivo, t_list* listaBloques){
+void agregarBloquesOcupados(t_list* listaBloques, t_config* config){
 
-	char** arrayStringBloques = string_get_string_as_array(archivo->bloquesQueOcupa); // ["1", "2"]
-
-	for(int i=0; i < archivo->cantidadBloques; i++){
-
-		int numeroBloque = atoi(*(arrayStringBloques + i));
-		list_add(listaBloques, &numeroBloque);
-	}
-}
-
-
-char* obtenerPathBitacora(int idTripulante){
-
-	char* pathBitacoraTripulante = strdup(pathBitacora);
-	string_append(&pathBitacoraTripulante, "/Tripulante");
-	string_append(&pathBitacoraTripulante, string_from_format("%d", idTripulante));
-	string_append(&pathBitacoraTripulante, ".ims");
-
-	if(verificarSiExiste(pathBitacoraTripulante)){
-		return pathBitacoraTripulante;
-	}
-	else{
-		return NULL;
-	}
+	t_list* listaAux = convertirEnLista(config_get_array_value(config, "BLOCKS"));
+	list_add_all(listaBloques, listaAux);
+	list_destroy(listaAux);
 }
 
 
 void arreglarSabotajeBitmapEnSuperBloque(){
 
+	t_list* listaBloques = list_create();
+
+	//PARA CADA FILE
+
+	if(verificarSiExiste(pathOxigeno)){
+		agregarBloquesOcupados(listaBloques, oxigeno->config);
+	}
+	if(verificarSiExiste(pathBasura)){
+		agregarBloquesOcupados(listaBloques, basura->config);
+	}
+	if(verificarSiExiste(pathComida)){
+		agregarBloquesOcupados(listaBloques, comida->config);
+	}
+	// FALTA PARTE DE BITACORAS
+
+	int tamanioBitmap = (int) ceil ((float) config_get_long_value(configSuperBloque, "BLOCKS") / (float) 8);
+	t_bitarray* bitmap = bitarray_create_with_mode(malloc(tamanioBitmap), tamanioBitmap, MSB_FIRST);
+
+	for(int i=0; i<list_size(listaBloques); i++){
+		bitarray_set_bit(bitmap, i);
+	}
+
+	char* stringMap = convertirBitmapEnString(bitmap);
+	config_set_value(configSuperBloque, "BITMAP", stringMap);
+
+	free(stringMap);
+	bitarray_destroy(bitmap);
+	list_destroy(listaBloques);
 }
-*/
+
 
 //HECHA
 bool haySabotajeSizeEnFile(tarea* fileConsumible){
@@ -159,6 +175,7 @@ void arreglarSabotajeBloquesEnFile(tarea* fileConsumible){
 */
 
 // ------ FUNCIONAS AUXILIARES ------
+
 
 // PROBADA
 uint32_t cantBloquesEnBlocks(){
@@ -221,6 +238,7 @@ uint32_t max(long int n1, long int n2){
 		return n2;
 }
 
+
 // PROBADA
 uint32_t cantBloquesSegunLista(tarea* fileConsumible){
 	t_list* listaBloquesOcupados = convertirEnLista(config_get_array_value(fileConsumible->config, "BLOCKS"));
@@ -228,6 +246,46 @@ uint32_t cantBloquesSegunLista(tarea* fileConsumible){
 	list_destroy(listaBloquesOcupados);
 	return cantidadBloques;
 }
+
+
+//PROBADA
+t_bitarray* crearBitmap(char* stringBitmap){
+
+	int tamanioBitmap = (int) ceil ((float) strlen(stringBitmap) / (float) 8);
+			//((float)config_get_long_value(configSuperBloque, "BLOCKS")
+
+	t_bitarray* bitmap = bitarray_create_with_mode(malloc(tamanioBitmap), tamanioBitmap, MSB_FIRST);
+
+	for(int i=0; i<strlen(stringBitmap); i++){
+
+		if(*(stringBitmap + i) == '1'){
+			bitarray_set_bit(bitmap, i);
+		}
+		else{
+			bitarray_clean_bit(bitmap, i);
+		}
+	}
+
+	return bitmap;
+}
+
+
+//PROBADA
+char* convertirBitmapEnString(t_bitarray* bitmap){
+
+	char* stringBitmap = string_new();
+
+	for(int i=0; i< bitarray_get_max_bit(bitmap); i++){
+
+		if(bitarray_test_bit(bitmap, i))
+			string_append(&stringBitmap, "1");
+		else
+			string_append(&stringBitmap, "0");
+	}
+
+	return stringBitmap;
+}
+
 
 
 // PROBADA
@@ -247,7 +305,7 @@ t_list* convertirEnLista(char** arrayValores){
 }
 
 // PROBADA
-char* convertirEnString(t_list* listaEnteros){
+char* convertirListaEnString(t_list* listaEnteros){
 
 	char* stringLista = string_new();
 	string_append(&stringLista, "[");
