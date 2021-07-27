@@ -729,35 +729,52 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 void actualizarMD5(tarea* structTarea){
 
-	 	char * copiaFile = malloc(structTarea->file->tamanioArchivo + 1);
+	char* md5 = obtenerMD5(structTarea->file->bloques);
 
-	 	for(int i=0; i<structTarea->file->cantidadBloques;i++){
-	 		int * bloque = list_get(structTarea->file->bloques, i);
-	 		int offsetMemoria =  (*bloque) * superBloque->block_size;
-	 		int offsetFile = i * superBloque->block_size;
-	 		log_info(logImongo,"offset memoria %d",offsetMemoria);
-	 		log_info(logImongo,"offset file %d",offsetFile);
-	 		lock(&mutexMemoriaSecundaria);
-	 		memcpy(copiaFile+offsetFile,copiaMemoriaSecundaria + offsetMemoria ,min(superBloque->block_size, structTarea->file->tamanioArchivo - offsetFile));
-	 		unlock(&mutexMemoriaSecundaria);
-	 	}
-	 	copiaFile[structTarea->file->tamanioArchivo] = '\0';
-	 	char * comando = string_from_format("echo -n \"%s\" | md5sum", copiaFile);
-	 	int md5Size = 32;
-	 	char * md5 = malloc(md5Size +2);
-	 	FILE * file = popen(comando, "r");
+	//char * freemd5 = structTarea->file->md5_archivo;
+	structTarea->file->md5_archivo = md5;
 
-	 	fgets(md5, md5Size+1, file);
-	 	//char * freemd5 = structTarea->file->md5_archivo;
-	 	structTarea->file->md5_archivo = md5;
-	 	log_info(logImongo,"md5:%s contenido:%s ", structTarea->file->md5_archivo,copiaFile);
+	log_info(logImongo,"md5:%s contenido:%s ", structTarea->file->md5_archivo);
 
-	 	free(comando);
-	 	//free(freemd5);
-	 	free(copiaFile);
-	 	fclose(file);
-	 	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
-	 	config_save(structTarea->config);
+
+	//free(freemd5);
+
+
+	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
+	config_save(structTarea->config);
+}
+char * reconstruirArchivo(t_list * bloques){
+	int tamanio = list_size(bloques);
+	char * copiaFile = malloc(tamanio + 1);
+
+	for(int i=0; i<tamanio;i++){
+		int * bloque = list_get(bloques, i);
+		int offsetMemoria =  (*bloque) * superBloque->block_size;
+		int offsetFile = i * superBloque->block_size;
+		log_info(logImongo,"offset memoria %d",offsetMemoria);
+		log_info(logImongo,"offset file %d",offsetFile);
+		lock(&mutexMemoriaSecundaria);
+		memcpy(copiaFile+offsetFile,copiaMemoriaSecundaria + offsetMemoria ,min(superBloque->block_size, tamanio - offsetFile));
+		unlock(&mutexMemoriaSecundaria);
+	}
+	copiaFile[tamanio] = '\0';
+	log_info(logImongo,"archivo reconstruido es: %s",copiaFile);
+	return copiaFile;
+}
+char * obtenerMD5(t_list * bloques){
+	int md5Size = 32;
+
+	char* copiaFile = reconstruirArchivo(bloques);
+	char * comando = string_from_format("echo -n \"%s\" | md5sum", copiaFile);
+	char * md5 = malloc(md5Size +2);
+	FILE * file = popen(comando, "r");
+
+	fgets(md5, md5Size+1, file);
+
+	fclose(file);
+	free(comando);
+	free(copiaFile);
+	return md5;
 }
 
 
