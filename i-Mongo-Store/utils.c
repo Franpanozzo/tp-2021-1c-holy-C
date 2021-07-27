@@ -734,7 +734,7 @@ void actualizarMD5(tarea* structTarea){
 	//char * freemd5 = structTarea->file->md5_archivo;
 	structTarea->file->md5_archivo = md5;
 
-	log_info(logImongo,"md5:%s contenido:%s ", structTarea->file->md5_archivo);
+	log_info(logImongo,"md5:%s ", structTarea->file->md5_archivo);
 
 
 	//free(freemd5);
@@ -743,11 +743,13 @@ void actualizarMD5(tarea* structTarea){
 	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
 	config_save(structTarea->config);
 }
-char * reconstruirArchivo(t_list * bloques){
-	int tamanio = list_size(bloques);
-	char * copiaFile = malloc(tamanio + 1);
 
-	for(int i=0; i<tamanio;i++){
+char * reconstruirArchivo(t_list * bloques){
+	int cantidadBloques = list_size(bloques);
+	int tamanio = cantidadBloques*superBloque->block_size;
+	char * copiaFile = malloc(tamanio);
+
+	for(int i=0; i<cantidadBloques;i++){
 		int * bloque = list_get(bloques, i);
 		int offsetMemoria =  (*bloque) * superBloque->block_size;
 		int offsetFile = i * superBloque->block_size;
@@ -1008,15 +1010,14 @@ t_desplazamiento* deserializarDesplazamiento(void* stream){
 t_avisoTarea* deserializarAvisoTarea(void* stream){
 
 	t_avisoTarea* avisoTarea = malloc(sizeof(t_avisoTarea));
-
 	uint32_t tamanioNombreTarea;
-
 	int offset=0;
 
 	memcpy(&(avisoTarea->idTripulante), stream + offset, sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(&tamanioNombreTarea, stream + offset, sizeof(uint32_t));
 	offset += sizeof(uint32_t);
+	avisoTarea->nombreTarea = malloc(tamanioNombreTarea);
 	memcpy(avisoTarea->nombreTarea, stream + offset,  tamanioNombreTarea);
 
 	return avisoTarea;
@@ -1033,7 +1034,7 @@ int deserializarAvisoSabotaje(void* stream){
 
 
 void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
-
+	/*
 	lock(&mutexBitacora);
 
 	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
@@ -1117,6 +1118,7 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 	}
 
 	unlock(&mutexBitacora);
+	*/
 }
 
 

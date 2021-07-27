@@ -49,6 +49,7 @@ t_desplazamiento* deserializarDesplazamiento(void*);
 t_avisoTarea* deserializarAvisoTarea(void*);
 int deserializarAvisoSabotaje(void*);
 void escribirEnBitacora(char*, int, int*);
-
+char * obtenerMD5(t_list * );
+char * reconstruirArchivo(t_list *);
 
 #endif
