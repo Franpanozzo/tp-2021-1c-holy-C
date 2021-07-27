@@ -650,7 +650,7 @@ int guardarTCB(tcb* tcbAGuardar, int idPatota) {
 	}
 
 	if(res == 1) {
-		char idNumero = tcbAGuardar->idTripulante + '0';
+		char idNumero = tcbAGuardar->idTripulante + '@';
 
 		lock(&mutexMapa);
 		int confirm = personaje_crear(nave, idNumero, tcbAGuardar->posX, tcbAGuardar->posY);
@@ -684,7 +684,7 @@ void expulsarTripulante(int idTripu,int idPatota) {
 	exit(1);
 	}
 
-	char idNumero = idTripu + '0';
+	char idNumero = idTripu + '@';
 	lock(&mutexMapa);
 	int confirm = item_borrar(nave, idNumero);
 	if(confirm != 0)
@@ -735,7 +735,7 @@ int actualizarTripulante(tcb* tcbAGuardar, int idPatota){
 
 	if(res == 1 ) {
 
-		char idNumero = tcbAGuardar->idTripulante + '0';
+		char idNumero = tcbAGuardar->idTripulante + '@';
 		lock(&mutexMapa);
 		int confirm = item_mover(nave, idNumero, tcbAGuardar->posX, tcbAGuardar->posY);
 		if(confirm != 0)
