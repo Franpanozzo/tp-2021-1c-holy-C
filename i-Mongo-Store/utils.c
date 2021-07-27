@@ -936,6 +936,8 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 				datosAguardar = string_repeat('\0',superBloque->block_size);
 				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
 				list_remove(structTarea->file->bloques,posiciones);
+				list_add(posicionesAlimpiar,&posiciones);
+				structTarea->file->cantidadBloques -= 1;
 
 			}
 
@@ -944,7 +946,7 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 				datosAguardar = string_repeat(structTarea->file->caracterLlenado[0],cantidadCaracteres - caracteresAconsumir);
 				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
 				char* relleno = string_repeat('\0',superBloque->block_size-(cantidadCaracteres - caracteresAconsumir));
-				log_info(logImongo,"El tamaño del relleno es : %d", string_length(relleno));
+				log_info(logImongo,"El tamaño del relleno es : %d", superBloque->block_size-(cantidadCaracteres - caracteresAconsumir));
 				string_append(&datosAguardar, relleno);
 				log_info(logImongo,"Los datos a guardar FINALMENTE son: ---- %s ----", datosAguardar);
 			}
@@ -964,11 +966,6 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", max(0,caracteresAconsumir));
 
-			list_add(posicionesAlimpiar,&posiciones);
-
-			log_info(logImongo,"Las posiciones que no estan mas son: %d",posiciones);
-
-
 			i--;
 
 		}
@@ -977,39 +974,39 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		log_info(logImongo,"Se van a poner en metadata los bloques: %s",bloquesMetaData);
 
-		int* posicionesAlimpiarBitArray = malloc(sizeof(int) * list_size(posicionesAlimpiar));
+		if(list_size(posicionesAlimpiar) > 0){
 
-		for(int i=0; i<list_size(posicionesAlimpiar);i++){
+			int* posicionesAlimpiarBitArray = malloc(sizeof(int) * list_size(posicionesAlimpiar));
 
-			posicionesAlimpiarBitArray[i] = *((int*) list_get(posicionesAlimpiar,i));
+			for(int i=0; i<list_size(posicionesAlimpiar);i++){
 
+				posicionesAlimpiarBitArray[i] = *((int*) list_get(posicionesAlimpiar,i));
+
+			}
+
+			log_info(logImongo, "Se van a limpiar en el bitarray las posiciones: ");
+
+			for(int i=0; i<bloquesAconsumir; i++){
+
+				log_info(logImongo, "%d ",posicionesAlimpiarBitArray[i]);
+
+			}
+
+			limpiarBitArray(posicionesAlimpiarBitArray,bloquesAconsumir);
+			free(posicionesAlimpiarBitArray);
 		}
-
-		log_info(logImongo, "Se van a limpiar en el bitarray las posiciones: ");
-
-		for(int i=0; i<bloquesAconsumir; i++){
-
-			log_info(logImongo, "%d ",posicionesAlimpiarBitArray[i]);
-
-		}
-
-		limpiarBitArray(posicionesAlimpiarBitArray,bloquesAconsumir);
 
 		structTarea->file->bloquesQueOcupa = bloquesMetaData;
 		log_info(logImongo,"Ahora los bloques que ocupa son: %s ", structTarea->file->bloquesQueOcupa);
-		structTarea->file->cantidadBloques -= bloquesAconsumir;
-		log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
 		structTarea->file->tamanioArchivo -= caracteresParaConsumir;
 		log_info(logImongo,"El tamanio del archivo ahora es: %d ", structTarea->file->tamanioArchivo);
-
-
+		log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
 		config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
 		config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
 		config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->tamanioArchivo));
 		//free(bloquesMetaData);
 		//actualizarMD5(structTarea);
 		config_save(structTarea->config);
-		free(posicionesAlimpiarBitArray);
 
 		/*void destruirPuntero(int* numero){
 			if(numero!=NULL)
