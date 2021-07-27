@@ -1011,11 +1011,13 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 		config_save(structTarea->config);
 		free(posicionesAlimpiarBitArray);
 
-		void destruirPuntero(int* numero){
-			free(numero);
+		/*void destruirPuntero(int* numero){
+			if(numero!=NULL)
+				free(numero);
 		}
-
-		list_destroy_and_destroy_elements(posicionesAlimpiar, (void*) destruirPuntero);
+		*/
+		//list_iterate(posicionesAlimpiar, (void*) destruirPuntero);
+		list_destroy(posicionesAlimpiar);
 		mandarOKAdiscordiador(tripulanteSock);
 
 	}
