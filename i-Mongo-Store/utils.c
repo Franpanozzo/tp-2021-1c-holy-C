@@ -361,7 +361,7 @@ void actualizarEstructurasFile(tarea* structTarea){
 
 void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bloquesAocupar){
 
-	char* bloquesQueTenia = structTarea->file->bloquesQueOcupa;
+	//char* bloquesQueTenia = structTarea->file->bloquesQueOcupa;
 	/*
 	log_info(logImongo,"Los bloques que tenia son: %s \n", bloquesQueTenia);
 
@@ -431,7 +431,7 @@ void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bl
 
 
 	//structTarea->file->bloquesQueOcupa = bloquesActuales;
-	char * freebloques=structTarea->file->bloquesQueOcupa;
+	//char * freebloques=structTarea->file->bloquesQueOcupa;
 	structTarea->file->bloquesQueOcupa = bloques;
 	structTarea->file->cantidadBloques += bloquesAocupar;
 
@@ -441,7 +441,7 @@ void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bl
 	config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
 	config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
 	config_save(structTarea->config);
-	free(freebloques);
+	//free(freebloques);
 }//
 
 int min(int a,int b){
@@ -906,12 +906,12 @@ void actualizarMD5(tarea* structTarea){
 	 	FILE * file = popen(comando, "r");
 
 	 	fgets(md5, md5Size+1, file);
-	 	char * freemd5 = structTarea->file->md5_archivo;
+	 	//char * freemd5 = structTarea->file->md5_archivo;
 	 	structTarea->file->md5_archivo = md5;
 	 	log_info(logImongo,"md5:%s contenido:%s ", structTarea->file->md5_archivo,copiaFile);
 
 	 	free(comando);
-	 	free(freemd5);
+	 	//free(freemd5);
 	 	free(copiaFile);
 	 	fclose(file);
 	 	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
