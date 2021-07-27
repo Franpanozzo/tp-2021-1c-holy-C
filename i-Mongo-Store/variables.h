@@ -19,6 +19,7 @@ typedef struct{
 	uint32_t tamanioArchivo;
 	uint32_t cantidadBloques;
 	char* bloquesQueOcupa;
+	t_list* bloques;
 	char* caracterLlenado;
 	char* md5_archivo;
 

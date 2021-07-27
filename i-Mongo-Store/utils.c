@@ -104,7 +104,6 @@ void mallocTareas(){
 	oxigeno->file= malloc(sizeof(t_file));
 	oxigeno->file->caracterLlenado = "O";
 	oxigeno->file->md5_archivo = malloc(sizeof(char));
-	//oxigeno->file->bloques= list_create();
 	pthread_mutex_init(oxigeno->mutex, NULL);
 
 	comida = malloc(sizeof(tarea));
@@ -113,7 +112,6 @@ void mallocTareas(){
 	comida->file= malloc(sizeof(t_file));
 	comida->file->caracterLlenado = "C";
 	comida->file->md5_archivo = malloc(sizeof(char));
-	//comida->file->bloques= list_create();
 	pthread_mutex_init(comida->mutex, NULL);
 
 	basura = malloc(sizeof(tarea));
@@ -122,7 +120,6 @@ void mallocTareas(){
 	basura->file= malloc(sizeof(t_file));
 	basura->file->caracterLlenado = "B";
 	basura->file->md5_archivo = malloc(sizeof(char));
-	//basura->file->bloques= list_create();
 	pthread_mutex_init(basura->mutex, NULL);
 
 
@@ -339,21 +336,33 @@ char* bitmap = malloc(sizeBitArray + 1);
 
 }
 
-void actualizarEstructurasFile(t_file* file, t_config* config){
+void actualizarEstructurasFile(tarea* structTarea){
 
-	file->bloquesQueOcupa = config_get_string_value(config,"BLOCKS");
-	file->cantidadBloques = config_get_int_value(config,"BLOCK_COUNT");
-	//file->caracterLlenado = config_get_string_value(config,"CARACTER_LLENADO");
-	file->md5_archivo = config_get_string_value(config,"MD5_ARCHIVO");
-	file->tamanioArchivo = config_get_int_value(config,"SIZE");
+	if(structTarea->configSeCreo != true){
+		structTarea->configSeCreo = true;
+		structTarea->file->bloquesQueOcupa = config_get_string_value(structTarea->config,"BLOCKS");
+		if(strcmp(structTarea->file->bloquesQueOcupa,"")==0){
+			structTarea->file->bloques = list_create();
+		}
+		else{
+			char ** stringAsArray = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
+			structTarea->file->bloques = convertirEnLista(stringAsArray);
+		}
+
+		structTarea->file->cantidadBloques = config_get_int_value(structTarea->config,"BLOCK_COUNT");
+		//file->caracterLlenado = config_get_string_value(config,"CARACTER_LLENADO");
+		structTarea->file->md5_archivo = config_get_string_value(structTarea->config,"MD5_ARCHIVO");
+		structTarea->file->tamanioArchivo = config_get_int_value(structTarea->config,"SIZE");
+
+	}
 
 }
 
 
-void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config* config, int bloquesAocupar){
+void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bloquesAocupar){
 
-	char* bloquesQueTenia = archivo->bloquesQueOcupa;
-
+	char* bloquesQueTenia = structTarea->file->bloquesQueOcupa;
+	/*
 	log_info(logImongo,"Los bloques que tenia son: %s \n", bloquesQueTenia);
 
 	int tamanio = string_length(bloquesQueTenia);
@@ -413,15 +422,24 @@ void actualizarPosicionesFile(t_file* archivo, int* arrayDePosiciones, t_config*
 	}
 	string_append(&bloquesActuales,"]");
 	log_info(logImongo,"%s \n", bloquesActuales);
+	*/
+	for(int i = 0; i<bloquesAocupar; i++){
+		int * bloque = (arrayDePosiciones+i);
+		list_add(structTarea->file->bloques,bloque);
+	}
+	char* bloques = convertirEnString(structTarea->file->bloques);
 
-	archivo->bloquesQueOcupa = bloquesActuales;
-	archivo->cantidadBloques += bloquesAocupar;
 
-	log_info(logImongo,"Se procede a actualizar las estructuras y archivos con los valores nuevos: ----%s--------%d----",archivo->bloquesQueOcupa,archivo->cantidadBloques);
+	//structTarea->file->bloquesQueOcupa = bloquesActuales;
+	structTarea->file->bloquesQueOcupa = bloques;
+	structTarea->file->cantidadBloques += bloquesAocupar;
 
-	config_set_value(config,"BLOCKS",archivo->bloquesQueOcupa);
-	config_set_value(config,"BLOCK_COUNT",string_itoa(archivo->cantidadBloques));
-	config_save(config);
+	log_info(logImongo,"Se procede a actualizar las estructuras y archivos con los valores nuevos: ----%s--------%d----",structTarea->file->bloquesQueOcupa,structTarea->file->cantidadBloques);
+
+
+	config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
+	config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
+	config_save(structTarea->config);
 
 }//
 
@@ -580,6 +598,10 @@ int fragmentacionDe(int ultimoBloqueTarea){
 
 int ultimoBloqueDeLa(tarea* structTarea){
 
+	int indiceUltimoBloque = list_size( structTarea->file->bloques) - 1;
+	int * ultimoBloque = list_get( structTarea->file->bloques,indiceUltimoBloque);
+	return *ultimoBloque;
+	/*
 	char** bloquesQueOcupa = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
 
 	for(int i=0; i<structTarea->file->cantidadBloques;i++){
@@ -606,7 +628,27 @@ int ultimoBloqueDeLa(tarea* structTarea){
 
 
 	return ultimoBloque;
+	*/
 
+}
+int saberUltimoBloqueTarea(tarea* structTarea){
+	/*
+	int indiceUltimoBloque = list_size( structTarea->file->bloques) - 1;
+	int * ultimoBloque = list_get( structTarea->file->bloques,indiceUltimoBloque);
+	return *ultimoBloque;
+	 */
+	char** ultimoBloqueTarea = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
+
+	int numeroUltimoBloque = atoi(*(ultimoBloqueTarea + structTarea->file->cantidadBloques));
+
+	for(int i=0; i<structTarea->file->cantidadBloques;i++){
+
+		free(ultimoBloqueTarea[i]);
+	}
+
+	free(ultimoBloqueTarea);
+
+	return numeroUltimoBloque;
 }
 
 
@@ -697,7 +739,6 @@ t_info*  nuevosBloquesAocupar(tarea* structTarea,t_tarea* _tarea){
 	unlock(&mutexMemoriaSecundaria);
 
 	free(bloque);
-
 	capacidad->bloquesNuevosAocupar  = 0;
 
 	capacidad->caracteresAguardar = 0;
@@ -709,8 +750,6 @@ t_info*  nuevosBloquesAocupar(tarea* structTarea,t_tarea* _tarea){
 void crearConfigTarea(tarea* structTarea){
 
 	if(structTarea->configSeCreo != true){
-
-		structTarea->configSeCreo = true;
 		structTarea->config  = config_create(structTarea->path);
 
 		if(structTarea->config == NULL){
@@ -750,7 +789,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			crearConfigTarea(structTarea);
 
-			actualizarEstructurasFile(structTarea->file, structTarea->config);
+			actualizarEstructurasFile(structTarea);
 
 			log_info(logImongo,"Los bloques que ocupaba antes son: %s que serian %d bloques \n", structTarea->file->bloquesQueOcupa, bloquesAocupar);
 
@@ -764,7 +803,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 				t_info* capacidad;
 
 				capacidad = nuevosBloquesAocupar(structTarea,_tarea);
-
+				actualizarMD5(structTarea);
 				bloquesAocupar = capacidad->bloquesNuevosAocupar;
 
 				if(bloquesAocupar > 0){
@@ -780,7 +819,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 						log_info(logImongo, "%d, " , posicionesQueOcupa[i]);
 					}
 
-					actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
+					actualizarPosicionesFile(structTarea,posicionesQueOcupa,bloquesAocupar);
 
 					log_info(logImongo,"Se porcede a guardar en memoria secundaria %d bloques", bloquesAocupar);
 					guardarEnMemoriaSecundaria(posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,capacidad->caracteresAguardar);
@@ -806,7 +845,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 			inicializarTarea(structTarea, bloquesAocupar, caracteresAOcupar);
 
-			actualizarEstructurasFile(structTarea->file, structTarea->config);
+			actualizarEstructurasFile(structTarea);
 
 			log_info(logImongo,"La tarea %s es la primera vez que ingresa, los bloques que va a ocupar son: %d \n", _tarea->nombreTarea,bloquesAocupar);
 
@@ -819,7 +858,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 				log_info(logImongo, "%d, ",posicionesQueOcupa[i]);
 			}
 
-			actualizarPosicionesFile(structTarea->file,posicionesQueOcupa,structTarea->config,bloquesAocupar);
+			actualizarPosicionesFile(structTarea,posicionesQueOcupa,bloquesAocupar);
 
 			log_info(logImongo,"Se procede a guardar en memoria secundaria %d bloques", bloquesAocupar);
 			guardarEnMemoriaSecundaria(posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,_tarea->parametro);
@@ -846,16 +885,20 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 
 void actualizarMD5(tarea* structTarea){
-	// arrayBloques = ["1","3"]  array de strings
+	/* arrayBloques = ["1","3"]  array de strings
 	 	char ** arrayBloques = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
+	*/
 	 	char * copiaFile = malloc(structTarea->file->tamanioArchivo + 1);
 
 	 	for(int i=0; i<structTarea->file->cantidadBloques;i++){
-	 		int offsetMemoria = atoi(*(arrayBloques + i)) * superBloque->block_size;
+	 		int * bloque = list_get(structTarea->file->bloques, i);
+	 		int offsetMemoria =  (*bloque) * superBloque->block_size;
 	 		int offsetFile = i * superBloque->block_size;
 	 		log_info(logImongo,"offset memoria %d",offsetMemoria);
 	 		log_info(logImongo,"offset file %d",offsetFile);
+	 		lock(&mutexMemoriaSecundaria);
 	 		memcpy(copiaFile+offsetFile,copiaMemoriaSecundaria + offsetMemoria ,min(superBloque->block_size, structTarea->file->tamanioArchivo - offsetFile));
+	 		unlock(&mutexMemoriaSecundaria);
 	 	}
 	 	copiaFile[structTarea->file->tamanioArchivo] = '\0';
 	 	char * comando = string_from_format("echo -n \"%s\" | md5sum", copiaFile);
@@ -864,18 +907,21 @@ void actualizarMD5(tarea* structTarea){
 	 	FILE * file = popen(comando, "r");
 
 	 	fgets(md5, md5Size+1, file);
-	 	char * freemd5 = structTarea->file->md5_archivo;
+
 	 	structTarea->file->md5_archivo = md5;
 	 	log_info(logImongo,"md5:%s contenido:%s ", structTarea->file->md5_archivo,copiaFile);
 	 	fclose(file);
 	 	free(comando);
+	 	//char * freemd5 = structTarea->file->md5_archivo;
 	 	//free(structTarea->file->md5_archivo);
 	 	//free(freemd5);
 	 	free(copiaFile);
-	 	for(int i=0;i<structTarea->file->cantidadBloques; i++){
+
+	 	/*for(int i=0;i<structTarea->file->cantidadBloques; i++){
 	 		free(arrayBloques[i]);
 	 	}
 	 	free(arrayBloques);
+	 	*/
 	 	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
 	 	config_save(structTarea->config);
 
@@ -901,23 +947,43 @@ void limpiarBitArray(int* bloquesAlimpiar, int cantidadBloquesALimpiar){
 	actualizarStringBitMap(cantidadBloquesALimpiar);
 
 }
+t_list* convertirEnLista(char** arrayValores){
 
+	t_list* lista = list_create();
 
-int saberUltimoBloqueTarea(tarea* structTarea){
+	for(uint32_t i=0; *(arrayValores + i) != NULL; i++){
 
-	char** ultimoBloqueTarea = string_get_string_as_array(structTarea->file->bloquesQueOcupa);
+		uint32_t* valor = malloc(sizeof(uint32_t));
+		*valor = atol(*(arrayValores + i));
 
-	int numeroUltimoBloque = atoi(*(ultimoBloqueTarea + structTarea->file->cantidadBloques));
-
-	for(int i=0; i<structTarea->file->cantidadBloques;i++){
-
-		free(ultimoBloqueTarea[i]);
+		list_add(lista, valor);
 	}
 
-	free(ultimoBloqueTarea);
-
-	return numeroUltimoBloque;
+	return lista;
 }
+
+char* convertirEnString(t_list* listaEnteros){
+
+	char* stringLista = string_new();
+	string_append(&stringLista, "[");
+
+	if(!list_is_empty(listaEnteros)){
+
+		for(uint32_t i=0; i < list_size(listaEnteros) - 1; i++){
+
+			string_append_with_format(&stringLista, "%d, ",
+					*(long int*)(list_get(listaEnteros, i)));
+
+		}
+
+		string_append_with_format(&stringLista, "%d", *(int*)(list_get(listaEnteros, list_size(listaEnteros) - 1)));
+	}
+
+	string_append(&stringLista, "]");
+
+	return stringLista;
+}
+
 
 
 
@@ -953,102 +1019,103 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 
 		}
 
-			char** posiciones = string_get_string_as_array(string_reverse(structTarea->file->bloquesQueOcupa));
+		char** posiciones = string_get_string_as_array(string_reverse(structTarea->file->bloquesQueOcupa));
 
-			int* posicionesEnNumero = malloc(sizeof(int)* structTarea->file->cantidadBloques);
+		int* posicionesEnNumero = malloc(sizeof(int)* structTarea->file->cantidadBloques);
 
-			log_info(logImongo,"El reverse de los bloques que ocupa es: ");
+		log_info(logImongo,"El reverse de los bloques que ocupa es: ");
 
-			for(int i=0; i<structTarea->file->cantidadBloques;i++){
+		for(int i=0; i<structTarea->file->cantidadBloques;i++){
 
-				posicionesEnNumero[i] = atoi(*(posiciones) + i);
-				log_info(logImongo,"%d ",posicionesEnNumero[i]);
-				free(posiciones[i]);
+			posicionesEnNumero[i] = atoi(*(posiciones) + i);
+			log_info(logImongo,"%d ",posicionesEnNumero[i]);
+			free(posiciones[i]);
 
-			}
+		}
 
-			free(posiciones);
+		free(posiciones);
 
-			int* posicionesAlimpiar = malloc(sizeof(int)* bloquesAconsumir);
+		int* posicionesAlimpiar = malloc(sizeof(int)* bloquesAconsumir);
 
-			int i=0;
+		int i=0;
 
-			int caracteresParaConsumir = caracteresAconsumir;
+		int caracteresParaConsumir = caracteresAconsumir;
 
-			while(caracteresAconsumir >0){
+		while(caracteresAconsumir >0){
 
-				log_info(logImongo,"Los caracteres a consumir son: %d", caracteresAconsumir);
-				char* datos = datosBloque(posicionesEnNumero[i]);
-				log_info(logImongo,"Los datos que estan en la posicion %d actualmente son: %s: ", posicionesEnNumero[i],datos);
-				int cantidadCaracteres = string_length(datos);
-				log_info(logImongo,"La cantidad de caracteres de %s es: %d", datos,cantidadCaracteres);
-				char* datosAguardar;
-				if(caracteresAconsumir > cantidadCaracteres){
+			log_info(logImongo,"Los caracteres a consumir son: %d", caracteresAconsumir);
+			char* datos = datosBloque(posicionesEnNumero[i]);
+			log_info(logImongo,"Los datos que estan en la posicion %d actualmente son: %s: ", posicionesEnNumero[i],datos);
+			int cantidadCaracteres = string_length(datos);
+			log_info(logImongo,"La cantidad de caracteres de %s es: %d", datos,cantidadCaracteres);
+			char* datosAguardar;
+			if(caracteresAconsumir > cantidadCaracteres){
 
-					caracteresAconsumir = cantidadCaracteres;
-					datosAguardar = string_repeat('\0',superBloque->block_size);
-					log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
-
-				}
-				else if((caracteresAconsumir == cantidadCaracteres)){
-
-					datosAguardar = string_repeat('\0',superBloque->block_size);
-					log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
-
-				}
-				else{
-
-					datosAguardar = string_repeat(structTarea->file->caracterLlenado[0],cantidadCaracteres - caracteresAconsumir);
-					log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
-					char* relleno = string_repeat('\0',superBloque->block_size-(cantidadCaracteres - caracteresAconsumir));
-					log_info(logImongo,"El tamaño del relleno es : %d", string_length(relleno));
-					string_append(&datosAguardar, relleno);
-					log_info(logImongo,"Los datos a guardar FINALMENTE son: ---- %s ----", datosAguardar);
-				}
-
-				log_info(logImongo,"El bloque que voy a guardar en memoria es %s ", datosAguardar);
-				int offset = posicionesEnNumero[i] * superBloque->block_size;
-				log_info(logImongo,"El offset para guardar en memoria es %d ", offset);
-				lock(&mutexMemoriaSecundaria);
-				memcpy(copiaMemoriaSecundaria + offset, datosAguardar,superBloque->block_size);
-				unlock(&mutexMemoriaSecundaria);
-				free(datosAguardar);
-				caracteresAconsumir-=cantidadCaracteres;
-				log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", max(0,caracteresAconsumir));
-				posicionesAlimpiar[i] = posicionesEnNumero[i];
-				log_info(logImongo,"Las posiciones que no estan mas son: %d",posicionesAlimpiar[i]);
-				i++;
+				caracteresAconsumir = cantidadCaracteres;
+				datosAguardar = string_repeat('\0',superBloque->block_size);
+				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
 
 			}
+			else if((caracteresAconsumir == cantidadCaracteres)){
 
-			char* bloquesMetaData = strdup("[");
+				datosAguardar = string_repeat('\0',superBloque->block_size);
+				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
 
-			for(int j=i; j<structTarea->file->cantidadBloques;j++){
-
-				if(j!=i){
-					string_append(&bloquesMetaData,", ");
-				}
-				string_append(&bloquesMetaData,string_itoa(posicionesEnNumero[j]));
 			}
-			string_append(&bloquesMetaData,"]");
+			else{
+
+				datosAguardar = string_repeat(structTarea->file->caracterLlenado[0],cantidadCaracteres - caracteresAconsumir);
+				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
+				char* relleno = string_repeat('\0',superBloque->block_size-(cantidadCaracteres - caracteresAconsumir));
+				log_info(logImongo,"El tamaño del relleno es : %d", string_length(relleno));
+				string_append(&datosAguardar, relleno);
+				log_info(logImongo,"Los datos a guardar FINALMENTE son: ---- %s ----", datosAguardar);
+			}
+
+			log_info(logImongo,"El bloque que voy a guardar en memoria es %s ", datosAguardar);
+			int offset = posicionesEnNumero[i] * superBloque->block_size;
+			log_info(logImongo,"El offset para guardar en memoria es %d ", offset);
+			lock(&mutexMemoriaSecundaria);
+			memcpy(copiaMemoriaSecundaria + offset, datosAguardar,superBloque->block_size);
+			unlock(&mutexMemoriaSecundaria);
+			free(datosAguardar);
+			caracteresAconsumir-=cantidadCaracteres;
+			log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", max(0,caracteresAconsumir));
+			posicionesAlimpiar[i] = posicionesEnNumero[i];
+			log_info(logImongo,"Las posiciones que no estan mas son: %d",posicionesAlimpiar[i]);
+			i++;
+
+		}
+
+		char* bloquesMetaData = strdup("[");
+
+		for(int j=i; j<structTarea->file->cantidadBloques;j++){
+
+			if(j!=i){
+				string_append(&bloquesMetaData,", ");
+			}
+			string_append(&bloquesMetaData,string_itoa(posicionesEnNumero[j]));
+		}
+		string_append(&bloquesMetaData,"]");
 
 
 
-			limpiarBitArray(posicionesAlimpiar,bloquesAconsumir);
+		limpiarBitArray(posicionesAlimpiar,bloquesAconsumir);
 
-			structTarea->file->bloquesQueOcupa = bloquesMetaData;
-			log_info(logImongo,"Ahora los bloques que ocupa son: %s ", structTarea->file->bloquesQueOcupa);
-			structTarea->file->cantidadBloques -= bloquesAconsumir;
-			log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
-			structTarea->file->tamanioArchivo -= caracteresParaConsumir;
-			log_info(logImongo,"El tamanio del archivo ahora es: %d ", structTarea->file->tamanioArchivo);
+		structTarea->file->bloquesQueOcupa = bloquesMetaData;
+		log_info(logImongo,"Ahora los bloques que ocupa son: %s ", structTarea->file->bloquesQueOcupa);
+		structTarea->file->cantidadBloques -= bloquesAconsumir;
+		log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
+		structTarea->file->tamanioArchivo -= caracteresParaConsumir;
+		log_info(logImongo,"El tamanio del archivo ahora es: %d ", structTarea->file->tamanioArchivo);
 
-			config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
-			//config_set_value(structTarea->config,"MD5_ARCHIVO","");
-			config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
-			config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->tamanioArchivo));
-			free(bloquesMetaData);
-			config_save(structTarea->config);
+
+		config_set_value(structTarea->config,"BLOCKS",structTarea->file->bloquesQueOcupa);
+		config_set_value(structTarea->config,"BLOCK_COUNT",string_itoa(structTarea->file->cantidadBloques));
+		config_set_value(structTarea->config,"SIZE",string_itoa(structTarea->file->tamanioArchivo));
+		//free(bloquesMetaData);
+		//actualizarMD5(structTarea);
+		config_save(structTarea->config);
 
 		mandarOKAdiscordiador(tripulanteSock);
 

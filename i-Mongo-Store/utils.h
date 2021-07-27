@@ -16,12 +16,12 @@ bool validarExistenciaFileSystem(char*, char*,char*);
 void crearMemoria(int);
 int ultimoBloqueDeLa(tarea*);
 void generarTarea(tarea*, t_tarea*, int*);
-void actualizarEstructurasFile(t_file*, t_config*);
+void actualizarEstructurasFile(tarea*);
 void descartarBasura(t_tarea*,int*);
 void mandarErrorAdiscordiador(int*);
 int* obtenerArrayDePosiciones(int);
 bool bloquesLibres(int);
-void actualizarPosicionesFile(t_file*, int*, t_config*,int);
+void actualizarPosicionesFile(tarea*, int*,int);
 int min(int ,int );
 int max(int, int);
 void actualizarStringBitMap();
@@ -45,5 +45,8 @@ void limpiarBitArray(int*, int);
 void crearConfigTarea(tarea*);
 void inicializarTarea(tarea*, int, int);
 int saberUltimoBloqueTarea(tarea*);
+t_list* convertirEnLista(char** arrayValores);
+char* convertirEnString(t_list* listaEnteros);
+
 
 #endif
