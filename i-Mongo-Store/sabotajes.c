@@ -163,16 +163,39 @@ void arreglarSabotajeCantBloquesEnFile(tarea* fileConsumible){
 			string_itoa(cantBloquesReal));
 }
 
-/*
+
 bool haySabotajeBloquesEnFile(tarea* fileConsumible){
-	return true;
+
+	char** arrayPosiciones = config_get_array_value(fileConsumible->config, "BLOCKS");
+	t_list* listaBloques = convertirEnLista(arrayPosiciones);
+	char* md5calculado = calcularMd5(listaBloques);
+
+	char* md5real = config_get_string_value(fileConsumible->config, "MD5");
+
+	bool result = strcmp(md5calculado, md5real) != 0;
+
+	free(md5calculado);
+	free(md5real);
+	//falta liberar los elementos de la lista
+	list_destroy(listaBloques);
+	// falta liberar en arrayPosiciones
+
+	return result;
 }
+
 
 
 void arreglarSabotajeBloquesEnFile(tarea* fileConsumible){
 
+	char** arrayPosiciones = config_get_array_value(fileConsumible->config, "BLOCKS");
+	t_list* listaBloques = convertirEnLista(arrayPosiciones);
+	char* md5calculado = calcularMd5(listaBloques);
+
+	config_set_value(fileConsumible->config, "MD5", md5calculado);
+
+
 }
-*/
+
 
 // ------ FUNCIONAS AUXILIARES ------
 
