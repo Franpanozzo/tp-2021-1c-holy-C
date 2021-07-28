@@ -25,12 +25,14 @@
 	int gradoMultiprocesamiento;
 	int retardoCiclosCPU;
 	int idTripulanteBlocked;
+	int chequeoMemoria;
 
 
 	t_estado estadoAcomparar;
 	t_sabotaje* sabotaje;
 
 	sem_t semPlanificacion;
+	sem_t semMemoria;
 
 	char** todasLasTareasIO;
 
@@ -46,6 +48,7 @@
 	pthread_mutex_t mutexTotalTripus;
 	pthread_mutex_t mutexIdTripulanteBlocked;
 	pthread_mutex_t mutexPlanificador;
+
 
 
 #endif

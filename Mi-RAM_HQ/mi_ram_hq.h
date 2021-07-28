@@ -5,6 +5,7 @@
 #include "paginacion.h"
 
 t_log* logMemoria;
+NIVEL* nave;
 
 
 void cargar_configuracion();
@@ -26,7 +27,7 @@ void eliminarListaTCB(t_list*);
 void eliminarTCB(tcb* tcb);
 tcb* buscarTripulante(int tcbAActualizar,pcb* patotaDeTripu);
 void deserializarSegun(t_paquete*, int);
-t_tarea* deserializarTripulante(t_paquete*);
+int deserializarTripulante(t_paquete*);
 pcb* buscarPatota(uint32_t);
 void asignarSiguienteTarea(tcb*);
 void mandarTarea(t_tarea* , int);
@@ -39,7 +40,7 @@ tcb* cargarEnTripulante(void* );
 t_tarea* armarTarea(char* );
 void* meterEnBuffer(void* , tipoEstructura , int*, int*);
 int guardarPCB(pcb*, char*);
-t_tarea* guardarTCB(tcb*, int);
+int guardarTCB(tcb*, int);
 void hacerDump(int);
 void expulsarTripulante(int,int);
 t_tarea* asignarProxTarea(int, int);

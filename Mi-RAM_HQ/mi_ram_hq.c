@@ -6,7 +6,9 @@ sem_t habilitarPatotaEnRam;
 int main(void) {
 
 	char* pathDelLogMemoria = pathLogMemoria();
-	logMemoria = iniciarLogger(pathDelLogMemoria,"Memoria",1);
+	logMemoria = iniciarLogger(pathDelLogMemoria,"Memoria",0);
+
+	nave = nivel_crear("naveAmong");
 
 	cargar_configuracion();
 	iniciarMemoria();
@@ -101,18 +103,12 @@ void deserializarSegun(t_paquete* paquete, int tripulanteSock){
 		case TRIPULANTE:
 		{
 			log_info(logMemoria,"Voy a deserializar un tripulante");
-			t_tarea* tarea = deserializarTripulante(paquete);
-			if(tarea != NULL)
-			{
-				log_info(logMemoria,"Se le va a mandar al tripulante la tarea de: %s",tarea->nombreTarea);
-				mandarTarea(tarea, tripulanteSock);
-			}
+			res = deserializarTripulante(paquete);
+			log_info(logMemoria,"El resultado de la operacion es: %d",res);
+			if(res)
+				mandarConfirmacionDisc("OK", tripulanteSock);
 			else
-			{
-				log_info(logMemoria,"Se procede a enviar la TAREA ERROR");
-				t_tarea* tareaError = tarea_error();
-				mandarTarea(tareaError, tripulanteSock);
-			}
+				mandarConfirmacionDisc("ERROR", tripulanteSock);
 			break;
 		}
 		case EXPULSAR:
@@ -203,13 +199,37 @@ char* asignar_bytes(int cant_frames)
 
 void iniciarMemoria() {
 
+	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
+
+	memoria_principal = malloc(configRam.tamanioMemoria);
+
+	log_info(logMemoria,"El esquema usado es %s", configRam.esquemaMemoria);
+
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		tablasPaginasPatotas = list_create();
+
+		cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
+		log_info(logMemoria, "RAM FRAMES: %d", cant_frames_ppal);
+		char* data = asignar_bytes(cant_frames_ppal);
+		frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
+
+		cant_frames_virtual = configRam.tamanioSwap / configRam.tamanioPagina;
+		log_info(logMemoria, "SWAP FRAMES: %d\n",cant_frames_virtual);
+		char* data2 = asignar_bytes(cant_frames_virtual);
+		frames_ocupados_virtual = bitarray_create_with_mode(data2, cant_frames_virtual/8, MSB_FIRST);
+
 	}
 	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
+		log_info(logMemoria,"El criterio de seleccion usado es %s", configRam.criterioSeleccion);
 		tablasSegmentosPatotas = list_create();
+
+	    lugaresLibres = list_create();
+	    t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
+	    lugarInicial->inicio = 0;
+	    lugarInicial->bytesAlojados = configRam.tamanioMemoria;
+	    list_add(lugaresLibres,lugarInicial);
 	}
 
     signal(SIGUSR1, hacerDump);
@@ -228,35 +248,16 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexBitarray, NULL);
     pthread_mutex_init(&mutexAlojados, NULL);
     pthread_mutex_init(&mutexTiempo, NULL);
+    pthread_mutex_init(&mutexMapa, NULL);
+
 
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
 	tiempo = 0;
 	punteroClock = 0;
 
-	log_info(logMemoria, "TAMANIO RAM: %d", configRam.tamanioMemoria);
-
-	memoria_principal = malloc(configRam.tamanioMemoria);
-
-	//memset(memoria_principal,'$',configRam.tamanioMemoria);
-
-	cant_frames_ppal = configRam.tamanioMemoria / configRam.tamanioPagina;
-    log_info(logMemoria, "RAM FRAMES: %d", cant_frames_ppal);
-    char* data = asignar_bytes(cant_frames_ppal);
-    frames_ocupados_ppal = bitarray_create_with_mode(data, cant_frames_ppal/8, MSB_FIRST);
-
-    cant_frames_virtual = configRam.tamanioSwap / configRam.tamanioPagina;
-    log_info(logMemoria, "SWAP FRAMES: %d\n",cant_frames_virtual);
-    char* data2 = asignar_bytes(cant_frames_virtual);
-    frames_ocupados_virtual = bitarray_create_with_mode(data2, cant_frames_virtual/8, MSB_FIRST);
-
-    lugaresLibres = list_create();
-    t_lugarLibre* lugarInicial = malloc(sizeof(t_lugarLibre));
-    lugarInicial->inicio = 0;
-    lugarInicial->bytesAlojados = configRam.tamanioMemoria;
-    list_add(lugaresLibres,lugarInicial);
-
-	log_info(logMemoria,"El esquema usado es %s", configRam.esquemaMemoria);
+	nivel_gui_inicializar();
+	nivel_gui_dibujar(nave);
 
 }
 
@@ -363,7 +364,6 @@ int deserializarInfoPCB(t_paquete* paquete) {
 
 	free(stringTareas);
 
-	//sem_wait(&habilitarPatotaEnRam);
 	return guardarPCB(nuevoPCB,tareasDelimitadas);
 
 }
@@ -392,7 +392,7 @@ char* delimitarTareas(char* stringTareas) {
 }
 
 
-t_tarea* deserializarTripulante(t_paquete* paquete) {
+int deserializarTripulante(t_paquete* paquete) {
 
 	tcb* nuevoTCB = malloc(sizeof(tcb));
 
@@ -421,16 +421,17 @@ t_tarea* deserializarTripulante(t_paquete* paquete) {
 
 	log_info(logMemoria,"Recibi el tribulante de id %d de la  patota %d en estado %c",nuevoTCB->idTripulante, idPatota, nuevoTCB->estado);
 
+	/*
 	if(nuevoTCB->idTripulante == -1){
 		sem_post(&habilitarPatotaEnRam);
 		return tarea_error();
-	}
+	}*/
 
-	t_tarea* tarea = guardarTCB(nuevoTCB,idPatota);
+	int confirmacion = guardarTCB(nuevoTCB,idPatota);
 
 	free(nuevoTCB);
 
-	return tarea;
+	return confirmacion;
 
 	//NOS QUEDAMOS ACA
 	//BUSCAR EN RAM LA TAREA A DARLE, YA ENTRA EN JUEGO EL TEMA DE IR A BUSCAR A LAS PAGINAS SEGUN DESPLAZ ETC.
@@ -540,11 +541,15 @@ t_tarea* armarTarea(char* string){
 
 	    } else {
 	        tarea->nombreTarea = strdup(arrayParametros[0]);
+	        tarea->parametro = 0;
 	    }
 	    tarea->coordenadas.posX = (uint32_t) atoi(arrayParametros[1]);
 	    tarea->coordenadas.posY = (uint32_t) atoi(arrayParametros[2]);
 	    tarea->tiempo = (uint32_t) atoi(arrayParametros[3]);
 	    liberarDoblesPunterosAChar(arrayParametros);
+
+	    log_info(logMemoria, "TAREA - NOMBRE: %s - PARAMETRO: %d - POSX: %d - POSY: %d - TIEMPO: %d",
+	    		tarea->nombreTarea, tarea->parametro, tarea->coordenadas.posX, tarea->coordenadas.posY, tarea->tiempo);
 
 	    return tarea;
 }
@@ -627,21 +632,45 @@ int guardarPCB(pcb* pcbAGuardar, char* stringTareas) {
 }
 
 
-t_tarea* guardarTCB(tcb* tcbAGuardar, int idPatota) {
+int guardarTCB(tcb* tcbAGuardar, int idPatota) {
+
+	int res;
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
-		return guardarTCBPag(tcbAGuardar, idPatota);
+		res = guardarTCBPag(tcbAGuardar, idPatota);
 	}
-	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	else if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
-		return guardarTCBSeg(tcbAGuardar, idPatota);
+		res = guardarTCBSeg(tcbAGuardar, idPatota);
 	}
-	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
-	exit(1);
+	else
+	{
+		log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+		exit(1);
+	}
+
+	if(res == 1) {
+		char idNumero = tcbAGuardar->idTripulante + '@';
+
+		lock(&mutexMapa);
+		int confirm = personaje_crear(nave, idNumero, tcbAGuardar->posX, tcbAGuardar->posY);
+
+		if(confirm != 0)
+		{
+			char* error = nivel_gui_string_error(confirm);
+			log_error(logMemoria, "Error en el mapa: %s", error);
+			exit(1);
+		}
+		nivel_gui_dibujar(nave);
+		unlock(&mutexMapa);
+	}
+
+	return res;
 }
 
 
 void expulsarTripulante(int idTripu,int idPatota) {
+
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
 		expulsarTripulantePag(idTripu, idPatota);
@@ -654,6 +683,19 @@ void expulsarTripulante(int idTripu,int idPatota) {
 	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
 	exit(1);
 	}
+
+	char idNumero = idTripu + '@';
+	lock(&mutexMapa);
+	int confirm = item_borrar(nave, idNumero);
+	if(confirm != 0)
+	{
+		char* error = nivel_gui_string_error(confirm);
+		log_error(logMemoria, "Error en el mapa: %s", error);
+		exit(1);
+	}
+	nivel_gui_dibujar(nave);
+	unlock(&mutexMapa);
+
 	sem_post(&habilitarExpulsionEnRam);
 }
 
@@ -675,16 +717,38 @@ t_tarea* asignarProxTarea(int idPatota, int idTripu) {
 
 
 int actualizarTripulante(tcb* tcbAGuardar, int idPatota){
+
+	int res;
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
-		return actualizarTripulantePag(tcbAGuardar, idPatota);
+		res = actualizarTripulantePag(tcbAGuardar, idPatota);
 	}
-	if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
+	else if(strcmp(configRam.esquemaMemoria,"SEGMENTACION") == 0)
 	{
-		return actualizarTripulanteSeg(tcbAGuardar, idPatota);
+		res = actualizarTripulanteSeg(tcbAGuardar, idPatota);
 	}
-	log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
-	exit(1);
+	else
+	{
+		log_info(logMemoria,"Esquema de memoria no valido: %s", configRam.esquemaMemoria);
+		exit(1);
+	}
+
+	if(res == 1 ) {
+
+		char idNumero = tcbAGuardar->idTripulante + '@';
+		lock(&mutexMapa);
+		int confirm = item_mover(nave, idNumero, tcbAGuardar->posX, tcbAGuardar->posY);
+		if(confirm != 0)
+		{
+			char* error = nivel_gui_string_error(confirm);
+			log_error(logMemoria, "Error en el mapa: %s", error);
+			exit(1);
+		}
+		nivel_gui_dibujar(nave);
+		unlock(&mutexMapa);
+	}
+
+	return res;
 }
 
 
@@ -703,10 +767,11 @@ void hacerDump(int signal) {
 	}
 }
 
+
 char * pathLogMemoria(){
 	char *pathLog = string_new();
 	char *fecha = temporal_get_string_time("%d-%m-%y %H:%M:%S");
-	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logs/");
+	string_append(&pathLog, "/home/utnso/tp-2021-1c-holy-C/Mi-RAM_HQ/logsMemoria/");
 	string_append(&pathLog, "logMemoria_ ");
 	string_append(&pathLog, fecha);
 	string_append(&pathLog, ".log");

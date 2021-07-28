@@ -85,6 +85,8 @@ pthread_mutex_t mutexTablaPaginasPatota;
 pthread_mutex_t mutexBitarray;
 pthread_mutex_t mutexAlojados;
 pthread_mutex_t mutexTiempo;
+pthread_mutex_t mutexMapa;
+
 
 
 
@@ -101,7 +103,7 @@ t_info_pagina* crearPaginaEnTabla(t_tablaPaginasPatota* ,tipoEstructura);
 int asignarPaginasEnTabla(void* , t_tablaPaginasPatota* , tipoEstructura );
 t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int );
 t_info_pagina* buscarUltimaPaginaDisponible(t_tablaPaginasPatota* );
-t_tarea* guardarTCBPag(tcb*, int);
+int guardarTCBPag(tcb*, int);
 int guardarPCBPag(pcb*, char*);
 uint32_t estimarDLTareasPag();
 uint32_t buscarInicioDLTareas(t_tablaPaginasPatota* );
@@ -112,9 +114,7 @@ t_alojado* obtenerAlojadoPagina(t_list* , int);
 int actualizarTripulanteEnMemPag(t_tablaPaginasPatota* , tcb*);
 int frameTotalmenteLibre(int, int);
 t_list* paginasConTripu(t_list*, uint32_t );
-
 int sobreescribirTripu(t_list* , tcb*, int);
-
 int actualizarTripulantePag(tcb* , int);
 tcb* obtenerTripulante(t_tablaPaginasPatota* ,int );
 t_tarea* asignarProxTareaPag(int , int);
@@ -129,24 +129,8 @@ void dumpPag();
 int obtener_tiempo();
 void ejecutar_reemplazo(void*, t_info_pagina*, int);
 t_list* buscarInfosPaginasEnRam();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+t_info_pagina* paginaAReemplazar();
+int asignarNuevaPagina(t_info_pagina*, t_tablaPaginasPatota*, tipoEstructura, void*, int, int*, int*);
 
 
 #endif /* PAGINACION_H_ */
-
-
-
-

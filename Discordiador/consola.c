@@ -19,14 +19,9 @@ void leerConsola(){
 			cursor ++;
 
 			uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
-			log_info(logDiscordiador, "La cantidad de tripulantes es: %d",cantidadTripulantes);
 			char* tareas = procesarPathTareas(comandoYparametros, &cursor);
-			log_info(logDiscordiador, "Las tareas son: %s\n",tareas);
+			log_info(logDiscordiador, "Las tareas son: %s",tareas);
 			t_coordenadas* coordenadasTripulantes= procesarPosicionesTripulantes(comandoYparametros, cantidadTripulantes, &cursor);
-			log_info(logDiscordiador, "Las coordenadas son:");
-			for(int i=0; i<cantidadTripulantes; i++){
-				log_info(logDiscordiador,"---posx:%d;posy:%d---",coordenadasTripulantes[i].posX,coordenadasTripulantes[i].posY);
-			}
 
 			iniciarPatota(coordenadasTripulantes, tareas, cantidadTripulantes);
 

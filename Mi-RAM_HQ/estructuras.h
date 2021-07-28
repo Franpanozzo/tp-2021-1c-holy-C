@@ -24,6 +24,8 @@
 #include <commons/memory.h>
 #include <signal.h>
 #include <commons/process.h>
+#include <nivel-gui/nivel-gui.h>
+#include <nivel-gui/tad_nivel.h>
 
 
 typedef struct {

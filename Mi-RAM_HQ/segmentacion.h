@@ -35,7 +35,7 @@ t_list* tablasSegmentosPatotas;
 
 
 int guardarPCBSeg(pcb*, char*);
-t_tarea* guardarTCBSeg(tcb*, int);
+int guardarTCBSeg(tcb*, int);
 t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int);
 int asignarSegmentosEnTabla(void* , t_tablaSegmentosPatota* , tipoEstructura);
 void insertar_en_memoria_seg(t_info_segmento*, void*);
@@ -63,31 +63,9 @@ t_lugarLibre* buscarLugarLibre(int);
 void eliminarTablaPatota(t_tablaSegmentosPatota*);
 void mostrarLugaresLibres();
 void liberarSegmento(t_info_segmento*);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void mostrarLugaresLibresEnArchivo(FILE*);
+void unificarLugaresLibres();
+bool contieneLugarLibre(t_list*, t_lugarLibre*);
 
 
 
