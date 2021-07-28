@@ -175,11 +175,17 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			return sizeof(uint32_t);
 		}
 
+		case COORDENADAS_SABOTAJE:
+		{
+			return sizeof(t_coordenadas);
+		}
+
 		case STRING:
 		{
 			char * string = (char *) estructura;
 			return strlen(string) + 1;
 		}
+
 
 		default:
 				//printf("\n No pusiste el tipo de estructura para ver el tamanio negro \n");
@@ -229,6 +235,18 @@ t_tarea* deserializarTarea(void* stream){
     memcpy(tarea->nombreTarea, stream + offset, tamanioNombreTarea);
 
     return tarea;
+}
+
+t_coordenadas deserializarCoordenadas(void* stream) {
+
+    t_coordenadas coordenadas;
+
+    int offset = 0;
+    memcpy(&(coordenadas.posX),stream + offset,sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(&(coordenadas.posY),stream + offset,sizeof(uint32_t));
+
+    return coordenadas;
 }
 
 
@@ -329,6 +347,16 @@ void* serializarAvisoSabotaje(void* stream, void* estructura, int offset){
 	return stream;
 }
 
+void* serializarCoordenadas(void* stream, void* estructura, int offset){
+	t_coordenadas* coordenadas = (t_coordenadas*) estructura;
+
+	memcpy(stream + offset, &(coordenadas->posX),sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(stream + offset, &(coordenadas->posY),sizeof(uint32_t));
+
+	return stream;
+}
+
 
 void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperacion){
 
@@ -375,6 +403,9 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperaci
 
 		case FIN_SABOTAJE:
 			return serializarAvisoSabotaje(stream, estructura, offset);
+
+		case COORDENADAS_SABOTAJE:
+			return serializarCoordenadas(stream, estructura, offset);
 
 		case STRING:
 				return serializarString(stream,estructura,offset);

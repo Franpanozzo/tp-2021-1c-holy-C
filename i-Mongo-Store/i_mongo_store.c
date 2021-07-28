@@ -5,6 +5,8 @@ int main(void) {
 
 	char* path = pathLog();
 
+	signal(SIGUSR1, sabotaje);
+
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
 
 	crearConfig(&configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
@@ -21,6 +23,7 @@ int main(void) {
 
 	iniciarFileSystem();
 
+	listaPosicionesSabotaje = listaCoordenadasSabotaje();
 
 	pthread_create(&hiloSincronizador, NULL, (void*) sincronizarMemoriaSecundaria, NULL);
 	pthread_detach(hiloSincronizador);
@@ -30,6 +33,7 @@ int main(void) {
 	pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	pthread_join(manejoTripulante, (void*) NULL);
 
+	proximoPosSabotaje = 0;
 
 	//liberarConfiguracion();
 	//liberarTareas();
@@ -92,22 +96,18 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 			free(tarea);
 			break;
 		}
-
 		case DESPLAZAMIENTO:
 		{
 			break;
 		}
-
 		case INICIO_TAREA:
 		{
 			break;
 		}
-
 		case FIN_TAREA:
 		{
 			break;
 		}
-
 		case ID_SABOTAJE:
 		{
 			break;
@@ -116,7 +116,6 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 		{
 			break;
 		}
-
 		default:
 			log_info(logImongo,"i-Mongo-Store no entiende esa tarea");
 

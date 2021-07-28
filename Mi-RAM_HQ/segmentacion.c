@@ -529,7 +529,6 @@ void imprimirDatosSegmento(t_tablaSegmentosPatota* tablaSegPatota, FILE* archivo
 
 	void imprimirSegmento(t_info_segmento* info_segmento) {
 
-
 		char* dumpMarco = string_from_format("Proceso:%d   Segmento:%d	 Inicio:%d	 Tam:%db \n",
 				tablaSegPatota->idPatota, info_segmento->indice, info_segmento->deslazamientoInicial, info_segmento->bytesAlojados);
 

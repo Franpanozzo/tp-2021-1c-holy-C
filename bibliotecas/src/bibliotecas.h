@@ -41,6 +41,7 @@
 		FIN_TAREA, // id tripulante y nombre tarea solamente (char)
 		ID_SABOTAJE, // id tripulante
 		FIN_SABOTAJE,// id tripulante
+		COORDENADAS_SABOTAJE,
 		STRING
 
 	} tipoDeDato;
@@ -142,6 +143,8 @@
 	void* serializarAvisoSabotaje(void*, void*, int);
 	t_tarea* deserializarTarea(void*);
 	void liberarDoblesPunterosAChar(char** );
+	t_coordenadas deserializarCoordenadas(void*);
+	void* serializarCoordenadas(void*, void*, int);
 
 
 

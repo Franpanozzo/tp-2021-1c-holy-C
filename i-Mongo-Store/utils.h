@@ -37,5 +37,8 @@ void liberarTodosLosStructTareas();
 void sincronizarMemoriaSecundaria();
 void iniciarMutex();
 void actualizarMD5(tarea* );
+t_list* listaCoordenadasSabotaje();
+void sabotaje(int);
+
 
 #endif

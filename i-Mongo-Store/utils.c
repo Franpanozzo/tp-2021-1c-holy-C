@@ -80,6 +80,10 @@ void cargarDatosConfig(){
 	datosConfig->puerto = (uint32_t)config_get_int_value(configImongo,"PUERTO");
 	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(configImongo,"TIEMPO_SINCRONIZACION");
 	datosConfig->posicionesSabotaje = config_get_string_value(configImongo,"POSICIONES_SABOTAJE");
+
+	puertoEIPDisc = malloc(sizeof(puertoEIP));
+	puertoEIPDisc->puerto = config_get_int_value(configImongo,"PUERTO_DISC");
+	puertoEIPDisc->IP = strdup(config_get_string_value(configImongo,"IP_DISC"));
 }
 
 
@@ -836,3 +840,70 @@ void liberarTareas(){
 	}
 	free(tareas);
 }//
+
+
+
+t_list* listaCoordenadasSabotaje() {
+
+    char* stringCoordenadas = datosConfig->posicionesSabotaje;
+    stringCoordenadas = string_substring(stringCoordenadas, 1, strlen(stringCoordenadas)-2 ); //Le saco los corchetes
+    //Aca puede ir un log info para chequear que se haya hecho
+    char** arrayStringsCoordenadas = string_split(stringCoordenadas, ",");
+
+    t_list* listaCoordenadas = list_create();
+    int i = 0;
+    while(arrayStringsCoordenadas[i] != NULL) {
+
+        char** parCoordenadas = string_split(stringCoordenadas, "|");
+
+        t_coordenadas* coordenadasSabotaje = malloc(sizeof(t_coordenadas));
+
+        coordenadasSabotaje->posX = (uint32_t) atoi(parCoordenadas[0]);
+        coordenadasSabotaje->posY = (uint32_t) atoi(parCoordenadas[1]);
+
+        list_add(listaCoordenadas, coordenadasSabotaje);
+
+        liberarDoblesPunterosAChar(parCoordenadas);
+        i++;
+    }
+
+    liberarDoblesPunterosAChar(arrayStringsCoordenadas);
+    free(stringCoordenadas);
+
+    return listaCoordenadas;
+}
+
+
+void sabotaje(int signal) {
+
+  t_coordenadas* coordenadasSabotaje = list_get(listaPosicionesSabotaje, proximoPosSabotaje);
+
+  proximoPosSabotaje++;
+  if(proximoPosSabotaje == list_size(listaPosicionesSabotaje)) proximoPosSabotaje = 0;
+
+  t_paquete* paqueteEnviado = armarPaqueteCon((void*) coordenadasSabotaje, COORDENADAS_SABOTAJE);
+
+  log_info(logImongo,"\nSABOTAJE - AVISANDO A DISCORDADOR QUE ES EN POS: X:%d - Y:%d\n", coordenadasSabotaje->posX, coordenadasSabotaje->posY);
+
+  int socketDisc = iniciarConexionDesdeClienteHacia((void*) puertoEIPDisc);
+
+  enviarPaquete(paqueteEnviado, socketDisc);
+  close(socketDisc);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

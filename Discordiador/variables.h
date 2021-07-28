@@ -13,6 +13,7 @@
 
 	pthread_t planificador;
 	pthread_t sabo;
+	pthread_t manejoSabotaje;
 
 
 	puertoEIP* puertoEIPRAM;
@@ -26,6 +27,7 @@
 	int retardoCiclosCPU;
 	int idTripulanteBlocked;
 	int chequeoMemoria;
+	int puertoDisc;
 
 
 	t_estado estadoAcomparar;
