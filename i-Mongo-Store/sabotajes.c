@@ -179,6 +179,75 @@ bool haySabotajeBloquesEnFile(tarea* fileConsumible){
 }
 
 
+void guardarEnMemoriaSecundaria2(int* posicionesQueOcupa, char* contenido, int cantBloquesAocupar){
+
+	int offsetMemoria = 0;
+	int offsetContenido = 0;
+
+	for(int i = 0; i < cantBloquesAocupar;i++){
+
+		char* contenidoBloque = string_substring(contenido,
+				offsetContenido, min(offsetContenido, superBloque->block_size));
+
+		offsetContenido = superBloque->block_size;
+
+		offsetMemoria = posicionesQueOcupa[i] * superBloque->block_size;
+
+		lock(&mutexMemoriaSecundaria);
+		memcpy(copiaMemoriaSecundaria + offsetMemoria , contenidoBloque, strlen(contenidoBloque));
+		unlock(&mutexMemoriaSecundaria);
+
+		free(contenidoBloque);
+	}
+//	actualizarBitArray(posicionesQueOcupa, cantBloquesAocupar);
+}
+
+
+void guardarEnMemoriaSecundaria(int* posicionesQueOcupa,char* caracterLlenado, int bloquesAocupar, int caracteresAguardar){
+
+	int flag = caracteresAguardar;
+
+	log_info(logImongo,"flag = %d", flag);
+
+	char caracter = caracterLlenado[0];
+
+	log_info(logImongo,"caracter = %c", caracter);
+
+	char** palabraAguardar = malloc(sizeof(char*) * bloquesAocupar);
+
+	for(int i = 0; i < bloquesAocupar;i++){
+
+		palabraAguardar[i] = string_repeat(caracter,min(superBloque->block_size,flag));
+		log_info(logImongo,"Lo que pesa cada char es %d", strlen(palabraAguardar[i]));
+		log_info(logImongo,"palabra = %s", palabraAguardar[i]);
+		flag -= superBloque->block_size;
+		log_info(logImongo,"flag = %d", flag);
+	}
+
+	for(int i=0; i<bloquesAocupar; i++){
+
+		int offset = posicionesQueOcupa[i] * superBloque->block_size;
+
+		log_info(logImongo,"offset = %d", offset);
+
+		lock(&mutexMemoriaSecundaria);
+
+		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i], strlen(palabraAguardar[i]));
+		unlock(&mutexMemoriaSecundaria);
+
+		log_info(logImongo,"Lo que termino guardando fue %d", superBloque->block_size);
+	}
+
+	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
+
+	for(int i = 0; i < bloquesAocupar;i++){
+		free(palabraAguardar[i]);
+	}
+
+	free(palabraAguardar);
+}
+
+
 void arreglarSabotajeBloquesEnFile(tarea* fileConsumible){
 
 	char** arrayPosiciones = config_get_array_value(fileConsumible->config, "BLOCKS");
