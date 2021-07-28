@@ -707,8 +707,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 			actualizarPosicionesFile(structTarea,posicionesQueOcupa,bloquesAocupar);
 
 			log_info(logImongo,"Se procede a guardar en memoria secundaria %d bloques", bloquesAocupar);
-			guardarEnMemoriaSecundaria(posicionesQueOcupa,
-					structTarea->file->caracterLlenado,bloquesAocupar,_tarea->parametro);
+			guardarEnMemoriaSecundaria(posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,_tarea->parametro);
 
 			actualizarMD5(structTarea);
 			config_save(structTarea->config);
@@ -743,6 +742,39 @@ void actualizarMD5(tarea* structTarea){
 	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
 	config_save(structTarea->config);
 }
+
+
+void guardarStringEnMemoriaSecundaria(int* posicionesQueOcupa, char* contenido, int cantBloquesAocupar){
+
+	log_info(logImongo,"El contenido a guardar es: %s",contenido);
+
+    int offsetMemoria = 0;
+    int offsetContenido = 0;
+
+    for(int i = 0; i < cantBloquesAocupar;i++){
+
+        char* contenidoBloque = string_substring(contenido,
+        		offsetContenido, min(string_length(contenido) - offsetContenido, superBloque->block_size));
+
+        log_info(logImongo,"Procesando...: %s",contenidoBloque);
+
+        offsetContenido = superBloque->block_size;
+
+        log_info(logImongo,"El offset del contenido es...: %d",offsetContenido);
+
+        offsetMemoria = posicionesQueOcupa[i] * superBloque->block_size;
+
+        log_info(logImongo,"El offset de la memoria es...: %d",offsetMemoria);
+
+        lock(&mutexMemoriaSecundaria);
+        memcpy(copiaMemoriaSecundaria + offsetMemoria , contenidoBloque, strlen(contenidoBloque));
+        unlock(&mutexMemoriaSecundaria);
+
+        free(contenidoBloque);
+    }
+    actualizarBitArray(posicionesQueOcupa, cantBloquesAocupar);
+}
+
 
 char * reconstruirArchivo(t_list * bloques){
 	int cantidadBloques = list_size(bloques);
@@ -1034,7 +1066,7 @@ int deserializarAvisoSabotaje(void* stream){
 
 
 void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
-	/*
+
 	lock(&mutexBitacora);
 
 	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
@@ -1069,7 +1101,9 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 
 		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
 
-		guardarEnMemoriaSecundaria(posicionesQueOcupa,mensaje,bloquesAocupar,string_length(mensaje));
+		guardarStringEnMemoriaSecundaria(posicionesQueOcupa,mensaje, bloquesAocupar);
+
+    	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
 
 		int cantidadDeCaracteresQueHabia = config_get_int_value(config,"SIZE");
 
@@ -1118,7 +1152,7 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 	}
 
 	unlock(&mutexBitacora);
-	*/
+
 }
 
 

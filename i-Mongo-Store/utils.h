@@ -51,5 +51,8 @@ int deserializarAvisoSabotaje(void*);
 void escribirEnBitacora(char*, int, int*);
 char * obtenerMD5(t_list * );
 char * reconstruirArchivo(t_list *);
+void guardarStringEnMemoriaSecundaria(int*, char*, int);
+
+
 
 #endif
