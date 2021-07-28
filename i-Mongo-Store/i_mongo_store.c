@@ -29,7 +29,6 @@ int main(void) {
 	pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	pthread_join(manejoTripulante, (void*) NULL);
 
-
 	//liberarConfiguracion();
 
 	//liberarTareas();

@@ -51,7 +51,7 @@ int iniciarConexionDesdeServidor(int puerto) {
 	struct sockaddr_in* localAddress = malloc(sizeof(struct sockaddr_in));
 	struct sockaddr_in* serverAddress = malloc(sizeof(struct sockaddr_in));
 
-	localAddress->sin_addr.s_addr = inet_addr("127.0.0.1");
+	localAddress->sin_addr.s_addr = inet_addr("0.0.0.0");
 	localAddress->sin_port = htons(puerto);
 	localAddress->sin_family = AF_INET;
 
@@ -246,12 +246,26 @@ void* serializarPatota(void* stream, void* estructura, int offset){
 
 void* serializarTripulante(void* stream, void* estructura, int offset){
 
+	t_estado leerEstado(t_tripulante* tripulante){
+		lock(&tripulante->mutexEstado);
+		t_estado estado = tripulante->estado;
+		unlock(&tripulante->mutexEstado);
+		return estado;
+	}
+
 	t_tripulante* tripulante = (t_tripulante*) estructura;
+
+	t_estado estadoAMandar = leerEstado(tripulante);
+	if(estadoAMandar == SABOTAJE || estadoAMandar == EXIT)
+	{
+		estadoAMandar = EXEC;
+	}
+
 	memcpy(stream + offset, &(tripulante->idPatota),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, &(tripulante->idTripulante),sizeof(uint32_t));
 	offset += sizeof(uint32_t);
-	memcpy(stream + offset, &(tripulante->estado),sizeof(t_estado));
+	memcpy(stream + offset, &(estadoAMandar),sizeof(t_estado));
 	offset += sizeof(t_estado);
 	memcpy(stream + offset, &(tripulante->coordenadas.posX),sizeof(uint32_t));
 	offset += sizeof(uint32_t);

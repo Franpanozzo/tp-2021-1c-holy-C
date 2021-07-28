@@ -207,8 +207,8 @@ void hiloTripulante(t_tripulante* tripulante){
 				}
 				if(ciclosExec <= 0){
 
-					int socketMongo = enviarA(puertoEIPMongo, avisoTarea, FIN_TAREA);
-					close(socketMongo);
+					//int socketMongo = enviarA(puertoEIPMongo, avisoTarea, FIN_TAREA);
+					//close(socketMongo);
 					free(avisoTarea);
 					avisoTarea = NULL;
 

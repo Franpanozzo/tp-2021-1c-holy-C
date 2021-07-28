@@ -19,17 +19,13 @@
 
 
 	typedef struct{
-
 		uint32_t posX;
 		uint32_t posY;
-
 	}t_coordenadas;
 
 	typedef struct{
-
 		char* IP;
 		int puerto;
-
 	} puertoEIP;
 
 	typedef enum{
@@ -59,32 +55,25 @@
 	} t_tarea;
 
 	typedef enum{
-
 		NEW,
 		READY,
 		EXEC,
 		BLOCKED,
 		SABOTAJE,
 		EXIT
-
 	}t_estado;
 
 	typedef struct {
-
 		uint32_t size; // Tamaño del payload
 		void* stream; // Payload
-
 	} t_buffer;
 
 	typedef struct {
-
 		tipoDeDato codigoOperacion;
 		t_buffer* buffer;
-
 	} t_paquete;
 
 	typedef struct{
-
 		uint32_t idPatota;
 		uint32_t idTripulante;
 		t_estado estado;
@@ -92,20 +81,16 @@
 		t_tarea* instruccionAejecutar;
 		sem_t semaforoInicio;
 		sem_t semaforoFin;
-		bool estaVivo;
-
+		pthread_mutex_t mutexEstado;
 	} t_tripulante;
 
 	typedef struct{
-
 		uint32_t ID;
 		uint32_t tamanioTareas;
 		char* tareas;
-
 	}t_patota;
 
 	typedef struct{
-
 		t_tripulante* tripulanteSabotaje;
 		t_coordenadas coordenadas;
 		int haySabotaje;
@@ -114,22 +99,17 @@
 		sem_t semaforoCorrerSabotaje;
 		sem_t semaforoTerminoTripulante;
 		sem_t semaforoTerminoSabotaje;
-
 	} t_sabotaje;
 
 	typedef struct{
-
 		uint32_t idTripulante;
 		t_coordenadas inicio;
 		t_coordenadas fin;
-
 	} t_desplazamiento;
 
 	typedef struct{
-
 		uint32_t idTripulante;
 		char* nombreTarea;
-
 	} t_avisoTarea;
 
 	typedef struct{
