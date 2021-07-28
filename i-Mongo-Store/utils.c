@@ -770,6 +770,7 @@ void guardarStringEnMemoriaSecundaria(int* posicionesQueOcupa, char* contenido, 
         memcpy(copiaMemoriaSecundaria + offsetMemoria , contenidoBloque, strlen(contenidoBloque));
         unlock(&mutexMemoriaSecundaria);
 
+
         free(contenidoBloque);
     }
     actualizarBitArray(posicionesQueOcupa, cantBloquesAocupar);
@@ -1075,7 +1076,97 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 
 	t_config* config;
 
-	int bloquesAocupar = (int) ceil((float) string_length(mensaje)  / (float) superBloque->block_size);
+	if(!verificarSiExiste(pathBitacora)){
+
+		log_info(logImongo,"No existe la carpeta Bitacora, se procede a crearla");
+
+		mkdir(pathBitacora,0777);
+
+	}
+
+	if(!(verificarSiExiste(path))){
+
+		log_info(logImongo,"Es la primera vez que el tripulante ID: %d escribe en disco", idTripulante);
+
+		FILE* tripulante = fopen(path,"wb");
+
+		log_info(logImongo,"1");
+
+		fclose(tripulante);
+
+		config = config_create(path);
+
+		log_info(logImongo,"3");
+
+		config_set_value(config,"BLOCKS","[]");
+
+		log_info(logImongo,"4");
+
+		config_set_value(config,"SIZE","0");
+
+		config_save(config);
+
+	}
+
+	else{
+
+		log_info(logImongo,"Ya existia el archivo del tripulante de ID: %d", idTripulante);
+
+		config = config_create(path);
+
+	}
+	char** bloquesQueOcupaba = config_get_array_value(config,"BLOCKS");
+	t_list * blocksQueOcupaba = convertirEnLista(bloquesQueOcupaba);
+
+	int ultimoBloque = max(list_size(blocksQueOcupaba) -1, 0);
+
+	int fragmentacionUltimoBloque = fragmentacionDe(ultimoBloque);
+
+	int bloquesAocupar;
+	int* posicionesQueOcupa;
+
+	if(fragmentacionUltimoBloque != 0){
+		char * contenidoUltimoBloque = datosBloque(ultimoBloque);
+		string_append(&contenidoUltimoBloque,mensaje);
+
+		int primeraVez = strlen(contenidoUltimoBloque)>0;
+
+		log_info(logImongo,"el contido luego de fragmentacion es: %s",contenidoUltimoBloque);
+		int tamanio = strlen(contenidoUltimoBloque) - fragmentacionUltimoBloque;
+		log_info(logImongo,"el tamanio luego de fragmentacion es: %d", tamanio);
+		bloquesAocupar = (int) ceil((float) tamanio  / (float) superBloque->block_size);
+		log_info(logImongo,"los bloques a ocupar luego de fragmentacion son: %d", bloquesAocupar);
+
+
+
+		if(bloquesAocupar>=0 && primeraVez){
+			posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar + 1);
+		}
+		else if(bloquesAocupar>0 && !primeraVez){
+			posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+			int* posicionesNuevasAocupar = malloc(bloquesAocupar + 1);
+
+			posicionesNuevasAocupar[0] = ultimoBloque;
+
+			for(int i = 1; i<bloquesAocupar; i++){
+				posicionesNuevasAocupar[i] = posicionesQueOcupa[i];
+			}
+
+			free(posicionesQueOcupa);
+			posicionesQueOcupa = posicionesNuevasAocupar;
+
+		}
+		else if(bloquesAocupar==0 && !primeraVez){
+			posicionesQueOcupa = malloc(sizeof(int));
+			posicionesQueOcupa[0] = ultimoBloque;
+		}
+		log_info(logImongo,"los bloques a ocupar son: %d",bloquesAocupar);
+
+	}
+	else{
+		bloquesAocupar = (int) ceil((float) strlen(mensaje)  / (float) superBloque->block_size);
+		posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+	}
 
 	log_info(logImongo,"Los bloques a ocupar de la bitacora del tripulante %d son: %d",idTripulante,bloquesAocupar);
 
@@ -1084,77 +1175,6 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 		log_info(logImongo,"Existen bloques libres por ocupar, se procede a "
 				"escribir en disco la bitacora del tripulante ID: %d", idTripulante);
 
-		if(!verificarSiExiste(pathBitacora)){
-
-			log_info(logImongo,"No existe la carpeta Bitacora, se procede a crearla");
-
-			mkdir(pathBitacora,0777);
-
-		}
-
-		if(!(verificarSiExiste(path))){
-
-			log_info(logImongo,"Es la primera vez que el tripulante ID: %d escribe en disco", idTripulante);
-
-			FILE* tripulante = fopen(path,"wb");
-
-			log_info(logImongo,"1");
-
-			fclose(tripulante);
-
-			config = config_create(path);
-
-			log_info(logImongo,"3");
-
-			config_set_value(config,"BLOCKS","[]");
-
-			log_info(logImongo,"4");
-
-			config_set_value(config,"SIZE","0");
-
-			config_save(config);
-
-		}
-
-		else{
-
-		log_info(logImongo,"Ya existia el archivo del tripulante de ID: %d", idTripulante);
-
-		config = config_create(path);
-
-		}
-
-		char** bloquesQueOcupaba = config_get_array_value(config,"BLOCKS");
-
-		int i=0;
-
-		while(*(bloquesQueOcupaba + i) != NULL){
-
-			i++;
-		}
-
-		int ultimoBloque = atoi(*(bloquesQueOcupaba + i - 1));
-
-		int fragmentacionUltimoBloque = fragmentacionDe(ultimoBloque);
-
-		int* posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
-
-		if(fragmentacionUltimoBloque != 0){
-
-			string_append(&datosBloque(ultimoBloque),mensaje);
-
-			int* posicionesNuevasAocupar = malloc(bloquesAocupar + 1);
-
-			posicionesNuevasAocupar[0] = ultimoBloque;
-
-			for(int i = 1; i<bloquesAocupar + 1; i++){
-				posicionesNuevasAocupar[i] = posicionesQueOcupa[i-1];
-			}
-
-			free(posicionesQueOcupa);
-			posicionesQueOcupa = posicionesNuevasAocupar;
-
-		}
 
 		guardarStringEnMemoriaSecundaria(posicionesQueOcupa,mensaje, bloquesAocupar);
 
@@ -1170,35 +1190,16 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 		log_info(logImongo,"La cantidad de caracteres que hay ahora del "
 				"tripulante %d son: %d", idTripulante,cantidadDeCaracteresQueHabia);
 
-		bloquesQueOcupaba = config_get_string_value(config,"BLOCKS");
+		for(int i=0; i<bloquesAocupar;i++){
 
-		log_info(logImongo,"La posicion de los bloques que tenia antes el "
-				"tripulante de ID %d eran: %s", idTripulante,bloquesQueOcupaba);
-
-		char* bloquesNuevos = string_substring_until(bloquesQueOcupaba, string_length(bloquesQueOcupaba) - 1);
-
-		log_info(logImongo,"Procesando... %s",bloquesNuevos);
-
-		for(int i=0; i<bloquesAocupar - 1 ;i++){
-
-			log_info(logImongo,"Procesando... %s",bloquesNuevos);
-			string_append(&bloquesNuevos, string_itoa(posicionesQueOcupa[i]));
-			log_info(logImongo,"Procesando... %s",bloquesNuevos);
-			string_append(&bloquesNuevos,",");
-
+			list_add(blocksQueOcupaba, posicionesQueOcupa + i);
 		}
-		string_append(&bloquesNuevos, string_itoa(posicionesQueOcupa[bloquesAocupar - 1]));
-		string_append(&bloquesNuevos,"]");
-
-		log_info(logImongo,"Los bloques q %s",bloquesNuevos);
-
-		log_info(logImongo,"La posicion de los bloques actualizada del "
-				"tripulante de ID %d es: %s", idTripulante,bloquesNuevos);
-
+		char * bloquesQueOcupa = convertirEnString(blocksQueOcupaba);
+		config_set_value(config, "BLOCKS", bloquesQueOcupa);
 		config_save(config);
 
 		free(bloquesQueOcupaba);
-		free(bloquesNuevos);
+		//free(bloquesNuevos);
 
 		mandarOKAdiscordiador(tripulanteSock);
 	}
