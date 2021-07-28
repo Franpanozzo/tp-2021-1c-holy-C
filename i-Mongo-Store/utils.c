@@ -931,7 +931,8 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea, int* tripulanteSock){
 				datosAguardar = string_repeat('\0',superBloque->block_size);
 				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
 				//ERROR 2, se remueve el elemento q esta en la posicion posiciones, pero posiciones es un contenido de la lista
-				list_remove(structTarea->file->bloques,posiciones);
+				//list_remove(structTarea->file->bloques, i);
+				list_remove(structTarea->file->bloques, posiciones);
 				list_add(posicionesAlimpiar,&posiciones);
 				structTarea->file->cantidadBloques -= 1;
 			}
@@ -1066,6 +1067,45 @@ int deserializarAvisoSabotaje(void* stream){
 }
 
 
+
+
+char* contenidoBloque(uint32_t posicionBloque){
+
+	uint32_t posicionEnMemoria = posicionBloque * superBloque->block_size;
+
+	uint32_t tamanioContenidoBloque = 0;
+
+	while(*(memoriaSecundaria + posicionEnMemoria + tamanioContenidoBloque) != caracterCorte
+			&& tamanioContenidoBloque < superBloque->block_size){
+
+		tamanioContenidoBloque ++;
+	}
+
+	char* contenido = malloc(tamanioContenidoBloque);
+
+	memcpy(contenido, memoriaSecundaria + posicionEnMemoria, tamanioContenidoBloque);
+
+	return contenido;
+}
+
+
+char* contenidoBloque2(uint32_t posicionBloque, uint32_t fragInt){
+
+	char* contenido = malloc(fragInt);
+
+	memcpy(contenido, memoriaSecundaria + posicionBloque * superBloque->block_size, fragInt);
+}
+
+
+uint32_t fragmentacionInterna(t_file archivo){
+
+	return archivo->tamanioArchivo % superBloque->block_size;
+}
+
+
+
+
+
 void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 
 	lock(&mutexBitacora);
@@ -1118,7 +1158,11 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 	char** bloquesQueOcupaba = config_get_array_value(config,"BLOCKS");
 	t_list * blocksQueOcupaba = convertirEnLista(bloquesQueOcupaba);
 
-	int ultimoBloque = max(list_size(blocksQueOcupaba) -1, 0);
+//	int posicionUltimoBloque = * (int*)list_get(blocksQueOcupaba, list_size(blocksQueOcupaba) - 1);
+
+//	char* contenidoUltimoBloque = contenidoBloque2(posicionUltimoBloque, fragmentacionDe(posicionUltimoBloque));
+
+	int ultimoBloque = * (int*)list_get(max(list_size(blocksQueOcupaba) -1, 0));
 
 	int fragmentacionUltimoBloque = fragmentacionDe(ultimoBloque);
 
