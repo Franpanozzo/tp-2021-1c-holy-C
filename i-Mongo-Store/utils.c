@@ -1075,158 +1075,56 @@ int deserializarAvisoSabotaje(void* stream){
 }
 
 
-void escribirEnBitacora(char* mensaje, int idTripulante){
-/*
-	lock(&mutexBitacora);
+char* leerBitacora(int idTripulante){
+
+	char* bitacora;
 
 	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
-
-	log_info(logImongo,"El archivo a crear tiene el path: %s",path);
-
 	t_config* config;
 
-	if(!verificarSiExiste(pathBitacora)){
+	if(verificarSiExiste(path)){
 
-		log_info(logImongo,"No existe la carpeta Bitacora, se procede a crearla");
-
-		mkdir(pathBitacora,0777);
-
-	}
-
-	if(!(verificarSiExiste(path))){
-
-		log_info(logImongo,"Es la primera vez que el tripulante ID: %d escribe en disco", idTripulante);
-
-		FILE* tripulante = fopen(path,"wb");
-
-		log_info(logImongo,"1");
-
-		fclose(tripulante);
-
+		bitacora = string_new();
 		config = config_create(path);
+		char** arrayBloques = config_get_array_value(config,"BLOCKS");
+		t_list* listaBloques = convertirEnLista(arrayBloques);
+		char* contenidoBloque;
+		char* contenidoBloqueSinFrag;
 
-		log_info(logImongo,"3");
+		for(int i=0; i<list_size(listaBloques); i++){
 
-		config_set_value(config,"BLOCKS","[]");
-
-		log_info(logImongo,"4");
-
-		config_set_value(config,"SIZE","0");
-
-		config_save(config);
-
-	}
-
-	else{
-
-		log_info(logImongo,"Ya existia el archivo del tripulante de ID: %d", idTripulante);
-
-		config = config_create(path);
-
-	}
-	char** bloquesQueOcupaba = config_get_array_value(config,"BLOCKS");
-	t_list * blocksQueOcupaba = convertirEnLista(bloquesQueOcupaba);
-
-//	int posicionUltimoBloque = * (int*)list_get(blocksQueOcupaba, list_size(blocksQueOcupaba) - 1);
-
-//	char* contenidoUltimoBloque = contenidoBloque2(posicionUltimoBloque, fragmentacionDe(posicionUltimoBloque));
-
-	int ultimoBloque = * (int*)list_get(max(list_size(blocksQueOcupaba) -1, 0));
-
-	int fragmentacionUltimoBloque = fragmentacionDe(ultimoBloque);
-
-	int bloquesAocupar;
-	int* posicionesQueOcupa;
-
-	if(fragmentacionUltimoBloque != 0){
-		char * contenidoUltimoBloque = datosBloque(ultimoBloque);
-		string_append(&contenidoUltimoBloque,mensaje);
-
-		int primeraVez = strlen(contenidoUltimoBloque)>0;
-
-		log_info(logImongo,"el contido luego de fragmentacion es: %s",contenidoUltimoBloque);
-		int tamanio = strlen(contenidoUltimoBloque) - fragmentacionUltimoBloque;
-		log_info(logImongo,"el tamanio luego de fragmentacion es: %d", tamanio);
-		bloquesAocupar = (int) ceil((float) tamanio  / (float) superBloque->block_size);
-		log_info(logImongo,"los bloques a ocupar luego de fragmentacion son: %d", bloquesAocupar);
-
-
-
-		if(bloquesAocupar>=0 && primeraVez){
-			posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar + 1);
+			contenidoBloque = datosBloque(* (int*)list_get(listaBloques, i));
+	        log_info(logImongo,"El contenido de la biacora q se va a leer es: %s", contenidoBloque);
+			contenidoBloqueSinFrag = string_substring(contenidoBloque, 0, strlen(contenidoBloque));
+			string_append(&bitacora, contenidoBloqueSinFrag);
 		}
-		else if(bloquesAocupar>0 && !primeraVez){
-			posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
-			int* posicionesNuevasAocupar = malloc(bloquesAocupar + 1);
-
-			posicionesNuevasAocupar[0] = ultimoBloque;
-
-			for(int i = 1; i<bloquesAocupar; i++){
-				posicionesNuevasAocupar[i] = posicionesQueOcupa[i];
-			}
-
-			free(posicionesQueOcupa);
-			posicionesQueOcupa = posicionesNuevasAocupar;
-
-		}
-		else if(bloquesAocupar==0 && !primeraVez){
-			posicionesQueOcupa = malloc(sizeof(int));
-			posicionesQueOcupa[0] = ultimoBloque;
-		}
-		log_info(logImongo,"los bloques a ocupar son: %d",bloquesAocupar);
-
 	}
 	else{
-		bloquesAocupar = (int) ceil((float) strlen(mensaje)  / (float) superBloque->block_size);
-		posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+		bitacora = string_from_format("No existe la bitacora del tripulante %d", idTripulante);
 	}
 
-	log_info(logImongo,"Los bloques a ocupar de la bitacora del tripulante %d son: %d",idTripulante,bloquesAocupar);
-
-	if(bloquesLibres(bloquesAocupar)){
-
-		log_info(logImongo,"Existen bloques libres por ocupar, se procede a "
-				"escribir en disco la bitacora del tripulante ID: %d", idTripulante);
-
-
-		guardarStringEnMemoriaSecundaria(posicionesQueOcupa,mensaje, bloquesAocupar);
-
-    	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
-
-		int cantidadDeCaracteresQueHabia = config_get_int_value(config,"SIZE");
-
-		log_info(logImongo,"La cantidad de caracteres que habia en disco de la "
-				"bitacora del tripulante %d eran: %d", idTripulante,cantidadDeCaracteresQueHabia);
-
-		config_set_value(config,"SIZE",string_itoa(string_length(mensaje) + cantidadDeCaracteresQueHabia));
-
-		log_info(logImongo,"La cantidad de caracteres que hay ahora del "
-				"tripulante %d son: %d", idTripulante,cantidadDeCaracteresQueHabia);
-
-		for(int i=0; i<bloquesAocupar;i++){
-
-			list_add(blocksQueOcupaba, posicionesQueOcupa + i);
-		}
-		char * bloquesQueOcupa = convertirEnString(blocksQueOcupaba);
-		config_set_value(config, "BLOCKS", bloquesQueOcupa);
-		config_save(config);
-
-		free(bloquesQueOcupaba);
-		//free(bloquesNuevos);
-
-		mandarOKAdiscordiador(tripulanteSock);
-	}
-	else{
-
-		log_error(logImongo,"No hay mas espacio en el disco para escribir en bitacora");
-
-		mandarErrorAdiscordiador(tripulanteSock);
-	}
-
-	unlock(&mutexBitacora);
-*/
+	return bitacora;
 }
 
+
+char* contenidoBloque(uint32_t posicionBloque){
+
+	uint32_t posicionEnMemoria = posicionBloque * superBloque->block_size;
+
+	uint32_t tamanioContenidoBloque = 0;
+
+	while(*(copiaMemoriaSecundaria + posicionEnMemoria + tamanioContenidoBloque) != '\0'
+			&& tamanioContenidoBloque < superBloque->block_size){
+
+		tamanioContenidoBloque ++;
+	}
+
+	char* contenido = malloc(tamanioContenidoBloque);
+
+	memcpy(contenido, copiaMemoriaSecundaria + posicionEnMemoria, tamanioContenidoBloque);
+
+	return contenido;
+}
 
 void liberarConfiguracion(){
 
