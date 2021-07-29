@@ -15,7 +15,7 @@ char* crearDestinoApartirDeRaiz(char*);
 bool validarExistenciaFileSystem(char*, char*,char*);
 void crearMemoria(int);
 int ultimoBloqueDeLa(tarea*);
-void generarTarea(tarea*, t_tarea*, int*);
+void generarTarea(tarea*, t_tarea*);
 void actualizarEstructurasFile(tarea*);
 void mandarErrorAdiscordiador(int*);
 int* obtenerArrayDePosiciones(int);
@@ -39,7 +39,7 @@ int ultimoBloqueDeLa(tarea*);
 t_info*  nuevosBloquesAocupar(tarea*,t_tarea*);
 void guardarEnMemoriaSecundaria(int*,char* , int, int);
 bool alcanzanCaracteresParaConsumir(int,int);
-void consumirTarea(tarea*, t_tarea*, int*);
+void consumirTarea(tarea*, t_tarea*);
 void limpiarBitArray(int*, int);
 void crearConfigTarea(tarea*);
 void inicializarTarea(tarea*, int, int);
@@ -48,12 +48,10 @@ char* convertirEnString(t_list* listaEnteros);
 t_desplazamiento* deserializarDesplazamiento(void*);
 t_avisoTarea* deserializarAvisoTarea(void*);
 int deserializarAvisoSabotaje(void*);
-void escribirEnBitacora(char*, int, int*);
+void escribirEnBitacora(char*, int);
 char * obtenerMD5(t_list * );
 char * reconstruirArchivo(t_list *);
-void guardarStringEnMemoriaSecundaria(t_list*, char*, int);
-t_list* obtenerArrayDePosiciones2(int);
-void actualizarBitArray2(t_list*, int);
+void guardarStringEnMemoriaSecundaria(int*, char*, int);
 
 
 

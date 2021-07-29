@@ -57,8 +57,7 @@ void atenderTripulantes(int* serverSock) {
 
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
 
-		//pthread_detach(t);
-		pthread_join(t, (void*) NULL);
+		pthread_detach(t);
     }
 }
 
@@ -79,12 +78,14 @@ void manejarTripulante(int *tripulanteSock) {
 
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
-    deserializarSegun(paquete,tripulanteSock);
+    deserializarSegun(paquete);
+
+    close(*tripulanteSock);
     free(tripulanteSock);
 }
 
 
-void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
+void deserializarSegun(t_paquete* paquete){
 
 	switch(paquete->codigoOperacion){
 
@@ -94,7 +95,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
 
-			seleccionarTarea(tarea,tripulanteSock);
+			seleccionarTarea(tarea);
 
 			free(tarea->nombreTarea);
 			free(tarea);
@@ -112,7 +113,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 					desplazamiento->inicio.posX, desplazamiento->inicio.posY,
 					desplazamiento->fin.posX, desplazamiento->fin.posY);
 
-			escribirEnBitacora(mensaje,desplazamiento->idTripulante,tripulanteSock);
+			escribirEnBitacora(mensaje,desplazamiento->idTripulante);
 
 			free(mensaje);
 			free(desplazamiento);
@@ -129,7 +130,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Comienza la ejecucion de la tarea %s", avisoTarea->nombreTarea);
 
-			escribirEnBitacora(mensaje,avisoTarea->idTripulante,tripulanteSock);
+			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
 
 			free(mensaje);
 			free(avisoTarea->nombreTarea);
@@ -146,7 +147,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Se finaliza la tarea %s", avisoTarea->nombreTarea);
 
-			escribirEnBitacora(mensaje,avisoTarea->idTripulante,tripulanteSock);
+			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
 
 			free(mensaje);
 
@@ -164,7 +165,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Se corre en panico hacia la ubicacion del sabotaje");
 
-			escribirEnBitacora(mensaje,idTripulante,tripulanteSock);
+			escribirEnBitacora(mensaje,idTripulante);
 
 			free(mensaje);
 
@@ -179,7 +180,7 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 
 			char* mensaje = string_from_format("Se resuelve el sabotaje");
 
-			escribirEnBitacora(mensaje,idTripulante,tripulanteSock);
+			escribirEnBitacora(mensaje,idTripulante);
 
 			free(mensaje);
 
@@ -191,11 +192,11 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 	}
 
 	eliminarPaquete(paquete);
-	close(*tripulanteSock);
+
 }
 
 
-void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
+void seleccionarTarea(t_tarea* tarea){
 
 	switch(indiceTarea(tarea)){
 
@@ -203,7 +204,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO");
 
-			generarTarea(oxigeno, tarea,tripulanteSock);
+			generarTarea(oxigeno, tarea);
 
 			break;
 		}
@@ -212,7 +213,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO");
 
-			consumirTarea(oxigeno,tarea,tripulanteSock);
+			consumirTarea(oxigeno,tarea);
 
 			break;
 		}
@@ -221,7 +222,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA");
 
-			generarTarea(comida, tarea,tripulanteSock);
+			generarTarea(comida, tarea);
 
 			break;
 		}
@@ -230,7 +231,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA");
 
-			consumirTarea(comida,tarea,tripulanteSock);
+			consumirTarea(comida,tarea);
 
 			break;
 		}
@@ -239,7 +240,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de GENERAR_BASURA");
 
-			generarTarea(basura, tarea,tripulanteSock);
+			generarTarea(basura, tarea);
 
 			break;
 		}
@@ -248,7 +249,7 @@ void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
 		{
 			log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA");
 
-			consumirTarea(basura,tarea,tripulanteSock);
+			consumirTarea(basura,tarea);
 			break;
 		}
 
