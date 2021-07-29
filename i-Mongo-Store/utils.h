@@ -54,6 +54,8 @@ char * reconstruirArchivo(t_list *);
 void guardarStringEnMemoriaSecundaria(t_list*, char*, int);
 t_list* obtenerArrayDePosiciones2(int);
 void actualizarBitArray2(t_list*, int);
+char* leerBitacora(int);
+char* contenidoBloque(uint32_t);
 
 
 

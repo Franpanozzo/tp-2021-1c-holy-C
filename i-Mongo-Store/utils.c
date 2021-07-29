@@ -1027,26 +1027,6 @@ int deserializarAvisoSabotaje(void* stream){
 
 
 /*
-char* contenidoBloque(uint32_t posicionBloque){
-
-	uint32_t posicionEnMemoria = posicionBloque * superBloque->block_size;
-
-	uint32_t tamanioContenidoBloque = 0;
-
-	while(*(memoriaSecundaria + posicionEnMemoria + tamanioContenidoBloque) != caracterCorte
-			&& tamanioContenidoBloque < superBloque->block_size){
-
-		tamanioContenidoBloque ++;
-	}
-
-	char* contenido = malloc(tamanioContenidoBloque);
-
-	memcpy(contenido, memoriaSecundaria + posicionEnMemoria, tamanioContenidoBloque);
-
-	return contenido;
-}
-
-
 char* contenidoBloque2(uint32_t posicionBloque, uint32_t fragInt){
 
 	char* contenido = malloc(superBloque->block_size - fragInt);
@@ -1098,7 +1078,6 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 
 	char** bloquesQueOcupaba = config_get_array_value(config,"BLOCKS");
 	t_list * blocksQueOcupaba = convertirEnLista(bloquesQueOcupaba);
-	log_info(logImongo,"paso 1");
 
 	int posicionUltimoBloque = 0;
 	int fragmentacionUltBloque = 0;
@@ -1150,6 +1129,11 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 		config_set_value(config, "BLOCKS", bloquesQueOcupa);
 		config_save(config);
 	}
+
+	char* bitacora = leerBitacora(idTripulante);
+	string_append(&bitacora, "\0");
+	log_info(logImongo,"Lo que esta en la bitacora del tripulante %d por "
+			"el momento es: %s", idTripulante, bitacora);
 
 	unlock(&mutexBitacora);
 }
@@ -1209,15 +1193,11 @@ void guardarStringEnMemoriaSecundaria(t_list* posicionesQueOcupa, char* contenid
     		contenidoBloqueConFragmentacion, strlen(contenidoBloqueConFragmentacion));
     unlock(&mutexMemoriaSecundaria);
 
-    log_info(logImongo,"LLego a 1");
-
     //free(contenidoBloqueConFragmentacion);
 
     for(int i=1; i < cantBloquesAocupar;i++){
 
     	posicionDelBloque = * (int*) list_get(posicionesQueOcupa, i);
-
-        log_info(logImongo,"LLego a 2");
 
         char* contenidoBloque = string_substring(contenido, offsetContenido,
 				min(string_length(contenido) - offsetContenido, superBloque->block_size));
@@ -1257,6 +1237,57 @@ void actualizarBitArray2(t_list* posicionesQueOcupa, int cantBloquesAocupar){
 	actualizarStringBitMap();
 }
 
+
+char* leerBitacora(int idTripulante){
+
+	char* bitacora;
+
+	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
+	t_config* config;
+
+	if(verificarSiExiste(path)){
+
+		bitacora = string_new();
+		config = config_create(path);
+		char** arrayBloques = config_get_array_value(config,"BLOCKS");
+		t_list* listaBloques = convertirEnLista(arrayBloques);
+		char* contenidoBloque;
+		char* contenidoBloqueSinFrag;
+
+		for(int i=0; i<list_size(listaBloques); i++){
+
+			contenidoBloque = datosBloque(* (int*)list_get(listaBloques, i));
+	        log_info(logImongo,"El contenido de la biacora q se va a leer es: %s", contenidoBloque);
+			contenidoBloqueSinFrag = string_substring(contenidoBloque, 0, strlen(contenidoBloque));
+			string_append(&bitacora, contenidoBloqueSinFrag);
+		}
+	}
+	else{
+		bitacora = string_from_format("No existe la bitacora del tripulante %d", idTripulante);
+	}
+
+	return bitacora;
+}
+
+
+char* contenidoBloque(uint32_t posicionBloque){
+
+	uint32_t posicionEnMemoria = posicionBloque * superBloque->block_size;
+
+	uint32_t tamanioContenidoBloque = 0;
+
+	while(*(copiaMemoriaSecundaria + posicionEnMemoria + tamanioContenidoBloque) != '\0'
+			&& tamanioContenidoBloque < superBloque->block_size){
+
+		tamanioContenidoBloque ++;
+	}
+
+	char* contenido = malloc(tamanioContenidoBloque);
+
+	memcpy(contenido, copiaMemoriaSecundaria + posicionEnMemoria, tamanioContenidoBloque);
+
+	return contenido;
+}
 
 void liberarConfiguracion(){
 
