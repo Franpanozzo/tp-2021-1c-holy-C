@@ -91,7 +91,7 @@ void mallocTareas(){
 	oxigeno->mutex = malloc(sizeof(pthread_mutex_t));
 	oxigeno->file= malloc(sizeof(t_file));
 	oxigeno->file->caracterLlenado = "O";
-	oxigeno->file->md5_archivo = malloc(sizeof(char));
+
 	pthread_mutex_init(oxigeno->mutex, NULL);
 
 	comida = malloc(sizeof(tarea));
@@ -99,7 +99,7 @@ void mallocTareas(){
 	comida->mutex = malloc(sizeof(pthread_mutex_t));
 	comida->file= malloc(sizeof(t_file));
 	comida->file->caracterLlenado = "C";
-	comida->file->md5_archivo = malloc(sizeof(char));
+
 	pthread_mutex_init(comida->mutex, NULL);
 
 	basura = malloc(sizeof(tarea));
@@ -107,7 +107,7 @@ void mallocTareas(){
 	basura->mutex = malloc(sizeof(pthread_mutex_t));
 	basura->file= malloc(sizeof(t_file));
 	basura->file->caracterLlenado = "B";
-	basura->file->md5_archivo = malloc(sizeof(char));
+
 	pthread_mutex_init(basura->mutex, NULL);
 }
 
@@ -644,7 +644,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea){
 
 			log_info(logImongo,"Los bloques que ocupaba antes son: %s que serian %d bloques",
 					mostrarBloquesLog, structTarea->file->cantidadBloques);
-
+			free(mostrarBloquesLog);
 			structTarea->file->tamanioArchivo += caracteresAOcupar;
 			char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
 			config_set_value(structTarea->config,"SIZE",tamanioArchivo);
@@ -677,6 +677,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea){
 				guardarEnMemoriaSecundaria(posicionesQueOcupa,structTarea->file->caracterLlenado,bloquesAocupar,capacidad->caracteresAguardar);
 
 				actualizarMD5(structTarea);
+				free(posicionesQueOcupa);
 			}
 
 			free(tamanioArchivo);
@@ -1006,7 +1007,7 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea){
 		char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
 		config_set_value(structTarea->config,"SIZE",tamanioArchivo);
 		free(tamanioArchivo);
-		//free(bloquesMetaData);
+		free(bloquesMetaData);
 		//actualizarMD5(structTarea);
 		config_save(structTarea->config);
 
