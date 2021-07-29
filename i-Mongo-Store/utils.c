@@ -281,17 +281,6 @@ void actualizarStringBitMap(){
     	bitmap[i] = valor + '0';
    }
 
-/*
-  for(int i = sizeBitArray; i<bitarray_get_max_bit(superBloque->bitmap);i++){
-
-	  int valor =  bitarray_test_bit(superBloque->bitmap, i);
-
-	      	printf("%d ", valor);
-
-  }
- PARA ANALIZAR LOS BLOQUES MUERTOS SI NO SON MULTIPLOS DE 8
-*/
-
   bitmap[sizeBitArray] = '\0';
 
   //lock(&mutexSuperBloque);
@@ -455,7 +444,7 @@ char* datosBloque(int numeroBloque){
 
 	int offset = (numeroBloque * superBloque->block_size);
 
-	log_info(logImongo,"El corrimiento para guardar es: %d", offset);
+	//log_info(logImongo,"El corrimiento para guardar es: %d", offset);
 
 	char* bloque = malloc(superBloque->block_size + 1);
 	lock(&mutexMemoriaSecundaria);
@@ -474,11 +463,11 @@ int fragmentacionDe(int ultimoBloqueTarea){
 
 	int tamanioBloque = string_length(bloque);
 
-	log_info(logImongo,"El tamanio del bloque es: %d", tamanioBloque);
+	//log_info(logImongo,"El tamanio del bloque es: %d", tamanioBloque);
 
 	int fragmentacion = ((int) superBloque->block_size) - tamanioBloque;
 
-	log_info(logImongo,"La fragmentacion del bloque es: %d", fragmentacion);
+	//log_info(logImongo,"La fragmentacion del bloque es: %d", fragmentacion);
 
 	//free(bloque);
 
@@ -744,37 +733,6 @@ void actualizarMD5(tarea* structTarea){
 }
 
 
-void guardarStringEnMemoriaSecundaria(int* posicionesQueOcupa, char* contenido, int cantBloquesAocupar){
-
-	log_info(logImongo,"El contenido a guardar es: %s",contenido);
-
-    int offsetMemoria = 0;
-    int offsetContenido = 0;
-
-    for(int i = 0; i < cantBloquesAocupar;i++){
-
-        char* contenidoBloque = string_substring(contenido,
-        		offsetContenido, min(string_length(contenido) - offsetContenido, superBloque->block_size));
-
-        log_info(logImongo,"Procesando...: %s",contenidoBloque);
-
-        offsetContenido += superBloque->block_size;
-
-        log_info(logImongo,"El offset del contenido es...: %d",offsetContenido);
-
-        offsetMemoria = posicionesQueOcupa[i] * superBloque->block_size;
-
-        log_info(logImongo,"El offset de la memoria es...: %d",offsetMemoria);
-
-        lock(&mutexMemoriaSecundaria);
-        memcpy(copiaMemoriaSecundaria + offsetMemoria , contenidoBloque, strlen(contenidoBloque));
-        unlock(&mutexMemoriaSecundaria);
-
-
-        free(contenidoBloque);
-    }
-    actualizarBitArray(posicionesQueOcupa, cantBloquesAocupar);
-}
 
 
 char * reconstruirArchivo(t_list * bloques){
@@ -1068,7 +1026,7 @@ int deserializarAvisoSabotaje(void* stream){
 
 
 
-
+/*
 char* contenidoBloque(uint32_t posicionBloque){
 
 	uint32_t posicionEnMemoria = posicionBloque * superBloque->block_size;
@@ -1091,138 +1049,86 @@ char* contenidoBloque(uint32_t posicionBloque){
 
 char* contenidoBloque2(uint32_t posicionBloque, uint32_t fragInt){
 
-	char* contenido = malloc(fragInt);
+	char* contenido = malloc(superBloque->block_size - fragInt);
 
-	memcpy(contenido, memoriaSecundaria + posicionBloque * superBloque->block_size, fragInt);
+	memcpy(contenido, memoriaSecundaria + posicionBloque * superBloque->block_size,
+			superBloque->block_size - fragInt);
+
+	return contenido;
 }
 
 
-uint32_t fragmentacionInterna(t_file archivo){
+uint32_t fragmentacionInterna(uint32_t sizeArchivo){
 
-	return archivo->tamanioArchivo % superBloque->block_size;
+	return sizeArchivo % superBloque->block_size;
 }
 
-
+*/
 
 
 
 void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 
 	lock(&mutexBitacora);
-
 	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
-
 	log_info(logImongo,"El archivo a crear tiene el path: %s",path);
-
 	t_config* config;
 
 	if(!verificarSiExiste(pathBitacora)){
 
 		log_info(logImongo,"No existe la carpeta Bitacora, se procede a crearla");
-
 		mkdir(pathBitacora,0777);
-
 	}
-
 	if(!(verificarSiExiste(path))){
 
 		log_info(logImongo,"Es la primera vez que el tripulante ID: %d escribe en disco", idTripulante);
-
 		FILE* tripulante = fopen(path,"wb");
-
-		log_info(logImongo,"1");
-
 		fclose(tripulante);
-
 		config = config_create(path);
-
-		log_info(logImongo,"3");
-
 		config_set_value(config,"BLOCKS","[]");
-
-		log_info(logImongo,"4");
-
 		config_set_value(config,"SIZE","0");
-
 		config_save(config);
-
 	}
-
 	else{
 
 		log_info(logImongo,"Ya existia el archivo del tripulante de ID: %d", idTripulante);
-
 		config = config_create(path);
-
 	}
+
+
 	char** bloquesQueOcupaba = config_get_array_value(config,"BLOCKS");
 	t_list * blocksQueOcupaba = convertirEnLista(bloquesQueOcupaba);
+	log_info(logImongo,"paso 1");
 
-//	int posicionUltimoBloque = * (int*)list_get(blocksQueOcupaba, list_size(blocksQueOcupaba) - 1);
+	int posicionUltimoBloque = 0;
+	int fragmentacionUltBloque = 0;
 
-//	char* contenidoUltimoBloque = contenidoBloque2(posicionUltimoBloque, fragmentacionDe(posicionUltimoBloque));
+	if(!list_is_empty(blocksQueOcupaba)){
 
-	int ultimoBloque = * (int*)list_get(max(list_size(blocksQueOcupaba) -1, 0));
+		posicionUltimoBloque = * (int*)list_get(blocksQueOcupaba, list_size(blocksQueOcupaba) - 1);
+		fragmentacionUltBloque = fragmentacionDe(posicionUltimoBloque);
 
-	int fragmentacionUltimoBloque = fragmentacionDe(ultimoBloque);
-
-	int bloquesAocupar;
-	int* posicionesQueOcupa;
-
-	if(fragmentacionUltimoBloque != 0){
-		char * contenidoUltimoBloque = datosBloque(ultimoBloque);
-		string_append(&contenidoUltimoBloque,mensaje);
-
-		int primeraVez = strlen(contenidoUltimoBloque)>0;
-
-		log_info(logImongo,"el contido luego de fragmentacion es: %s",contenidoUltimoBloque);
-		int tamanio = strlen(contenidoUltimoBloque) - fragmentacionUltimoBloque;
-		log_info(logImongo,"el tamanio luego de fragmentacion es: %d", tamanio);
-		bloquesAocupar = (int) ceil((float) tamanio  / (float) superBloque->block_size);
-		log_info(logImongo,"los bloques a ocupar luego de fragmentacion son: %d", bloquesAocupar);
-
-
-
-		if(bloquesAocupar>=0 && primeraVez){
-			posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar + 1);
-		}
-		else if(bloquesAocupar>0 && !primeraVez){
-			posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
-			int* posicionesNuevasAocupar = malloc(bloquesAocupar + 1);
-
-			posicionesNuevasAocupar[0] = ultimoBloque;
-
-			for(int i = 1; i<bloquesAocupar; i++){
-				posicionesNuevasAocupar[i] = posicionesQueOcupa[i];
-			}
-
-			free(posicionesQueOcupa);
-			posicionesQueOcupa = posicionesNuevasAocupar;
-
-		}
-		else if(bloquesAocupar==0 && !primeraVez){
-			posicionesQueOcupa = malloc(sizeof(int));
-			posicionesQueOcupa[0] = ultimoBloque;
-		}
-		log_info(logImongo,"los bloques a ocupar son: %d",bloquesAocupar);
-
-	}
-	else{
-		bloquesAocupar = (int) ceil((float) strlen(mensaje)  / (float) superBloque->block_size);
-		posicionesQueOcupa = obtenerArrayDePosiciones(bloquesAocupar);
+		log_info(logImongo,"La lista de blocks no estaba vacia, su ultimo bloque es el %d y "
+				"tiene una fragmetacion de %d", posicionUltimoBloque, fragmentacionUltBloque);
 	}
 
-	log_info(logImongo,"Los bloques a ocupar de la bitacora del tripulante %d son: %d",idTripulante,bloquesAocupar);
+	uint32_t cantBloquesAocupar = (int) ceil((float)(strlen(mensaje) - fragmentacionUltBloque)
+			/ (float) superBloque->block_size);
+//34
+	log_info(logImongo,"El mensaje es %s y la cant de bloques que "
+			"va a ocupar es %d", mensaje, cantBloquesAocupar);
 
-	if(bloquesLibres(bloquesAocupar)){
+	t_list* bloquesAocupar = obtenerArrayDePosiciones2(cantBloquesAocupar);
 
-		log_info(logImongo,"Existen bloques libres por ocupar, se procede a "
-				"escribir en disco la bitacora del tripulante ID: %d", idTripulante);
+	if(bloquesLibres(cantBloquesAocupar)){
 
+		if(fragmentacionUltBloque > 0){
 
-		guardarStringEnMemoriaSecundaria(posicionesQueOcupa,mensaje, bloquesAocupar);
+			list_add_in_index(bloquesAocupar, 0, &posicionUltimoBloque);
+			cantBloquesAocupar ++;
+		}
 
-    	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
+		guardarStringEnMemoriaSecundaria(bloquesAocupar, mensaje, cantBloquesAocupar);
 
 		int cantidadDeCaracteresQueHabia = config_get_int_value(config,"SIZE");
 
@@ -1234,28 +1140,121 @@ void escribirEnBitacora(char* mensaje, int idTripulante, int* tripulanteSock){
 		log_info(logImongo,"La cantidad de caracteres que hay ahora del "
 				"tripulante %d son: %d", idTripulante,cantidadDeCaracteresQueHabia);
 
-		for(int i=0; i<bloquesAocupar;i++){
+		if(fragmentacionUltBloque > 0){
 
-			list_add(blocksQueOcupaba, posicionesQueOcupa + i);
+			list_remove(bloquesAocupar, 0);
 		}
+
+		list_add_all(blocksQueOcupaba, bloquesAocupar);
 		char * bloquesQueOcupa = convertirEnString(blocksQueOcupaba);
 		config_set_value(config, "BLOCKS", bloquesQueOcupa);
 		config_save(config);
-
-		free(bloquesQueOcupaba);
-		//free(bloquesNuevos);
-
-		mandarOKAdiscordiador(tripulanteSock);
-	}
-	else{
-
-		log_error(logImongo,"No hay mas espacio en el disco para escribir en bitacora");
-
-		mandarErrorAdiscordiador(tripulanteSock);
 	}
 
 	unlock(&mutexBitacora);
+}
 
+
+t_list* obtenerArrayDePosiciones2(int cantBloquesAocupar){
+
+	int flag = 0;
+	t_list* bloquesAocupar = list_create();
+
+	for(int i=0; i < superBloque->blocks && cantBloquesAocupar > 0;i++){
+
+		lock(&mutexBitMap);
+		flag = bitarray_test_bit(superBloque->bitmap,i);
+		unlock(&mutexBitMap);
+
+		if(flag == 0){
+			int* numeroBloque = malloc(sizeof(int));
+			*numeroBloque = i;
+			list_add(bloquesAocupar, numeroBloque);
+			cantBloquesAocupar --;
+			log_info(logImongo,"Se va a ocupar el bloque %d",
+					* (int *) list_get(bloquesAocupar, list_size(bloquesAocupar) - 1));
+		}
+	}
+
+	return bloquesAocupar;
+}
+
+
+
+void guardarStringEnMemoriaSecundaria(t_list* posicionesQueOcupa, char* contenido, int cantBloquesAocupar){
+
+	log_info(logImongo,"El contenido a guardar es: %s",contenido);
+
+    int offsetMemoria = 0;
+    int offsetContenido = 0;
+    int posicionDelBloque;
+
+    posicionDelBloque = * (int*) list_get(posicionesQueOcupa, 0);
+
+    char* contenidoBloqueConFragmentacion = string_substring(contenido, offsetContenido,
+    		fragmentacionDe(posicionDelBloque));
+
+    log_info(logImongo,"El fragmento %s se guarda en el bloque %d",
+    		contenidoBloqueConFragmentacion, posicionDelBloque);
+
+	offsetContenido += fragmentacionDe(posicionDelBloque);
+    log_info(logImongo,"El offset del contenido es %d",offsetContenido);
+
+    offsetMemoria = posicionDelBloque * superBloque->block_size +
+			superBloque->block_size - fragmentacionDe(posicionDelBloque);
+    log_info(logImongo,"El offset de la memoria es %d",offsetMemoria);
+
+    lock(&mutexMemoriaSecundaria);
+    memcpy(copiaMemoriaSecundaria + offsetMemoria,
+    		contenidoBloqueConFragmentacion, strlen(contenidoBloqueConFragmentacion));
+    unlock(&mutexMemoriaSecundaria);
+
+    log_info(logImongo,"LLego a 1");
+
+    //free(contenidoBloqueConFragmentacion);
+
+    for(int i=1; i < cantBloquesAocupar;i++){
+
+    	posicionDelBloque = * (int*) list_get(posicionesQueOcupa, i);
+
+        log_info(logImongo,"LLego a 2");
+
+        char* contenidoBloque = string_substring(contenido, offsetContenido,
+				min(string_length(contenido) - offsetContenido, superBloque->block_size));
+        log_info(logImongo,"El fragmento --%s-- se guarda en el bloque %d",
+        		contenidoBloque, posicionDelBloque);
+
+		offsetContenido += superBloque->block_size;
+        log_info(logImongo,"El offset del contenido es %d",offsetContenido);
+
+        offsetMemoria = posicionDelBloque * superBloque->block_size;
+        log_info(logImongo,"El offset de la memoria es %d",offsetMemoria);
+
+        lock(&mutexMemoriaSecundaria);
+        memcpy(copiaMemoriaSecundaria + offsetMemoria , contenidoBloque, strlen(contenidoBloque));
+        unlock(&mutexMemoriaSecundaria);
+
+        //free(contenidoBloque);
+    }
+    actualizarBitArray2(posicionesQueOcupa, cantBloquesAocupar);
+}
+
+
+
+void actualizarBitArray2(t_list* posicionesQueOcupa, int cantBloquesAocupar){
+
+	int posicionDelBloque;
+
+	for(int i=0; i < cantBloquesAocupar; i++){
+
+		posicionDelBloque = * (int*) list_get(posicionesQueOcupa, i);
+
+		lock(&mutexBitMap);
+		bitarray_set_bit(superBloque->bitmap, posicionDelBloque);
+		unlock(&mutexBitMap);
+	}
+
+	actualizarStringBitMap();
 }
 
 
