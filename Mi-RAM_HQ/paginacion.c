@@ -62,8 +62,6 @@ int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, i
         {
         	lock(&mutexEscribirMemoria);
 
-        	log_info(logMemoria, "Me tengo que desplazar en memoria: %d - y escribo: %d", desp, bytesAEscribir);
-
             memcpy(memoria_principal+desp, pagina, bytesAEscribir);
             unlock(&mutexEscribirMemoria);
 
@@ -88,7 +86,6 @@ int insertar_en_memoria_pag(t_info_pagina* info_pagina, void* pagina, int mem, i
 
         *bytesEscribidos = bytesAEscribir;
 
-		log_info(logMemoria, "Quedan por meter %d", *aMeter);
         return 1;
     }
     else
@@ -501,8 +498,6 @@ t_list_iterator* iterarHastaIndice(t_list* tablaPaginas, int indicePagina) {
 
 
 t_tarea* irABuscarSiguienteTareaPag(t_tablaPaginasPatota* tablaPaginasPatotaActual, tcb* tcbAGuardar) {
-
-	log_info(logMemoria,"Soy el tripu %d voy a buscar tarea a %d", tcbAGuardar->idTripulante, tcbAGuardar->proximaAEjecutar);
 
 	char* tarea = string_new();
 	char* aux = malloc(2);

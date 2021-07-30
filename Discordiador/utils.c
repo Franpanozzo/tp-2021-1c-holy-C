@@ -595,6 +595,10 @@ void ponerEnSabotaje(t_tripulante* unTripulante){
 
 
 void mandarTCBaMiRAM(t_tripulante* tripulante){
+
+	log_info(logDiscordiador, "Mandando a guardar por primera vez a memoria el tripu ID:%d",
+			    			tripulante->idTripulante);
+
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, TRIPULANTE);
 
 	if(!confirmacion(miRAMsocket)) {

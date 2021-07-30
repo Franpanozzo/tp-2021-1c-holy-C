@@ -249,7 +249,7 @@ void expulsarTripulanteSeg(int idTripu, int idPatota) {
 	chequearUltimoTripulanteSeg(tablaSegmentosBuscada);
 
 	lock(&mutexBuscarLugarLibre);
-	mostrarLugaresLibres();
+	mostrarLugaresLibres(lugaresLibres);
 	unlock(&mutexBuscarLugarLibre);
 }
 
@@ -266,7 +266,7 @@ void liberarSegmento(t_info_segmento* info_segmento) {
 }
 
 
-void mostrarLugaresLibres() {
+void mostrarLugaresLibres(t_list* listaLugaresLibre) {
 
 	void imprimirLugarLibre(t_lugarLibre* lugarLibre) {
 
@@ -274,7 +274,7 @@ void mostrarLugaresLibres() {
 
 	}
 
-	list_iterate(lugaresLibres, (void*) imprimirLugarLibre);
+	list_iterate(listaLugaresLibre, (void*) imprimirLugarLibre);
 }
 
 
@@ -320,7 +320,9 @@ int asignarSegmentosEnTabla(void* aGuardar, t_tablaSegmentosPatota* tablaSegment
 	{
 		log_info(logMemoria, "SIN ESPACIO EN MEMORIA PRINCIPAL - SE PROCEDE A COMPACTAR");
 		compactarMemoria();
+		lock(&mutexBuscarLugarLibre);
 		inicioSegmentoLibre = buscarSegmentoSegunAjuste(aMeter);
+		unlock(&mutexBuscarLugarLibre);
 		if(inicioSegmentoLibre == -1)
 		{
 		log_info(logMemoria, "MEMORIA PRINCIPAL LLENA - NO SE PUEDE CREAR EL SEGMENTO");
@@ -360,6 +362,7 @@ t_info_segmento* crearSegmentoEnTabla(t_tablaSegmentosPatota* tablaSegmentosPato
 
 
 void borrarLugarLibre(t_lugarLibre* lugarAEliminar) {
+
 	bool empiezaEn(t_lugarLibre* lugarLibre)
 	{
 		return lugarLibre->inicio == lugarAEliminar->inicio;
@@ -400,12 +403,14 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 
 		t_lugarLibre* lugarLibreOptimo = list_get_minimum(lugaresQueEntra, (void*) sobraMenos);
 		inicio = lugarLibreOptimo->inicio;
-		lugarLibreOptimo->inicio += aMeter;
 		lugarLibreOptimo->bytesAlojados -= aMeter;
 
 		if(lugarLibreOptimo->bytesAlojados == 0)
 		{
 			borrarLugarLibre(lugarLibreOptimo);
+		}
+		else {
+			lugarLibreOptimo->inicio += aMeter;
 		}
 
 		list_destroy(lugaresQueEntra);
@@ -422,12 +427,14 @@ int buscarSegmentoSegunAjuste(int aMeter) {
 
 		t_lugarLibre* primerLugarLibre = list_get_minimum(lugaresQueEntra, (void*) empiezaAntes);
 		inicio = primerLugarLibre->inicio;
-		primerLugarLibre->inicio += aMeter;
 		primerLugarLibre->bytesAlojados -= aMeter;
 
 		if(primerLugarLibre->bytesAlojados == 0)
 		{
 			borrarLugarLibre(primerLugarLibre);
+		}
+		else {
+			primerLugarLibre->inicio += aMeter;
 		}
 
 		list_destroy(lugaresQueEntra);

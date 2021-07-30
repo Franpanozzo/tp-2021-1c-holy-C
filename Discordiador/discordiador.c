@@ -337,6 +337,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota %d",patota->ID);
 	}
 
+	chequeoMemoria = 0;
 	eliminarPatota(patota);
 	close(miRAMsocket);
 }
