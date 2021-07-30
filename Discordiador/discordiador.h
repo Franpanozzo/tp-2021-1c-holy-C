@@ -25,7 +25,9 @@
 #include <math.h>
 
 void hiloPlanificador();
-void hiloSabotaje();
+void procedimientoSabotaje(int*);
+int esperarSabotaje(int);
+void atenderSabotaje(int*);
 void hiloTripulante(t_tripulante*);
 
 void iniciarTripulante(t_coordenadas, uint32_t, t_list*);

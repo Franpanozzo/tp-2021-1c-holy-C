@@ -12,7 +12,6 @@
 	t_log* logDiscordiador;
 
 	pthread_t planificador;
-	pthread_t sabo;
 	pthread_t manejoSabotaje;
 
 
