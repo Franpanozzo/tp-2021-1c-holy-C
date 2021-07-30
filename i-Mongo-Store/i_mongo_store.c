@@ -5,6 +5,8 @@ int main(void) {
 
 	char* path = pathLog();
 
+	signal(SIGUSR1, sabotaje);
+
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
 
 	crearConfig(&configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
@@ -21,6 +23,8 @@ int main(void) {
 
 	iniciarFileSystem();
 
+	listaPosicionesSabotaje = listaCoordenadasSabotaje();
+
 	pthread_create(&hiloSincronizador, NULL, (void*) sincronizarMemoriaSecundaria, NULL);
 	pthread_detach(hiloSincronizador);
 
@@ -29,18 +33,14 @@ int main(void) {
 	pthread_create(&manejoTripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
 	pthread_join(manejoTripulante, (void*) NULL);
 
+	proximoPosSabotaje = 0;
+
 	//liberarConfiguracion();
-
 	//liberarTareas();
-
 	//log_destroy(logImongo); PREGUNTAR AYUDANTE DIOS MIO
-
 	//config_destroy(configImongo); PREGUNTAR AYUDANTE DIOS MIO
-
 	//liberarTodosLosStructTareas();
-
 	free(path);
-
 	return EXIT_SUCCESS;
 }
 
@@ -50,13 +50,9 @@ void atenderTripulantes(int* serverSock) {
     while(1){
 
 		int* tripulanteSock = malloc(sizeof(int));
-
 		*tripulanteSock = esperarTripulante(*serverSock);
-
 		pthread_t t;
-
 		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
-
 		pthread_detach(t);
     }
 }
@@ -65,9 +61,7 @@ void atenderTripulantes(int* serverSock) {
 int esperarTripulante(int serverSock) {
 
     struct sockaddr_in serverAddress;
-
     unsigned int len = sizeof(struct sockaddr);
-
     int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
 
     return socket_tripulante;
@@ -271,9 +265,9 @@ void crearFileSystemExistente(){
 
 	log_info(logImongo,"El valor del block size es: %d", superBloque->block_size);
 	log_info(logImongo,"La cantidad de bloques es: %d", superBloque->blocks);
-
+//sizeof(char) *
 	int sizeBitArrayEnBytes = (int) ceil (((float)superBloque->blocks / (float) 8));
-	bitArray = malloc(sizeBitArrayEnBytes);
+	bitArray = malloc( sizeBitArrayEnBytes);
 	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArrayEnBytes ,MSB_FIRST);
 
 	char* bitmap = config_get_string_value(configSuperBloque,"BITMAP");
@@ -282,11 +276,9 @@ void crearFileSystemExistente(){
 	for(int i=0; i<cantidadPosicionesBitArray;i++){
 
 		if(bitmap[i] == '1'){
-
 			bitarray_set_bit(superBloque->bitmap,i);
 		}
 		else if (bitmap[i] == '0'){
-
 			bitarray_clean_bit(superBloque->bitmap,i);
 		}
 		else{
@@ -351,10 +343,8 @@ void crearFileSystemDesdeCero(){
 	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
 
 	if(mkdir(pathFiles,0777) != 0){
-
 		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
 	}
-
 	crearMemoria(fd);
 }
 
@@ -364,7 +354,6 @@ void iniciarFileSystem(){
 	int flag = access(datosConfig->puntoMontaje, F_OK );
 
 	if(flag == -1){
-
 		log_info(logImongo, "No existe el punto de montaje en el directorio %s, "
 				"se creara uno", datosConfig->puntoMontaje);
 		mkdir(datosConfig->puntoMontaje,0777);
@@ -383,7 +372,6 @@ void iniciarFileSystem(){
 		crearFileSystemExistente();
 	}
 	else{
-
 		log_info(logImongo,"Existe el punto de montaje ahora, pero no existe "
 				"SuperBloque.ims y Blocks.ims, creando archivos...");
 		crearFileSystemDesdeCero();

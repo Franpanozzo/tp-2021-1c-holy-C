@@ -54,6 +54,8 @@ typedef struct {
 }tarea;
 
 
+puertoEIP* puertoEIPDisc;
+
 pthread_mutex_t mutexBitacora;
 pthread_mutex_t mutexSuperBloque;
 pthread_mutex_t mutexMemoriaSecundaria;
@@ -89,6 +91,8 @@ char* pathComida;
 char* pathBasura;
 char* pathFiles;
 char* pathBitacora;
+t_list* listaPosicionesSabotaje;
+int proximoPosSabotaje;
 
 
 #endif

@@ -36,8 +36,10 @@ int main() {
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
 	pthread_detach(planificador);
 
-	pthread_create(&sabo, NULL, (void*) hiloSabotaje, NULL);
-	pthread_detach(sabo);
+	int serverSock = iniciarConexionDesdeServidor(puertoDisc);
+
+	pthread_create(&manejoSabotaje, NULL, (void*) atenderSabotaje, (void*) &serverSock);
+	pthread_detach(manejoSabotaje);
 
 	leerConsola();
 	free(path);
@@ -100,45 +102,74 @@ void hiloPlanificador(){
 }
 
 
-void hiloSabotaje(){
 
-	while(1){
-		/*
-		 * TODO la parte de recibir un saboteje, osea un recv y se
-		 * deserializa para ver si llego un sabotaje en el caso de
-		 * que si, se hace lo siguiente:
-		 */
-		while(sabotaje->haySabotaje == 0);
-		log_info(logDiscordiador,"----- HAY UN SABOTAJE -----");
 
-		//PREPARACION SABOTAJE
-		sabotaje->haySabotaje = 1;
-		sem_wait(&sabotaje->semaforoIniciarSabotaje);//esperar a que el plani termine de actualizar las listas
-		//log_info(logDiscordiador,"----- EL PLANIFICADOR ME DEJO AVANZAR -----");
+void atenderSabotaje(int* serverSock) {
 
-		pasarAlistaSabotaje(listaExec);
-		pasarAlistaSabotaje(listaReady);
 
-		log_info(logDiscordiador,"%d tripulantes pasaron a la lista de sabotaje",
-						list_size(listaSabotaje->elementos));
+    while(1){
 
-		elegirTripulanteSabotaje();
+    	int* sabotajeSock = malloc(sizeof(int));
+		*sabotajeSock = esperarSabotaje(*serverSock);
 
-		//FINALIZACION SABOTAJE
-		sem_wait(&sabotaje->semaforoTerminoTripulante);//esperar q el tripulante termine el sabotaje
+		procedimientoSabotaje(sabotajeSock);
+    }
+}
 
-		list_iterate(listaSabotaje->elementos, (void*)ponerEnReady);
-		list_add_all(listaReady->elementos, listaSabotaje->elementos);
-		sabotaje->tripulanteSabotaje->estado = READY;
-		list_clean(listaSabotaje->elementos);
-		sabotaje->haySabotaje = 0;
-		list_add(listaReady->elementos, sabotaje->tripulanteSabotaje);
-		int socketMongo = enviarA(puertoEIPMongo, &sabotaje->tripulanteSabotaje->idTripulante, FIN_SABOTAJE);
-		close(socketMongo);
-		sabotaje->tripulanteSabotaje = NULL;
 
-		sem_post(&sabotaje->semaforoCorrerSabotaje);//avisarle al planificador que termino la preparacion
-	}
+int esperarSabotaje(int serverSock) {
+
+    struct sockaddr_in serverAddress;
+
+    unsigned int len = sizeof(struct sockaddr);
+
+    int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
+
+	log_info(logDiscordiador,"----- HAY UN SABOTAJE -----");
+
+    return socket_tripulante;
+}
+
+
+
+void procedimientoSabotaje(int* sabotajeSock){
+
+	t_paquete* paquete = recibirPaquete(*sabotajeSock);
+
+	sabotaje->coordenadas = deserializarCoordenadas(paquete->buffer->stream);
+
+	log_info(logDiscordiador,"EL SABOTAJE ES EN: X:%d - Y:%d", sabotaje->coordenadas.posX, sabotaje->coordenadas.posY );
+
+	//PREPARACION SABOTAJE
+	sabotaje->haySabotaje = 1;
+	sem_wait(&sabotaje->semaforoIniciarSabotaje);//esperar a que el plani termine de actualizar las listas
+	//log_info(logDiscordiador,"----- EL PLANIFICADOR ME DEJO AVANZAR -----");
+
+	pasarAlistaSabotaje(listaExec);
+	pasarAlistaSabotaje(listaReady);
+
+	log_info(logDiscordiador,"%d tripulantes pasaron a la lista de sabotaje",
+					list_size(listaSabotaje->elementos));
+
+	elegirTripulanteSabotaje();
+
+	//FINALIZACION SABOTAJE
+	sem_wait(&sabotaje->semaforoTerminoTripulante);//esperar q el tripulante termine el sabotaje
+
+	list_iterate(listaSabotaje->elementos, (void*)ponerEnReady);
+	list_add_all(listaReady->elementos, listaSabotaje->elementos);
+	sabotaje->tripulanteSabotaje->estado = READY;
+	list_clean(listaSabotaje->elementos);
+	sabotaje->haySabotaje = 0;
+	list_add(listaReady->elementos, sabotaje->tripulanteSabotaje);
+	int socketMongo = enviarA(puertoEIPMongo, &sabotaje->tripulanteSabotaje->idTripulante, FIN_SABOTAJE);
+	close(socketMongo);
+	sabotaje->tripulanteSabotaje = NULL;
+
+	sem_post(&sabotaje->semaforoCorrerSabotaje);//avisarle al planificador que termino la preparacion
+
+	close(*sabotajeSock);
+	free(sabotajeSock);
 }
 
 

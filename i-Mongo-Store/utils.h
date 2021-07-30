@@ -33,6 +33,8 @@ void liberarTodosLosStructTareas();
 void sincronizarMemoriaSecundaria();
 void iniciarMutex();
 void actualizarMD5(tarea* );
+t_list* listaCoordenadasSabotaje();
+void sabotaje(int);
 char* datosBloque(int);
 int fragmentacionDe(int);
 int ultimoBloqueDeLa(tarea*);

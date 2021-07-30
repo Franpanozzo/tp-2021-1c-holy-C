@@ -56,6 +56,7 @@ void cargarConfiguracion(){
 	puertoEIPMongo = malloc(sizeof(puertoEIP));
 	puertoEIPMongo->puerto = config_get_int_value(config,"PUERTO_I_MONGO_STORE");
 	puertoEIPMongo->IP = strdup(config_get_string_value(config,"IP_I_MONGO_STORE"));
+	puertoDisc = config_get_int_value(config,"PUERTO");
 
 	gradoMultiprocesamiento = config_get_int_value(config,"GRADO_MULTITAREA");
 	char * algoritmo;

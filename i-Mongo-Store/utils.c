@@ -4,13 +4,11 @@
 void crearConfig(t_config** config, char* path){
 
 	*config  = config_create(path);
-
 	if(*config == NULL){
 		log_error(logImongo, "La ruta es incorrecta ");
 		exit(1);
 	}
 }
-
 
 char * pathLog(){
 
@@ -45,7 +43,6 @@ int indiceTarea(t_tarea* tarea){
 			return i;
 		}
 	}
-
 	return -1;
 }
 
@@ -81,6 +78,10 @@ void cargarDatosConfig(){
 	datosConfig->puerto = (uint32_t)config_get_int_value(configImongo,"PUERTO");
 	datosConfig->tiempoSincronizacion = (uint32_t)config_get_int_value(configImongo,"TIEMPO_SINCRONIZACION");
 	datosConfig->posicionesSabotaje = config_get_string_value(configImongo,"POSICIONES_SABOTAJE");
+
+	puertoEIPDisc = malloc(sizeof(puertoEIP));
+	puertoEIPDisc->puerto = config_get_int_value(configImongo,"PUERTO_DISC");
+	puertoEIPDisc->IP = strdup(config_get_string_value(configImongo,"IP_DISC"));
 }
 
 
@@ -129,7 +130,6 @@ void iniciarMutex(){
 
 
 bool validarExistenciaFileSystem(char* superBloque, char* blocks, char* raiz){
-
 	return (access(superBloque, F_OK ) != -1) && (access(blocks, F_OK ) != -1) && (access(raiz, F_OK ) != -1);
 }
 
@@ -143,10 +143,10 @@ void detallesArchivo(int fileDescriptor){
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Tamanio total del archivo: %lu bytes\n", sb.st_size);
-	printf("Ultimo estado:       %s", ctime(&sb.st_ctime));
-	printf("Ultimo acceso:         %s", ctime(&sb.st_atime));
-	printf("Ultima modificacion del archivo:   %s", ctime(&sb.st_mtime));
+	log_info(logImongo, "Tamanio total del archivo: %lu bytes\n", sb.st_size);
+	log_info(logImongo, "Ultimo estado:       %s", ctime(&sb.st_ctime));
+	log_info(logImongo, "Ultimo acceso:         %s", ctime(&sb.st_atime));
+	log_info(logImongo, "Ultima modificacion del archivo:   %s", ctime(&sb.st_mtime));
 }
 
 
@@ -164,8 +164,8 @@ void crearMemoria(int fd){
 
 	result = write(fd,"",1);
 
-	 if (result < 0) {
-	    close(fd);
+	if (result < 0) {
+		close(fd);
 	    log_info(logImongo,"Anda mal generar con "" el espacio en el disco secundario");
 	    exit(1);
 	}
@@ -187,25 +187,15 @@ void crearMemoria(int fd){
 
 void mandarErrorAdiscordiador(int* tripulanteSock){
 
-	char* error = strdup("ERROR");
-
-	t_paquete* paquete = armarPaqueteCon(error,STRING);
-
+	t_paquete* paquete = armarPaqueteCon("ERROR",STRING);
 	enviarPaquete(paquete,*tripulanteSock);
-
-	free(error);
 }
 
 
 void mandarOKAdiscordiador(int* tripulanteSock){
 
-	char* confirmacion = strdup("OK");
-
-	t_paquete* paquete = armarPaqueteCon(confirmacion,STRING);
-
+	t_paquete* paquete = armarPaqueteCon("OK",STRING);
 	enviarPaquete(paquete,*tripulanteSock);
-
-	free(confirmacion);
 }
 
 
@@ -233,7 +223,6 @@ bool bloquesLibres(int bloquesAocupar){
 
 
 bool verificarSiExiste(char* pathArchivo){
-
 	return access(pathArchivo,F_OK) != -1;
 }
 
@@ -246,7 +235,7 @@ int* obtenerArrayDePosiciones(int bloquesAocupar){
 
 	int* cadaBloqueAocupar = malloc(sizeof(int) * bloquesAocupar);
 
-	for(int i=0; i<superBloque->blocks;i++){
+	for(int i=0; i<superBloque->blocks && bloquesLibres < bloquesAocupar;i++){
 
 		lock(&mutexBitMap);
 		flag = bitarray_test_bit(superBloque->bitmap,i);
@@ -274,23 +263,12 @@ void actualizarStringBitMap(){
 
 	for(int i=0; i<sizeBitArray;i++){
 
-	  	lock(&mutexBitMap);
+		lock(&mutexBitMap);
     	int valor =  bitarray_test_bit(superBloque->bitmap, i);
     	unlock(&mutexBitMap);
 
     	bitmap[i] = valor + '0';
    }
-
-/*
-  for(int i = sizeBitArray; i<bitarray_get_max_bit(superBloque->bitmap);i++){
-
-	  int valor =  bitarray_test_bit(superBloque->bitmap, i);
-
-	      	printf("%d ", valor);
-
-  }
- PARA ANALIZAR LOS BLOQUES MUERTOS SI NO SON MULTIPLOS DE 8
-*/
 
   bitmap[sizeBitArray] = '\0';
 
@@ -344,7 +322,6 @@ void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bl
 	config_save(structTarea->config);
 	free(cantidadBloques);
 	free(bloques);
-
 }
 
 
@@ -400,12 +377,10 @@ void sincronizarMemoriaSecundaria(){
 void actualizarBitArray(int* posicionesQueOcupa, int bloquesAocupar){
 
 	for(int i=0; i<bloquesAocupar; i++){
-
 		lock(&mutexBitMap);
 		bitarray_set_bit(superBloque->bitmap, posicionesQueOcupa[i]);
 		unlock(&mutexBitMap);
 	}
-
 	actualizarStringBitMap(bloquesAocupar);
 }
 
@@ -435,14 +410,13 @@ void guardarEnMemoriaSecundaria(int* posicionesQueOcupa,char* caracterLlenado, i
 
 		int offset = posicionesQueOcupa[i] * superBloque->block_size;
 
-		log_info(logImongo,"offset = %d", offset);
+		log_info(logImongo, "offset = %d", offset);
 
 		lock(&mutexMemoriaSecundaria);
-
-		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i], strlen(palabraAguardar[i]));
+		memcpy(copiaMemoriaSecundaria + offset ,palabraAguardar[i],strlen(palabraAguardar[i]));
 		unlock(&mutexMemoriaSecundaria);
 
-		log_info(logImongo,"Lo que termino guardando fue %d", superBloque->block_size);
+		log_info(logImongo, "Lo que termino guardando fue %d ", superBloque->block_size);
 	}
 
 	actualizarBitArray(posicionesQueOcupa, bloquesAocupar);
@@ -737,9 +711,7 @@ void actualizarMD5(tarea* structTarea){
 
 	log_info(logImongo,"md5:%s ", structTarea->file->md5_archivo);
 
-
 	//free(freemd5);
-
 
 	config_set_value(structTarea->config,"MD5_ARCHIVO",structTarea->file->md5_archivo);
 	config_save(structTarea->config);
@@ -766,6 +738,8 @@ char * reconstruirArchivo(t_list * bloques){
 	log_info(logImongo,"archivo reconstruido es: %s",copiaFile);
 	return copiaFile;
 }
+
+
 char * obtenerMD5(t_list * bloques){
 	int md5Size = 32;
 
@@ -784,7 +758,6 @@ char * obtenerMD5(t_list * bloques){
 
 
 bool alcanzanCaracteresParaConsumir(int caracteresEnDisco, int caracteresAremover){
-
 	return caracteresEnDisco > caracteresAremover;
 }
 
@@ -801,7 +774,6 @@ void limpiarBitArray(int* bloquesAlimpiar, int cantidadBloquesALimpiar){
 	}
 
 	actualizarStringBitMap(cantidadBloquesALimpiar);
-
 }
 
 
@@ -947,7 +919,6 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea){
 			for(int i=0; i<list_size(posicionesAlimpiar);i++){
 
 				posicionesAlimpiarBitArray[i] = *((int*) list_get(posicionesAlimpiar,i));
-
 			}
 
 			log_info(logImongo, "Se van a limpiar en el bitarray las posiciones: ");
@@ -1159,7 +1130,6 @@ t_list* obtenerArrayDePosiciones2(int cantBloquesAocupar){
 }
 
 
-
 void guardarStringEnMemoriaSecundaria(t_list* posicionesQueOcupa, char* contenido, int cantBloquesAocupar){
 
 	log_info(logImongo,"El contenido a guardar es: %s",contenido);
@@ -1213,7 +1183,6 @@ void guardarStringEnMemoriaSecundaria(t_list* posicionesQueOcupa, char* contenid
     }
     actualizarBitArray2(posicionesQueOcupa, cantBloquesAocupar);
 }
-
 
 
 void actualizarBitArray2(t_list* posicionesQueOcupa, int cantBloquesAocupar){
@@ -1285,7 +1254,6 @@ char* contenidoBloque(uint32_t posicionBloque){
 }
 
 void liberarConfiguracion(){
-
 	free(datosConfig->puntoMontaje);
 	free(datosConfig->posicionesSabotaje);
 	free(datosConfig);
@@ -1300,6 +1268,7 @@ void liberarStructTareas(t_file* file){
 	free(file);
 }
 
+
 void liberarTodosLosStructTareas(){
 
 	//liberarStructTareas(oxigeno);
@@ -1309,9 +1278,57 @@ void liberarTodosLosStructTareas(){
 
 
 void liberarTareas(){
-
 	for(int i=0; i<6; i++){
 		free(tareas[i]);
 	}
 	free(tareas);
+}
+
+
+t_list* listaCoordenadasSabotaje() {
+
+    char* stringCoordenadas = datosConfig->posicionesSabotaje;
+    stringCoordenadas = string_substring(stringCoordenadas, 1, strlen(stringCoordenadas)-2 ); //Le saco los corchetes
+    //Aca puede ir un log info para chequear que se haya hecho
+    char** arrayStringsCoordenadas = string_split(stringCoordenadas, ",");
+
+    t_list* listaCoordenadas = list_create();
+    int i = 0;
+    while(arrayStringsCoordenadas[i] != NULL) {
+
+        char** parCoordenadas = string_split(stringCoordenadas, "|");
+
+        t_coordenadas* coordenadasSabotaje = malloc(sizeof(t_coordenadas));
+
+        coordenadasSabotaje->posX = (uint32_t) atoi(parCoordenadas[0]);
+        coordenadasSabotaje->posY = (uint32_t) atoi(parCoordenadas[1]);
+
+        list_add(listaCoordenadas, coordenadasSabotaje);
+
+        liberarDoblesPunterosAChar(parCoordenadas);
+        i++;
+    }
+
+    liberarDoblesPunterosAChar(arrayStringsCoordenadas);
+    free(stringCoordenadas);
+
+    return listaCoordenadas;
+}
+
+
+void sabotaje(int signal) {
+
+  t_coordenadas* coordenadasSabotaje = list_get(listaPosicionesSabotaje, proximoPosSabotaje);
+
+  proximoPosSabotaje++;
+  if(proximoPosSabotaje == list_size(listaPosicionesSabotaje)) proximoPosSabotaje = 0;
+
+  t_paquete* paqueteEnviado = armarPaqueteCon((void*) coordenadasSabotaje, COORDENADAS_SABOTAJE);
+
+  log_info(logImongo,"\nSABOTAJE - AVISANDO A DISCORDADOR QUE ES EN POS: X:%d - Y:%d\n", coordenadasSabotaje->posX, coordenadasSabotaje->posY);
+
+  int socketDisc = iniciarConexionDesdeClienteHacia((void*) puertoEIPDisc);
+
+  enviarPaquete(paqueteEnviado, socketDisc);
+  close(socketDisc);
 }
