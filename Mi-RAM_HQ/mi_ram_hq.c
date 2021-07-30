@@ -22,8 +22,6 @@ int main(void) {
     pthread_create(&manejo_tripulante, NULL, (void*) atenderTripulantes, (void*) &serverSock);
     pthread_join(manejo_tripulante, (void**) NULL);
 
-
-
     //falta hacer funcion para destruir las tareas de la lista de tareas del pcb
     //falta hacer funcion para destruir los pcb de las lista de pcbs
     //Prototipo:
@@ -249,12 +247,14 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexAlojados, NULL);
     pthread_mutex_init(&mutexTiempo, NULL);
     pthread_mutex_init(&mutexMapa, NULL);
+    pthread_mutex_init(&mutexChequearUltTripu, NULL);
 
 
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
 	tiempo = 0;
 	punteroClock = 0;
+	chequeoUltTripu = 0;
 
 	nivel_gui_inicializar();
 	nivel_gui_dibujar(nave);

@@ -4,6 +4,9 @@
 int guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = buscarTablaDeSegmentosDePatota(idPatota);
+	if(tablaSegmentosPatotaActual == NULL) {
+		return 0;
+	}
 	tcbAGuardar->dlPatota = 0;
 	tcbAGuardar->proximaAEjecutar = 0; //desplazamiento dentro del segmento de las tareas (el cual es siempre el segundo segmento).
 
@@ -14,7 +17,14 @@ int guardarTCBSeg(tcb* tcbAGuardar, int idPatota) {
 	int res = asignarSegmentosEnTabla((void*) tcbAGuardar, tablaSegmentosPatotaActual,TCB);
 	if(res == 0){
 		log_info(logMemoria,"No se pudo crear el tripulante %d por memoria llena", tcbAGuardar->idTripulante);
-		chequearUltimoTripulanteSeg(tablaSegmentosPatotaActual);
+
+		lock(&mutexChequearUltTripu);
+		if(chequeoUltTripu == 0)
+		{
+			chequeoUltTripu = 1;
+			chequearUltimoTripulanteSeg(tablaSegmentosPatotaActual);
+		}
+		unlock(&mutexChequearUltTripu);
 		return 0;
 	}
 
@@ -186,7 +196,7 @@ t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 	    if(tablaSegmentosBuscada == NULL)
 	    {
 	        log_error(logMemoria,"Tabla de Segmentos de patota %d no encontrada!! - No existe PCB para ese TCB \n", idPatotaABuscar);
-			exit(1);
+	        return NULL;
 	    }
 	    return tablaSegmentosBuscada;
 }
@@ -195,6 +205,7 @@ t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 
 	int pcbGuardado, tareasGuardadas;
+	chequeoUltTripu = 0;
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = malloc(sizeof(t_tablaSegmentosPatota));
 	tablaSegmentosPatotaActual->idPatota = pcbAGuardar->pid;
 	tablaSegmentosPatotaActual->tablaDeSegmentos = list_create();
@@ -279,6 +290,7 @@ void mostrarLugaresLibres(t_list* listaLugaresLibre) {
 
 
 void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
+
 	lock(&mutexTablaSegmentosPatota);
 	if(!tieneTripulantesSeg(tablaSegmentosPatota)) {
 		unlock(&mutexTablaSegmentosPatota);
@@ -290,6 +302,7 @@ void chequearUltimoTripulanteSeg(t_tablaSegmentosPatota* tablaSegmentosPatota) {
 	else {
 		unlock(&mutexTablaSegmentosPatota);
 	}
+
 }
 
 

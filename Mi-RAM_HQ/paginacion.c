@@ -469,6 +469,9 @@ void existenciaDeTablaParaPatota(t_tablaPaginasPatota* tablaPaginasPatotaActual)
 int guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = buscarTablaDePaginasDePatota(idPatota);
+	if(tablaPaginasPatotaActual == NULL) {
+		return 0;
+	}
 	tcbAGuardar->dlPatota = 00;
 	tcbAGuardar->proximaAEjecutar = buscarInicioDLTareas(tablaPaginasPatotaActual);
 	existenciaDeTablaParaPatota(tablaPaginasPatotaActual);
@@ -476,7 +479,7 @@ int guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 	int res = asignarPaginasEnTabla((void*) tcbAGuardar, tablaPaginasPatotaActual,TCB);
 	if(res == 0) {
 		log_info(logMemoria, "El tripulante %d no entro completo en memoria, se procede a borrar las paginas que si entraron");
-		expulsarTripulante(tcbAGuardar->idTripulante, idPatota);
+		expulsarTripulantePag(tcbAGuardar->idTripulante, idPatota);
 		return 0;
 	}
 
@@ -801,6 +804,7 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
 
 	int pcbGuardado, tareasGuardadas;
+	chequeoUltTripu = 1;
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = malloc(sizeof(t_tablaPaginasPatota));
 	tablaPaginasPatotaActual->idPatota = pcbAGuardar->pid;
 	tablaPaginasPatotaActual->tablaDePaginas = list_create();
@@ -976,7 +980,7 @@ t_tablaPaginasPatota* buscarTablaDePaginasDePatota(int idPatotaABuscar) {
 	    if(tablaPaginasBuscada == NULL)
 	    {
 	        log_error(logMemoria,"Tabla de pagina de patota %d no encontrada!! - No existe PCB para ese TCB negro", idPatotaABuscar);
-	        exit(1);
+	        return NULL;
 	    }
 
 	    return tablaPaginasBuscada;
@@ -1180,7 +1184,13 @@ void expulsarTripulantePag(int idTripulante,int idPatota) {
 		}
 
 		list_destroy(paginasTripu);
-		chequearUltimoTripulante(tablaPatota);
+		lock(&mutexChequearUltTripu);
+		if(chequeoUltTripu == 0)
+		{
+			chequeoUltTripu = 1;
+			chequearUltimoTripulante(tablaPatota);
+		}
+		unlock(&mutexChequearUltTripu);
 		list_iterator_destroy(iteradorPaginas);
 	}
 }
