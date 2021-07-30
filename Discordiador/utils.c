@@ -98,17 +98,17 @@ char * pathLog(){
 // ---------OPERACIONES VARIABLES GLOBALES--------
 
 t_estado leerEstado(t_tripulante* tripulante){
-	lock(&tripulante->mutexEstado);
+	//lock(&tripulante->mutexEstado);
 	t_estado estado = tripulante->estado;
-	unlock(&tripulante->mutexEstado);
+	//unlock(&tripulante->mutexEstado);
 	return estado;
 }
 
 
 void modificarEstado(t_tripulante* tripulante, t_estado estado){
-	lock(&tripulante->mutexEstado);
+	//lock(&tripulante->mutexEstado);
 	tripulante->estado = estado;
-	unlock(&tripulante->mutexEstado);
+	//unlock(&tripulante->mutexEstado);
 }
 
 
@@ -192,11 +192,15 @@ void cambiarDeEstado(t_tripulante* tripulante, t_estado estado){
 }
 
 void esperarTerminarTripulante(t_tripulante* unTripulante){
+	//log_info(logDiscordiador, "SE ESTA ESPERANDO Q TERMINE EL TRIPU %d", unTripulante->idTripulante);
 	sem_wait(&unTripulante->semaforoFin);
+	//log_info(logDiscordiador, "EL TRIPU %d YA LE HIZO POST", unTripulante->idTripulante);
 }
 
 
 void avisarTerminoPlanificacion(t_tripulante* tripulante){
+	//log_info(logDiscordiador,"el tripulante %d HACE POST DESDE TERMINO PLANI CON ESTADO %s",
+	//		tripulante->idTripulante, traducirEstado(tripulante->estado));
 	sem_post(&tripulante->semaforoInicio);
 }
 
@@ -288,6 +292,7 @@ void pasarDeLista(t_tripulante* tripulante){
 		case READY:
 			meterEnLista(tripulante, listaReady);
 			log_info(logDiscordiador,"------El tripulante %d paso a COLA READY", tripulante->idTripulante);
+			//log_info(logDiscordiador,"el tripulante %d HACE POST DESDE PASAR DE LISTA READY", tripulante->idTripulante);
 			sem_post(&tripulante->semaforoInicio);
 			break;
 
@@ -309,6 +314,7 @@ void pasarDeLista(t_tripulante* tripulante){
 		case EXIT:
 			meterEnLista(tripulante, listaExit);
 			log_info(logDiscordiador,"------El tripulante %d paso a COLA EXIT", tripulante->idTripulante);
+			//log_info(logDiscordiador,"el tripulante %d HACE POST DESDE PASAR DE LISTA EXIT", tripulante->idTripulante);
 			sem_post(&tripulante->semaforoInicio);
 			break;
 
@@ -360,6 +366,8 @@ void eliminiarPatota(uint32_t idPatota){
 		tripulante = (t_tripulante*)list_remove_by_condition(listaExit->elementos, (void*)esDeLaPatota);
 		unlock(&listaExit->mutex);
 	}
+
+	//remover de patotas activas a la patota q fue eliminada y poner mutexs
 }
 
 
@@ -376,9 +384,11 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
   
 	if(leerEstado(tripulante) != EXIT && leerEstado(tripulante) != SABOTAJE) {
 		int miRAMsocket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE);
-		if(!confirmacion(miRAMsocket))
+		if(!confirmacion(miRAMsocket)){
+
 			log_error(logDiscordiador,"No se pudo actalizar en miRam el estado "
 					"del tripulante %d", tripulante->idTripulante);
+		}
 		close(miRAMsocket);
 	}
 }
@@ -401,6 +411,7 @@ bool confirmacion(int server_socket){
 
 		char* mensajeConfirmacion = deserializarString(paqueteRecibido);
 		confirmacion = strcmp(mensajeConfirmacion,"OK") == 0;
+		//log_info(logDiscordiador, "SE RECIBIO UN %s", mensajeConfirmacion);
 		free(mensajeConfirmacion);
 	}
 
@@ -602,10 +613,8 @@ void mandarTCBaMiRAM(t_tripulante* tripulante){
 
 		log_info(logDiscordiador, "NO HAY ESPACIO EN MEMORIA PARA GUARDAR AL TRIPULANTE DE ID: %d",
 				    			tripulante->idTripulante);
-		chequeoMemoria = 1;
 	}
 
-	sem_post(&semMemoria);
 	close(miRAMsocket);
 }
 

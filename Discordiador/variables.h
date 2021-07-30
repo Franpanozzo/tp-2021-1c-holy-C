@@ -26,7 +26,6 @@
 	int gradoMultiprocesamiento;
 	int retardoCiclosCPU;
 	int idTripulanteBlocked;
-	int chequeoMemoria;
 	int puertoDisc;
 
 
@@ -35,7 +34,6 @@
 	t_sabotaje* sabotaje;
 
 	sem_t semPlanificacion;
-	sem_t semMemoria;
 
 	char** todasLasTareasIO;
 

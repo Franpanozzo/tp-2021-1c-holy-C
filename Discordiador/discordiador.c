@@ -18,7 +18,6 @@ int main() {
 
 	cargarConfiguracion();
 
-	chequeoMemoria = 0;
 	idTripulante = 0;
 	idPatota = 0;
 	modificarTripulanteBlocked(NO_HAY_TRIPULANTE_BLOQUEADO);
@@ -29,8 +28,6 @@ int main() {
 	sem_init(&sabotaje->semaforoTerminoTripulante,0,0);
 	sem_init(&sabotaje->semaforoTerminoSabotaje,0,0);
 	sem_init(&semPlanificacion,0,0);
-	sem_init(&semMemoria,0,1);
-
 
 
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
@@ -79,7 +76,8 @@ void hiloPlanificador(){
 			if(!list_is_empty(listaNew->elementos))
 				actualizarListaNew();
 			if(!list_is_empty(listaReady->elementos)){
-				list_iterate(listaReady->elementos, (void*)esperarTerminarTripulante);
+				comunicarseConTripulantes(listaReady, (void*)esperarTerminarTripulante);
+				//list_iterate(listaReady->elementos, (void*)esperarTerminarTripulante);
 				actualizarListaReady();
 			}
 
@@ -184,7 +182,6 @@ void hiloTripulante(t_tripulante* tripulante){
 
 			case NEW:
 				log_info(logDiscordiador,"el tripulante %d esta en new", tripulante->idTripulante);
-				mandarTCBaMiRAM(tripulante);
 				sem_post(&tripulante->semaforoFin);
 				sem_wait(&tripulante->semaforoInicio);
 				break;
@@ -234,7 +231,9 @@ void hiloTripulante(t_tripulante* tripulante){
 					ciclosExec --;
 				}
 				if(quantumPendiente == 0 && leerEstado(tripulante) != EXIT){
+					//log_info(logDiscordiador,"el tripulante %d termino su quantum", tripulante->idTripulante);
 					modificarEstado(tripulante, READY);
+					//log_info(logDiscordiador,"el tripulante %d va a pasar a READY por fin q", tripulante->idTripulante);
 				}
 				if(ciclosExec <= 0){
 
@@ -256,6 +255,7 @@ void hiloTripulante(t_tripulante* tripulante){
 						ciclosExec = calculoCiclosExec(tripulante);
 					}
 				}
+				//log_info(logDiscordiador,"el tripulante %d le hace post al plani", tripulante->idTripulante);
 				sem_post(&tripulante->semaforoFin);
 				sem_wait(&tripulante->semaforoInicio);
 				break;
@@ -309,10 +309,12 @@ void hiloTripulante(t_tripulante* tripulante){
 		}
 	}
 
+	/*
 	if(patotaSinTripulantes(tripulante->idPatota)){
 		log_info(logDiscordiador,"Ya no quedan tripus de la patota %d", tripulante->idPatota);
 		eliminiarPatota(tripulante->idPatota);
 	}
+	*/
 }
 
 
@@ -320,34 +322,43 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 
 	t_patota* patota = asignarDatosAPatota(tareasString);
 	int miRAMsocket = enviarA(puertoEIPRAM, patota, PATOTA);
+	t_list* listaTripulantesACrear = list_create();
+
+
+	void empezarTripulante(t_tripulante* tripulante){
+
+		//log_info(logDiscordiador,"SE ESTA ITERANDO LA LISTA");
+
+		pthread_t _hiloTripulante;
+		pthread_create(&_hiloTripulante, NULL, (void*) hiloTripulante, tripulante);
+		pthread_detach(_hiloTripulante);
+	}
+
+
 	if(confirmacion(miRAMsocket)){
 		log_info(logDiscordiador,"Se creo la patota %d con %d tripulantes",
 				patota->ID, cantidadTripulantes);
     
 		for (int i=0; i<cantidadTripulantes; i++){
-			sem_wait(&semMemoria);
-			if(chequeoMemoria)
-			{
-				log_info(logDiscordiador,"No hay espacio suficiente en memoria para ingresar mas tripulantes de la patota:%d - "
-						" Por lo tanto no se crean mas tripulantes",patota->ID);
-				break;
-			}
-			iniciarTripulante(*(coordenadas+i), patota->ID);
+
+			iniciarTripulante(*(coordenadas+i), patota->ID, listaTripulantesACrear);
 		}
+
+		list_iterate(listaTripulantesACrear, (void *) empezarTripulante);
 	}
 	else{
 		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota %d",patota->ID);
 	}
 
+	list_destroy(listaTripulantesACrear);
 	eliminarPatota(patota);
 	close(miRAMsocket);
 }
 
 
-void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
+void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota, t_list* listaTripulantesACrear){
 
 	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
-	pthread_t _hiloTripulante;
 
 	idTripulante++;
 
@@ -362,16 +373,30 @@ void iniciarTripulante(t_coordenadas coordenada, uint32_t idPatota){
 	sem_init(&tripulante->semaforoInicio, 0, 0);
 	sem_init(&tripulante->semaforoFin, 0, 0);
 
-	if(sabotaje->haySabotaje)
-		meterEnLista(tripulante, listaSabotaje);
-	else
-		meterEnLista(tripulante, listaNew);
 
-	log_info(logDiscordiador,"Se creo el tripulante numero %d con posicion %d|%d",
-			tripulante->idTripulante, tripulante->coordenadas.posX, tripulante->coordenadas.posY);
+	mandarTCBaMiRAM(tripulante);
 
-	pthread_create(&_hiloTripulante, NULL, (void*) hiloTripulante, tripulante);
-	pthread_detach(_hiloTripulante);
+	if(tripulante->estado != EXIT){
+
+		log_info(logDiscordiador,"SE VA A FIJAR A Q LISTA VA");
+
+		if(sabotaje->haySabotaje){
+			meterEnLista(tripulante, listaSabotaje);
+		}
+		else{
+			list_add(listaNew->elementos, tripulante);
+			//meterEnLista(tripulante, listaNew);
+			//log_info(logDiscordiador,"FUE A LISTA NEW");
+		}
+
+		log_info(logDiscordiador,"Se creo el tripulante numero %d con posicion %d|%d",
+				tripulante->idTripulante, tripulante->coordenadas.posX, tripulante->coordenadas.posY);
+
+		list_add(listaTripulantesACrear, tripulante);
+	}
+	else{
+		liberarTripulante(tripulante);
+	}
 }
 
 

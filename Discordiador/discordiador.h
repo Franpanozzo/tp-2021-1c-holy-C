@@ -28,7 +28,7 @@
 void hiloPlanificador();
 void hiloTripulante(t_tripulante*);
 
-void iniciarTripulante(t_coordenadas, uint32_t);
+void iniciarTripulante(t_coordenadas, uint32_t, t_list*);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
 
 void actualizarListaEyB(t_lista*, t_estado);
