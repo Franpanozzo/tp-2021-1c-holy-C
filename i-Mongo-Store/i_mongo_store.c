@@ -42,7 +42,6 @@ int main(void) {
 	//liberarTodosLosStructTareas();
 	free(path);
 	return EXIT_SUCCESS;
-
 }
 
 
@@ -64,23 +63,23 @@ int esperarTripulante(int serverSock) {
     struct sockaddr_in serverAddress;
     unsigned int len = sizeof(struct sockaddr);
     int socket_tripulante = accept(serverSock, (void*) &serverAddress, &len);
-    //log_info(logImongo, "Se conecto un cliente! ");
+
     return socket_tripulante;
 }
 
-//CUANDO CREAS UN HILO HAY QUE PASAR SI O SI UN PUNTERO
 
 void manejarTripulante(int *tripulanteSock) {
 
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
-    deserializarSegun(paquete,tripulanteSock);
+
+    deserializarSegun(paquete);
+
+    close(*tripulanteSock);
     free(tripulanteSock);
 }
 
 
-void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
-
-	//log_info(logImongo,"Deserializando...");
+void deserializarSegun(t_paquete* paquete){
 
 	switch(paquete->codigoOperacion){
 
@@ -88,91 +87,169 @@ void deserializarSegun(t_paquete* paquete, int *tripulanteSock){
 		{
 			t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
 
-			log_info(logImongo,"tareaRecibida %s  ",tarea->nombreTarea);
+			log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
 
-			seleccionarTarea(tarea,tripulanteSock);
+			seleccionarTarea(tarea);
 
 			free(tarea->nombreTarea);
 			free(tarea);
 			break;
 		}
+
 		case DESPLAZAMIENTO:
 		{
+
+			t_desplazamiento* desplazamiento = deserializarDesplazamiento(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el desplazamiento del tripulante de ID %d", desplazamiento->idTripulante);
+
+			char* mensaje = string_from_format("Se mueve de %d|%d a %d|%d",
+					desplazamiento->inicio.posX, desplazamiento->inicio.posY,
+					desplazamiento->fin.posX, desplazamiento->fin.posY);
+
+			escribirEnBitacora(mensaje,desplazamiento->idTripulante);
+
+			free(mensaje);
+			free(desplazamiento);
+
 			break;
 		}
+
 		case INICIO_TAREA:
 		{
+
+			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el inicio de tarea del tripulante de ID %d", avisoTarea->idTripulante);
+
+			char* mensaje = string_from_format("Comienza la ejecucion de la tarea %s", avisoTarea->nombreTarea);
+
+			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
+
+			free(mensaje);
+			free(avisoTarea->nombreTarea);
+			free(avisoTarea);
+
 			break;
 		}
+
 		case FIN_TAREA:
 		{
+			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
+
+			char* mensaje = string_from_format("Se finaliza la tarea %s", avisoTarea->nombreTarea);
+
+			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
+
+			free(mensaje);
+
+			free(avisoTarea->nombreTarea);
+			free(avisoTarea);
+
 			break;
 		}
+
 		case ID_SABOTAJE:
 		{
+			int idTripulante = deserializarAvisoSabotaje(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
+
+			char* mensaje = string_from_format("Se corre en panico hacia la ubicacion del sabotaje");
+
+			escribirEnBitacora(mensaje,idTripulante);
+
+			free(mensaje);
+
 			break;
 		}
+
 		case FIN_SABOTAJE:
 		{
+			int idTripulante = deserializarAvisoSabotaje(paquete->buffer->stream);
+
+			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
+
+			char* mensaje = string_from_format("Se resuelve el sabotaje");
+
+			escribirEnBitacora(mensaje,idTripulante);
+
+			free(mensaje);
+
 			break;
 		}
+
 		default:
 			log_info(logImongo,"i-Mongo-Store no entiende esa tarea");
-
 	}
 
 	eliminarPaquete(paquete);
-	close(*tripulanteSock);
+
 }
 
 
-void seleccionarTarea(t_tarea* tarea, int* tripulanteSock){
+void seleccionarTarea(t_tarea* tarea){
 
 	switch(indiceTarea(tarea)){
 
 		case 0:
 		{
-			log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO  ");
-			generarTarea(oxigeno, tarea,tripulanteSock);
+			log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO");
+
+			generarTarea(oxigeno, tarea);
+
 			break;
 		}
+
 		case 1:
 		{
-			log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO  ");
-			consumirOxigeno(tarea,tripulanteSock);
+			log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO");
+
+			consumirTarea(oxigeno,tarea);
+
 			break;
 		}
+
 		case 2:
 		{
-			log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA  ");
-			//generarComida(tarea,tripulanteSock);
-			generarTarea(comida, tarea,tripulanteSock);
+			log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA");
+
+			generarTarea(comida, tarea);
+
 			break;
 		}
+
 		case 3:
 		{
-			log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA  ");
-			consumirComida(tarea,tripulanteSock);
+			log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA");
+
+			consumirTarea(comida,tarea);
+
 			break;
 		}
 
 		case 4:
 		{
-			log_info(logImongo,"Recibi una tarea de GENERAR_BASURA  ");
-			//generarBasura(tarea,tripulanteSock);
-			generarTarea(basura, tarea,tripulanteSock);
+			log_info(logImongo,"Recibi una tarea de GENERAR_BASURA");
+
+			generarTarea(basura, tarea);
+
 			break;
 		}
 
 		case 5:
 		{
-			log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA  ");
-			descartarBasura(tarea,tripulanteSock);
+			log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA");
+
+			consumirTarea(basura,tarea);
 			break;
 		}
 
 		default:
-			log_info(logImongo,"No existe ese tipo de tarea negro  ");
+
+			log_info(logImongo,"No existe ese tipo de tarea");
 			exit(1);
 	}
 }
@@ -239,12 +316,11 @@ void crearFileSystemDesdeCero(){
 
 	int cantidadPosicionesBitArray = bitarray_get_max_bit(superBloque->bitmap);
 
-	 log_info(logImongo,"Se inicializo un bitmap con %d posiciones", superBloque->blocks );
+	log_info(logImongo,"Se inicializo un bitmap con %d posiciones", superBloque->blocks );
 
 	for(int i=0; i<superBloque->blocks;i++){
 
 		bitarray_clean_bit(superBloque->bitmap, i);
-
 	}
 
 	for(int i=superBloque->blocks; i<cantidadPosicionesBitArray ; i++){
@@ -252,8 +328,7 @@ void crearFileSystemDesdeCero(){
 		bitarray_set_bit(superBloque->bitmap, i);
 
 		//PONER EN 1 BLOQUES MUERTOS CUANDO NO SON MULTIPLOS DE 8
-
-		}
+	}
 
     FILE* elSuperBloque = fopen(pathSuperBloque,"wb");
 
@@ -270,13 +345,8 @@ void crearFileSystemDesdeCero(){
 	if(mkdir(pathFiles,0777) != 0){
 		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
 	}
-
-	if(mkdir(pathBitacora,0777) != 0){
-		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
-	}
-
 	crearMemoria(fd);
-}//
+}
 
 
 void iniciarFileSystem(){
@@ -289,22 +359,21 @@ void iniciarFileSystem(){
 		mkdir(datosConfig->puntoMontaje,0777);
 	}
 	else if(flag == 0){
-		log_info(logImongo, "Existe el punto de montaje en el directorio %s, "
-					"se procedera a validar la existencia de SuperBloque.ims y Blocks.ims", datosConfig->puntoMontaje);
+		log_info(logImongo, "Existe el punto de montaje en el directorio %s , se procedera "
+				"a validar la existencia de SuperBloque.ims y Blocks.ims", datosConfig->puntoMontaje);
 	}
 	else{
 		log_info(logImongo, "La verificacion de si existe la carpeta punto de montaje esta tirando cualquier valor");
 		exit(1);
 	}
-
 	if(validarExistenciaFileSystem(pathSuperBloque,pathBloque,datosConfig->puntoMontaje)){
 
 		log_info(logImongo,"Existe un file system actualmente");
 		crearFileSystemExistente();
 	}
 	else{
-		log_info(logImongo,"Existe el punto de montaje ahora, "
-				"pero no existe SuperBloque.ims y Blocks.ims, creando archivos...");
+		log_info(logImongo,"Existe el punto de montaje ahora, pero no existe "
+				"SuperBloque.ims y Blocks.ims, creando archivos...");
 		crearFileSystemDesdeCero();
 	}
 }

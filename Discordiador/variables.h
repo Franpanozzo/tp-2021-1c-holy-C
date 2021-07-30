@@ -30,6 +30,7 @@
 	int puertoDisc;
 
 
+
 	t_estado estadoAcomparar;
 	t_sabotaje* sabotaje;
 

@@ -19,6 +19,7 @@ typedef struct{
 	uint32_t tamanioArchivo;
 	uint32_t cantidadBloques;
 	char* bloquesQueOcupa;
+	t_list* bloques;
 	char* caracterLlenado;
 	char* md5_archivo;
 
@@ -34,16 +35,28 @@ typedef struct{
 
 }t_datosConfig;
 
+typedef struct{
+
+	int bloquesNuevosAocupar;
+	int caracteresAguardar;
+
+}t_info;
+
+
 typedef struct {
+
 	t_config* config;
 	t_file* file;
 	pthread_mutex_t* mutex;
 	char * path;
 	bool configSeCreo;
+
 }tarea;
+
 
 puertoEIP* puertoEIPDisc;
 
+pthread_mutex_t mutexBitacora;
 pthread_mutex_t mutexSuperBloque;
 pthread_mutex_t mutexMemoriaSecundaria;
 pthread_mutex_t mutexBitMap;
