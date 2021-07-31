@@ -28,6 +28,8 @@ t_bitarray* crearBitmap();
 char* convertirBitmapEnString(t_bitarray*);
 void agregarBloquesOcupados(t_list*, t_config*);
 void sabotajesFile(tarea*);
+void escribirBloque(uint32_t, char*);
+void consumirBloque(uint32_t, uint32_t);
 
 
 #endif

@@ -11,24 +11,26 @@ void buscarSabotaje(){
 		log_info(logImongo,"Se detecto un sabotaje en el bitmap del super bloque");
 		arreglarSabotajeBitmapEnSuperBloque();
 	}
+	else{
+		log_info(logImongo,"No se detecto ningun sabotaje en el super bloque");
+	}
 
 	sabotajesFile(oxigeno);
 	sabotajesFile(comida);
 	sabotajesFile(basura);
 
-	log_info(logImongo,"No se detecto ningun sabotaje en el super bloque o en los files");
 }
 
 
 void sabotajesFile(tarea* structTarea){
 
 	if(verificarSiExiste(structTarea->path)){
-	/*
+
 		if(haySabotajeBloquesEnFile(structTarea)){
 			log_info(logImongo,"Se detecto un sabotaje en los bloques del file %s", structTarea->path);
-			//arreglarSabotajeBloquesEnFile(arrayFilesConsumibles[i]);
+			arreglarSabotajeBloquesEnFile(structTarea);
 		}
-		/*else*/ if(haySabotajeCantBloquesEnFile(structTarea)){
+		else if(haySabotajeCantBloquesEnFile(structTarea)){
 			log_info(logImongo,"Se detecto un sabotaje en la cantidad de bloques del file %s", structTarea->path);
 			arreglarSabotajeCantBloquesEnFile(structTarea);
 		}
@@ -36,6 +38,9 @@ void sabotajesFile(tarea* structTarea){
 		else if(haySabotajeSizeEnFile(structTarea)){
 			log_info(logImongo,"Se detecto un sabotaje en el tamanio del file %s", structTarea->path);
 			arreglarSabotajeSizeEnFile(structTarea);
+		}
+		else{
+			log_info(logImongo,"No se detecto ningun sabotaje en el file %s", structTarea->path);
 		}
 	}
 
@@ -193,8 +198,6 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 	int tamanioBitmap = (int) ceil ((float) cantBloques / (float) 8);
 	t_bitarray* bitmap = bitarray_create_with_mode(malloc(tamanioBitmap), tamanioBitmap, MSB_FIRST);
 
-	uint32_t numeroBloque = 0;
-
 	for(int i=0; i<cantBloques; i++){
 
 		if(estaEnLaLista(i)){
@@ -282,20 +285,24 @@ void arreglarSabotajeCantBloquesEnFile(tarea* fileConsumible){
 
 bool haySabotajeBloquesEnFile(tarea* fileConsumible){
 
-	char** arrayPosiciones = config_get_array_value(fileConsumible->config, "BLOCKS");
+	t_config* config = config_create(fileConsumible->path);
+	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
 	char* md5calculado = obtenerMD5(listaBloques);
 
-	char* md5real = config_get_string_value(fileConsumible->config, "MD5");
+	char* md5real = config_get_string_value(config, "MD5_ARCHIVO");
+
+	log_info(logImongo,"el md5 calculado es %s y el del config %s", md5calculado, md5real);
 
 	bool result = strcmp(md5calculado, md5real) != 0;
 
+	/*
 	free(md5calculado);
 	free(md5real);
 	//falta liberar los elementos de la lista
 	list_destroy(listaBloques);
 	// falta liberar en arrayPosiciones
-
+*/
 	return result;
 }
 
@@ -324,18 +331,28 @@ void guardarEnMemoriaSecundaria2(int* posicionesQueOcupa, char* contenido, int c
 }
 
 
-/*
+
 void arreglarSabotajeBloquesEnFile(tarea* fileConsumible){
 
-	char** arrayPosiciones = config_get_array_value(fileConsumible->config, "BLOCKS");
+	t_config* config = config_create(fileConsumible->path);
+	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
-	char* md5calculado = calcularMd5(listaBloques);
-	config_set_value(fileConsumible->config, "MD5", md5calculado);
+	char* md5calculado = obtenerMD5(listaBloques);
+	char* md5anterior = config_get_string_value(config, "MD5_ARCHIVO");
+	config_set_value(config, "MD5_ARCHIVO", md5calculado);
 
-	uint32_t cantCaracteresAescribir = config_get_long_value(fileConsumible->config, "SIZE");
-	char* stringCaracter = config_get_string_value(fileConsumible->config, "CARACTER_LLENADO");
+	log_info(logImongo,"YA CAMBIO EL MD5");
+
+	uint32_t cantCaracteresAescribir = config_get_long_value(config, "SIZE");
+	log_info(logImongo,"PROBANDO 1");
+	char* stringCaracter = config_get_string_value(config, "CARACTER_LLENADO");
+	log_info(logImongo,"PROBANDO 2");
 	char caracter = * stringCaracter;
-	uint32_t tamanioBloque = config_get_long_value(fileConsumible->config, "BLOCKS_SIZE");
+	t_config* configSB = config_create(pathSuperBloque);
+	log_info(logImongo,"PROBANDO 3");
+	uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
+
+	log_info(logImongo,"PREPARO TODO");
 
 	for(uint32_t i = 0; i < list_size(listaBloques); i++){
 
@@ -346,17 +363,58 @@ void arreglarSabotajeBloquesEnFile(tarea* fileConsumible){
 		cantCaracteresAescribir = max(cantCaracteresAescribir - tamanioBloque, 0);
 	}
 
-	char* md5anterior = config_get_string_value(fileConsumible->config, "MD5");
+	config_save(config);
 
 	log_info(logImongo,"Ya se soluciono el sabotaje, se cambio el md5 de %s a %s "
 			"para el nuevo orden de bloques", md5anterior, md5calculado);
 
+	/*
 	free(md5anterior);
 	free(stringCaracter);
+	*/
 }
-*/
-// escribirBloque(uint32_t posicionDelBloque, char* contenido);
-// consumirBloque(uint32_t posicionDelBloque, uint32_t cant);
+
+
+void escribirBloque(uint32_t posicionDelBloque, char* contenido){
+
+	t_config* configSB = config_create(pathSuperBloque);
+	int tamanioBloque = config_get_int_value(configSB, "BLOCK_SIZE");
+	config_destroy(configSB);
+
+	log_info(logImongo,"ACA 1");
+
+	lock(&mutexMemoriaSecundaria);
+	memcpy(copiaMemoriaSecundaria + posicionDelBloque * tamanioBloque, contenido, strlen(contenido));
+	unlock(&mutexMemoriaSecundaria);
+
+	log_info(logImongo,"ACA 2");
+
+	char* contenidoImprimible = string_duplicate(contenido);
+	string_append(&contenidoImprimible, "\0");
+
+	log_info(logImongo,"ACA 3");
+
+	log_info(logImongo,"SE PUSO %s EN EL BLOQUE %d", contenidoImprimible, posicionDelBloque);
+}
+
+
+void consumirBloque(uint32_t posicionDelBloque, uint32_t cant){
+
+	char* contenido = string_repeat('\0', cant);
+	t_config* configSB = config_create(pathSuperBloque);
+	int tamanioBloque = config_get_int_value(configSB, "BLOCK_SIZE");
+	config_destroy(configSB);
+
+	log_info(logImongo,"ACA 4");
+
+	lock(&mutexMemoriaSecundaria);
+	memcpy(copiaMemoriaSecundaria + posicionDelBloque * tamanioBloque, contenido, cant);
+	unlock(&mutexMemoriaSecundaria);
+
+	log_info(logImongo,"ACA 5");
+
+	log_info(logImongo,"SE LLENO DE BARRA CEROS EL BLOQUE %d", posicionDelBloque);
+}
 
 // ------ FUNCIONAS AUXILIARES ------
 

@@ -744,15 +744,18 @@ char * obtenerMD5(t_list * bloques){
 	int md5Size = 32;
 
 	char* copiaFile = reconstruirArchivo(bloques);
+	log_info(logImongo,"ACA 1");
 	char * comando = string_from_format("echo -n \"%s\" | md5sum", copiaFile);
 	char * md5 = malloc(md5Size +2);
 	FILE * file = popen(comando, "r");
 
+	log_info(logImongo,"ACA 2");
 	fgets(md5, md5Size+1, file);
-
+	log_info(logImongo,"ACA 3");
+	/*
 	fclose(file);
 	free(comando);
-	free(copiaFile);
+	free(copiaFile);*/
 	return md5;
 }
 
