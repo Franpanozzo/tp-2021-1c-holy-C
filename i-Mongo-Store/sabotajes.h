@@ -27,6 +27,7 @@ t_list* obtenerBloquesOcupadosSegunFiles();
 t_bitarray* crearBitmap();
 char* convertirBitmapEnString(t_bitarray*);
 void agregarBloquesOcupados(t_list*, t_config*);
+void sabotajesFile(tarea*);
 
 
 #endif

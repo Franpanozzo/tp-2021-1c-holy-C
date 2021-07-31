@@ -1234,6 +1234,19 @@ char* leerBitacora(int idTripulante){
 }
 
 
+char* pathBitacoraTripulante(int idTripulante){
+	return string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
+}
+
+
+bool existeBitacoraTripulante(int idTripulante){
+	char* path = pathBitacoraTripulante(idTripulante);
+	bool result = verificarSiExiste(path);
+	free(path);
+	return result;
+}
+
+
 char* contenidoBloque(uint32_t posicionBloque){
 
 	uint32_t posicionEnMemoria = posicionBloque * superBloque->block_size;
@@ -1318,6 +1331,7 @@ t_list* listaCoordenadasSabotaje() {
 
 void sabotaje(int signal) {
 
+	/*
   t_coordenadas* coordenadasSabotaje = list_get(listaPosicionesSabotaje, proximoPosSabotaje);
 
   proximoPosSabotaje++;
@@ -1331,4 +1345,6 @@ void sabotaje(int signal) {
 
   enviarPaquete(paqueteEnviado, socketDisc);
   close(socketDisc);
+*/
+  buscarSabotaje();
 }

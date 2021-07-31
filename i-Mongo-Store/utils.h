@@ -2,7 +2,7 @@
 #define UTILS_H_
 
 
-#include "variables.h"
+//#include "variables.h"
 #include "i_mongo_store.h"
 
 
@@ -58,6 +58,8 @@ t_list* obtenerArrayDePosiciones2(int);
 void actualizarBitArray2(t_list*, int);
 char* leerBitacora(int);
 char* contenidoBloque(uint32_t);
+char* pathBitacoraTripulante(int);
+bool existeBitacoraTripulante(int);
 
 
 
