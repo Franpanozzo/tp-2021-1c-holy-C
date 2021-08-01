@@ -381,18 +381,12 @@ void escribirBloque(uint32_t posicionDelBloque, char* contenido){
 	int tamanioBloque = config_get_int_value(configSB, "BLOCK_SIZE");
 	config_destroy(configSB);
 
-	log_info(logImongo,"ACA 1");
-
 	lock(&mutexMemoriaSecundaria);
 	memcpy(copiaMemoriaSecundaria + posicionDelBloque * tamanioBloque, contenido, strlen(contenido));
 	unlock(&mutexMemoriaSecundaria);
 
-	log_info(logImongo,"ACA 2");
-
 	char* contenidoImprimible = string_duplicate(contenido);
 	string_append(&contenidoImprimible, "\0");
-
-	log_info(logImongo,"ACA 3");
 
 	log_info(logImongo,"SE PUSO %s EN EL BLOQUE %d", contenidoImprimible, posicionDelBloque);
 }
@@ -405,13 +399,9 @@ void consumirBloque(uint32_t posicionDelBloque, uint32_t cant){
 	int tamanioBloque = config_get_int_value(configSB, "BLOCK_SIZE");
 	config_destroy(configSB);
 
-	log_info(logImongo,"ACA 4");
-
 	lock(&mutexMemoriaSecundaria);
 	memcpy(copiaMemoriaSecundaria + posicionDelBloque * tamanioBloque, contenido, cant);
 	unlock(&mutexMemoriaSecundaria);
-
-	log_info(logImongo,"ACA 5");
 
 	log_info(logImongo,"SE LLENO DE BARRA CEROS EL BLOQUE %d", posicionDelBloque);
 }
@@ -477,15 +467,6 @@ uint32_t tamanioUltimoBloque(tarea* fileConsumible){
 	return offset;
 }
 
-/*
-uint32_t max(long int n1, long int n2){
-
-	if(n1 > n2)
-		return n1;
-	else
-		return n2;
-}
-*/
 
 // PROBADA
 uint32_t cantBloquesSegunLista(tarea* fileConsumible){

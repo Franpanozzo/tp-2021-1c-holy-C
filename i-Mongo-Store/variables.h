@@ -54,6 +54,28 @@ typedef struct {
 }tarea;
 
 
+typedef struct{
+
+	uint32_t tamanioArchivo;
+	t_list* bloques;
+	char* caracterLlenado;
+	char* md5_archivo;
+	pthread_mutex_t* mutex;
+	char * path;
+
+}t_file2;
+
+
+typedef struct{
+
+	uint32_t tamanioArchivo;
+	t_list* bloques;
+	pthread_mutex_t* mutex;
+	char * path;
+
+}t_bitacora_tripulante;
+
+
 puertoEIP* puertoEIPDisc;
 
 pthread_mutex_t mutexBitacora;

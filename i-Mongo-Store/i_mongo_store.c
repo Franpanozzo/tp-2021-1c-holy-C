@@ -118,6 +118,7 @@ void deserializarSegun(t_paquete* paquete){
 		case INICIO_TAREA:
 		{
 
+			/*
 			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
 
 			log_info(logImongo,"Se recibio el inicio de tarea del tripulante de ID %d", avisoTarea->idTripulante);
@@ -129,12 +130,13 @@ void deserializarSegun(t_paquete* paquete){
 			free(mensaje);
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
-
+			 */
 			break;
 		}
 
 		case FIN_TAREA:
 		{
+			/*
 			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
@@ -148,6 +150,7 @@ void deserializarSegun(t_paquete* paquete){
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
 
+			 */
 			break;
 		}
 

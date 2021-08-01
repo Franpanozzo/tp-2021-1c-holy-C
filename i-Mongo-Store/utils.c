@@ -597,6 +597,381 @@ void inicializarTarea(tarea* structTarea, int bloquesAocupar, int caracteresAOcu
 	config_save(structTarea->config);
 }
 
+
+void generarTarea2(t_file2 archivo, uint32_t cantidad){
+
+	lock(archivo->mutex);
+
+	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
+
+	if(bloquesLibres2(max(0, cantidad - fragmentacionArchivo))){
+
+		archivo->tamanioArchivo += cantidad;
+
+		if(fragmentacionArchivo > 0){
+
+			uint32_t ultimoBloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
+			escribirBloqueEmpezado(ultimoBloque, string_repeat(*archivo->caracterLlenado, fragmentacionArchivo));
+			cantidad = max(0, cantidad - fragmentacionArchivo);
+		}
+
+		t_list* bloquesAocupar = buscarBloques(cantidad); //si la cantdad es cero, devuelve una lista vacia
+		uint32_t bloque = 0;
+
+		while(!list_is_empty(bloquesAocupar)){
+
+			list_add(archivo->bloques, list_remove(bloquesAocupar, 0));
+			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
+			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad)));
+			cantidad -= superBloque->block_size;
+		}
+
+
+		actualizarMd5(archivo);
+
+		//esto no hay q hacerlo cunado se baja al blocks.ims?
+		actualizarEstructurasEnFile(archivo);
+	}
+	else{
+		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA TAREA---");
+	}
+
+	unlock(archivo->mutex);
+}
+
+
+consumirTarea2(t_file2 archivo, uint32_t cantidad){
+
+	lock(archivo->mutex);
+
+	cantidad = min(cantidad, archivo->tamanioArchivo);
+	uint32_t fragmentacionArchivo = fragmentacion(archivo);
+
+	if(fragmentacionArchivo > 0){
+
+		uint32_t* ultimoBloque = (int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+		consumirBloqueEmpezado(*ultimoBloque, superBloque->block_size - fragmentacionArchivo);
+		cantidad = max(0, cantidad - superBloque->block_size + fragmentacionArchivo);
+		//free(ultimoBloque);
+	}
+
+	uint32_t* bloque;
+
+	while(cantidad > 0){
+
+		bloque =(int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+		consumirBloque(bloque);
+		cantidad -= superBloque->block_size;
+		//free(bloque);
+	}
+
+	archivo->tamanioArchivo -= cantidad;
+	actualizarMd5(archivo);
+
+	//esto no hay q hacerlo cunado se baja al blocks.ims?
+	actualizarEstructurasEnFile(archivo);
+
+	unlock(archivo->mutex);
+}
+
+
+// LA CREACION DEL ARCHIVO LA HAGO APARTE
+escribirBitacora2(int idTripulante, char* mensaje){
+
+	char* charIdTripulante = string_itoa(idTripulante);
+	t_bitacora_tripulante* bitacora = dictionary_get(bitacoras, charIdTripulante);
+
+	uint32_t fragmentacionArchivo = fragmentacion(bitacora->tamanioArchivo);
+	int tamanioMensaje = strlen(mensaje);
+
+	if(bloquesLibres2(max(0, strlen(mensaje) - fragmentacionArchivo))){
+
+		bitacora->tamanioArchivo += tamanioMensaje;
+
+		if(fragmentacionArchivo > 0){
+
+			uint32_t ultimoBloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
+			char* contenidoUltimoBloque = string_substring_until(mensaje, fragmentacionArchivo);
+			escribirBloqueEmpezado(ultimoBloque, contenidoUltimoBloque);
+			tamanioMensaje = max(0, tamanioMensaje - fragmentacionArchivo);
+		}
+
+		t_list* bloquesAocupar = buscarBloques(tamanioMensaje); //si la cantdad es cero, devuelve una lista vacia
+		uint32_t bloque = 0;
+
+		while(!list_is_empty(bloquesAocupar)){
+
+			char* fragmentoAescribir = string_substring_until(mensaje, min(tamanioMensaje, superBloque->block_size));
+			list_add(bitacora->bloques, list_remove(bloquesAocupar, 0));
+			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
+			escribirBloque(bloque, fragmentoAescribir);
+			tamanioMensaje -= superBloque->block_size;
+			free(fragmentoAescribir);
+		}
+
+		actualizarMd5(bitacora);
+
+		//esto no hay q hacerlo cunado se baja al blocks.ims?
+		actualizarEstructurasEnFile(bitacora);
+	}
+	else{
+		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA BITACORA---");
+	}
+
+	unlock(bitacora->mutex);
+}
+
+
+void escribirEnBitacora(char* mensaje, int idTripulante){
+
+	lock(&mutexBitacora);
+	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
+	log_info(logImongo,"El archivo a crear tiene el path: %s",path);
+	t_config* config;
+
+	if(!verificarSiExiste(pathBitacora)){
+
+		log_info(logImongo,"No existe la carpeta Bitacora, se procede a crearla");
+		mkdir(pathBitacora,0777);
+	}
+	if(!(verificarSiExiste(path))){
+
+		log_info(logImongo,"Es la primera vez que el tripulante ID: %d escribe en disco", idTripulante);
+		FILE* tripulante = fopen(path,"wb");
+		fclose(tripulante);
+		config = config_create(path);
+		config_set_value(config,"BLOCKS","[]");
+		config_set_value(config,"SIZE","0");
+		config_save(config);
+	}
+	else{
+
+		log_info(logImongo,"Ya existia el archivo del tripulante de ID: %d", idTripulante);
+		config = config_create(path);
+	}
+
+
+	char** bloquesQueOcupaba = config_get_array_value(config,"BLOCKS");
+	t_list * blocksQueOcupaba = convertirEnLista(bloquesQueOcupaba);
+
+	int posicionUltimoBloque = 0;
+	int fragmentacionUltBloque = 0;
+
+	if(!list_is_empty(blocksQueOcupaba)){
+
+		posicionUltimoBloque = * (int*)list_get(blocksQueOcupaba, list_size(blocksQueOcupaba) - 1);
+		fragmentacionUltBloque = fragmentacionDe(posicionUltimoBloque);
+
+		log_info(logImongo,"La lista de blocks no estaba vacia, su ultimo bloque es el %d y "
+				"tiene una fragmetacion de %d", posicionUltimoBloque, fragmentacionUltBloque);
+	}
+
+	uint32_t cantBloquesAocupar = (int) ceil((float)(strlen(mensaje) - fragmentacionUltBloque)
+			/ (float) superBloque->block_size);
+//34
+	log_info(logImongo,"El mensaje es %s y la cant de bloques que "
+			"va a ocupar es %d", mensaje, cantBloquesAocupar);
+
+	t_list* bloquesAocupar = obtenerArrayDePosiciones2(cantBloquesAocupar);
+
+	if(bloquesLibres(cantBloquesAocupar)){
+
+		if(fragmentacionUltBloque > 0){
+
+			list_add_in_index(bloquesAocupar, 0, &posicionUltimoBloque);
+			cantBloquesAocupar ++;
+		}
+
+		guardarStringEnMemoriaSecundaria(bloquesAocupar, mensaje, cantBloquesAocupar);
+
+		int cantidadDeCaracteresQueHabia = config_get_int_value(config,"SIZE");
+
+		log_info(logImongo,"La cantidad de caracteres que habia en disco de la "
+				"bitacora del tripulante %d eran: %d", idTripulante,cantidadDeCaracteresQueHabia);
+
+		config_set_value(config,"SIZE",string_itoa(string_length(mensaje) + cantidadDeCaracteresQueHabia));
+
+		log_info(logImongo,"La cantidad de caracteres que hay ahora del "
+				"tripulante %d son: %d", idTripulante,cantidadDeCaracteresQueHabia);
+
+		if(fragmentacionUltBloque > 0){
+
+			list_remove(bloquesAocupar, 0);
+		}
+
+		list_add_all(blocksQueOcupaba, bloquesAocupar);
+		char * bloquesQueOcupa = convertirEnString(blocksQueOcupaba);
+		config_set_value(config, "BLOCKS", bloquesQueOcupa);
+		config_save(config);
+	}
+
+	char* bitacora = leerBitacora(idTripulante);
+	string_append(&bitacora, "\0");
+	log_info(logImongo,"Lo que esta en la bitacora del tripulante %d por "
+			"el momento es: %s", idTripulante, bitacora);
+
+	unlock(&mutexBitacora);
+}
+
+
+void consumirTarea(tarea* structTarea, t_tarea* _tarea){
+
+	lock(structTarea->mutex);
+
+	if(verificarSiExiste(structTarea->path)){
+
+		log_info(logImongo,"Existe la tarea: %s, se procede a realizarla",_tarea->nombreTarea);
+
+		int caracteresAconsumir = 0;
+
+		//ERROR 1 en la segunda condicion del if
+		if(alcanzanCaracteresParaConsumir(structTarea->file->tamanioArchivo, _tarea->parametro)
+				&& strcmp(_tarea->nombreTarea,"DESCARTAR_BASURA") != 0){
+
+			log_info(logImongo,"Los caracteres a suprimir son menores que los que estan "
+					"actualmente en disco, se procede a operar");
+
+			caracteresAconsumir = _tarea->parametro;
+
+		}
+		else{
+
+			log_info(logImongo,"Los caracteres a suprimir son mayores que los que estan"
+					"actualmente en disco, se procede a suprimir todos los que hay en disco");
+
+			caracteresAconsumir = structTarea->file->tamanioArchivo;
+
+		}
+
+		t_list* posicionesAlimpiar = list_create();
+
+		int caracteresParaConsumir = caracteresAconsumir;
+
+		log_info(logImongo,"LOS BLOQUES QUE TIENE EL FILE %s SON %s",
+				structTarea->path, convertirEnString(structTarea->file->bloques));
+
+		for(int i= list_size(structTarea->file->bloques) - 1; caracteresAconsumir > 0 && i >= 0; i--){
+
+			log_info(logImongo,"Los caracteres a consumir son: %d", caracteresAconsumir);
+
+			int posiciones = *((int*)list_get(structTarea->file->bloques,i));
+
+			char* datos = datosBloque(posiciones);
+
+			log_info(logImongo,"Los datos que estan en la posicion %d actualmente son: %s: ", posiciones,datos);
+
+			int cantidadCaracteres = string_length(datos);
+
+			log_info(logImongo,"La cantidad de caracteres de %s es: %d", datos,cantidadCaracteres);
+
+			free(datos);
+
+			char* datosAguardar;
+
+			int caracteresDeLaPasada;
+
+			if(caracteresAconsumir >= cantidadCaracteres){// vos queres consumir 13 caracteres y hay 8
+
+				datosAguardar = string_repeat('\0',superBloque->block_size);
+				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
+				list_add(posicionesAlimpiar,list_remove(structTarea->file->bloques, i));
+				structTarea->file->cantidadBloques -= 1;
+			}
+			else{//vos queres consumir 2 y hay 4
+
+				caracteresDeLaPasada = max(0,(cantidadCaracteres - caracteresAconsumir));
+				log_info(logImongo,"Esta pasada quuedaron en el bloque %d caracteres", caracteresDeLaPasada);
+				datosAguardar = string_repeat(structTarea->file->caracterLlenado[0],caracteresDeLaPasada);
+				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
+				char* relleno = string_repeat('\0', superBloque->block_size - caracteresDeLaPasada);
+				log_info(logImongo,"El tamaño del relleno es : %d", superBloque->block_size-caracteresDeLaPasada);
+				string_append(&datosAguardar, relleno);
+				log_info(logImongo,"Los datos a guardar FINALMENTE son: ---- %s ----", datosAguardar);
+				free(relleno);
+			}
+
+			log_info(logImongo,"El bloque que voy a guardar en memoria es %s ", datosAguardar);
+
+			int offset = posiciones * superBloque->block_size;
+
+			log_info(logImongo,"El offset para guardar en memoria es %d ", offset);
+			lock(&mutexMemoriaSecundaria);
+			memcpy(copiaMemoriaSecundaria + offset, datosAguardar,superBloque->block_size);
+			unlock(&mutexMemoriaSecundaria);
+
+			free(datosAguardar);
+
+			caracteresAconsumir-=cantidadCaracteres;
+
+			log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", max(0,caracteresAconsumir));
+		}
+
+		char* bloquesMetaData = convertirEnString(structTarea->file->bloques);
+
+		log_info(logImongo,"Se van a poner en metadata los bloques: %s",bloquesMetaData);
+
+		if(list_size(posicionesAlimpiar) > 0){
+
+		// SE PUEDE BORRAR
+		//DE ACA
+			log_info(logImongo, "El tamanio de la lista de posiciones a limpiar es: %d", list_size(posicionesAlimpiar));
+
+			int* posicionesAlimpiarBitArray = malloc(sizeof(int) * list_size(posicionesAlimpiar));
+
+			for(int i=0; i<list_size(posicionesAlimpiar);i++){
+
+				posicionesAlimpiarBitArray[i] = *((int*) list_get(posicionesAlimpiar,i));
+			}
+
+			log_info(logImongo, "Se van a limpiar en el bitarray las posiciones: ");
+
+			for(int i=0; i<list_size(posicionesAlimpiar); i++){
+
+				log_info(logImongo, "%d ",posicionesAlimpiarBitArray[i]);
+
+			}
+
+		//A ACA
+			limpiarBitArray(posicionesAlimpiarBitArray,list_size(posicionesAlimpiar));
+			free(posicionesAlimpiarBitArray);
+		}
+
+		log_info(logImongo,"Ahora los bloques que ocupa son: %s ", bloquesMetaData);
+		structTarea->file->tamanioArchivo -= caracteresParaConsumir;
+		log_info(logImongo,"El tamanio del archivo ahora es: %d ", structTarea->file->tamanioArchivo);
+		log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
+		config_set_value(structTarea->config,"BLOCKS",bloquesMetaData);
+		char * cantidadBloques = string_itoa(structTarea->file->cantidadBloques);
+		config_set_value(structTarea->config,"BLOCK_COUNT",cantidadBloques);
+		free(cantidadBloques);
+		char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
+		config_set_value(structTarea->config,"SIZE",tamanioArchivo);
+		free(tamanioArchivo);
+		free(bloquesMetaData);
+		//actualizarMD5(structTarea);
+		config_save(structTarea->config);
+
+		/*void destruirPuntero(int* numero){
+			if(numero!=NULL)
+				free(numero);
+		}
+		*/
+		//list_iterate(posicionesAlimpiar, (void*) destruirPuntero);
+		list_destroy(posicionesAlimpiar);
+	}
+	else{
+
+		log_info(logImongo,"No existe la tarea: %s",_tarea->nombreTarea);
+
+	}
+
+	unlock(structTarea->mutex);
+}
+
+
+
+
+
 void generarTarea(tarea* structTarea, t_tarea* _tarea){
 
 	int caracteresAOcupar = _tarea->parametro;
@@ -608,7 +983,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea){
 
 		log_info(logImongo,"Se comprobó que hay espacio en el disco para la tarea %s",_tarea->nombreTarea);
 
-		if(verificarSiExiste(structTarea->path) && structTarea->file->cantidadBloques > 0){ // SI NO ES LA PRIMERA VEZ QUE VIENE ESA TAREA
+		if(verificarSiExiste(structTarea->path) && list_size(structTarea->file->bloques) > 0){ // SI NO ES LA PRIMERA VEZ QUE VIENE ESA TAREA
 
 			crearConfigTarea(structTarea);
 
@@ -818,156 +1193,7 @@ char* convertirEnString(t_list* listaEnteros){
 }
 
 
-void consumirTarea(tarea* structTarea, t_tarea* _tarea){
 
-	lock(structTarea->mutex);
-
-	if(verificarSiExiste(structTarea->path)){
-
-		log_info(logImongo,"Existe la tarea: %s, se procede a realizarla",_tarea->nombreTarea);
-
-		int caracteresAconsumir = 0;
-
-		//ERROR 1 en la segunda condicion del if
-		if(alcanzanCaracteresParaConsumir(structTarea->file->tamanioArchivo, _tarea->parametro)
-				&& strcmp(_tarea->nombreTarea,"DESCARTAR_BASURA") != 0){
-
-			log_info(logImongo,"Los caracteres a suprimir son menores que los que estan "
-					"actualmente en disco, se procede a operar");
-
-			caracteresAconsumir = _tarea->parametro;
-
-		}
-		else{
-
-			log_info(logImongo,"Los caracteres a suprimir son mayores que los que estan"
-					"actualmente en disco, se procede a suprimir todos los que hay en disco");
-
-			caracteresAconsumir = structTarea->file->tamanioArchivo;
-
-		}
-
-		t_list* posicionesAlimpiar = list_create();
-
-		int caracteresParaConsumir = caracteresAconsumir;
-
-		for(int i= list_size(structTarea->file->bloques) - 1; caracteresAconsumir > 0 && i >= 0; i--){
-
-			log_info(logImongo,"Los caracteres a consumir son: %d", caracteresAconsumir);
-
-			int posiciones = *((int*)list_get(structTarea->file->bloques,i));
-
-			char* datos = datosBloque(posiciones);
-
-			log_info(logImongo,"Los datos que estan en la posicion %d actualmente son: %s: ", posiciones,datos);
-
-			int cantidadCaracteres = string_length(datos);
-
-			log_info(logImongo,"La cantidad de caracteres de %s es: %d", datos,cantidadCaracteres);
-
-			free(datos);
-
-			char* datosAguardar;
-
-			int caracteresDeLaPasada;
-
-			if(caracteresAconsumir >= cantidadCaracteres){// vos queres consumir 13 caracteres y hay 8
-
-				datosAguardar = string_repeat('\0',superBloque->block_size);
-				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
-				list_add(posicionesAlimpiar,list_remove(structTarea->file->bloques, i));
-				structTarea->file->cantidadBloques -= 1;
-			}
-			else{//vos queres consumir 2 y hay 4
-
-				caracteresDeLaPasada = max(0,(cantidadCaracteres - caracteresAconsumir));
-				log_info(logImongo,"Esta pasada quuedaron en el bloque %d caracteres", caracteresDeLaPasada);
-				datosAguardar = string_repeat(structTarea->file->caracterLlenado[0],caracteresDeLaPasada);
-				log_info(logImongo,"Los datos a guardar son: ---- %s ----", datosAguardar);
-				char* relleno = string_repeat('\0', superBloque->block_size - caracteresDeLaPasada);
-				log_info(logImongo,"El tamaño del relleno es : %d", superBloque->block_size-caracteresDeLaPasada);
-				string_append(&datosAguardar, relleno);
-				log_info(logImongo,"Los datos a guardar FINALMENTE son: ---- %s ----", datosAguardar);
-				free(relleno);
-			}
-
-			log_info(logImongo,"El bloque que voy a guardar en memoria es %s ", datosAguardar);
-
-			int offset = posiciones * superBloque->block_size;
-
-			log_info(logImongo,"El offset para guardar en memoria es %d ", offset);
-			lock(&mutexMemoriaSecundaria);
-			memcpy(copiaMemoriaSecundaria + offset, datosAguardar,superBloque->block_size);
-			unlock(&mutexMemoriaSecundaria);
-
-			free(datosAguardar);
-
-			caracteresAconsumir-=cantidadCaracteres;
-
-			log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", max(0,caracteresAconsumir));
-		}
-
-		char* bloquesMetaData = convertirEnString(structTarea->file->bloques);
-
-		log_info(logImongo,"Se van a poner en metadata los bloques: %s",bloquesMetaData);
-
-		if(list_size(posicionesAlimpiar) > 0){
-
-		// SE PUEDE BORRAR
-		//DE ACA
-			log_info(logImongo, "El tamanio de la lista de posiciones a limpiar es: %d", list_size(posicionesAlimpiar));
-
-			int* posicionesAlimpiarBitArray = malloc(sizeof(int) * list_size(posicionesAlimpiar));
-
-			for(int i=0; i<list_size(posicionesAlimpiar);i++){
-
-				posicionesAlimpiarBitArray[i] = *((int*) list_get(posicionesAlimpiar,i));
-			}
-
-			log_info(logImongo, "Se van a limpiar en el bitarray las posiciones: ");
-
-			for(int i=0; i<list_size(posicionesAlimpiar); i++){
-
-				log_info(logImongo, "%d ",posicionesAlimpiarBitArray[i]);
-
-			}
-
-		//A ACA
-			limpiarBitArray(posicionesAlimpiarBitArray,list_size(posicionesAlimpiar));
-			free(posicionesAlimpiarBitArray);
-		}
-
-		log_info(logImongo,"Ahora los bloques que ocupa son: %s ", bloquesMetaData);
-		structTarea->file->tamanioArchivo -= caracteresParaConsumir;
-		log_info(logImongo,"El tamanio del archivo ahora es: %d ", structTarea->file->tamanioArchivo);
-		log_info(logImongo,"La cantidad de bloques que ocupa son: %d ", structTarea->file->cantidadBloques);
-		config_set_value(structTarea->config,"BLOCKS",bloquesMetaData);
-		char * cantidadBloques = string_itoa(structTarea->file->cantidadBloques);
-		config_set_value(structTarea->config,"BLOCK_COUNT",cantidadBloques);
-		free(cantidadBloques);
-		char* tamanioArchivo = string_itoa(structTarea->file->tamanioArchivo);
-		config_set_value(structTarea->config,"SIZE",tamanioArchivo);
-		free(tamanioArchivo);
-		free(bloquesMetaData);
-		//actualizarMD5(structTarea);
-		config_save(structTarea->config);
-
-		/*void destruirPuntero(int* numero){
-			if(numero!=NULL)
-				free(numero);
-		}
-		*/
-		//list_iterate(posicionesAlimpiar, (void*) destruirPuntero);
-		list_destroy(posicionesAlimpiar);
-	}
-	else{
-
-		log_info(logImongo,"No existe la tarea: %s",_tarea->nombreTarea);
-
-	}
-
-	unlock(structTarea->mutex);
-}
 
 
 t_desplazamiento* deserializarDesplazamiento(void* stream){
@@ -1016,96 +1242,7 @@ int deserializarAvisoSabotaje(void* stream){
 }
 
 
-void escribirEnBitacora(char* mensaje, int idTripulante){
 
-	lock(&mutexBitacora);
-	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
-	log_info(logImongo,"El archivo a crear tiene el path: %s",path);
-	t_config* config;
-
-	if(!verificarSiExiste(pathBitacora)){
-
-		log_info(logImongo,"No existe la carpeta Bitacora, se procede a crearla");
-		mkdir(pathBitacora,0777);
-	}
-	if(!(verificarSiExiste(path))){
-
-		log_info(logImongo,"Es la primera vez que el tripulante ID: %d escribe en disco", idTripulante);
-		FILE* tripulante = fopen(path,"wb");
-		fclose(tripulante);
-		config = config_create(path);
-		config_set_value(config,"BLOCKS","[]");
-		config_set_value(config,"SIZE","0");
-		config_save(config);
-	}
-	else{
-
-		log_info(logImongo,"Ya existia el archivo del tripulante de ID: %d", idTripulante);
-		config = config_create(path);
-	}
-
-
-	char** bloquesQueOcupaba = config_get_array_value(config,"BLOCKS");
-	t_list * blocksQueOcupaba = convertirEnLista(bloquesQueOcupaba);
-
-	int posicionUltimoBloque = 0;
-	int fragmentacionUltBloque = 0;
-
-	if(!list_is_empty(blocksQueOcupaba)){
-
-		posicionUltimoBloque = * (int*)list_get(blocksQueOcupaba, list_size(blocksQueOcupaba) - 1);
-		fragmentacionUltBloque = fragmentacionDe(posicionUltimoBloque);
-
-		log_info(logImongo,"La lista de blocks no estaba vacia, su ultimo bloque es el %d y "
-				"tiene una fragmetacion de %d", posicionUltimoBloque, fragmentacionUltBloque);
-	}
-
-	uint32_t cantBloquesAocupar = (int) ceil((float)(strlen(mensaje) - fragmentacionUltBloque)
-			/ (float) superBloque->block_size);
-//34
-	log_info(logImongo,"El mensaje es %s y la cant de bloques que "
-			"va a ocupar es %d", mensaje, cantBloquesAocupar);
-
-	t_list* bloquesAocupar = obtenerArrayDePosiciones2(cantBloquesAocupar);
-
-	if(bloquesLibres(cantBloquesAocupar)){
-
-		if(fragmentacionUltBloque > 0){
-
-			list_add_in_index(bloquesAocupar, 0, &posicionUltimoBloque);
-			cantBloquesAocupar ++;
-		}
-
-		guardarStringEnMemoriaSecundaria(bloquesAocupar, mensaje, cantBloquesAocupar);
-
-		int cantidadDeCaracteresQueHabia = config_get_int_value(config,"SIZE");
-
-		log_info(logImongo,"La cantidad de caracteres que habia en disco de la "
-				"bitacora del tripulante %d eran: %d", idTripulante,cantidadDeCaracteresQueHabia);
-
-		config_set_value(config,"SIZE",string_itoa(string_length(mensaje) + cantidadDeCaracteresQueHabia));
-
-		log_info(logImongo,"La cantidad de caracteres que hay ahora del "
-				"tripulante %d son: %d", idTripulante,cantidadDeCaracteresQueHabia);
-
-		if(fragmentacionUltBloque > 0){
-
-			list_remove(bloquesAocupar, 0);
-		}
-
-		list_add_all(blocksQueOcupaba, bloquesAocupar);
-		char * bloquesQueOcupa = convertirEnString(blocksQueOcupaba);
-		config_set_value(config, "BLOCKS", bloquesQueOcupa);
-		config_save(config);
-	}
-
-	char* bitacora = leerBitacora(idTripulante);
-	string_append(&bitacora, "\0");
-	log_info(logImongo,"Lo que esta en la bitacora del tripulante %d por "
-			"el momento es: %s", idTripulante, bitacora);
-
-	unlock(&mutexBitacora);
-}
 
 
 t_list* obtenerArrayDePosiciones2(int cantBloquesAocupar){
