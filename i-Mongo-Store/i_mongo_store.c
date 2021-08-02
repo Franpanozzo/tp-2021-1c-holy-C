@@ -195,58 +195,44 @@ void deserializarSegun(t_paquete* paquete){
 
 void seleccionarTarea(t_tarea* tarea){
 
-	switch(indiceTarea(tarea)){
+	log_info(logImongo,"Recibi una tarea de %s", tarea->nombreTarea);
 
-		case 0:
+	switch(tarea->nombreTarea){
+
+		case "GENERAR_OXIGENO":
 		{
-			log_info(logImongo,"Recibi una tarea de GENERAR_OXIGENO");
-
-			generarTarea(oxigeno, tarea);
-
+			generarTarea2(oxigeno, tarea->parametro);
 			break;
 		}
 
-		case 1:
+		case "CONSUMIR_OXIGENO":
 		{
-			log_info(logImongo,"Recibi una tarea de CONSUMIR_OXIGENO");
 
-			consumirTarea(oxigeno,tarea);
-
+			consumirTarea2(oxigeno, tarea->parametro);
 			break;
 		}
 
-		case 2:
+		case "GENERAR_COMIDA":
 		{
-			log_info(logImongo,"Recibi una tarea de GENERAR_COMIDA");
-
-			generarTarea(comida, tarea);
-
+			generarTarea2(comida, tarea->parametro);
 			break;
 		}
 
-		case 3:
+		case "CONSUMIR_COMIDA":
 		{
-			log_info(logImongo,"Recibi una tarea de CONSUMIR_COMIDA");
-
-			consumirTarea(comida,tarea);
-
+			consumirTarea2(comida,tarea->parametro);
 			break;
 		}
 
-		case 4:
+		case "GENERAR_BASURA":
 		{
-			log_info(logImongo,"Recibi una tarea de GENERAR_BASURA");
-
-			generarTarea(basura, tarea);
-
+			generarTarea2(basura, tarea->parametro);
 			break;
 		}
 
-		case 5:
+		case "DESCARTAR_BASURA":
 		{
-			log_info(logImongo,"Recibi una tarea de DESCARTAR_BASURA");
-
-			consumirTarea(basura,tarea);
+			consumirTarea2(basura, basura->tamanioArchivo);
 			break;
 		}
 
@@ -260,20 +246,31 @@ void seleccionarTarea(t_tarea* tarea){
 
 void crearFileSystemExistente(){
 
-	crearConfig(&configSuperBloque,pathSuperBloque);
+	cargarSuperBloque();
+	cargarBlocks();
+	cargarFile(oxigeno);
+	cargarFile(comida);
+	cargarFile(basura);
 
-	superBloque = malloc(sizeof(t_superBloque));
-	superBloque->block_size = config_get_int_value(configSuperBloque,"BLOCK_SIZE");
-	superBloque->blocks = config_get_int_value(configSuperBloque,"BLOCKS");
+	log_info(logImongo,"Se levanto el file system existente");
+}
+
+
+void cargarSuperBloque(){
+
+	t_config* configSB = config_create(superBloque->path);
+
+	superBloque->block_size = config_get_int_value(configSB,"BLOCK_SIZE");
+	superBloque->blocks = config_get_int_value(configSB,"BLOCKS");
 
 	log_info(logImongo,"El valor del block size es: %d", superBloque->block_size);
 	log_info(logImongo,"La cantidad de bloques es: %d", superBloque->blocks);
-//sizeof(char) *
+
 	int sizeBitArrayEnBytes = (int) ceil (((float)superBloque->blocks / (float) 8));
 	bitArray = malloc( sizeBitArrayEnBytes);
 	superBloque->bitmap = bitarray_create_with_mode(bitArray,sizeBitArrayEnBytes ,MSB_FIRST);
 
-	char* bitmap = config_get_string_value(configSuperBloque,"BITMAP");
+	char* bitmap = config_get_string_value(configSB,"BITMAP");
 
 	int cantidadPosicionesBitArray = bitarray_get_max_bit(superBloque->bitmap);
 	for(int i=0; i<cantidadPosicionesBitArray;i++){
@@ -290,6 +287,12 @@ void crearFileSystemExistente(){
 		}
 	}
 
+	config_destroy(configSB);
+}
+
+
+void cargarBlocks(){
+
 	int fd = open(pathBloque,O_RDWR,S_IRWXU|S_IRWXG|S_IRWXO);
 	memoriaSecundaria = mmap(NULL,superBloque->block_size * superBloque->blocks, PROT_READ | PROT_WRITE, MAP_SHARED,fd,0);
 
@@ -298,18 +301,38 @@ void crearFileSystemExistente(){
 	memcpy(copiaMemoriaSecundaria,memoriaSecundaria, superBloque->block_size * superBloque->blocks);
 	unlock(&mutexMemoriaSecundaria);
 
-	log_info(logImongo,"Se ha creado la memoria secundaria con la capacidad %d con su copia para sincronizar", superBloque->block_size * superBloque->blocks);
-
 	detallesArchivo(fd);
 }
 
 
+
+void cargarFile(t_file2 archivo){
+
+	t_config* config = config_create(archivo->path);
+
+	archivo->tamanioArchivo = config_get_long_value(config,"SIZE");
+	char** b = config_get_array_value(config,"BLOCKS");
+	archivo->bloques = convertirEnLista(b);
+	archivo->md5_archivo = config_get_string_value(config,"MD5_ARCHIVO");
+}
+
 void crearFileSystemDesdeCero(){
 
-	superBloque = malloc(sizeof(t_superBloque));
+	crearSuperBloque();
 
-	superBloque->block_size = (uint32_t) config_get_int_value(configImongo,"BLOCK_SIZE");
-	superBloque->blocks = (uint32_t)config_get_int_value(configImongo,"BLOCKS");
+	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
+
+	if(mkdir(pathFiles,0777) != 0){
+		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
+	}
+	crearMemoria(fd);
+}
+
+
+void crearSuperBloque(){
+
+	superBloque->block_size = (uint32_t) config_get_lomg_value(configImongo,"BLOCK_SIZE");
+	superBloque->blocks = (uint32_t)config_get_long_value(configImongo,"BLOCKS");
 
 	int sizeBitArrayEnBytes = (int) ceil (((float)superBloque->blocks / (float) 8));
 
@@ -329,28 +352,34 @@ void crearFileSystemDesdeCero(){
 	for(int i=superBloque->blocks; i<cantidadPosicionesBitArray ; i++){
 
 		bitarray_set_bit(superBloque->bitmap, i);
-
-		//PONER EN 1 BLOQUES MUERTOS CUANDO NO SON MULTIPLOS DE 8
 	}
 
-    FILE* elSuperBloque = fopen(pathSuperBloque,"wb");
+	FILE* SB = fopen(superBloque->path,"wb");
+	fclose(SB);
 
-    crearConfig(&configSuperBloque,pathSuperBloque);
-
-    config_set_value(configSuperBloque,"BLOCK_SIZE",string_itoa(superBloque->block_size));
-    config_set_value(configSuperBloque,"BLOCKS",string_itoa(superBloque->blocks));
-    actualizarStringBitMap();
-
-    fclose(elSuperBloque);
-
-	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
-
-	if(mkdir(pathFiles,0777) != 0){
-		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
-	}
-	crearMemoria(fd);
+	t_config* config = config_create(superBloque->path);
+	config_set_value(configSuperBloque,"BLOCK_SIZE",string_itoa(superBloque->block_size));
+	config_set_value(configSuperBloque,"BLOCKS",string_itoa(superBloque->blocks));
+	config_save(config);
+	actualizarSuperBloque();
 }
 
+
+
+void crearFile(t_file2 archivo){
+
+	FILE* fd = fopen(archivo->path,"wb");
+	fclose(fd);
+
+	archivo->tamanioArchivo = 0;
+	archivo->bloques = list_create();
+	archivo->md5_archivo = string_new();
+
+	actualizarFile(archivo);
+
+	log_info(logImongo,"Se creo el file %s", archivo->path);
+
+}
 
 void iniciarFileSystem(){
 
@@ -369,7 +398,7 @@ void iniciarFileSystem(){
 		log_info(logImongo, "La verificacion de si existe la carpeta punto de montaje esta tirando cualquier valor");
 		exit(1);
 	}
-	if(validarExistenciaFileSystem(pathSuperBloque,pathBloque,datosConfig->puntoMontaje)){
+	if(validarExistenciaFileSystem(superBloque->path,pathBloque,datosConfig->puntoMontaje)){
 
 		log_info(logImongo,"Existe un file system actualmente");
 		crearFileSystemExistente();
