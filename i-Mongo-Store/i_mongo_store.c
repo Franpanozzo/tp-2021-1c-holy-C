@@ -22,6 +22,7 @@ int main(void) {
 	cargarDatosConfig();
 	cargarPaths();
 	iniciarMutex();
+	asignarTareas();
 	iniciarFileSystem();
 
 	listaPosicionesSabotaje = listaCoordenadasSabotaje();
@@ -360,11 +361,17 @@ void crearFileSystemDesdeCero(){
 
 	crearSuperBloque();
 
-	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
-
 	if(mkdir(pathFiles,0777) != 0){
 		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
 	}
+
+	crearFile(oxigeno);
+	crearFile(comida);
+	crearFile(basura);
+
+
+	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
+
 	crearMemoria(fd);
 }
 
@@ -409,6 +416,7 @@ void crearFile(t_file2* archivo){
 
 	FILE* fd = fopen(archivo->path,"wb");
 	fclose(fd);
+	//log_info(logImongo,"ACA 1");
 
 	archivo->tamanioArchivo = 0;
 	archivo->bloques = list_create();
@@ -417,7 +425,6 @@ void crearFile(t_file2* archivo){
 	actualizarFile(archivo);
 
 	log_info(logImongo,"Se creo el file %s", archivo->path);
-
 }
 
 

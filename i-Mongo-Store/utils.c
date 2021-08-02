@@ -248,14 +248,11 @@ char * obtenerMD5(t_list * bloques){
 	int md5Size = 32;
 
 	char* copiaFile = reconstruirArchivo(bloques);
-	log_info(logImongo,"ACA 1");
 	char * comando = string_from_format("echo -n \"%s\" | md5sum", copiaFile);
 	char * md5 = malloc(md5Size +2);
 	FILE * file = popen(comando, "r");
 
-	log_info(logImongo,"ACA 2");
 	fgets(md5, md5Size+1, file);
-	log_info(logImongo,"ACA 3");
 	/*
 	fclose(file);
 	free(comando);
@@ -466,9 +463,8 @@ void sabotaje(int signal) {
 void generarTarea2(t_file2* archivo, uint32_t cantidad){
 
 	lock(&archivo->mutex);
-
 	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
-	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacion);
+	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacionArchivo);
 	uint32_t bloque = 0;
 
 	lock(&mutexBitMap);
@@ -478,7 +474,7 @@ void generarTarea2(t_file2* archivo, uint32_t cantidad){
 	log_info(logImongo, "El archivo %s va a ocupar los bloques %s", archivo->path, stringBloques);
 	free(stringBloques);
 
-	if(!list_is_empty(bloquesAocupar)){
+	if(!list_is_empty(bloquesAocupar) || cantidad <= fragmentacionArchivo){
 
 		archivo->tamanioArchivo += cantidad;
 		log_info(logImongo, "Se agrego %d bytes al archivo %s y paso a tener un tamanio de %d",
@@ -489,7 +485,7 @@ void generarTarea2(t_file2* archivo, uint32_t cantidad){
 			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
 			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(fragmentacionArchivo, cantidad)),
 					superBloque->block_size - fragmentacionArchivo);
-			cantidad = cantidad - fragmentacionArchivo;
+			cantidad -= fragmentacionArchivo;
 		}
 
 		while(!list_is_empty(bloquesAocupar)){
@@ -524,8 +520,7 @@ void consumirTarea2(t_file2* archivo, uint32_t cantidad){
 
 	cantidad = min(cantidad, archivo->tamanioArchivo);
 	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
-	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacion);
-	uint32_t* bloque;
+	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacionArchivo);
 
 	archivo->tamanioArchivo -= cantidad;
 	log_info(logImongo, "Se consumio %d bytes del archivo %s y paso a tener un tamanio de %d",
@@ -535,28 +530,31 @@ void consumirTarea2(t_file2* archivo, uint32_t cantidad){
 
 	if(fragmentacionArchivo > 0){
 
-		bloque = (int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+		uint32_t* bloque = (int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
 		uint32_t tamanioUltBloque = superBloque->block_size - fragmentacionArchivo;
 		consumirBloque(*bloque, min(cantidad, tamanioUltBloque), tamanioUltBloque);
-		cantidad = cantidad - tamanioUltBloque;
-		if(cantidad > 0){
+		if(cantidad >= tamanioUltBloque){
+			cantidad = cantidad - tamanioUltBloque;
 			liberarBloque(*bloque);
-			//free(bloque);
+			free(bloque);
 		}
 		else{
+			cantidad = 0;
 			list_add(archivo->bloques, bloque);
 		}
 	}
 
 	while(cantidad > 0){
 
-		bloque =(int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+		uint32_t* bloque =(int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
 		consumirBloque(*bloque, min(cantidad, superBloque->block_size), superBloque->block_size);
-		cantidad -= superBloque->block_size;
-		if(cantidad > 0){
+		if(cantidad >= superBloque->block_size){
+			cantidad = cantidad - superBloque->block_size;
 			liberarBloque(*bloque);
+			free(bloque);
 		}
 		else{
+			cantidad = 0;
 			list_add(archivo->bloques, bloque);
 		}
 		//free(bloque);
@@ -581,7 +579,7 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 	lock(&bitacora->mutex);
 
 	uint32_t fragmentacionArchivo = fragmentacion(bitacora->tamanioArchivo);
-	log_info(logImongo, "La bitacora del tripulante %s tiene una fragmentacion de %d", idTripulante, fragmentacion);
+	log_info(logImongo, "La bitacora del tripulante %s tiene una fragmentacion de %d", idTripulante, fragmentacionArchivo);
 	int tamanioMensaje = strlen(mensaje);
 	uint32_t offsetMensaje = 0;
 	uint32_t bloque = 0;
@@ -597,7 +595,7 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 	free(stringBloques);
 
 
-	if(!list_is_empty(bloquesAocupar)){
+	if(!list_is_empty(bloquesAocupar) || tamanioMensaje <= fragmentacionArchivo){
 
 		bitacora->tamanioArchivo += tamanioMensaje;
 
@@ -612,11 +610,11 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 
 		while(!list_is_empty(bloquesAocupar)){
 
-			char* fragmentoAescribir = string_substring(mensaje, offsetMensaje, min(tamanioMensaje, superBloque->block_size));
+			char* fragmentoAescribir = string_substring(mensaje,
+					offsetMensaje, min(tamanioMensaje, superBloque->block_size));
 			list_add(bitacora->bloques, list_remove(bloquesAocupar, 0));
 			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
 			escribirBloque(bloque, fragmentoAescribir, 0);
-
 			ocuparBloque(bloque);
 			offsetMensaje += superBloque->block_size;
 			free(fragmentoAescribir);
@@ -637,8 +635,9 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 
 uint32_t fragmentacion(uint32_t tamanioArchivo){
 
-	if(tamanioArchivo > 0)
-		return superBloque->block_size - (tamanioArchivo % superBloque->block_size);
+	uint32_t bytesSobrantes = tamanioArchivo % superBloque->block_size;
+	if(bytesSobrantes > 0)
+		return superBloque->block_size - bytesSobrantes;
 	else{
 		return 0;
 	}
@@ -647,17 +646,17 @@ uint32_t fragmentacion(uint32_t tamanioArchivo){
 
 void escribirBloque(uint32_t bloque, char* contenido, uint32_t tamanioBloque){
 
-	char* dupContenido = string_duplicate(contenido);
-	string_append(&dupContenido, "\0");
+	//char* dupContenido = string_duplicate(contenido);
+	//string_append(&dupContenido, "\0");
 
 	uint32_t posicionEnBites = bloque * superBloque->block_size + tamanioBloque;
 
 	lock(&mutexMemoriaSecundaria);
-	memcpy(copiaMemoriaSecundaria + posicionEnBites , contenido, strlen(dupContenido));
+	memcpy(copiaMemoriaSecundaria + posicionEnBites , contenido, strlen(contenido));
 	unlock(&mutexMemoriaSecundaria);
 
 	log_info(logImongo, "Escribio '%s' en el bloque %d a partir de la posicion %d",
-			dupContenido, bloque, tamanioBloque);
+			contenido, bloque, tamanioBloque);
 }
 
 
@@ -728,10 +727,10 @@ void actualizarFile(t_file2* archivo){
 	char* stringCantBloques = string_itoa(list_size(archivo->bloques));
 	char* stringSize = string_itoa(archivo->tamanioArchivo);
 
-	config_set_value(configFile, stringBloques, "BLOCKS");
-	config_set_value(configFile, stringSize, "SIZE");
-	config_set_value(configFile, archivo->md5_archivo, "MD5_ARCHIVO");
-	config_set_value(configFile, stringCantBloques, "BLOCK_COUNT");
+	config_set_value(configFile, "BLOCKS", stringBloques);
+	config_set_value(configFile, "SIZE", stringSize);
+	config_set_value(configFile, "MD5_ARCHIVO", archivo->md5_archivo);
+	config_set_value(configFile, "BLOCK_COUNT", stringCantBloques);
 
 	config_save(configFile);
 	config_destroy(configFile);
@@ -760,7 +759,7 @@ void actualizarSuperBloque(){
 	t_config* configSB = config_create(superBloque->path);
 
 	config_set_value(configSB, "BITMAP", stringBitmap);
-	free(stringBitmap);
+	//free(stringBitmap);
 
 	config_save(configSB);
 	config_destroy(configSB);
