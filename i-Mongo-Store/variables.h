@@ -10,6 +10,7 @@ typedef struct{
 	uint32_t block_size;
 	uint32_t blocks;
 	t_bitarray* bitmap;
+	char* path
 
 }t_superBloque;
 

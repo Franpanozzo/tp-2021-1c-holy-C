@@ -46,7 +46,7 @@ void limpiarBitArray(int*, int);
 void crearConfigTarea(tarea*);
 void inicializarTarea(tarea*, int, int);
 t_list* convertirEnLista(char** arrayValores);
-char* convertirEnString(t_list* listaEnteros);
+char* convertirListaEnString(t_list* listaEnteros);
 t_desplazamiento* deserializarDesplazamiento(void*);
 t_avisoTarea* deserializarAvisoTarea(void*);
 int deserializarAvisoSabotaje(void*);

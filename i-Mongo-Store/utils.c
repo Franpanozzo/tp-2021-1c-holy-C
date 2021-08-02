@@ -310,7 +310,7 @@ void actualizarPosicionesFile(tarea* structTarea, int* arrayDePosiciones, int bl
 		int * bloque = (arrayDePosiciones+i);
 		list_add(structTarea->file->bloques,bloque);
 	}
-	char* bloques = convertirEnString(structTarea->file->bloques);
+	char* bloques = convertirListaEnString(structTarea->file->bloques);
 
 	structTarea->file->cantidadBloques += bloquesAocupar;
 
@@ -598,128 +598,7 @@ void inicializarTarea(tarea* structTarea, int bloquesAocupar, int caracteresAOcu
 }
 
 
-void generarTarea2(t_file2 archivo, uint32_t cantidad){
 
-	lock(archivo->mutex);
-
-	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
-
-	if(bloquesLibres2(max(0, cantidad - fragmentacionArchivo))){
-
-		archivo->tamanioArchivo += cantidad;
-
-		if(fragmentacionArchivo > 0){
-
-			uint32_t ultimoBloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
-			escribirBloqueEmpezado(ultimoBloque, string_repeat(*archivo->caracterLlenado, fragmentacionArchivo));
-			cantidad = max(0, cantidad - fragmentacionArchivo);
-		}
-
-		t_list* bloquesAocupar = buscarBloques(cantidad); //si la cantdad es cero, devuelve una lista vacia
-		uint32_t bloque = 0;
-
-		while(!list_is_empty(bloquesAocupar)){
-
-			list_add(archivo->bloques, list_remove(bloquesAocupar, 0));
-			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
-			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad)));
-			cantidad -= superBloque->block_size;
-		}
-
-
-		actualizarMd5(archivo);
-
-		//esto no hay q hacerlo cunado se baja al blocks.ims?
-		actualizarEstructurasEnFile(archivo);
-	}
-	else{
-		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA TAREA---");
-	}
-
-	unlock(archivo->mutex);
-}
-
-
-consumirTarea2(t_file2 archivo, uint32_t cantidad){
-
-	lock(archivo->mutex);
-
-	cantidad = min(cantidad, archivo->tamanioArchivo);
-	uint32_t fragmentacionArchivo = fragmentacion(archivo);
-
-	if(fragmentacionArchivo > 0){
-
-		uint32_t* ultimoBloque = (int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
-		consumirBloqueEmpezado(*ultimoBloque, superBloque->block_size - fragmentacionArchivo);
-		cantidad = max(0, cantidad - superBloque->block_size + fragmentacionArchivo);
-		//free(ultimoBloque);
-	}
-
-	uint32_t* bloque;
-
-	while(cantidad > 0){
-
-		bloque =(int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
-		consumirBloque(bloque);
-		cantidad -= superBloque->block_size;
-		//free(bloque);
-	}
-
-	archivo->tamanioArchivo -= cantidad;
-	actualizarMd5(archivo);
-
-	//esto no hay q hacerlo cunado se baja al blocks.ims?
-	actualizarEstructurasEnFile(archivo);
-
-	unlock(archivo->mutex);
-}
-
-
-// LA CREACION DEL ARCHIVO LA HAGO APARTE
-escribirBitacora2(int idTripulante, char* mensaje){
-
-	char* charIdTripulante = string_itoa(idTripulante);
-	t_bitacora_tripulante* bitacora = dictionary_get(bitacoras, charIdTripulante);
-
-	uint32_t fragmentacionArchivo = fragmentacion(bitacora->tamanioArchivo);
-	int tamanioMensaje = strlen(mensaje);
-
-	if(bloquesLibres2(max(0, strlen(mensaje) - fragmentacionArchivo))){
-
-		bitacora->tamanioArchivo += tamanioMensaje;
-
-		if(fragmentacionArchivo > 0){
-
-			uint32_t ultimoBloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
-			char* contenidoUltimoBloque = string_substring_until(mensaje, fragmentacionArchivo);
-			escribirBloqueEmpezado(ultimoBloque, contenidoUltimoBloque);
-			tamanioMensaje = max(0, tamanioMensaje - fragmentacionArchivo);
-		}
-
-		t_list* bloquesAocupar = buscarBloques(tamanioMensaje); //si la cantdad es cero, devuelve una lista vacia
-		uint32_t bloque = 0;
-
-		while(!list_is_empty(bloquesAocupar)){
-
-			char* fragmentoAescribir = string_substring_until(mensaje, min(tamanioMensaje, superBloque->block_size));
-			list_add(bitacora->bloques, list_remove(bloquesAocupar, 0));
-			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
-			escribirBloque(bloque, fragmentoAescribir);
-			tamanioMensaje -= superBloque->block_size;
-			free(fragmentoAescribir);
-		}
-
-		actualizarMd5(bitacora);
-
-		//esto no hay q hacerlo cunado se baja al blocks.ims?
-		actualizarEstructurasEnFile(bitacora);
-	}
-	else{
-		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA BITACORA---");
-	}
-
-	unlock(bitacora->mutex);
-}
 
 
 void escribirEnBitacora(char* mensaje, int idTripulante){
@@ -800,7 +679,7 @@ void escribirEnBitacora(char* mensaje, int idTripulante){
 		}
 
 		list_add_all(blocksQueOcupaba, bloquesAocupar);
-		char * bloquesQueOcupa = convertirEnString(blocksQueOcupaba);
+		char * bloquesQueOcupa = convertirListaEnString(blocksQueOcupaba);
 		config_set_value(config, "BLOCKS", bloquesQueOcupa);
 		config_save(config);
 	}
@@ -848,7 +727,7 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea){
 		int caracteresParaConsumir = caracteresAconsumir;
 
 		log_info(logImongo,"LOS BLOQUES QUE TIENE EL FILE %s SON %s",
-				structTarea->path, convertirEnString(structTarea->file->bloques));
+				structTarea->path, convertirListaEnString(structTarea->file->bloques));
 
 		for(int i= list_size(structTarea->file->bloques) - 1; caracteresAconsumir > 0 && i >= 0; i--){
 
@@ -906,7 +785,7 @@ void consumirTarea(tarea* structTarea, t_tarea* _tarea){
 			log_info(logImongo,"Los caracteres que quedan por consumir son: %d ", max(0,caracteresAconsumir));
 		}
 
-		char* bloquesMetaData = convertirEnString(structTarea->file->bloques);
+		char* bloquesMetaData = convertirListaEnString(structTarea->file->bloques);
 
 		log_info(logImongo,"Se van a poner en metadata los bloques: %s",bloquesMetaData);
 
@@ -989,7 +868,7 @@ void generarTarea(tarea* structTarea, t_tarea* _tarea){
 
 			actualizarEstructurasFile(structTarea);
 
-			char* mostrarBloquesLog = convertirEnString(structTarea->file->bloques);
+			char* mostrarBloquesLog = convertirListaEnString(structTarea->file->bloques);
 
 			log_info(logImongo,"Los bloques que ocupaba antes son: %s que serian %d bloques",
 					mostrarBloquesLog, structTarea->file->cantidadBloques);
@@ -1171,7 +1050,7 @@ t_list* convertirEnLista(char** arrayValores){
 }
 
 
-char* convertirEnString(t_list* listaEnteros){
+char* convertirListaEnString(t_list* listaEnteros){
 
 	char* stringLista = string_new();
 	string_append(&stringLista, "[");
@@ -1191,7 +1070,6 @@ char* convertirEnString(t_list* listaEnteros){
 
 	return stringLista;
 }
-
 
 
 
@@ -1487,4 +1365,308 @@ void sabotaje(int signal) {
   close(socketDisc);
 */
   buscarSabotaje();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void generarTarea2(t_file2 archivo, uint32_t cantidad){
+
+	lock(archivo->mutex);
+
+	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
+	uint32_t bloque = 0;
+
+	lock(&mutexBitMap);
+	t_list* bloquesAocupar = buscarBloques2(max(0, cantidad - fragmentacionArchivo));
+
+	if(!list_is_empty(bloquesAocupar)){
+
+		archivo->tamanioArchivo += cantidad;
+
+		if(fragmentacionArchivo > 0){
+
+			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
+			escribirBloqueEmpezado(bloque, string_repeat(*archivo->caracterLlenado, fragmentacionArchivo));
+			ocuparBloque(bloque);
+			cantidad = max(0, cantidad - fragmentacionArchivo);
+		}
+
+		t_list* bloquesAocupar = buscarBloques2(cantidad); //si la cantdad es cero, devuelve una lista vacia
+
+		while(!list_is_empty(bloquesAocupar)){
+
+			list_add(archivo->bloques, list_remove(bloquesAocupar, 0));
+			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
+			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad)));
+			ocuparBloque(bloque);
+			cantidad -= superBloque->block_size;
+		}
+
+		actualizarSuperBloque();
+		unlock(&mutexBitMap);
+
+		archivo->md5_archivo = obtenerMD5(archivo->bloques);
+
+		actualizarFile(archivo);
+	}
+	else{
+		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA TAREA ---");
+	}
+
+	unlock(archivo->mutex);
+}
+
+
+consumirTarea2(t_file2 archivo, uint32_t cantidad){
+
+	lock(archivo->mutex);
+
+	cantidad = min(cantidad, archivo->tamanioArchivo);
+	uint32_t fragmentacionArchivo = fragmentacion(archivo);
+	uint32_t* bloque = 0;
+
+	archivo->tamanioArchivo -= cantidad;
+
+	unlock(&mutexBitMap);
+
+	if(fragmentacionArchivo > 0){
+
+		bloque = (int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+		consumirBloqueEmpezado(*bloque, superBloque->block_size - fragmentacionArchivo);
+		liberarBloque(*bloque);
+		cantidad = max(0, cantidad - superBloque->block_size + fragmentacionArchivo);
+		//free(ultimoBloque);
+	}
+
+	while(cantidad > 0){
+
+		bloque =(int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+		consumirBloque(bloque, min(cantidad, superBloque->block_size));
+		ocuparBloque(*bloque);
+		cantidad -= superBloque->block_size;
+		//free(bloque);
+	}
+
+	actualizarSuperBloque();
+	unlock(&mutexBitMap);
+
+	archivo->md5_archivo = obtenerMD5(archivo->bloques);
+
+	actualizarFile(archivo);
+
+	unlock(archivo->mutex);
+}
+
+
+// LA CREACION DEL ARCHIVO LA HAGO APARTE
+escribirBitacora2(int idTripulante, char* mensaje){
+
+	char* charIdTripulante = string_itoa(idTripulante);
+	t_bitacora_tripulante* bitacora = dictionary_get(bitacoras, charIdTripulante);
+
+	uint32_t fragmentacionArchivo = fragmentacion(bitacora->tamanioArchivo);
+	int tamanioMensaje = strlen(mensaje);
+	uint32_t bloque = 0;
+
+	lock(&mutexBitMap);
+	t_list* bloquesAocupar = buscarBloques(tamanioMensaje); //si la cantdad es cero, devuelve una lista vacia
+
+	if(!list_is_empty(bloquesAocupar)){
+
+		bitacora->tamanioArchivo += tamanioMensaje;
+
+		if(fragmentacionArchivo > 0){
+
+			uint32_t ultimoBloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
+			char* contenidoUltimoBloque = string_substring_until(mensaje, fragmentacionArchivo);
+			escribirBloqueEmpezado(ultimoBloque, contenidoUltimoBloque);
+			ocuparBloque(ultimoBloque);
+			tamanioMensaje = max(0, tamanioMensaje - fragmentacionArchivo);
+		}
+
+		while(!list_is_empty(bloquesAocupar)){
+
+			char* fragmentoAescribir = string_substring_until(mensaje, min(tamanioMensaje, superBloque->block_size));
+			list_add(bitacora->bloques, list_remove(bloquesAocupar, 0));
+			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
+			escribirBloque(bloque, fragmentoAescribir);
+			ocuparBloque(bloque);
+			tamanioMensaje -= superBloque->block_size;
+			free(fragmentoAescribir);
+		}
+
+		actualizarSuperBloque();
+		unlock(&mutexBitMap);
+
+		actualizarBitacora(bitacora);
+	}
+	else{
+		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA BITACORA ---");
+	}
+
+	unlock(bitacora->mutex);
+}
+
+
+uint32_t fragmentacion(uint32_t tamanioArchivo){
+
+	return superBloque->block_size - (tamanioArchivo % superBloque->block_size);
+}
+
+
+void escribirBloque(uint32_t bloque, char* contenido){
+
+	char* dupContenido = string_duplicate(contenido);
+	string_append(&dupContenido, "\0");
+
+	uint32_t posicionEnBites = bloque * superBloque->block_size;
+
+	lock(&mutexMemoriaSecundaria);
+	memcpy(copiaMemoriaSecundaria + posicionEnBites , contenido, strlen(dupContenido));
+	unlock(&mutexMemoriaSecundaria);
+
+	log_info(logImongo, "Escribio en memoria %s en el bloque %d", dupContenido, posicionEnBites);
+}
+
+
+void escribirBloqueEmpezado(uint32_t bloque, char* contenido){
+
+	char* dupContenido = string_duplicate(contenido);
+	string_append(&dupContenido, "\0");
+
+	uint32_t posicionEnBites = bloque * superBloque->block_size + superBloque->block_size - strlen(dupContenido);
+
+	lock(&mutexMemoriaSecundaria);
+	memcpy(copiaMemoriaSecundaria + posicionEnBites , contenido, strlen(dupContenido));
+	unlock(&mutexMemoriaSecundaria);
+
+	log_info(logImongo, "Escribio en memoria %s en el bloque %d", dupContenido, posicionEnBites);
+}
+
+
+void consumirBloqueEmpezado(uint32_t bloque, uint32_t cantidadConsumir){
+
+	uint32_t posicionEnBites = bloque * superBloque->block_size;
+
+	lock(&mutexMemoriaSecundaria);
+	memcpy(copiaMemoriaSecundaria + posicionEnBites , string_repeat('\0', cantidadConsumir), cantidadConsumir);
+	unlock(&mutexMemoriaSecundaria);
+}
+
+
+void consumirBloque(uint32_t bloque, uint32_t cantidadConsumir){
+
+	uint32_t posicionEnBites = bloque * superBloque->block_size + superBloque->block_size - cantidadConsumir;
+
+	lock(&mutexMemoriaSecundaria);
+	memcpy(copiaMemoriaSecundaria + posicionEnBites , string_repeat('\0', cantidadConsumir), cantidadConsumir);
+	unlock(&mutexMemoriaSecundaria);
+}
+
+
+t_list* buscarBloques2(uint32_t cantBytes){
+
+	int cantBloques = (int) ceil((float) cantBytes / (float) superBloque->block_size);
+
+	t_list* bloquesAocupar = list_create();
+
+	for(int i=0; i<superBloque->blocks && list_size(bloquesAocupar) < cantBloques; i++){
+
+		if(bitarray_test_bit(superBloque->bitmap,i) == 0){
+			uint32_t* bloque = malloc(sizeof(uint32_t));
+			*bloque = i;
+			list_add(bloquesAocupar, bloque);
+		}
+	}
+
+	if(list_size(bloquesAocupar) < cantBloques){
+
+		void eliminarEntero(int* n){
+			free(n);
+		}
+
+		list_clean_and_destroy_elements(bloquesAocupar, (void*) eliminarEntero);
+	}
+
+	return bloquesAocupar;
+}
+
+
+void ocuparBloque(uint32_t bloque){
+
+	bitarray_set_bit(superBloque->bitmap, bloque);
+}
+
+
+void liberarBloque(uint32_t bloque){
+
+	bitarray_clean_bit(superBloque->bitmap, bloque);
+}
+
+
+void actualizarFile(t_file2 archivo){
+
+	t_config* configFile = config_create();
+
+	char* stringBloques = convertirListaEnString(archivo->bloques);
+	char* stringCantBloques = string_itoa(list_size(archivo->bloques));
+	char* stringSize = string_itoa(archivo->tamanioArchivo);
+
+	config_set_value(configFile, stringBloques, "BLOCKS");
+	config_set_value(configFile, stringSize, "SIZE");
+	config_set_value(configFile, archivo->md5_archivo, "MD5_ARCHIVO");
+	config_set_value(configFile, stringCantBloques, "BLOCK_COUNT");
+
+	config_save(configFile);
+	config_destroy(configFile);
+}
+
+
+void actualizarBitacora(t_bitacora_tripulante bitacora){
+
+	t_config* configBitacora = config_create();
+
+	char* stringBloques = convertirListaEnString(bitacora->bloques);
+	char* stringSize = string_itoa(bitacora->tamanioArchivo);
+
+	config_set_value(configBitacora, stringBloques, "BLOCKS");
+	config_set_value(configBitacora, stringSize, "SIZE");
+
+	config_save(configBitacora);
+	config_destroy(configBitacora);
+}
+
+
+void actualizarSuperBloque(){
+
+	char* stringBitmap = convertirBitmapEnString(superBloque->bitmap);
+
+	t_config* configSB = config_create(superBloque->path);
+
+	config_set_value(configSB, "BITMAP", stringBitmap);
+	free(stringBitmap);
+
+	config_save(configSB);
+	config_destroy(configSB);
 }
