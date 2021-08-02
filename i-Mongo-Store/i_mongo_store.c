@@ -20,9 +20,7 @@ int main(void) {
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
 	crearConfig(&configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
 	cargarDatosConfig();
-	mallocTareas();
 	cargarPaths();
-	asignarTareas();
 	iniciarMutex();
 	iniciarFileSystem();
 
@@ -118,7 +116,7 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirEnBitacora(mensaje, stringIdtripulante);
+			escribirBitacora2(mensaje, stringIdtripulante);
 
 			free(mensaje);
 			free(desplazamiento);
@@ -143,7 +141,7 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirEnBitacora(mensaje, stringIdtripulante);
+			escribirBitacora2(mensaje, stringIdtripulante);
 
 			free(mensaje);
 			free(avisoTarea->nombreTarea);
@@ -168,7 +166,7 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirEnBitacora(mensaje, stringIdtripulante);
+			escribirBitacora2(mensaje, stringIdtripulante);
 
 			free(mensaje);
 
@@ -194,7 +192,7 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirEnBitacora(mensaje, stringIdtripulante);
+			escribirBitacora2(mensaje, stringIdtripulante);
 
 			free(mensaje);
 
@@ -216,7 +214,7 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirEnBitacora(mensaje, stringIdtripulante);
+			escribirBitacora2(mensaje, stringIdtripulante);
 
 			free(mensaje);
 
@@ -235,40 +233,40 @@ void seleccionarTarea(t_tarea* tarea){
 
 	log_info(logImongo,"Recibi la tarea %s", tarea->nombreTarea);
 
-	switch(tarea->nombreTarea){
+	switch(indiceTarea(tarea)){
 
-		case "GENERAR_OXIGENO":
+		case 0:
 		{
 			generarTarea2(oxigeno, tarea->parametro);
 			break;
 		}
 
-		case "CONSUMIR_OXIGENO":
+		case 1:
 		{
 
 			consumirTarea2(oxigeno, tarea->parametro);
 			break;
 		}
 
-		case "GENERAR_COMIDA":
+		case 2:
 		{
 			generarTarea2(comida, tarea->parametro);
 			break;
 		}
 
-		case "CONSUMIR_COMIDA":
+		case 3:
 		{
 			consumirTarea2(comida,tarea->parametro);
 			break;
 		}
 
-		case "GENERAR_BASURA":
+		case 4:
 		{
 			generarTarea2(basura, tarea->parametro);
 			break;
 		}
 
-		case "DESCARTAR_BASURA":
+		case 5:
 		{
 			lock(&basura->mutex);
 			uint32_t cantConsumir = basura->tamanioArchivo;
@@ -347,7 +345,7 @@ void cargarBlocks(){
 
 
 
-void cargarFile(t_file2 archivo){
+void cargarFile(t_file2* archivo){
 
 	t_config* config = config_create(archivo->path);
 
@@ -373,7 +371,7 @@ void crearFileSystemDesdeCero(){
 
 void crearSuperBloque(){
 
-	superBloque->block_size = (uint32_t) config_get_lomg_value(configImongo,"BLOCK_SIZE");
+	superBloque->block_size = (uint32_t) config_get_long_value(configImongo,"BLOCK_SIZE");
 	superBloque->blocks = (uint32_t)config_get_long_value(configImongo,"BLOCKS");
 
 	int sizeBitArrayEnBytes = (int) ceil (((float)superBloque->blocks / (float) 8));
@@ -407,7 +405,7 @@ void crearSuperBloque(){
 }
 
 
-void crearFile(t_file2 archivo){
+void crearFile(t_file2* archivo){
 
 	FILE* fd = fopen(archivo->path,"wb");
 	fclose(fd);
@@ -421,6 +419,7 @@ void crearFile(t_file2 archivo){
 	log_info(logImongo,"Se creo el file %s", archivo->path);
 
 }
+
 
 void iniciarFileSystem(){
 

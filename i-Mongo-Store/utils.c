@@ -35,6 +35,30 @@ char* crearDestinoApartirDeRaiz(char* destino){
 }
 
 
+void asignarTareas(){
+
+	tareas = malloc(sizeof(char*) * 6);
+
+	tareas[0] = strdup("GENERAR_OXIGENO");
+	tareas[1] = strdup("CONSUMIR_OXIGENO");
+	tareas[2] = strdup("GENERAR_COMIDA");
+	tareas[3] = strdup("CONSUMIR_COMIDA");
+	tareas[4] = strdup("GENERAR_BASURA");
+	tareas[5] = strdup("DESCARTAR_BASURA");
+}
+
+
+int indiceTarea(t_tarea* tarea){
+
+	for(int i=0; tareas[i] != NULL; i++){
+		if(string_contains(tarea->nombreTarea, tareas[i])){
+			return i;
+		}
+	}
+	return -1;
+}
+
+
 void cargarPaths(){
 
 	superBloque->path = crearDestinoApartirDeRaiz("SuperBloque.ims");
@@ -435,38 +459,45 @@ void sabotaje(int signal) {
   enviarPaquete(paqueteEnviado, socketDisc);
   close(socketDisc);
 */
-  buscarSabotaje();
+  //buscarSabotaje();
 }
 
 
-void generarTarea2(t_file2 archivo, uint32_t cantidad){
+void generarTarea2(t_file2* archivo, uint32_t cantidad){
 
-	lock(archivo->mutex);
+	lock(&archivo->mutex);
 
 	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
+	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacion);
 	uint32_t bloque = 0;
 
 	lock(&mutexBitMap);
 	t_list* bloquesAocupar = buscarBloques2(max(0, cantidad - fragmentacionArchivo));
 
+	char* stringBloques = convertirListaEnString(bloquesAocupar);
+	log_info(logImongo, "El archivo %s va a ocupar los bloques %s", archivo->path, stringBloques);
+	free(stringBloques);
+
 	if(!list_is_empty(bloquesAocupar)){
 
 		archivo->tamanioArchivo += cantidad;
+		log_info(logImongo, "Se agrego %d bytes al archivo %s y paso a tener un tamanio de %d",
+				cantidad, archivo->path, archivo->tamanioArchivo);
 
 		if(fragmentacionArchivo > 0){
 
 			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
-			escribirBloqueEmpezado(bloque, string_repeat(*archivo->caracterLlenado, fragmentacionArchivo));
-			cantidad = max(0, cantidad - fragmentacionArchivo);
+			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(fragmentacionArchivo, cantidad)),
+					superBloque->block_size - fragmentacionArchivo);
+			cantidad = cantidad - fragmentacionArchivo;
 		}
-
-		t_list* bloquesAocupar = buscarBloques2(cantidad); //si la cantdad es cero, devuelve una lista vacia
 
 		while(!list_is_empty(bloquesAocupar)){
 
 			list_add(archivo->bloques, list_remove(bloquesAocupar, 0));
 			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
-			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad)));
+			log_info(logImongo, "Se agrego el bloque %d al archivo %s", bloque, archivo->path);
+			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad)), 0);
 			ocuparBloque(bloque);
 			cantidad -= superBloque->block_size;
 		}
@@ -480,39 +511,53 @@ void generarTarea2(t_file2 archivo, uint32_t cantidad){
 	}
 	else{
 		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA TAREA ---");
+		unlock(&mutexBitMap);
 	}
 
-	unlock(archivo->mutex);
+	unlock(&archivo->mutex);
 }
 
 
-void consumirTarea2(t_file2 archivo, uint32_t cantidad){
+void consumirTarea2(t_file2* archivo, uint32_t cantidad){
 
-	lock(archivo->mutex);
+	lock(&archivo->mutex);
 
 	cantidad = min(cantidad, archivo->tamanioArchivo);
-	uint32_t fragmentacionArchivo = fragmentacion(archivo);
+	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
+	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacion);
 	uint32_t* bloque;
 
 	archivo->tamanioArchivo -= cantidad;
+	log_info(logImongo, "Se consumio %d bytes del archivo %s y paso a tener un tamanio de %d",
+			cantidad, archivo->path, archivo->tamanioArchivo);
 
 	unlock(&mutexBitMap);
 
 	if(fragmentacionArchivo > 0){
 
 		bloque = (int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
-		consumirBloqueEmpezado(*bloque, superBloque->block_size - fragmentacionArchivo);
-		liberarBloque(*bloque);
-		cantidad = max(0, cantidad - superBloque->block_size + fragmentacionArchivo);
+		uint32_t tamanioUltBloque = superBloque->block_size - fragmentacionArchivo;
+		consumirBloque(*bloque, min(cantidad, tamanioUltBloque), tamanioUltBloque);
+		cantidad = cantidad - tamanioUltBloque;
+		if(cantidad > 0){
+			liberarBloque(*bloque);
+			//free(bloque);
+		}
+		else{
+			list_add(archivo->bloques, bloque);
+		}
 	}
 
 	while(cantidad > 0){
 
 		bloque =(int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
-		consumirBloque(bloque, min(cantidad, superBloque->block_size));
+		consumirBloque(*bloque, min(cantidad, superBloque->block_size), superBloque->block_size);
 		cantidad -= superBloque->block_size;
 		if(cantidad > 0){
 			liberarBloque(*bloque);
+		}
+		else{
+			list_add(archivo->bloques, bloque);
 		}
 		//free(bloque);
 	}
@@ -524,7 +569,7 @@ void consumirTarea2(t_file2 archivo, uint32_t cantidad){
 
 	actualizarFile(archivo);
 
-	unlock(archivo->mutex);
+	unlock(&archivo->mutex);
 }
 
 
@@ -536,11 +581,21 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 	lock(&bitacora->mutex);
 
 	uint32_t fragmentacionArchivo = fragmentacion(bitacora->tamanioArchivo);
+	log_info(logImongo, "La bitacora del tripulante %s tiene una fragmentacion de %d", idTripulante, fragmentacion);
 	int tamanioMensaje = strlen(mensaje);
+	uint32_t offsetMensaje = 0;
 	uint32_t bloque = 0;
 
+	log_info(logImongo, "Se escribio el mensaje '%s' de %d bytes en la bitacora del tripulante %s y "
+			"paso a tener un tamanio de %d", mensaje, tamanioMensaje, idTripulante, bitacora->tamanioArchivo);
+
 	lock(&mutexBitMap);
-	t_list* bloquesAocupar = buscarBloques(tamanioMensaje); //si la cantdad es cero, devuelve una lista vacia
+	t_list* bloquesAocupar = buscarBloques2(tamanioMensaje); //si la cantdad es cero, devuelve una lista vacia
+
+	char* stringBloques = convertirListaEnString(bloquesAocupar);
+	log_info(logImongo, "La bitacora del tripulante %s va a ocupar los bloques %s", idTripulante, stringBloques);
+	free(stringBloques);
+
 
 	if(!list_is_empty(bloquesAocupar)){
 
@@ -549,20 +604,21 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 		if(fragmentacionArchivo > 0){
 
 			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
-			char* contenidoUltimoBloque = string_substring_until(mensaje, fragmentacionArchivo);
-			escribirBloqueEmpezado(bloque, contenidoUltimoBloque);
+			char* contenidoUltimoBloque = string_substring_until(mensaje, min(fragmentacionArchivo, tamanioMensaje));
+			escribirBloque(bloque, contenidoUltimoBloque, superBloque->block_size - fragmentacionArchivo);
 			ocuparBloque(bloque);
-			tamanioMensaje = max(0, tamanioMensaje - fragmentacionArchivo);
+			offsetMensaje = min(fragmentacionArchivo, tamanioMensaje);
 		}
 
 		while(!list_is_empty(bloquesAocupar)){
 
-			char* fragmentoAescribir = string_substring_until(mensaje, min(tamanioMensaje, superBloque->block_size));
+			char* fragmentoAescribir = string_substring(mensaje, offsetMensaje, min(tamanioMensaje, superBloque->block_size));
 			list_add(bitacora->bloques, list_remove(bloquesAocupar, 0));
 			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
-			escribirBloque(bloque, fragmentoAescribir);
+			escribirBloque(bloque, fragmentoAescribir, 0);
+
 			ocuparBloque(bloque);
-			tamanioMensaje -= superBloque->block_size;
+			offsetMensaje += superBloque->block_size;
 			free(fragmentoAescribir);
 		}
 
@@ -581,63 +637,49 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 
 uint32_t fragmentacion(uint32_t tamanioArchivo){
 
-	return superBloque->block_size - (tamanioArchivo % superBloque->block_size);
+	if(tamanioArchivo > 0)
+		return superBloque->block_size - (tamanioArchivo % superBloque->block_size);
+	else{
+		return 0;
+	}
 }
 
 
-void escribirBloque(uint32_t bloque, char* contenido){
+void escribirBloque(uint32_t bloque, char* contenido, uint32_t tamanioBloque){
 
 	char* dupContenido = string_duplicate(contenido);
 	string_append(&dupContenido, "\0");
 
-	uint32_t posicionEnBites = bloque * superBloque->block_size;
+	uint32_t posicionEnBites = bloque * superBloque->block_size + tamanioBloque;
 
 	lock(&mutexMemoriaSecundaria);
 	memcpy(copiaMemoriaSecundaria + posicionEnBites , contenido, strlen(dupContenido));
 	unlock(&mutexMemoriaSecundaria);
 
-	log_info(logImongo, "Escribio en memoria %s en el bloque %d", dupContenido, posicionEnBites);
+	log_info(logImongo, "Escribio '%s' en el bloque %d a partir de la posicion %d",
+			dupContenido, bloque, tamanioBloque);
 }
 
 
-void escribirBloqueEmpezado(uint32_t bloque, char* contenido){
+void consumirBloque(uint32_t bloque, uint32_t cantidadConsumir, uint32_t tamanioBloque){
 
-	char* dupContenido = string_duplicate(contenido);
-	string_append(&dupContenido, "\0");
-
-	uint32_t posicionEnBites = bloque * superBloque->block_size + superBloque->block_size - strlen(dupContenido);
-
-	lock(&mutexMemoriaSecundaria);
-	memcpy(copiaMemoriaSecundaria + posicionEnBites , contenido, strlen(dupContenido));
-	unlock(&mutexMemoriaSecundaria);
-
-	log_info(logImongo, "Escribio en memoria %s en el bloque %d", dupContenido, posicionEnBites);
-}
-
-
-void consumirBloqueEmpezado(uint32_t bloque, uint32_t cantidadConsumir){
-
-	uint32_t posicionEnBites = bloque * superBloque->block_size;
+	uint32_t cantBytesFinalesEnBloque = tamanioBloque - cantidadConsumir;
+	uint32_t posicionEnBites = bloque * superBloque->block_size + cantBytesFinalesEnBloque;
 
 	lock(&mutexMemoriaSecundaria);
 	memcpy(copiaMemoriaSecundaria + posicionEnBites , string_repeat('\0', cantidadConsumir), cantidadConsumir);
 	unlock(&mutexMemoriaSecundaria);
-}
 
-
-void consumirBloque(uint32_t bloque, uint32_t cantidadConsumir){
-
-	uint32_t posicionEnBites = bloque * superBloque->block_size + superBloque->block_size - cantidadConsumir;
-
-	lock(&mutexMemoriaSecundaria);
-	memcpy(copiaMemoriaSecundaria + posicionEnBites , string_repeat('\0', cantidadConsumir), cantidadConsumir);
-	unlock(&mutexMemoriaSecundaria);
+	log_info(logImongo, "Se consumio %d del bloque %d y quedo %d bytes en el bloque",
+			cantidadConsumir, bloque, cantBytesFinalesEnBloque);
 }
 
 
 t_list* buscarBloques2(uint32_t cantBytes){
 
 	int cantBloques = (int) ceil((float) cantBytes / (float) superBloque->block_size);
+
+	log_info(logImongo, "La cant de bloques a ocupar es %d", cantBloques);
 
 	t_list* bloquesAocupar = list_create();
 
@@ -647,10 +689,11 @@ t_list* buscarBloques2(uint32_t cantBytes){
 			uint32_t* bloque = malloc(sizeof(uint32_t));
 			*bloque = i;
 			list_add(bloquesAocupar, bloque);
+			log_info(logImongo, "Se va a ocupar el bloque %d", i);
 		}
 	}
 
-	if(list_size(bloquesAocupar) < cantBloques){
+	if(list_size(bloquesAocupar) < cantBloques){ // CASO EN EL Q NO ALCANZARON LOS BLOQUES PARA ESCRIBIR TODA LA TAREA
 
 		void eliminarEntero(int* n){
 			free(n);
@@ -666,18 +709,20 @@ t_list* buscarBloques2(uint32_t cantBytes){
 void ocuparBloque(uint32_t bloque){
 
 	bitarray_set_bit(superBloque->bitmap, bloque);
+	log_info(logImongo, "El bloque %d ahora esta ocupado", bloque);
 }
 
 
 void liberarBloque(uint32_t bloque){
 
 	bitarray_clean_bit(superBloque->bitmap, bloque);
+	log_info(logImongo, "El bloque %d ahora esta libre", bloque);
 }
 
 
-void actualizarFile(t_file2 archivo){
+void actualizarFile(t_file2* archivo){
 
-	t_config* configFile = config_create();
+	t_config* configFile = config_create(archivo->path);
 
 	char* stringBloques = convertirListaEnString(archivo->bloques);
 	char* stringCantBloques = string_itoa(list_size(archivo->bloques));
@@ -695,7 +740,7 @@ void actualizarFile(t_file2 archivo){
 
 void actualizarBitacora(t_bitacora_tripulante* bitacora){
 
-	t_config* configBitacora = config_create();
+	t_config* configBitacora = config_create(bitacora->path);
 
 	char* stringBloques = convertirListaEnString(bitacora->bloques);
 	char* stringSize = string_itoa(bitacora->tamanioArchivo);
@@ -719,4 +764,20 @@ void actualizarSuperBloque(){
 
 	config_save(configSB);
 	config_destroy(configSB);
+}
+
+
+char* convertirBitmapEnString(t_bitarray* bitmap){
+
+	char* stringBitmap = string_new();
+
+	for(int i=0; i< bitarray_get_max_bit(bitmap); i++){
+
+		if(bitarray_test_bit(bitmap, i))
+			string_append(&stringBitmap, "1");
+		else
+			string_append(&stringBitmap, "0");
+	}
+
+	return stringBitmap;
 }

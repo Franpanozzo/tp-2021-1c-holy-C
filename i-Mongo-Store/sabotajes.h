@@ -1,6 +1,7 @@
 #ifndef SABOTAJE_H_
 #define SABOTAJE_H_
 
+/*
 //#include "variables.h"
 //#include "utils.h"
 #include "i_mongo_store.h"
@@ -31,5 +32,5 @@ void sabotajesFile(tarea*);
 void escribirBloque(uint32_t, char*);
 void consumirBloque(uint32_t, uint32_t);
 
-
+*/
 #endif

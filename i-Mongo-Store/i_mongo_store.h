@@ -35,12 +35,17 @@ void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
 void deserializarSegun(t_paquete*);
+void seleccionarTarea(t_tarea*);
+
 void iniciarFileSystem();
 void crearFileSystemDesdeCero();
+void crearSuperBloque();
+void crearFile(t_file2*);
+
 void crearFileSystemExistente();
-void seleccionarTarea(t_tarea*);
-void liberarTareas();
-void asignarTareas();
+void cargarSuperBloque();
+void cargarBlocks();
+void cargarFile(t_file2*);
 
 
 #endif

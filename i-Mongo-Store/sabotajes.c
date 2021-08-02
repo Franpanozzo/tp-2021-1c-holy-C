@@ -1,5 +1,5 @@
 #include "sabotajes.h"
-
+/*
 
 void buscarSabotaje(){
 
@@ -150,7 +150,7 @@ bool haySabotajeBitmapEnSuperBloque(){
 	free(stringBitmap);
 	config_destroy(config);
 */
-
+/*
 	return result;
 }
 
@@ -220,6 +220,7 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 	bitarray_destroy(bitmap);
 	list_destroy(listaBloques);
 	*/
+/*
 }
 
 
@@ -303,6 +304,7 @@ bool haySabotajeBloquesEnFile(tarea* fileConsumible){
 	list_destroy(listaBloques);
 	// falta liberar en arrayPosiciones
 */
+/*
 	return result;
 }
 
@@ -372,6 +374,7 @@ void arreglarSabotajeBloquesEnFile(tarea* fileConsumible){
 	free(md5anterior);
 	free(stringCaracter);
 	*/
+/*
 }
 
 
@@ -526,3 +529,4 @@ void agregarBloquesOcupados(t_list* listaBloques, t_config* config){
 	list_add_all(listaBloques, listaAux);
 	list_destroy(listaAux);
 }
+*/

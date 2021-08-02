@@ -58,6 +58,7 @@ t_config* configImongo;
 t_log* logImongo;
 t_datosConfig* datosConfig;
 char* bitArray;
+char** tareas;
 
 t_superBloque* superBloque;
 t_file2* oxigeno;
