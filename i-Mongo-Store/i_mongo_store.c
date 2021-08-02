@@ -3,24 +3,27 @@
 
 int main(void) {
 
-	char* path = pathLog();
-
 	signal(SIGUSR1, sabotaje);
 
+	oxigeno = malloc(sizeof(t_file2));
+	oxigeno->caracterLlenado = "O";
+	comida = malloc(sizeof(t_file2));
+	comida->caracterLlenado = "C";
+	basura = malloc(sizeof(t_file2));
+	basura->caracterLlenado = "B";
+
+	superBloque = malloc(sizeof(t_superBloque));
+
+	bitacoras = dictionary_create();
+
+	char* path = pathLog();
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
-
 	crearConfig(&configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
-
 	cargarDatosConfig();
-
 	mallocTareas();
-
 	cargarPaths();
-
 	asignarTareas();
-
 	iniciarMutex();
-
 	iniciarFileSystem();
 
 	listaPosicionesSabotaje = listaCoordenadasSabotaje();
@@ -87,7 +90,7 @@ void deserializarSegun(t_paquete* paquete){
 		{
 			t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
 
-			log_info(logImongo,"tareaRecibida %s \n",tarea->nombreTarea);
+			log_info(logImongo,"tareaRecibida %s",tarea->nombreTarea);
 
 			seleccionarTarea(tarea);
 
@@ -101,13 +104,21 @@ void deserializarSegun(t_paquete* paquete){
 
 			t_desplazamiento* desplazamiento = deserializarDesplazamiento(paquete->buffer->stream);
 
+
 			log_info(logImongo,"Se recibio el desplazamiento del tripulante de ID %d", desplazamiento->idTripulante);
 
 			char* mensaje = string_from_format("Se mueve de %d|%d a %d|%d",
 					desplazamiento->inicio.posX, desplazamiento->inicio.posY,
 					desplazamiento->fin.posX, desplazamiento->fin.posY);
 
-			escribirEnBitacora(mensaje,desplazamiento->idTripulante);
+			char* stringIdtripulante = string_itoa(desplazamiento->idTripulante);
+
+			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
+
+				crearBitacora(stringIdtripulante);
+			}
+
+			escribirEnBitacora(mensaje, stringIdtripulante);
 
 			free(mensaje);
 			free(desplazamiento);
@@ -125,7 +136,14 @@ void deserializarSegun(t_paquete* paquete){
 
 			char* mensaje = string_from_format("Comienza la ejecucion de la tarea %s", avisoTarea->nombreTarea);
 
-			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
+			char* stringIdtripulante = string_itoa(idTripulante);
+
+			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
+
+				crearBitacora(stringIdtripulante);
+			}
+
+			escribirEnBitacora(mensaje, stringIdtripulante);
 
 			free(mensaje);
 			free(avisoTarea->nombreTarea);
@@ -143,7 +161,14 @@ void deserializarSegun(t_paquete* paquete){
 
 			char* mensaje = string_from_format("Se finaliza la tarea %s", avisoTarea->nombreTarea);
 
-			escribirEnBitacora(mensaje,avisoTarea->idTripulante);
+			char* stringIdtripulante = string_itoa(avisoTarea->idTripulante);
+
+			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
+
+				crearBitacora(stringIdtripulante);
+			}
+
+			escribirEnBitacora(mensaje, stringIdtripulante);
 
 			free(mensaje);
 
@@ -162,7 +187,14 @@ void deserializarSegun(t_paquete* paquete){
 
 			char* mensaje = string_from_format("Se corre en panico hacia la ubicacion del sabotaje");
 
-			escribirEnBitacora(mensaje,idTripulante);
+			char* stringIdtripulante = string_itoa(idTripulante);
+
+			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
+
+				crearBitacora(stringIdtripulante);
+			}
+
+			escribirEnBitacora(mensaje, stringIdtripulante);
 
 			free(mensaje);
 
@@ -177,7 +209,14 @@ void deserializarSegun(t_paquete* paquete){
 
 			char* mensaje = string_from_format("Se resuelve el sabotaje");
 
-			escribirEnBitacora(mensaje,idTripulante);
+			char* stringIdtripulante = string_itoa(idTripulante);
+
+			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
+
+				crearBitacora(stringIdtripulante);
+			}
+
+			escribirEnBitacora(mensaje, stringIdtripulante);
 
 			free(mensaje);
 
@@ -189,13 +228,12 @@ void deserializarSegun(t_paquete* paquete){
 	}
 
 	eliminarPaquete(paquete);
-
 }
 
 
 void seleccionarTarea(t_tarea* tarea){
 
-	log_info(logImongo,"Recibi una tarea de %s", tarea->nombreTarea);
+	log_info(logImongo,"Recibi la tarea %s", tarea->nombreTarea);
 
 	switch(tarea->nombreTarea){
 
@@ -232,7 +270,10 @@ void seleccionarTarea(t_tarea* tarea){
 
 		case "DESCARTAR_BASURA":
 		{
-			consumirTarea2(basura, basura->tamanioArchivo);
+			lock(&basura->mutex);
+			uint32_t cantConsumir = basura->tamanioArchivo;
+			unlock(&basura->mutex);
+			consumirTarea2(basura, cantConsumir);
 			break;
 		}
 
@@ -316,6 +357,7 @@ void cargarFile(t_file2 archivo){
 	archivo->md5_archivo = config_get_string_value(config,"MD5_ARCHIVO");
 }
 
+
 void crearFileSystemDesdeCero(){
 
 	crearSuperBloque();
@@ -357,13 +399,12 @@ void crearSuperBloque(){
 	FILE* SB = fopen(superBloque->path,"wb");
 	fclose(SB);
 
-	t_config* config = config_create(superBloque->path);
-	config_set_value(configSuperBloque,"BLOCK_SIZE",string_itoa(superBloque->block_size));
-	config_set_value(configSuperBloque,"BLOCKS",string_itoa(superBloque->blocks));
-	config_save(config);
+	t_config* configSB = config_create(superBloque->path);
+	config_set_value(configSB,"BLOCK_SIZE",string_itoa(superBloque->block_size));
+	config_set_value(configSB,"BLOCKS",string_itoa(superBloque->blocks));
+	config_save(configSB);
 	actualizarSuperBloque();
 }
-
 
 
 void crearFile(t_file2 archivo){

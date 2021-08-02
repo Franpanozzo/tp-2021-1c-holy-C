@@ -23,30 +23,6 @@ char * pathLog(){
 }
 
 
-void asignarTareas(){
-
-	tareas = malloc(sizeof(char*) * 6);
-
-	tareas[0] = strdup("GENERAR_OXIGENO");
-	tareas[1] = strdup("CONSUMIR_OXIGENO");
-	tareas[2] = strdup("GENERAR_COMIDA");
-	tareas[3] = strdup("CONSUMIR_COMIDA");
-	tareas[4] = strdup("GENERAR_BASURA");
-	tareas[5] = strdup("DESCARTAR_BASURA");
-}
-
-
-int indiceTarea(t_tarea* tarea){
-
-	for(int i=0; tareas[i] != NULL; i++){
-		if(string_contains(tarea->nombreTarea, tareas[i])){
-			return i;
-		}
-	}
-	return -1;
-}
-
-
 char* crearDestinoApartirDeRaiz(char* destino){
 
 	char* raiz = string_new();
@@ -61,13 +37,13 @@ char* crearDestinoApartirDeRaiz(char* destino){
 
 void cargarPaths(){
 
-	pathSuperBloque = crearDestinoApartirDeRaiz("SuperBloque.ims");
+	superBloque->path = crearDestinoApartirDeRaiz("SuperBloque.ims");
 	pathBloque = crearDestinoApartirDeRaiz("Blocks.ims");
 	pathFiles = crearDestinoApartirDeRaiz("Files");
 	oxigeno->path = crearDestinoApartirDeRaiz("Files/Oxigeno.ims");
 	comida->path = crearDestinoApartirDeRaiz("Files/Comida.ims");
 	basura->path = crearDestinoApartirDeRaiz("Files/Basura.ims");
-	pathBitacora = crearDestinoApartirDeRaiz("Files/Bitacora");
+	pathBitacoras = crearDestinoApartirDeRaiz("Files/Bitacora");
 }
 
 
@@ -85,47 +61,14 @@ void cargarDatosConfig(){
 }
 
 
-void mallocTareas(){
-
-	oxigeno = malloc(sizeof(tarea));
-	oxigeno->configSeCreo = 0;
-	oxigeno->mutex = malloc(sizeof(pthread_mutex_t));
-	oxigeno->file= malloc(sizeof(t_file));
-	oxigeno->file->caracterLlenado = "O";
-
-	pthread_mutex_init(oxigeno->mutex, NULL);
-
-	comida = malloc(sizeof(tarea));
-	comida->configSeCreo = 0;
-	comida->mutex = malloc(sizeof(pthread_mutex_t));
-	comida->file= malloc(sizeof(t_file));
-	comida->file->caracterLlenado = "C";
-
-	pthread_mutex_init(comida->mutex, NULL);
-
-	basura = malloc(sizeof(tarea));
-	basura->configSeCreo = 0;
-	basura->mutex = malloc(sizeof(pthread_mutex_t));
-	basura->file= malloc(sizeof(t_file));
-	basura->file->caracterLlenado = "B";
-
-	pthread_mutex_init(basura->mutex, NULL);
-}
-
-
 void iniciarMutex(){
 
-	pthread_mutex_init(&mutexSuperBloque,NULL);
 	pthread_mutex_init(&mutexMemoriaSecundaria,NULL);
 	pthread_mutex_init(&mutexBitMap,NULL);
 	pthread_mutex_init(&mutexEstructurasFile,NULL);
-	pthread_mutex_init(&mutexOxigeno,NULL);
-	pthread_mutex_init(&mutexComida,NULL);
-	pthread_mutex_init(&mutexBasura,NULL);
-	pthread_mutex_init(&mutexEstructuraOxigeno,NULL);
-	pthread_mutex_init(&mutexEstructuraComida,NULL);
-	pthread_mutex_init(&mutexEstructuraBasura,NULL);
-	pthread_mutex_init(&mutexBitacora,NULL);
+	pthread_mutex_init(&oxigeno->mutex,NULL);
+	pthread_mutex_init(&comida->mutex,NULL);
+	pthread_mutex_init(&basura->mutex,NULL);
 }
 
 
@@ -238,7 +181,7 @@ void sincronizarMemoriaSecundaria(){
 	}
 }
 
-
+/*
 void crearConfigTarea(tarea* structTarea){
 
 	if(structTarea->configSeCreo != true){
@@ -252,20 +195,7 @@ void crearConfigTarea(tarea* structTarea){
 		}
 	}
 }
-
-
-void inicializarTarea(tarea* structTarea, int bloquesAocupar, int caracteresAOcupar){
-	config_set_value(structTarea->config,"CARACTER_LLENADO",structTarea->file->caracterLlenado);
-	config_set_value(structTarea->config,"BLOCKS","");
-	config_set_value(structTarea->config,"MD5_ARCHIVO","");
-	char* cantidadBloques =  string_itoa(bloquesAocupar);
-	config_set_value(structTarea->config,"BLOCK_COUNT","0");
-	free(cantidadBloques);
-	char* tamanioArchivo = string_itoa(caracteresAOcupar);
-	config_set_value(structTarea->config,"SIZE",tamanioArchivo);
-	free(tamanioArchivo);
-	config_save(structTarea->config);
-}
+*/
 
 
 char * reconstruirArchivo(t_list * bloques){
@@ -310,7 +240,6 @@ char * obtenerMD5(t_list * bloques){
 }
 
 
-
 t_list* convertirEnLista(char** arrayValores){
 
 	t_list* lista = list_create();
@@ -347,8 +276,6 @@ char* convertirListaEnString(t_list* listaEnteros){
 
 	return stringLista;
 }
-
-
 
 
 t_desplazamiento* deserializarDesplazamiento(void* stream){
@@ -397,12 +324,12 @@ int deserializarAvisoSabotaje(void* stream){
 }
 
 
-
+/*
 char* leerBitacora(int idTripulante){
 
 	char* bitacora;
 
-	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
+	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacoras,idTripulante);
 	t_config* config;
 
 	if(verificarSiExiste(path)){
@@ -428,18 +355,28 @@ char* leerBitacora(int idTripulante){
 
 	return bitacora;
 }
+*/
 
 
-char* pathBitacoraTripulante(int idTripulante){
-	return string_from_format("%s/Tripulante%d.ims", pathBitacora,idTripulante);
+void crearBitacora(char* idTripulante){
+
+	t_bitacora_tripulante* bitacoraTripulante = malloc(sizeof(t_bitacora_tripulante));
+	bitacoraTripulante->path = pathBitacoraTripulante(idTripulante);
+	bitacoraTripulante->tamanioArchivo = 0;
+	bitacoraTripulante->bloques = list_create();
+	pthread_mutex_init(&bitacoraTripulante->mutex, NULL);
+
+	FILE* b = fopen(bitacoraTripulante->path,"wb");
+	fclose(b);
+
+	actualizarBitacora(bitacoraTripulante);
+
+	dictionary_put(bitacoras, idTripulante, bitacoraTripulante);
 }
 
 
-bool existeBitacoraTripulante(int idTripulante){
-	char* path = pathBitacoraTripulante(idTripulante);
-	bool result = verificarSiExiste(path);
-	free(path);
-	return result;
+char* pathBitacoraTripulante(char* idTripulante){
+	return string_from_format("%s/Tripulante%s.ims", pathBitacoras, idTripulante);
 }
 
 
@@ -447,31 +384,6 @@ void liberarConfiguracion(){
 	free(datosConfig->puntoMontaje);
 	free(datosConfig->posicionesSabotaje);
 	free(datosConfig);
-}
-
-
-void liberarStructTareas(t_file* file){
-
-	list_destroy(file->bloques);
-	free(file->caracterLlenado);
-	free(file->md5_archivo);
-	free(file);
-}
-
-
-void liberarTodosLosStructTareas(){
-
-	//liberarStructTareas(oxigeno);
-	//liberarStructTareas(comida);
-	//liberarStructTareas(basura);
-}
-
-
-void liberarTareas(){
-	for(int i=0; i<6; i++){
-		free(tareas[i]);
-	}
-	free(tareas);
 }
 
 
@@ -527,28 +439,6 @@ void sabotaje(int signal) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void generarTarea2(t_file2 archivo, uint32_t cantidad){
 
 	lock(archivo->mutex);
@@ -596,13 +486,13 @@ void generarTarea2(t_file2 archivo, uint32_t cantidad){
 }
 
 
-consumirTarea2(t_file2 archivo, uint32_t cantidad){
+void consumirTarea2(t_file2 archivo, uint32_t cantidad){
 
 	lock(archivo->mutex);
 
 	cantidad = min(cantidad, archivo->tamanioArchivo);
 	uint32_t fragmentacionArchivo = fragmentacion(archivo);
-	uint32_t* bloque = 0;
+	uint32_t* bloque;
 
 	archivo->tamanioArchivo -= cantidad;
 
@@ -614,7 +504,6 @@ consumirTarea2(t_file2 archivo, uint32_t cantidad){
 		consumirBloqueEmpezado(*bloque, superBloque->block_size - fragmentacionArchivo);
 		liberarBloque(*bloque);
 		cantidad = max(0, cantidad - superBloque->block_size + fragmentacionArchivo);
-		//free(ultimoBloque);
 	}
 
 	while(cantidad > 0){
@@ -640,10 +529,11 @@ consumirTarea2(t_file2 archivo, uint32_t cantidad){
 
 
 // LA CREACION DEL ARCHIVO LA HAGO APARTE
-escribirBitacora2(int idTripulante, char* mensaje){
+void escribirBitacora2(char* idTripulante, char* mensaje){
 
-	char* charIdTripulante = string_itoa(idTripulante);
-	t_bitacora_tripulante* bitacora = dictionary_get(bitacoras, charIdTripulante);
+	t_bitacora_tripulante* bitacora = dictionary_get(bitacoras, idTripulante);
+
+	lock(&bitacora->mutex);
 
 	uint32_t fragmentacionArchivo = fragmentacion(bitacora->tamanioArchivo);
 	int tamanioMensaje = strlen(mensaje);
@@ -658,10 +548,10 @@ escribirBitacora2(int idTripulante, char* mensaje){
 
 		if(fragmentacionArchivo > 0){
 
-			uint32_t ultimoBloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
+			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
 			char* contenidoUltimoBloque = string_substring_until(mensaje, fragmentacionArchivo);
-			escribirBloqueEmpezado(ultimoBloque, contenidoUltimoBloque);
-			ocuparBloque(ultimoBloque);
+			escribirBloqueEmpezado(bloque, contenidoUltimoBloque);
+			ocuparBloque(bloque);
 			tamanioMensaje = max(0, tamanioMensaje - fragmentacionArchivo);
 		}
 
@@ -685,7 +575,7 @@ escribirBitacora2(int idTripulante, char* mensaje){
 		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA BITACORA ---");
 	}
 
-	unlock(bitacora->mutex);
+	unlock(&bitacora->mutex);
 }
 
 
@@ -803,7 +693,7 @@ void actualizarFile(t_file2 archivo){
 }
 
 
-void actualizarBitacora(t_bitacora_tripulante bitacora){
+void actualizarBitacora(t_bitacora_tripulante* bitacora){
 
 	t_config* configBitacora = config_create();
 

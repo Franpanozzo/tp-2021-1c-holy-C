@@ -17,18 +17,6 @@ typedef struct{
 
 typedef struct{
 
-	uint32_t tamanioArchivo;
-	uint32_t cantidadBloques;
-	char* bloquesQueOcupa;
-	t_list* bloques;
-	char* caracterLlenado;
-	char* md5_archivo;
-
-}t_file;
-
-
-typedef struct{
-
 	char* puntoMontaje;
 	int puerto;
 	int tiempoSincronizacion;
@@ -36,24 +24,6 @@ typedef struct{
 
 }t_datosConfig;
 
-typedef struct{
-
-	int bloquesNuevosAocupar;
-	int caracteresAguardar;
-
-}t_info;
-
-
-typedef struct {
-
-	t_config* config;
-	t_file* file;
-	pthread_mutex_t* mutex;
-	char * path;
-	bool configSeCreo;
-
-}tarea;
-
 
 typedef struct{
 
@@ -61,7 +31,7 @@ typedef struct{
 	t_list* bloques;
 	char* caracterLlenado;
 	char* md5_archivo;
-	pthread_mutex_t* mutex;
+	pthread_mutex_t mutex;
 	char * path;
 
 }t_file2;
@@ -71,7 +41,7 @@ typedef struct{
 
 	uint32_t tamanioArchivo;
 	t_list* bloques;
-	pthread_mutex_t* mutex;
+	pthread_mutex_t mutex;
 	char * path;
 
 }t_bitacora_tripulante;
@@ -79,44 +49,30 @@ typedef struct{
 
 puertoEIP* puertoEIPDisc;
 
-pthread_mutex_t mutexBitacora;
-pthread_mutex_t mutexSuperBloque;
 pthread_mutex_t mutexMemoriaSecundaria;
 pthread_mutex_t mutexBitMap;
 pthread_mutex_t mutexEstructurasFile;
-pthread_mutex_t mutexOxigeno;
-pthread_mutex_t mutexComida;
-pthread_mutex_t mutexBasura;
-pthread_mutex_t mutexEstructuraOxigeno;
-pthread_mutex_t mutexEstructuraComida;
-pthread_mutex_t mutexEstructuraBasura;
 pthread_t manejoTripulante;
 pthread_t hiloSincronizador;
 t_config* configImongo;
-t_config* configSuperBloque;
-t_config* configOxigeno;
-t_config* configComida;
-t_config* configBasura;
 t_log* logImongo;
 t_datosConfig* datosConfig;
-t_superBloque* superBloque;
 char* bitArray;
-tarea* oxigeno;
-tarea* comida;
-tarea* basura;
+
+t_superBloque* superBloque;
+t_file2* oxigeno;
+t_file2* comida;
+t_file2* basura;
+t_dictionary * bitacoras;
+
 char* memoriaSecundaria;
 char* copiaMemoriaSecundaria;
-char** tareas;
-char* pathSuperBloque;
-char* pathBloque;
-char* pathOxigeno;
-char* pathComida;
-char* pathBasura;
 char* pathFiles;
-char* pathBitacora;
+char* pathBitacoras;
+char* pathBloque;
+
 t_list* listaPosicionesSabotaje;
 int proximoPosSabotaje;
-
 
 #endif
 
