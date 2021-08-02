@@ -117,7 +117,7 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirBitacora2(mensaje, stringIdtripulante);
+			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
 			free(desplazamiento);
@@ -127,33 +127,30 @@ void deserializarSegun(t_paquete* paquete){
 
 		case INICIO_TAREA:
 		{
-
-			/*
 			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
 
 			log_info(logImongo,"Se recibio el inicio de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
 			char* mensaje = string_from_format("Comienza la ejecucion de la tarea %s", avisoTarea->nombreTarea);
 
-			char* stringIdtripulante = string_itoa(idTripulante);
+			char* stringIdtripulante = string_itoa(avisoTarea->idTripulante);
 
 			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
 
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirBitacora2(mensaje, stringIdtripulante);
+			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
-			 */
+
 			break;
 		}
 
 		case FIN_TAREA:
 		{
-			/*
 			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
@@ -167,14 +164,13 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirBitacora2(mensaje, stringIdtripulante);
+			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
 
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
 
-			 */
 			break;
 		}
 
@@ -193,7 +189,7 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirBitacora2(mensaje, stringIdtripulante);
+			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
 
@@ -215,7 +211,7 @@ void deserializarSegun(t_paquete* paquete){
 				crearBitacora(stringIdtripulante);
 			}
 
-			escribirBitacora2(mensaje, stringIdtripulante);
+			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
 
@@ -291,6 +287,11 @@ void crearFileSystemExistente(){
 	cargarFile(oxigeno);
 	cargarFile(comida);
 	cargarFile(basura);
+
+	if(!verificarSiExiste(pathBitacoras)){
+
+		mkdir(pathBitacoras,0777);
+	}
 
 	log_info(logImongo,"Se levanto el file system existente");
 }
@@ -369,6 +370,10 @@ void crearFileSystemDesdeCero(){
 	crearFile(comida);
 	crearFile(basura);
 
+	if(!verificarSiExiste(pathBitacoras)){
+
+		mkdir(pathBitacoras,0777);
+	}
 
 	int fd = open(pathBloque,O_RDWR|O_CREAT,S_IRWXU|S_IRWXG|S_IRWXO);
 
@@ -416,7 +421,6 @@ void crearFile(t_file2* archivo){
 
 	FILE* fd = fopen(archivo->path,"wb");
 	fclose(fd);
-	//log_info(logImongo,"ACA 1");
 
 	archivo->tamanioArchivo = 0;
 	archivo->bloques = list_create();

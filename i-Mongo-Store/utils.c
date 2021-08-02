@@ -584,16 +584,15 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 	uint32_t offsetMensaje = 0;
 	uint32_t bloque = 0;
 
-	log_info(logImongo, "Se escribio el mensaje '%s' de %d bytes en la bitacora del tripulante %s y "
-			"paso a tener un tamanio de %d", mensaje, tamanioMensaje, idTripulante, bitacora->tamanioArchivo);
+	log_info(logImongo, "Se va a escribir el mensaje '%s' de %d bytes en la bitacora del tripulante %s y "
+			"pasara a tener un tamanio de %d", mensaje, tamanioMensaje, idTripulante, bitacora->tamanioArchivo);
 
 	lock(&mutexBitMap);
-	t_list* bloquesAocupar = buscarBloques2(tamanioMensaje); //si la cantdad es cero, devuelve una lista vacia
+	t_list* bloquesAocupar = buscarBloques2(max(0, tamanioMensaje - fragmentacionArchivo));
 
 	char* stringBloques = convertirListaEnString(bloquesAocupar);
 	log_info(logImongo, "La bitacora del tripulante %s va a ocupar los bloques %s", idTripulante, stringBloques);
 	free(stringBloques);
-
 
 	if(!list_is_empty(bloquesAocupar) || tamanioMensaje <= fragmentacionArchivo){
 
@@ -604,7 +603,6 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
 			char* contenidoUltimoBloque = string_substring_until(mensaje, min(fragmentacionArchivo, tamanioMensaje));
 			escribirBloque(bloque, contenidoUltimoBloque, superBloque->block_size - fragmentacionArchivo);
-			ocuparBloque(bloque);
 			offsetMensaje = min(fragmentacionArchivo, tamanioMensaje);
 		}
 
@@ -617,7 +615,7 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 			escribirBloque(bloque, fragmentoAescribir, 0);
 			ocuparBloque(bloque);
 			offsetMensaje += superBloque->block_size;
-			free(fragmentoAescribir);
+			//free(fragmentoAescribir);
 		}
 
 		actualizarSuperBloque();
@@ -645,9 +643,6 @@ uint32_t fragmentacion(uint32_t tamanioArchivo){
 
 
 void escribirBloque(uint32_t bloque, char* contenido, uint32_t tamanioBloque){
-
-	//char* dupContenido = string_duplicate(contenido);
-	//string_append(&dupContenido, "\0");
 
 	uint32_t posicionEnBites = bloque * superBloque->block_size + tamanioBloque;
 
@@ -744,8 +739,8 @@ void actualizarBitacora(t_bitacora_tripulante* bitacora){
 	char* stringBloques = convertirListaEnString(bitacora->bloques);
 	char* stringSize = string_itoa(bitacora->tamanioArchivo);
 
-	config_set_value(configBitacora, stringBloques, "BLOCKS");
-	config_set_value(configBitacora, stringSize, "SIZE");
+	config_set_value(configBitacora, "BLOCKS", stringBloques);
+	config_set_value(configBitacora, "SIZE", stringSize);
 
 	config_save(configBitacora);
 	config_destroy(configBitacora);
