@@ -316,9 +316,9 @@ void eliminarBitacorasAnteriores(){
 
 	t_config* config;
 
-	char* pathBitacoraTripulante = strdup(pathBitacoras);
-
 	int i = 1;
+
+	char* pathBitacoraTripulante = strdup(pathBitacoras);
 
 	string_append_with_format(&pathBitacoraTripulante,"/Tripulante%d.ims",i);
 
@@ -333,6 +333,8 @@ void eliminarBitacorasAnteriores(){
 		 remove(pathBitacoraTripulante);
 
 		 i++;
+
+		 pathBitacoraTripulante = strdup(pathBitacoras);
 
 		 string_append_with_format(&pathBitacoraTripulante,"/Tripulante%d.ims",i);
 
