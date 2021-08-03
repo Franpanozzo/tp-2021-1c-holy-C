@@ -280,6 +280,67 @@ void seleccionarTarea(t_tarea* tarea){
 }
 
 
+void eliminarBloquesDeBitacoraTripulante(t_config* config){
+
+	char** bloquesQueOcupa = config_get_array_value(config,"BLOCKS");
+
+	int i = 0;
+
+	uint32_t bloque = 0;
+
+	while((*(bloquesQueOcupa + i)) != NULL){
+
+		bloque = atoi(*(bloquesQueOcupa + i));
+		consumirBloque(bloque,superBloque->block_size,superBloque->block_size);
+		liberarBloque(bloque);
+		i++;
+	}
+
+	actualizarSuperBloque();
+
+	config_destroy(config);
+
+	for(int j=0; j<i; j++){
+
+		free(*(bloquesQueOcupa + j));
+
+	}
+
+	free(bloquesQueOcupa);
+
+}
+
+
+void eliminarBitacorasAnteriores(){
+
+	t_config* config;
+
+	char* pathBitacoraTripulante;
+
+	int i = 1;
+
+	string_append_with_format(&pathBitacoraTripulante,"%s/Tripulante%d.ims",pathBitacoras,i);
+
+
+		while(verificarSiExiste(pathBitacoraTripulante)){
+
+		 config = config_create(pathBitacoraTripulante);
+
+		 eliminarBloquesDeBitacoraTripulante(config);
+
+		 remove(pathBitacoraTripulante);
+
+		 i++;
+
+		 string_append_with_format(&pathBitacoraTripulante,"%s/Tripulante%d.ims",pathBitacoras,i);
+
+		}
+
+		free(pathBitacoraTripulante);
+
+}
+
+
 void crearFileSystemExistente(){
 
 	cargarSuperBloque();
@@ -292,6 +353,8 @@ void crearFileSystemExistente(){
 
 		mkdir(pathBitacoras,0777);
 	}
+
+	//eliminarBitacorasAnteriores();
 
 	log_info(logImongo,"Se levanto el file system existente");
 }

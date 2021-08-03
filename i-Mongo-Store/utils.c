@@ -68,6 +68,7 @@ void cargarPaths(){
 	comida->path = crearDestinoApartirDeRaiz("Files/Comida.ims");
 	basura->path = crearDestinoApartirDeRaiz("Files/Basura.ims");
 	pathBitacoras = crearDestinoApartirDeRaiz("Files/Bitacora");
+
 }
 
 

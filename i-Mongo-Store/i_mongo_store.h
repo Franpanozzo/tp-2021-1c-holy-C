@@ -46,6 +46,8 @@ void crearFileSystemExistente();
 void cargarSuperBloque();
 void cargarBlocks();
 void cargarFile(t_file2*);
+void eliminarBitacorasAnteriores();
+void eliminarBloquesDeBitacoraTripulante(t_config*);
 
 
 #endif
