@@ -285,6 +285,9 @@ bool haySabotajeBloquesEnFile(t_file2* archivo){
 	t_config* config = config_create(archivo->path);
 	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
+
+	log_info(logImongo,"LA LISTA ES %s", convertirListaEnString(listaBloques));
+
 	char* md5calculado = obtenerMD5(listaBloques);
 
 	char* md5real = config_get_string_value(config, "MD5_ARCHIVO");
@@ -313,7 +316,6 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
 	char* md5calculado = obtenerMD5(listaBloques);
 	char* md5anterior = config_get_string_value(config, "MD5_ARCHIVO");
-	config_set_value(config, "MD5_ARCHIVO", md5calculado);
 
 	uint32_t cantCaracteresAescribir = config_get_long_value(config, "SIZE");
 	char* stringCaracter = config_get_string_value(config, "CARACTER_LLENADO");
@@ -330,13 +332,16 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 		cantCaracteresAescribir = max(cantCaracteresAescribir - tamanioBloque, 0);
 	}
 
-	config_save(config);
-	config_destroy(config);
-	config_destroy(configSB);
 
 	log_info(logImongo,"YA SE SOLUCIONO EL SABOTAJE, se cambio el md5 de %s a %s "
 			"para el nuevo orden de bloques", md5anterior, md5calculado);
 
+	config_set_value(config, "MD5_ARCHIVO", md5calculado);
+	config_save(config);
+	config_destroy(config);
+	config_destroy(configSB);
+
+	archivo->bloques = listaBloques;
 	/*
 	free(md5anterior);
 	free(stringCaracter);

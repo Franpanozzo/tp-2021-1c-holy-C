@@ -29,7 +29,7 @@
 	void comunicarseConTripulantes(t_lista*, void(*closure)(void*));
 
 	void pasarDeLista(t_tripulante*);
-	bool patotaSinTripulantes(uint32_t);
+	bool patotaSinTripulantes(uint32_t, uint32_t);
 	void eliminiarPatota(uint32_t idPatota);
 	void meterEnLista(t_tripulante* , t_lista*);
 	void* sacarDeLista(t_lista*);

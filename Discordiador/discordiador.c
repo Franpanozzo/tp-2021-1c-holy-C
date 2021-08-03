@@ -96,7 +96,9 @@ void hiloPlanificador(){
 			contadorCiclos++;
 		}
 		else{
+			log_info(logDiscordiador, "SE EMPEZO EL WAIT SEM HAY TRIPUS");
 			sem_wait(&semHayTripulantes);
+			log_info(logDiscordiador, "SE TERMINO EL WAIT SEM HAY TRIPUS");
 		}
 	}
 }
@@ -306,8 +308,9 @@ void hiloTripulante(t_tripulante* tripulante){
 	}
 
 	lock(&mutexEliminarPatota);
-	if(patotaSinTripulantes(tripulante->idPatota)){
-		log_info(logDiscordiador,"Ya no quedan tripus de la patota %d", tripulante->idPatota);
+	if(patotaSinTripulantes(tripulante->idPatota, tripulante->idTripulante)){
+		log_info(logDiscordiador,"Llego el tripu %d y ya no quedan tripus de la patota %d",
+				tripulante->idTripulante, tripulante->idPatota);
 		eliminiarPatota(tripulante->idPatota);
 	}
 	unlock(&mutexEliminarPatota);
@@ -315,10 +318,6 @@ void hiloTripulante(t_tripulante* tripulante){
 
 
 void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cantidadTripulantes){
-
-	t_patota* patota = asignarDatosAPatota(tareasString);
-	int miRAMsocket = enviarA(puertoEIPRAM, patota, PATOTA);
-	t_list* listaTripulantes = list_create();
 
 	void empezarHiloTripulante(t_tripulante* tripulante){
 
@@ -331,6 +330,9 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		pthread_detach(_hiloTripulante);
 	}
 
+	t_patota* patota = asignarDatosAPatota(tareasString);
+	int miRAMsocket = enviarA(puertoEIPRAM, patota, PATOTA);
+	t_list* listaTripulantes = list_create();
 
 	if(confirmacion(miRAMsocket)){
 
@@ -341,15 +343,17 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 			iniciarTripulante(*(coordenadas+i), patota->ID, listaTripulantes);
 		}
 
+		if(totalTripulantes() == list_size(listaTripulantes)){
+			log_info(logDiscordiador, "SE HIZO POST AL SEM HAY TRIPUS");
+			sem_post(&semHayTripulantes);
+		}
+
 		list_iterate(listaTripulantes, (void*) empezarHiloTripulante);
 	}
 	else{
 		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota %d",patota->ID);
 	}
 
-	if(totalTripulantes() == 0){
-		sem_post(&semHayTripulantes);
-	}
 
 	eliminarPatota(patota);
 	close(miRAMsocket);

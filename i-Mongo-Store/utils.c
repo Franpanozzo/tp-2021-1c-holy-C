@@ -191,9 +191,7 @@ void sincronizarMemoriaSecundaria(){
 		sleep(tiempoEspera);
 
 		lock(&mutexMemoriaSecundaria);
-
 		memcpy(memoriaSecundaria,copiaMemoriaSecundaria,size);
-
 		unlock(&mutexMemoriaSecundaria);
 
 		int flag = msync(memoriaSecundaria,size,MS_SYNC);
@@ -242,7 +240,7 @@ char * reconstruirArchivo(t_list * bloques){
 		log_info(logImongo,"offset memoria %d",offsetMemoria);
 		log_info(logImongo,"offset file %d",offsetFile);
 		lock(&mutexMemoriaSecundaria);
-		memcpy(copiaFile+offsetFile,copiaMemoriaSecundaria + offsetMemoria ,min(superBloque->block_size, tamanio - offsetFile));
+		memcpy(copiaFile + offsetFile, copiaMemoriaSecundaria + offsetMemoria, superBloque->block_size);
 		unlock(&mutexMemoriaSecundaria);
 	}
 	copiaFile[tamanio] = '\0';

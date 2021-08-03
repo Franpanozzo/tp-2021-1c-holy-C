@@ -320,7 +320,7 @@ void pasarDeLista(t_tripulante* tripulante){
 }
 
 
-bool patotaSinTripulantes(uint32_t idPatota){
+bool patotaSinTripulantes(uint32_t idPatota, uint32_t idTripulante){
 
 	t_list* listaAux = list_create();
 
@@ -334,6 +334,10 @@ bool patotaSinTripulantes(uint32_t idPatota){
 		return idPatota == tripulante->idPatota;
 	}
 
+	bool estaEnExit(t_tripulante* tripulante){
+		return idTripulante == tripulante->idTripulante;
+	}
+
 	agregarAlista(listaNew);
 	agregarAlista(listaReady);
 	agregarAlista(listaExec);
@@ -342,7 +346,10 @@ bool patotaSinTripulantes(uint32_t idPatota){
 	if(sabotaje->tripulanteSabotaje != NULL)
 		list_add(listaAux, sabotaje->tripulanteSabotaje);
 
-	bool result = list_any_satisfy(listaAux, (void*)esDeLaPatota) == 0;
+
+	bool result = list_any_satisfy(listaAux, (void*)esDeLaPatota) == 0 &&
+			list_any_satisfy(listaExit->elementos, (void*)estaEnExit);
+
 	list_destroy(listaAux);
 	return result;
 }
