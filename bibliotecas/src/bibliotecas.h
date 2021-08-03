@@ -42,7 +42,8 @@
 		ID_SABOTAJE, // id tripulante
 		FIN_SABOTAJE,// id tripulante
 		COORDENADAS_SABOTAJE,
-		STRING
+		STRING,
+		OBTENER_BITACORA
 
 	} tipoDeDato;
 

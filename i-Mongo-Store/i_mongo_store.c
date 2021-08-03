@@ -74,14 +74,12 @@ void manejarTripulante(int *tripulanteSock) {
 
     t_paquete* paquete = recibirPaquete(*tripulanteSock);
 
-    deserializarSegun(paquete);
+    deserializarSegun(paquete,tripulanteSock);
 
-    close(*tripulanteSock);
-    free(tripulanteSock);
 }
 
 
-void deserializarSegun(t_paquete* paquete){
+void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 	switch(paquete->codigoOperacion){
 
@@ -176,7 +174,7 @@ void deserializarSegun(t_paquete* paquete){
 
 		case ID_SABOTAJE:
 		{
-			int idTripulante = deserializarAvisoSabotaje(paquete->buffer->stream);
+			int idTripulante = deserializarID(paquete->buffer->stream);
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
 
@@ -198,7 +196,7 @@ void deserializarSegun(t_paquete* paquete){
 
 		case FIN_SABOTAJE:
 		{
-			int idTripulante = deserializarAvisoSabotaje(paquete->buffer->stream);
+			int idTripulante = deserializarID(paquete->buffer->stream);
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
 
@@ -218,11 +216,30 @@ void deserializarSegun(t_paquete* paquete){
 			break;
 		}
 
+		case OBTENER_BITACORA:
+		{
+			int idTripulante = deserializarID(paquete->buffer->stream);
+
+			t_bitacora_tripulante* bitacora = (t_bitacora_tripulante*) dictionary_get(bitacoras, string_itoa(idTripulante));
+
+			char* bitacoraTripulante = reconstruirArchivo(bitacora->bloques);
+
+			t_paquete* paquete = armarPaqueteCon(bitacoraTripulante,STRING);
+
+			enviarPaquete(paquete,*tripulanteSock);
+
+			break;
+		}
+
 		default:
 			log_info(logImongo,"i-Mongo-Store no entiende esa tarea");
 	}
 
+	 close(*tripulanteSock);
+	 free(tripulanteSock);
+
 	eliminarPaquete(paquete);
+
 }
 
 

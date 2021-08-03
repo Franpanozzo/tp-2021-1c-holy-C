@@ -33,7 +33,7 @@ char* convertirBitmapEnString(t_bitarray*);
 
 t_desplazamiento* deserializarDesplazamiento(void*);
 t_avisoTarea* deserializarAvisoTarea(void*);
-int deserializarAvisoSabotaje(void*);
+int deserializarID(void*);
 
 void crearBitacora(char*);
 char* pathBitacoraTripulante(char*);

@@ -34,7 +34,7 @@
 void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
-void deserializarSegun(t_paquete*);
+void deserializarSegun(t_paquete*,int*);
 void seleccionarTarea(t_tarea*);
 
 void iniciarFileSystem();

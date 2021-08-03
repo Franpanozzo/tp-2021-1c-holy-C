@@ -343,7 +343,7 @@ t_avisoTarea* deserializarAvisoTarea(void* stream){
 }
 
 
-int deserializarAvisoSabotaje(void* stream){
+int deserializarID(void* stream){
 
 	int *id = malloc(sizeof(uint32_t));
 	memcpy(id, stream, sizeof(uint32_t));
