@@ -463,47 +463,47 @@ void sabotaje(int signal) {
 void generarTarea2(t_file2* archivo, uint32_t cantidad){
 
 	lock(&archivo->mutex);
-	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
+	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);//SACA LA FRAGMENTACION DE ACUERDO AL ARCHIVO
 	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacionArchivo);
 	uint32_t bloque = 0;
 
 	lock(&mutexBitMap);
-	t_list* bloquesAocupar = buscarBloques2(max(0, cantidad - fragmentacionArchivo));
+	t_list* bloquesAocupar = buscarBloques2(max(0, cantidad - fragmentacionArchivo));//BUSCA LOS BLOQUES LIBRES BIT ARRAY Y LOS METE EN UNA LISTA
 
-	char* stringBloques = convertirListaEnString(bloquesAocupar);
+	char* stringBloques = convertirListaEnString(bloquesAocupar);//CONVIERTE LA LISTA DE BLOQUES A OCUPAR EN STRING
 	log_info(logImongo, "El archivo %s va a ocupar los bloques %s", archivo->path, stringBloques);
 	free(stringBloques);
 
-	if(!list_is_empty(bloquesAocupar) || cantidad <= fragmentacionArchivo){
+	if(!list_is_empty(bloquesAocupar) || cantidad <= fragmentacionArchivo){//SI LOS BLOQUES A OCUPAR NO SON 0 Y SI CANTIDAD DE CARACTERES A GENERAR ES MENOR O IGUAL A LA FRAGMENTACION DEL ARCHIVO
 
-		archivo->tamanioArchivo += cantidad;
+		archivo->tamanioArchivo += cantidad;//SE ACTUALIZA LA ESTRUCTURA CON EL TAMAÑO NUEVO PORQUE EN ESTE CASO LO UNICO QUE SE MODIFICA ES EL TAMAÑO
 		log_info(logImongo, "Se agrego %d bytes al archivo %s y paso a tener un tamanio de %d",
 				cantidad, archivo->path, archivo->tamanioArchivo);
 
-		if(fragmentacionArchivo > 0){
+		if(fragmentacionArchivo > 0){// SI LA FRAGMENTACION ES MAYOR A 0
 
-			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
+			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);//ESCRIBIR EN EL ULTIMO BLOQUE DE LA LISTA
 			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(fragmentacionArchivo, cantidad)),
-					superBloque->block_size - fragmentacionArchivo);
-			cantidad -= fragmentacionArchivo;
+					superBloque->block_size - fragmentacionArchivo);//SE ESCRIBE EL EQUIVALENTE A LA FRAGMENTACION EN EL ULTIMO BLOQUE
+			cantidad -= fragmentacionArchivo;//SE LE RESTA LA FRAGMENTACION RECIEN OCUPADA A LA CANTIDAD DE CARACTERES QUE SE IBAN A CONSUMIR DE UN PRINCIPIO
 		}
 
-		while(!list_is_empty(bloquesAocupar)){
+		while(!list_is_empty(bloquesAocupar)){//MIENTRAS EXISTAN BLOQUES A OCUPAR
 
-			list_add(archivo->bloques, list_remove(bloquesAocupar, 0));
-			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);
+			list_add(archivo->bloques, list_remove(bloquesAocupar, 0));//AGREGA LOS BLOQUES QUE VA A GUARDAR A LA ESTRUCTURA ADMINISTRATIVA
+			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);// AGARRA EL NUMERO DE BLOQUE A GUARDAR
 			log_info(logImongo, "Se agrego el bloque %d al archivo %s", bloque, archivo->path);
-			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad)), 0);
-			ocuparBloque(bloque);
-			cantidad -= superBloque->block_size;
+			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad)), 0);// SE ESCRIBE EN EL BLOQUE, EL 0 SIGNIFICA BLOQUE ENTERO
+			ocuparBloque(bloque);//ACTUALIZA BIT ARRAY
+			cantidad -= superBloque->block_size;// DECREMENTA LA CANTIDAD DE CARACTERES A GUARDAR (LA CANTIDAD DEL TAMAÑO DEL BLOQUE)
 		}
 
-		actualizarSuperBloque();
+		actualizarSuperBloque();//ACTUALIZA ESTRUCTURA SUPERBLOQUE
 		unlock(&mutexBitMap);
 
 		archivo->md5_archivo = obtenerMD5(archivo->bloques);
 
-		actualizarFile(archivo);
+		actualizarFile(archivo);//ACTUALIZA META DATA CON ESTRUCTURAS ADMINISTRATIVAS
 	}
 	else{
 		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA TAREA ---");
@@ -518,54 +518,54 @@ void consumirTarea2(t_file2* archivo, uint32_t cantidad){
 
 	lock(&archivo->mutex);
 
-	cantidad = min(cantidad, archivo->tamanioArchivo);
-	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);
+	cantidad = min(cantidad, archivo->tamanioArchivo);// FIJA LA VARIABLE CANTIDAD COMO EL MINIMO ENTRE LO QUE HAY Y LO QUE HAY Q CONSUMIR, ES DECIR, SI HAY Q CONSUMIR 7 Y HAY 5, SE CONSUMEN 5
+	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);// GUARDAMOS LA FRAGMENTACIÓN A CUANDO QUEREMOS CONSUMIR
 	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacionArchivo);
 
-	archivo->tamanioArchivo -= cantidad;
+	archivo->tamanioArchivo -= cantidad;//LE RESTAMOS AL ARCHIVO LA CANTIDAD QUE SE VA A CONSUMIR
 	log_info(logImongo, "Se consumio %d bytes del archivo %s y paso a tener un tamanio de %d",
 			cantidad, archivo->path, archivo->tamanioArchivo);
 
 	unlock(&mutexBitMap);
 
-	if(fragmentacionArchivo > 0){
+	if(fragmentacionArchivo > 0){ // SI LA FRAGMENTACION ES MAYOR A 0
 
-		uint32_t* bloque = (int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
-		uint32_t tamanioUltBloque = superBloque->block_size - fragmentacionArchivo;
-		consumirBloque(*bloque, min(cantidad, tamanioUltBloque), tamanioUltBloque);
-		if(cantidad >= tamanioUltBloque){
-			cantidad = cantidad - tamanioUltBloque;
-			liberarBloque(*bloque);
+		uint32_t* bloque = (uint32_t*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+		uint32_t tamanioUltBloque = superBloque->block_size - fragmentacionArchivo; // GUARDO EN UNA VARIABLE EL TAMAÑO DEL ÚLTIMO BLOQUE
+		consumirBloque(*bloque, min(cantidad, tamanioUltBloque), tamanioUltBloque);//  SE CONSUME DEL ULTIMO BLOQUE EL MINIMO ENTRE LA CANTIDAD A CONSUMIR Y EL TAMANIO QUE HAY
+		if(cantidad >= tamanioUltBloque){ //SI LA CANTIDAD A CONSUMIR ES MAYOR O IGUAL A LO QUE HABIA EN EL ULTIMO BLOQUE
+			cantidad -= tamanioUltBloque; //LE RESTO LO QUE CONSUMI DEL ULTIMO BLOQUE A LO QUE ME QUEDA POR CONSUMIR
+			liberarBloque(*bloque);//LIBERO BLOQUE EN EL BITMAP
 			free(bloque);
 		}
 		else{
-			cantidad = 0;
+			cantidad = 0;// ESTE CASO ES CUANDO LA FRAGMENTACION ALCANZO A CONSUMIR, NO QUEDA MAS CANATIDAD POR CONSUMIR
 			list_add(archivo->bloques, bloque);
 		}
 	}
 
-	while(cantidad > 0){
+	while(cantidad > 0){//MIENTRAS HAYA CARACTERES POR CONSUMIR
 
-		uint32_t* bloque =(int*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
-		consumirBloque(*bloque, min(cantidad, superBloque->block_size), superBloque->block_size);
-		if(cantidad >= superBloque->block_size){
-			cantidad = cantidad - superBloque->block_size;
+		uint32_t* bloque = (uint32_t*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);// SE AGARRA EL BLOQUE QUE ESTA EN LA ULTIMA POSICION
+		consumirBloque(*bloque, min(cantidad, superBloque->block_size), superBloque->block_size);// SE CONSUME SIEMPRE LA CANTIDAD DEL BLOQUE COMO MAXIMO
+		if(cantidad >= superBloque->block_size){//SI LA CANTIDAD A CONSUMIR ES MAYOR A LA DEL BLOQUE
+			cantidad -= superBloque->block_size; // LE RESTO EL TAMAÑO DEL BLOQUE
 			liberarBloque(*bloque);
 			free(bloque);
 		}
 		else{
-			cantidad = 0;
-			list_add(archivo->bloques, bloque);
+			cantidad = 0;//SI SOLO ES LA FRAGMENTACION INTERNA LO QUE SE CONSUMIO, NO SE PUEDE CONSUMIR MAS
+			list_add(archivo->bloques, bloque);// COMO SE SACO EL ULTIMO BLOQUE, SE VUELVE A AGREGAR EN LA ESTRUCTURA ADMINISTRATIVA
 		}
 		//free(bloque);
 	}
 
-	actualizarSuperBloque();
+	actualizarSuperBloque();// SE ACTUALIZA SUPERBLOQUE
 	unlock(&mutexBitMap);
 
-	archivo->md5_archivo = obtenerMD5(archivo->bloques);
+	archivo->md5_archivo = obtenerMD5(archivo->bloques);// SE ACTUALIZA MD5
 
-	actualizarFile(archivo);
+	actualizarFile(archivo);//SE ACTUALIZA LA METADATA
 
 	unlock(&archivo->mutex);
 }
