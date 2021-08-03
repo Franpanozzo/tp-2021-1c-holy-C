@@ -197,11 +197,17 @@ void sincronizarMemoriaSecundaria(){
 		unlock(&mutexMemoriaSecundaria);
 
 		int flag = msync(memoriaSecundaria,size,MS_SYNC);
+
 		if(flag ==0)
+
 			log_info(logImongo, "Se sincronizo la memoria con éxito");
+
 		else if(flag == -1)
+
 			log_error(logImongo, "No se sincronizo bien la memoria");
+
 		else
+
 			log_error(logImongo, "La sincronizacion esta arrojando cualquier valor");
 	}
 }

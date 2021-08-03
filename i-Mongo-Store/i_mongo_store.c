@@ -291,6 +291,7 @@ void eliminarBloquesDeBitacoraTripulante(t_config* config){
 	while((*(bloquesQueOcupa + i)) != NULL){
 
 		bloque = atoi(*(bloquesQueOcupa + i));
+		log_info(logImongo,"Los bloques que ocupa la tarea en curso son %d", bloque);
 		consumirBloque(bloque,superBloque->block_size,superBloque->block_size);
 		liberarBloque(bloque);
 		i++;
@@ -315,16 +316,17 @@ void eliminarBitacorasAnteriores(){
 
 	t_config* config;
 
-	char* pathBitacoraTripulante;
+	char* pathBitacoraTripulante = strdup(pathBitacoras);
 
 	int i = 1;
 
-	string_append_with_format(&pathBitacoraTripulante,"%s/Tripulante%d.ims",pathBitacoras,i);
-
+	string_append_with_format(&pathBitacoraTripulante,"/Tripulante%d.ims",i);
 
 		while(verificarSiExiste(pathBitacoraTripulante)){
 
-		 config = config_create(pathBitacoraTripulante);
+		log_info(logImongo,"El path de la metadata del tripulante %d es %s",i,pathBitacoraTripulante);
+
+		 crearConfig(&config,pathBitacoraTripulante);
 
 		 eliminarBloquesDeBitacoraTripulante(config);
 
@@ -332,7 +334,7 @@ void eliminarBitacorasAnteriores(){
 
 		 i++;
 
-		 string_append_with_format(&pathBitacoraTripulante,"%s/Tripulante%d.ims",pathBitacoras,i);
+		 string_append_with_format(&pathBitacoraTripulante,"/Tripulante%d.ims",i);
 
 		}
 
@@ -354,7 +356,7 @@ void crearFileSystemExistente(){
 		mkdir(pathBitacoras,0777);
 	}
 
-	//eliminarBitacorasAnteriores();
+	eliminarBitacorasAnteriores();
 
 	log_info(logImongo,"Se levanto el file system existente");
 }
