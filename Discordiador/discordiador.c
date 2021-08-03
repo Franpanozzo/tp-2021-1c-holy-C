@@ -28,7 +28,7 @@ int main() {
 	sem_init(&sabotaje->semaforoTerminoTripulante,0,0);
 	sem_init(&sabotaje->semaforoTerminoSabotaje,0,0);
 	sem_init(&semPlanificacion,0,0);
-
+	sem_init(&semHayTripulantes, 0, 0);
 
 	pthread_create(&planificador, NULL, (void*) hiloPlanificador, NULL);
 	pthread_detach(planificador);
@@ -94,6 +94,9 @@ void hiloPlanificador(){
 			comunicarseConTripulantes(listaExit, (void*)avisarTerminoPlanificacion);
 
 			contadorCiclos++;
+		}
+		else{
+			sem_wait(&semHayTripulantes);
 		}
 	}
 }
@@ -302,10 +305,12 @@ void hiloTripulante(t_tripulante* tripulante){
 		}
 	}
 
+	lock(&mutexEliminarPatota);
 	if(patotaSinTripulantes(tripulante->idPatota)){
 		log_info(logDiscordiador,"Ya no quedan tripus de la patota %d", tripulante->idPatota);
 		eliminiarPatota(tripulante->idPatota);
 	}
+	unlock(&mutexEliminarPatota);
 }
 
 
@@ -340,6 +345,10 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 	}
 	else{
 		log_info(logDiscordiador,"No hay espacio suficiente en memoria para iniciar la patota %d",patota->ID);
+	}
+
+	if(totalTripulantes() == 0){
+		sem_post(&semHayTripulantes);
 	}
 
 	eliminarPatota(patota);

@@ -45,6 +45,7 @@ void iniciarMutex(){
 	pthread_mutex_init(&mutexTotalTripus, NULL);
 	pthread_mutex_init(&mutexIdTripulanteBlocked, NULL);
 	pthread_mutex_init(&mutexPlanificador, NULL);
+	pthread_mutex_init(&mutexEliminarPatota, NULL);
 }
 
 void cargarConfiguracion(){
