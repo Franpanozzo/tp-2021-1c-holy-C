@@ -1,9 +1,6 @@
 #ifndef SABOTAJE_H_
 #define SABOTAJE_H_
 
-/*
-//#include "variables.h"
-//#include "utils.h"
 #include "i_mongo_store.h"
 
 
@@ -12,25 +9,22 @@ bool haySabotajeCantBloquesEnSuperBloque();
 void arreglarSabotajeCantBloquesEnSuperBloque();
 bool haySabotajeBitmapEnSuperBloque();
 void arreglarSabotajeBitmapEnSuperBloque();
-bool haySabotajeSizeEnFile(tarea*);
-void arreglarSabotajeSizeEnFile(tarea*);
-bool haySabotajeCantBloquesEnFile(tarea*);
-void arreglarSabotajeCantBloquesEnFile(tarea*);
-bool haySabotajeBloquesEnFile(tarea*);
-void arreglarSabotajeBloquesEnFile(tarea*);
+bool haySabotajeSizeEnFile(t_file2*);
+void arreglarSabotajeSizeEnFile(t_file2*);
+bool haySabotajeCantBloquesEnFile(t_file2*);
+void arreglarSabotajeCantBloquesEnFile(t_file2*);
+bool haySabotajeBloquesEnFile(t_file2*);
+void arreglarSabotajeBloquesEnFile(t_file2*);
 
-//uint32_t max(long int, long int);
 uint32_t cantBloquesEnBlocks();
-uint32_t sizeSegunBlocks(tarea*);
-uint32_t tamanioUltimoBloque(tarea*);
-uint32_t cantBloquesSegunLista(tarea*);
-t_list* obtenerBloquesOcupadosSegunFiles();
+uint32_t sizeSegunBlocks(t_file2*);
+uint32_t tamanioUltimoBloque(t_file2*);
+uint32_t cantBloquesSegunLista(t_file2*);
+bool existeBitacoraTripulante(int);
 t_bitarray* crearBitmap();
-char* convertirBitmapEnString(t_bitarray*);
 void agregarBloquesOcupados(t_list*, t_config*);
-void sabotajesFile(tarea*);
-void escribirBloque(uint32_t, char*);
-void consumirBloque(uint32_t, uint32_t);
+void sabotajesFile(t_file2*);
 
-*/
+
+
 #endif

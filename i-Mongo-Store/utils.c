@@ -456,7 +456,7 @@ void sabotaje(int signal) {
   enviarPaquete(paqueteEnviado, socketDisc);
   close(socketDisc);
 */
-  //buscarSabotaje();
+  buscarSabotaje();
 }
 
 
@@ -726,6 +726,7 @@ void actualizarFile(t_file2* archivo){
 	config_set_value(configFile, "SIZE", stringSize);
 	config_set_value(configFile, "MD5_ARCHIVO", archivo->md5_archivo);
 	config_set_value(configFile, "BLOCK_COUNT", stringCantBloques);
+	config_set_value(configFile, "CARACTER_LLENADO", archivo->caracterLlenado);
 
 	config_save(configFile);
 	config_destroy(configFile);
