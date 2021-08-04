@@ -804,7 +804,9 @@ tcb* obtenerTripulante(t_tablaPaginasPatota* tablaPaginasPatotaActual, int idTri
 int guardarPCBPag(pcb* pcbAGuardar,char* stringTareas) {
 
 	int pcbGuardado, tareasGuardadas;
-	chequeoUltTripu = 1;
+	lock(&mutexChequearUltTripu);
+	chequeoUltTripu = 0;
+	unlock(&mutexChequearUltTripu);
 	t_tablaPaginasPatota* tablaPaginasPatotaActual = malloc(sizeof(t_tablaPaginasPatota));
 	tablaPaginasPatotaActual->idPatota = pcbAGuardar->pid;
 	tablaPaginasPatotaActual->tablaDePaginas = list_create();
@@ -1185,8 +1187,13 @@ void expulsarTripulantePag(int idTripulante,int idPatota) {
 
 		list_destroy(paginasTripu);
 		lock(&mutexChequearUltTripu);
-		if(chequeoUltTripu == 0)
+
+		if(chequeoUltTripu == 0 || expulsarPosta)
 		{
+			lock(&mutexFlagExpulsion);
+			expulsarPosta = 0;
+			unlock(&mutexFlagExpulsion);
+
 			chequeoUltTripu = 1;
 			chequearUltimoTripulante(tablaPatota);
 		}
@@ -1302,6 +1309,7 @@ void dumpPag() {
 	free(rutaAbsoluta);
 	free(dump);
 	free(fechaYHora);
+	free(nombreArchivo);
 }
 
 

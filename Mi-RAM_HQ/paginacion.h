@@ -71,6 +71,7 @@ int cant_frames_virtual;
 int tiempo;
 int punteroClock;
 int chequeoUltTripu;
+int expulsarPosta;
 
 t_list* tablasPaginasPatotas;
 
@@ -88,6 +89,7 @@ pthread_mutex_t mutexAlojados;
 pthread_mutex_t mutexTiempo;
 pthread_mutex_t mutexMapa;
 pthread_mutex_t mutexChequearUltTripu;
+pthread_mutex_t mutexFlagExpulsion;
 
 
 
