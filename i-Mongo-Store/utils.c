@@ -94,6 +94,7 @@ void iniciarMutex(){
 	pthread_mutex_init(&oxigeno->mutex,NULL);
 	pthread_mutex_init(&comida->mutex,NULL);
 	pthread_mutex_init(&basura->mutex,NULL);
+	pthread_mutex_init(&mutexExisteBitacora,NULL);
 }
 
 
@@ -210,22 +211,6 @@ void sincronizarMemoriaSecundaria(){
 	}
 }
 
-/*
-void crearConfigTarea(tarea* structTarea){
-
-	if(structTarea->configSeCreo != true){
-		structTarea->config  = config_create(structTarea->path);
-
-		if(structTarea->config == NULL){
-
-			log_error(logImongo, "La ruta es incorrecta ");
-
-			exit(1);
-		}
-	}
-}
-*/
-
 
 char * reconstruirArchivo(t_list * bloques){
 	int cantidadBloques = list_size(bloques);
@@ -237,8 +222,8 @@ char * reconstruirArchivo(t_list * bloques){
 		int * bloque = list_get(bloques, i);
 		int offsetMemoria =  (*bloque) * superBloque->block_size;
 		int offsetFile = i * superBloque->block_size;
-		log_info(logImongo,"offset memoria %d",offsetMemoria);
-		log_info(logImongo,"offset file %d",offsetFile);
+		//log_info(logImongo,"offset memoria %d",offsetMemoria);
+		//log_info(logImongo,"offset file %d",offsetFile);
 		lock(&mutexMemoriaSecundaria);
 		memcpy(copiaFile + offsetFile, copiaMemoriaSecundaria + offsetMemoria, superBloque->block_size);
 		unlock(&mutexMemoriaSecundaria);
@@ -350,40 +335,6 @@ int deserializarID(void* stream){
 }
 
 
-/*
-char* leerBitacora(int idTripulante){
-
-	char* bitacora;
-
-	char* path = string_from_format("%s/Tripulante%d.ims", pathBitacoras,idTripulante);
-	t_config* config;
-
-	if(verificarSiExiste(path)){
-
-		bitacora = string_new();
-		config = config_create(path);
-		char** arrayBloques = config_get_array_value(config,"BLOCKS");
-		t_list* listaBloques = convertirEnLista(arrayBloques);
-		char* contenidoBloque;
-		char* contenidoBloqueSinFrag;
-
-		for(int i=0; i<list_size(listaBloques); i++){
-
-			contenidoBloque = datosBloque(* (int*)list_get(listaBloques, i));
-	        log_info(logImongo,"El contenido de la biacora q se va a leer es: %s", contenidoBloque);
-			contenidoBloqueSinFrag = string_substring(contenidoBloque, 0, strlen(contenidoBloque));
-			string_append(&bitacora, contenidoBloqueSinFrag);
-		}
-	}
-	else{
-		bitacora = string_from_format("No existe la bitacora del tripulante %d", idTripulante);
-	}
-
-	return bitacora;
-}
-*/
-
-
 void crearBitacora(char* idTripulante){
 
 	t_bitacora_tripulante* bitacoraTripulante = malloc(sizeof(t_bitacora_tripulante));
@@ -446,7 +397,6 @@ t_list* listaCoordenadasSabotaje() {
 
 void sabotaje(int signal) {
 
-	/*
   t_coordenadas* coordenadasSabotaje = list_get(listaPosicionesSabotaje, proximoPosSabotaje);
 
   proximoPosSabotaje++;
@@ -454,14 +404,12 @@ void sabotaje(int signal) {
 
   t_paquete* paqueteEnviado = armarPaqueteCon((void*) coordenadasSabotaje, COORDENADAS_SABOTAJE);
 
-  log_info(logImongo,"\nSABOTAJE - AVISANDO A DISCORDADOR QUE ES EN POS: X:%d - Y:%d\n", coordenadasSabotaje->posX, coordenadasSabotaje->posY);
+  log_info(logImongo,"\nSABOTAJE - AVISANDO A DISCORDADOR QUE ES EN POS: X:%d - Y:%d\n",
+		  coordenadasSabotaje->posX, coordenadasSabotaje->posY);
 
   int socketDisc = iniciarConexionDesdeClienteHacia((void*) puertoEIPDisc);
-
   enviarPaquete(paqueteEnviado, socketDisc);
   close(socketDisc);
-*/
-  buscarSabotaje();
 }
 
 
@@ -589,8 +537,8 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 	uint32_t offsetMensaje = 0;
 	uint32_t bloque = 0;
 
-	log_info(logImongo, "Se va a escribir el mensaje '%s' de %d bytes en la bitacora del tripulante %s y "
-			"pasara a tener un tamanio de %d", mensaje, tamanioMensaje, idTripulante, bitacora->tamanioArchivo);
+	log_info(logImongo, "Se va a escribir el mensaje '%s' de %d bytes en "
+			"la bitacora del tripulante %s", mensaje, tamanioMensaje, idTripulante);
 
 	lock(&mutexBitMap);
 	t_list* bloquesAocupar = buscarBloques2(max(0, tamanioMensaje - fragmentacionArchivo));

@@ -12,6 +12,8 @@ int main(void) {
 	basura = malloc(sizeof(t_file2));
 	basura->caracterLlenado = "B";
 
+	sem_init(&sabotajeResuelto, 0, 0);
+
 	superBloque = malloc(sizeof(t_superBloque));
 
 	bitacoras = dictionary_create();
@@ -87,7 +89,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 		{
 			t_tarea* tarea = deserializarTarea(paquete->buffer->stream);
 
-			log_info(logImongo,"tareaRecibida %s",tarea->nombreTarea);
+			log_info(logImongo,"tarea recibida %s",tarea->nombreTarea);
 
 			seleccionarTarea(tarea);
 
@@ -104,17 +106,17 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			log_info(logImongo,"Se recibio el desplazamiento del tripulante de ID %d", desplazamiento->idTripulante);
 
-			char* mensaje = string_from_format("Se mueve de %d|%d a %d|%d",
+			char* mensaje = string_from_format("Se mueve de %d|%d a %d|%d.",
 					desplazamiento->inicio.posX, desplazamiento->inicio.posY,
 					desplazamiento->fin.posX, desplazamiento->fin.posY);
 
 			char* stringIdtripulante = string_itoa(desplazamiento->idTripulante);
 
+			lock(&mutexExisteBitacora);
 			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
-
 				crearBitacora(stringIdtripulante);
 			}
-
+			unlock(&mutexExisteBitacora);
 			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
@@ -129,14 +131,15 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			log_info(logImongo,"Se recibio el inicio de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
-			char* mensaje = string_from_format("Comienza la ejecucion de la tarea %s", avisoTarea->nombreTarea);
+			char* mensaje = string_from_format("Comenzo la tarea %s.", avisoTarea->nombreTarea);
 
 			char* stringIdtripulante = string_itoa(avisoTarea->idTripulante);
 
+			lock(&mutexExisteBitacora);
 			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
-
 				crearBitacora(stringIdtripulante);
 			}
+			unlock(&mutexExisteBitacora);
 
 			escribirBitacora2(stringIdtripulante, mensaje);
 
@@ -153,14 +156,15 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
-			char* mensaje = string_from_format("Se finaliza la tarea %s", avisoTarea->nombreTarea);
+			char* mensaje = string_from_format("Termino la tarea %s.", avisoTarea->nombreTarea);
 
 			char* stringIdtripulante = string_itoa(avisoTarea->idTripulante);
 
+			lock(&mutexExisteBitacora);
 			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
-
 				crearBitacora(stringIdtripulante);
 			}
+			unlock(&mutexExisteBitacora);
 
 			escribirBitacora2(stringIdtripulante, mensaje);
 
@@ -176,17 +180,20 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 		{
 			int idTripulante = deserializarID(paquete->buffer->stream);
 
-			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
+			log_info(logImongo,"Se recibio que el tripulante de ID %d va a resolver el sabotaje", idTripulante);
 
-			char* mensaje = string_from_format("Se corre en panico hacia la ubicacion del sabotaje");
+			char* mensaje = string_from_format("Se dirige al sabotaje.");
 
 			char* stringIdtripulante = string_itoa(idTripulante);
 
+			lock(&mutexExisteBitacora);
 			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
 
 				crearBitacora(stringIdtripulante);
 			}
+			unlock(&mutexExisteBitacora);
 
+			sem_wait(&sabotajeResuelto);
 			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
@@ -194,23 +201,25 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 			break;
 		}
 
-		case FIN_SABOTAJE:
+		case RESOLUCION_SABOTAJE:
 		{
 			int idTripulante = deserializarID(paquete->buffer->stream);
 
-			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", idTripulante);
+			log_info(logImongo,"Se recibio que el tripulante de ID %d ya resolvio el sabotaje", idTripulante);
 
-			char* mensaje = string_from_format("Se resuelve el sabotaje");
+			char* mensaje = string_from_format("Resolvio el sabotaje.");
 
 			char* stringIdtripulante = string_itoa(idTripulante);
 
+			lock(&mutexExisteBitacora);
 			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
-
 				crearBitacora(stringIdtripulante);
 			}
+			unlock(&mutexExisteBitacora);
+
+			fsck();
 
 			escribirBitacora2(stringIdtripulante, mensaje);
-
 			free(mensaje);
 
 			break;
@@ -220,14 +229,22 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 		{
 			int idTripulante = deserializarID(paquete->buffer->stream);
 
-			t_bitacora_tripulante* bitacora = (t_bitacora_tripulante*) dictionary_get(bitacoras, string_itoa(idTripulante));
+			log_info(logImongo,"Se va a buscar la bitacora del tripulante de ID %d", idTripulante);
 
-			char* bitacoraTripulante = reconstruirArchivo(bitacora->bloques);
+			char * stringIdtripulante = string_itoa(idTripulante);
 
-			t_paquete* paquete = armarPaqueteCon(bitacoraTripulante,STRING);
+			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
 
-			enviarPaquete(paquete,*tripulanteSock);
+				t_bitacora_tripulante* bitacora = (t_bitacora_tripulante*) dictionary_get(bitacoras, stringIdtripulante);
 
+				char* bitacoraTripulante = reconstruirArchivo(bitacora->bloques);
+
+				t_paquete* paquete = armarPaqueteCon(bitacoraTripulante,STRING);
+
+				enviarPaquete(paquete,*tripulanteSock);
+			}
+
+			free(stringIdtripulante);
 			break;
 		}
 

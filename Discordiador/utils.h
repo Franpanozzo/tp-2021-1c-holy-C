@@ -51,6 +51,7 @@
 	void recibirProximaTareaDeMiRAM(t_tripulante*);
 	void recibirTareaDeMiRAM(int, t_tripulante*);
 	bool confirmacion(int);
+	void recibirBitacora(int, uint32_t);
 
 	int esIO(char*);
 	uint32_t calculoCiclosExec(t_tripulante*);

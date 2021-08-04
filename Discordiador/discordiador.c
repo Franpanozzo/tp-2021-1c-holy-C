@@ -96,9 +96,7 @@ void hiloPlanificador(){
 			contadorCiclos++;
 		}
 		else{
-			log_info(logDiscordiador, "SE EMPEZO EL WAIT SEM HAY TRIPUS");
 			sem_wait(&semHayTripulantes);
-			log_info(logDiscordiador, "SE TERMINO EL WAIT SEM HAY TRIPUS");
 		}
 	}
 }
@@ -161,8 +159,6 @@ void procedimientoSabotaje(int* sabotajeSock){
 	list_clean(listaSabotaje->elementos);
 	sabotaje->haySabotaje = 0;
 	list_add(listaReady->elementos, sabotaje->tripulanteSabotaje);
-	int socketMongo = enviarA(puertoEIPMongo, &sabotaje->tripulanteSabotaje->idTripulante, FIN_SABOTAJE);
-	close(socketMongo);
 	sabotaje->tripulanteSabotaje = NULL;
 
 	sem_post(&sabotaje->semaforoCorrerSabotaje);//avisarle al planificador que termino la preparacion
@@ -289,10 +285,13 @@ void hiloTripulante(t_tripulante* tripulante){
 							tripulante->idTripulante, distancia(tripulante->coordenadas, sabotaje->coordenadas));
 				}
 				else{
-					log_info(logDiscordiador,"el tripulante %d llego a la posicion del SABO %d|%d",
+					log_info(logDiscordiador,"el tripulante %d llego a la posicion del sabotaje %d|%d",
 							tripulante->idTripulante, tripulante->coordenadas.posX, tripulante->coordenadas.posX);
 
+					int socketMongo = enviarA(puertoEIPMongo, &tripulante->idTripulante, RESOLUCION_SABOTAJE);
+					close(socketMongo);
 					sleep(sabotaje->tiempo);
+
 					sem_post(&sabotaje->semaforoTerminoTripulante);
 //					sem_wait(&sabotaje->semaforoTerminoSabotaje);
 					sem_wait(&tripulante->semaforoInicio);
@@ -309,7 +308,7 @@ void hiloTripulante(t_tripulante* tripulante){
 
 	lock(&mutexEliminarPatota);
 	if(patotaSinTripulantes(tripulante->idPatota, tripulante->idTripulante)){
-		log_info(logDiscordiador,"Llego el tripu %d y ya no quedan tripus de la patota %d",
+		log_info(logDiscordiador,"Llego el tripulante %d y ya no quedan tripulantes de la patota %d",
 				tripulante->idTripulante, tripulante->idPatota);
 		eliminiarPatota(tripulante->idPatota);
 	}
@@ -344,7 +343,6 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 		}
 
 		if(totalTripulantes() == list_size(listaTripulantes)){
-			log_info(logDiscordiador, "SE HIZO POST AL SEM HAY TRIPUS");
 			sem_post(&semHayTripulantes);
 		}
 

@@ -52,6 +52,7 @@ puertoEIP* puertoEIPDisc;
 pthread_mutex_t mutexMemoriaSecundaria;
 pthread_mutex_t mutexBitMap;
 pthread_mutex_t mutexEstructurasFile;
+pthread_mutex_t mutexExisteBitacora;
 pthread_t manejoTripulante;
 pthread_t hiloSincronizador;
 t_config* configImongo;
@@ -65,6 +66,8 @@ t_file2* oxigeno;
 t_file2* comida;
 t_file2* basura;
 t_dictionary * bitacoras;
+
+sem_t sabotajeResuelto;
 
 char* memoriaSecundaria;
 char* copiaMemoriaSecundaria;

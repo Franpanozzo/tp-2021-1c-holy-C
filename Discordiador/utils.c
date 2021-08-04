@@ -417,6 +417,21 @@ bool confirmacion(int server_socket){
 }
 
 
+void recibirBitacora(int server_socket, uint32_t idTripulante){
+
+	t_paquete* paqueteRecibido = recibirPaquete(server_socket);
+
+	if(paqueteRecibido->codigoOperacion == STRING){
+
+		char* bitacora = deserializarString(paqueteRecibido);
+		log_info(logDiscordiador,"La bitacora del tripulante %d es:\n%s", idTripulante, bitacora);
+		free(bitacora);
+	}
+
+	eliminarPaquete(paqueteRecibido);
+}
+
+
 int esIO(char* tarea){
 
 	for(int i=0; todasLasTareasIO[i] != NULL; i++){
@@ -444,9 +459,9 @@ uint32_t calculoCiclosExec(t_tripulante* tripulante){
 
 void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 
-//	t_desplazamiento desplazamiento;
-//	desplazamiento.id = tripulante->idTripulante;
-//	desplazamiento.inicio = tripulante->coordenadas;
+	t_desplazamiento* desplazamiento = malloc(sizeof(t_desplazamiento));
+	desplazamiento->idTripulante = tripulante->idTripulante;
+	desplazamiento->inicio = tripulante->coordenadas;
 
 	int diferenciaEnX = diferencia(tripulante->coordenadas.posX, destino.posX);
 	int diferenciaEnY = diferencia(tripulante->coordenadas.posY, destino.posY);
@@ -463,11 +478,14 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 		tripulante->coordenadas.posY -= restaEnY / diferenciaEnY;
 	}
 
-//	desplazamiento.fin = tripulante->coordenadas;
+	desplazamiento->fin = tripulante->coordenadas;
 
 	int socket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE); // FALTA EL CLOSE
     close(socket);
-//	enviarA(puertoEIPMongo, tripulante, DESPLAZAMIENTO);
+    int socketIMongo = enviarA(puertoEIPMongo, desplazamiento, DESPLAZAMIENTO);
+    close(socketIMongo);
+
+    free(desplazamiento);
 //	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",
 //			tripulante->coordenadas.posX, tripulante->coordenadas.posY);
 

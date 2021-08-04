@@ -170,7 +170,7 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 			return sizeof(uint32_t);
 		}
 
-		case FIN_SABOTAJE:
+		case RESOLUCION_SABOTAJE:
 		{
 			return sizeof(uint32_t);
 		}
@@ -184,6 +184,11 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		{
 			char * string = (char *) estructura;
 			return strlen(string) + 1;
+		}
+
+		case OBTENER_BITACORA:
+		{
+			return sizeof(uint32_t);
 		}
 
 
@@ -401,7 +406,7 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperaci
 		case ID_SABOTAJE:
 			return serializarAvisoSabotaje(stream, estructura, offset);
 
-		case FIN_SABOTAJE:
+		case RESOLUCION_SABOTAJE:
 			return serializarAvisoSabotaje(stream, estructura, offset);
 
 		case COORDENADAS_SABOTAJE:
@@ -409,6 +414,10 @@ void* serializarEstructura(void* estructura,int tamanio,tipoDeDato codigoOperaci
 
 		case STRING:
 				return serializarString(stream,estructura,offset);
+
+		case OBTENER_BITACORA:
+				return serializarAvisoSabotaje(stream, estructura, offset);
+
 		default:
 				//printf("\n No pusiste el tipo de estructura para poder serializar negro \n");
 				exit(1);

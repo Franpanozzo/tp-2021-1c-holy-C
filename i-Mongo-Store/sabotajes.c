@@ -1,43 +1,44 @@
 #include "sabotajes.h"
 
-void buscarSabotaje(){
+void fsck(){
 
 	if(haySabotajeCantBloquesEnSuperBloque()){
-		log_info(logImongo,"Se detecto un sabotaje en la cantidad de bloques en el super bloque");
+		log_info(logImongo,"---- Se detecto un sabotaje en la cantidad de bloques en el super bloque ----");
 		arreglarSabotajeCantBloquesEnSuperBloque();
 	}
 	else if(haySabotajeBitmapEnSuperBloque()){
-		log_info(logImongo,"Se detecto un sabotaje en el bitmap del super bloque");
+		log_info(logImongo,"---- Se detecto un sabotaje en el bitmap del super bloque ----");
 		arreglarSabotajeBitmapEnSuperBloque();
 	}
 	else{
-		log_info(logImongo,"NO SE DETECTO NINGUN SABOTAJE EN EL SUPER BLOQUE");
+		log_info(logImongo,"---- NO SE DETECTO NINGUN SABOTAJE EN EL SUPER BLOQUE ----");
 	}
 
 	sabotajesFile(oxigeno);
 	sabotajesFile(comida);
 	sabotajesFile(basura);
 
+	sem_post(&sabotajeResuelto);
 }
 
 
 void sabotajesFile(t_file2* archivo){
 
 	if(haySabotajeBloquesEnFile(archivo)){
-		log_info(logImongo,"Se detecto un sabotaje en los bloques del file %s", archivo->path);
+		log_info(logImongo,"---- Se detecto un sabotaje en los bloques del file %s ----", archivo->path);
 		arreglarSabotajeBloquesEnFile(archivo);
 	}
 	else if(haySabotajeCantBloquesEnFile(archivo)){
-		log_info(logImongo,"Se detecto un sabotaje en la cantidad de bloques del file %s", archivo->path);
+		log_info(logImongo,"---- Se detecto un sabotaje en la cantidad de bloques del file %s ----", archivo->path);
 		arreglarSabotajeCantBloquesEnFile(archivo);
 	}
 
 	else if(haySabotajeSizeEnFile(archivo)){
-		log_info(logImongo,"Se detecto un sabotaje en el tamanio del file %s", archivo->path);
+		log_info(logImongo,"---- Se detecto un sabotaje en el tamanio del file %s ----", archivo->path);
 		arreglarSabotajeSizeEnFile(archivo);
 	}
 	else{
-		log_info(logImongo,"NO SE DETECTO NINGUN SABOTAJE EN EL %s", archivo->path);
+		log_info(logImongo,"---- NO SE DETECTO NINGUN SABOTAJE EN EL %s ----", archivo->path);
 	}
 }
 
@@ -51,7 +52,7 @@ bool haySabotajeCantBloquesEnSuperBloque(){
 	uint32_t cant2 = config_get_long_value(config, "BLOCKS");
 	config_destroy(config);
 
-	log_info(logImongo,"el cantEnBlocks es %d y en el config %d", cant1, cant2);
+	//log_info(logImongo,"el cantEnBlocks es %d y en el config %d", cant1, cant2);
 
 	return cant1 != cant2;
 }
@@ -206,7 +207,8 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 	char* stringMap = convertirBitmapEnString(bitmap);
 	config_set_value(configSB, "BITMAP", stringMap);
 
-	log_info(logImongo,"YA SE SOLUCIONO EL SABOTAJE, el bitmap indicaba mal el estado de un bloque");
+	log_info(logImongo,"---- YA SE SOLUCIONO EL SABOTAJE, "
+			"el bitmap indicaba mal el estado de un bloque ----");
 
 	config_save(configSB);
 
@@ -226,7 +228,7 @@ bool haySabotajeSizeEnFile(t_file2* archivo){
 	uint32_t cant2 = config_get_long_value(config, "SIZE");
 	config_destroy(config);
 
-	log_info(logImongo,"el size segun blocks es %d y en el config %d", cant1, cant2);
+	//log_info(logImongo,"el size segun blocks es %d y en el config %d", cant1, cant2);
 
 	return cant1 != cant2;
 }
@@ -238,8 +240,8 @@ void arreglarSabotajeSizeEnFile(t_file2* archivo){
 
 	t_config* config = config_create(archivo->path);
 
-	log_info(logImongo,"YA SE SOLUCIONO EL SABOTAJE, el tamanio del "
-			"file tanto no era %d sino %d",
+	log_info(logImongo,"---- YA SE SOLUCIONO EL SABOTAJE, el tamanio del "
+			"file tanto no era %d sino %d ----",
 			config_get_long_value(config, "SIZE"), sizeSegunBlocks(archivo));
 
 	config_set_value(config, "SIZE", string_itoa(sizeSegunBlocks(archivo)));
@@ -256,7 +258,7 @@ bool haySabotajeCantBloquesEnFile(t_file2* archivo){
 	t_config* config = config_create(archivo->path);
 	uint32_t cant2 = config_get_long_value(config, "BLOCK_COUNT");
 
-	log_info(logImongo,"la cant segun lista es %d y en el config %d", cant1, cant2);
+	//log_info(logImongo,"la cant segun lista es %d y en el config %d", cant1, cant2);
 	config_destroy(config);
 
 	return cant1 != cant2;
@@ -269,8 +271,8 @@ void arreglarSabotajeCantBloquesEnFile(t_file2* archivo){
 	uint32_t cantBloquesReal = cantBloquesSegunLista(archivo);
 	t_config* config = config_create(archivo->path);
 
-	log_info(logImongo,"YA SE SOLUCIONO EL SABOTAJE, la cant de bloques"
-			"del file tanto no era %d sino %d",
+	log_info(logImongo,"---- YA SE SOLUCIONO EL SABOTAJE, la cant de bloques"
+			"del file tanto no era %d sino %d ----",
 			config_get_long_value(config, "BLOCK_COUNT"), cantBloquesReal);
 
 	config_set_value(config, "BLOCK_COUNT", string_itoa(cantBloquesReal));
@@ -286,7 +288,7 @@ bool haySabotajeBloquesEnFile(t_file2* archivo){
 	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
 
-	log_info(logImongo,"LA LISTA ES %s", convertirListaEnString(listaBloques));
+	//log_info(logImongo,"LA LISTA ES %s", convertirListaEnString(listaBloques));
 
 	char* md5calculado = obtenerMD5(listaBloques);
 
@@ -314,8 +316,6 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 	t_config* config = config_create(archivo->path);
 	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
-	char* md5calculado = obtenerMD5(listaBloques);
-	char* md5anterior = config_get_string_value(config, "MD5_ARCHIVO");
 
 	uint32_t cantCaracteresAescribir = config_get_long_value(config, "SIZE");
 	char* stringCaracter = config_get_string_value(config, "CARACTER_LLENADO");
@@ -333,10 +333,9 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 	}
 
 
-	log_info(logImongo,"YA SE SOLUCIONO EL SABOTAJE, se cambio el md5 de %s a %s "
-			"para el nuevo orden de bloques", md5anterior, md5calculado);
+	log_info(logImongo,"---- YA SE SOLUCIONO EL SABOTAJE, se cambio el md5 de"
+			"para el nuevo orden de bloques ----");
 
-	config_set_value(config, "MD5_ARCHIVO", md5calculado);
 	config_save(config);
 	config_destroy(config);
 	config_destroy(configSB);
@@ -395,14 +394,14 @@ uint32_t tamanioUltimoBloque(t_file2* archivo){
 
 	uint32_t numeroUltimoBloque = * (long int*)list_get(bloquesOcupados, list_size(bloquesOcupados) - 1);
 
-	log_info(logImongo,"El numero del utlimo bloque cuando la lista tiene %d elementos es %d",
-			list_size(bloquesOcupados), numeroUltimoBloque);
+	//log_info(logImongo,"El numero del utlimo bloque cuando la lista tiene %d elementos es %d",
+	//		list_size(bloquesOcupados), numeroUltimoBloque);
 
 	uint32_t offset=0;
 
 	char caracterLLenado = *config_get_string_value(config, "CARACTER_LLENADO");
 
-	log_info(logImongo,"El caracter de llenado es %c", caracterLLenado);
+	//log_info(logImongo,"El caracter de llenado es %c", caracterLLenado);
 
 	t_config* configSB = config_create(superBloque->path);
 	uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");

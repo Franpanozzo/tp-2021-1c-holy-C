@@ -4,7 +4,7 @@
 #include "i_mongo_store.h"
 
 
-void buscarSabotaje();
+void fsck();
 bool haySabotajeCantBloquesEnSuperBloque();
 void arreglarSabotajeCantBloquesEnSuperBloque();
 bool haySabotajeBitmapEnSuperBloque();
