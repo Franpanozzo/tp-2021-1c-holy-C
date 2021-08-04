@@ -205,7 +205,9 @@ t_tablaSegmentosPatota* buscarTablaDeSegmentosDePatota(int idPatotaABuscar) {
 int guardarPCBSeg(pcb* pcbAGuardar, char* stringTareas) {
 
 	int pcbGuardado, tareasGuardadas;
+	lock(&mutexChequearUltTripu);
 	chequeoUltTripu = 0;
+	unlock(&mutexChequearUltTripu);
 	t_tablaSegmentosPatota* tablaSegmentosPatotaActual = malloc(sizeof(t_tablaSegmentosPatota));
 	tablaSegmentosPatotaActual->idPatota = pcbAGuardar->pid;
 	tablaSegmentosPatotaActual->tablaDeSegmentos = list_create();

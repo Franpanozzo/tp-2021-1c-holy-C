@@ -248,13 +248,14 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexTiempo, NULL);
     pthread_mutex_init(&mutexMapa, NULL);
     pthread_mutex_init(&mutexChequearUltTripu, NULL);
-
+    pthread_mutex_init(&mutexFlagExpulsion, NULL);
 
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
 	tiempo = 0;
 	punteroClock = 0;
 	chequeoUltTripu = 0;
+	expulsarPosta = 0;
 
 	nivel_gui_inicializar();
 	nivel_gui_dibujar(nave);
@@ -670,6 +671,10 @@ int guardarTCB(tcb* tcbAGuardar, int idPatota) {
 
 
 void expulsarTripulante(int idTripu,int idPatota) {
+
+	lock(&mutexFlagExpulsion);
+	expulsarPosta = 1;
+	unlock(&mutexFlagExpulsion);
 
 	if(strcmp(configRam.esquemaMemoria,"PAGINACION") == 0)
 	{
