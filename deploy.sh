@@ -16,4 +16,4 @@ make
 cd ~
 echo "agregando LD_LIBRARY_PATH"
 echo "export LD_LIBRARY_PATH=${PUNTO_MONTAJE}/${TP}/bibliotecas/Debug/" >> ~/.bashrc
-
+source .bashrc
