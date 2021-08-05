@@ -13,6 +13,8 @@ int main(void) {
 	basura->caracterLlenado = "B";
 
 	sem_init(&sabotajeResuelto, 0, 0);
+	sem_init(&semTarea, 0, 0);
+
 
 	superBloque = malloc(sizeof(t_superBloque));
 
@@ -160,18 +162,47 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
 
+			/*
+			if(!dictionary_has_key(semaforosTareas, stringIdtripulante)){
+
+				sem_t* semTarea = (sem_t*) dictionary_get(semaforosTareas, stringIdtripulante);
+				sem_post(semTarea);
+			}
+			else{
+				sem_t* semTarea = malloc(sizeof(sem_t));
+				sem_init(semTarea, 0, 0);
+				dictionary_put(semaforosTareas, stringIdtripulante, semTarea);
+			}
+			*/
+
 			break;
 		}
 
 		case FIN_TAREA:
 		{
-			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
 
+
+			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
+			char* stringIdtripulante = string_itoa(avisoTarea->idTripulante);
+
+			/*
+			//FALTA MUTEX
+			if(!dictionary_has_key(semaforosTareas, stringIdtripulante)){
+
+				sem_t* semTarea = (sem_t*) dictionary_get(semaforosTareas, stringIdtripulante);
+				sem_wait(semTarea);
+			}
+			else{
+				sem_t* semTarea = malloc(sizeof(sem_t));
+				sem_init(semTarea, 0, 0);
+				dictionary_put(semaforosTareas, stringIdtripulante, semTarea);
+				sem_wait(semTarea);
+			}
+			*/
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
 			char* mensaje = string_from_format("Termino la tarea %s.", avisoTarea->nombreTarea);
 
-			char* stringIdtripulante = string_itoa(avisoTarea->idTripulante);
 
 			lock(&mutexExisteBitacora);
 			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
@@ -218,6 +249,8 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora2(stringIdtripulante, mensaje);
 
+			free(stringIdtripulante);
+
 			free(mensaje);
 
 			break;
@@ -243,6 +276,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora2(stringIdtripulante, mensaje);
 			free(mensaje);
+			free(stringIdtripulante);
 
 			break;
 		}
@@ -478,6 +512,10 @@ void cargarFile(t_file2* archivo){
 	char** b = config_get_array_value(config,"BLOCKS");
 	archivo->bloques = convertirEnLista(b);
 	archivo->md5_archivo = config_get_string_value(config,"MD5_ARCHIVO");
+
+	config_destroy(config);
+
+	liberarDoblesPunterosAChar(b);
 }
 
 

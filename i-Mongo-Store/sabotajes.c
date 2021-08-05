@@ -59,7 +59,6 @@ bool haySabotajeCantBloquesEnSuperBloque(){
 
 	//log_info(logImongo,"el cantEnBlocks es %d y en el config %d", cant1, cant2);
 
-	log_info(logImongo,"SABO 1 SIN FALLA");
 	return cant1 != cant2;
 }
 
@@ -159,10 +158,9 @@ bool haySabotajeBitmapEnSuperBloque(){
 		free(n);
 	}
 
-	//list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
+	list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
 	//log_info(logImongo,"SABO 2 SIN FALLA 1.5");
 
-	log_info(logImongo,"SABO 2 SIN FALLA");
 	return result;
 }
 
@@ -231,10 +229,13 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 	config_destroy(configSB);
 	free(espacioBitmap);
 	bitarray_destroy(bitmap);
-	/*
 	free(stringMap);
-	list_destroy(listaBloques);
-	*/
+
+	void eliminarEntero(uint32_t* n){
+		free(n);
+	}
+
+	list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
 }
 
 
@@ -247,7 +248,6 @@ bool haySabotajeSizeEnFile(t_file2* archivo){
 	config_destroy(config);
 
 	//log_info(logImongo,"el size segun blocks es %d y en el config %d", cant1, cant2);
-	log_info(logImongo,"SABO 3 SIN FALLA");
 	return cant1 != cant2;
 }
 
@@ -282,7 +282,6 @@ bool haySabotajeCantBloquesEnFile(t_file2* archivo){
 	//log_info(logImongo,"la cant segun lista es %d y en el config %d", cant1, cant2);
 	config_destroy(config);
 
-	log_info(logImongo,"SABO 4 SIN FALLA");
 	return cant1 != cant2;
 }
 
@@ -312,27 +311,33 @@ bool haySabotajeBloquesEnFile(t_file2* archivo){
 	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
 
+	bool result = false;
 	//log_info(logImongo,"LA LISTA ES %s", convertirListaEnString(listaBloques));
 
-	char* md5calculado = obtenerMD5(listaBloques);
+	if(!list_is_empty(listaBloques)){
 
-	char* md5real = config_get_string_value(config, "MD5_ARCHIVO");
+		char* md5calculado = obtenerMD5(listaBloques);
 
-	log_info(logImongo,"el md5 calculado es %s y el del config %s", md5calculado, md5real);
+		char* md5real = config_get_string_value(config, "MD5_ARCHIVO");
 
-	bool result = strcmp(md5calculado, md5real) != 0;
+		log_info(logImongo,"el md5 calculado es %s y el del config %s", md5calculado, md5real);
+
+		result = strcmp(md5calculado, md5real) != 0;
+
+
+		free(md5calculado);
+		//free(md5real);
+	}
 
 	config_destroy(config);
+	liberarDoblesPunterosAChar(arrayPosiciones);
 
-	free(md5calculado);
-	//free(md5real);
-	//liberarDoblesPunterosAChar(arrayPosiciones);
-	/*
-	//falta liberar los elementos de la lista
-	list_destroy(listaBloques);
-	// falta liberar en arrayPosiciones
-	 */
-	log_info(logImongo,"SABO 5 SIN FALLA");
+	void eliminarEntero(uint32_t* n){
+		free(n);
+	}
+
+	list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
+
 	return result;
 }
 
@@ -353,8 +358,9 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 
 		uint32_t bloque = * (uint32_t *)list_get(listaBloques, i);
 		consumirBloque(bloque, tamanioBloque, tamanioBloque);
-		escribirBloque(bloque, string_repeat(caracter, min(cantCaracteresAescribir, tamanioBloque)), 0);
-
+		char* contenido = string_repeat(caracter, min(cantCaracteresAescribir, tamanioBloque));
+		escribirBloque(bloque, contenido, 0);
+		free(contenido);
 		cantCaracteresAescribir = max(cantCaracteresAescribir - tamanioBloque, 0);
 	}
 
@@ -365,7 +371,7 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 	config_destroy(config);
 	config_destroy(configSB);
 	//free(stringCaracter);
-	//liberarDoblesPunterosAChar(arrayPosiciones);
+	liberarDoblesPunterosAChar(arrayPosiciones);
 
 	void eliminarEntero(uint32_t* n){
 		free(n);
@@ -425,34 +431,43 @@ uint32_t tamanioUltimoBloque(t_file2* archivo){
 	t_config* config = config_create(archivo->path);
 	char** arrayBloques = config_get_array_value(config, "BLOCKS");
 	t_list* bloquesOcupados = convertirEnLista(arrayBloques);
-
-	uint32_t numeroUltimoBloque = * (long int*)list_get(bloquesOcupados, list_size(bloquesOcupados) - 1);
-
-	//log_info(logImongo,"El numero del utlimo bloque cuando la lista tiene %d elementos es %d",
-	//		list_size(bloquesOcupados), numeroUltimoBloque);
-
 	uint32_t offset=0;
 
-	char* stringCaracterLlenado = config_get_string_value(config, "CARACTER_LLENADO");
-	char caracterLLenado = *stringCaracterLlenado;
+	if(!list_is_empty(bloquesOcupados)){
 
-	//log_info(logImongo,"El caracter de llenado es %c", caracterLLenado);
+		uint32_t numeroUltimoBloque = * (long int*)list_get(bloquesOcupados, list_size(bloquesOcupados) - 1);
 
-	t_config* configSB = config_create(superBloque->path);
-	uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
+		//log_info(logImongo,"El numero del utlimo bloque cuando la lista tiene %d elementos es %d",
+		//		list_size(bloquesOcupados), numeroUltimoBloque);
 
-	lock(&mutexMemoriaSecundaria);
-	while(*(copiaMemoriaSecundaria + numeroUltimoBloque * tamanioBloque + offset) == caracterLLenado
-			&& offset < tamanioBloque){
 
-		offset ++;
+		char* stringCaracterLlenado = config_get_string_value(config, "CARACTER_LLENADO");
+		char caracterLLenado = *stringCaracterLlenado;
+
+		//log_info(logImongo,"El caracter de llenado es %c", caracterLLenado);
+
+		t_config* configSB = config_create(superBloque->path);
+		uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
+
+		lock(&mutexMemoriaSecundaria);
+		while(*(copiaMemoriaSecundaria + numeroUltimoBloque * tamanioBloque + offset) == caracterLLenado
+				&& offset < tamanioBloque){
+
+			offset ++;
+		}
+		unlock(&mutexMemoriaSecundaria);
+
+		config_destroy(configSB);
 	}
-	unlock(&mutexMemoriaSecundaria);
 
 	config_destroy(config);
-	config_destroy(configSB);
-	liberarDoblesPunterosAChar(arrayBloques);
 
+	void eliminarEntero(uint32_t* n){
+		free(n);
+	}
+
+	list_destroy_and_destroy_elements(bloquesOcupados, (void*) eliminarEntero);
+	liberarDoblesPunterosAChar(arrayBloques);
 	return offset;
 }
 
@@ -465,8 +480,12 @@ uint32_t cantBloquesSegunLista(t_file2* archivo){
 	t_list* listaBloquesOcupados = convertirEnLista(arrayBloques);
 	uint32_t cantidadBloques = list_size(listaBloquesOcupados);
 
-	list_destroy(listaBloquesOcupados);
-	//liberarDoblesPunterosAChar(arrayBloques);
+	void eliminarEntero(uint32_t* n){
+		free(n);
+	}
+
+	list_destroy_and_destroy_elements(listaBloquesOcupados, (void*) eliminarEntero);
+	liberarDoblesPunterosAChar(arrayBloques);
 	config_destroy(config);
 
 	return cantidadBloques;

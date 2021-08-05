@@ -74,6 +74,7 @@ t_file2* basura;
 t_dictionary * bitacoras;
 
 sem_t sabotajeResuelto;
+sem_t semTarea;
 
 char* memoriaSecundaria;
 char* copiaMemoriaSecundaria;

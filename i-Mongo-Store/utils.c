@@ -251,7 +251,7 @@ char * reconstruirArchivo(t_list * bloques){
 
 	char* lista = convertirListaEnString(bloques);
 
-	log_info(logImongo,"Los numeros dentro de la lista de bloque son es: ----%s---- y la cantidad de bloques es: ----%d----",lista,cantidadBloques);
+	//log_info(logImongo,"Los numeros dentro de la lista de bloque son es: ----%s---- y la cantidad de bloques es: ----%d----",lista,cantidadBloques);
 
 	free(lista);
 
@@ -259,11 +259,11 @@ char * reconstruirArchivo(t_list * bloques){
 
 	for(int i=0; i<cantidadBloques;i++){
 		uint32_t * bloque = list_get(bloques, i);
-		log_info(logImongo,"Numero del bloque es %d",*bloque);
+		//log_info(logImongo,"Numero del bloque es %d",*bloque);
 		uint32_t offsetMemoria =  (*bloque) * superBloque->block_size;
 		uint32_t offsetFile = i * superBloque->block_size;
-		log_info(logImongo,"offset memoria %d",offsetMemoria);
-		log_info(logImongo,"offset file %d",offsetFile);
+		//log_info(logImongo,"offset memoria %d",offsetMemoria);
+		//log_info(logImongo,"offset file %d",offsetFile);
 		lock(&mutexMemoriaSecundaria);
 		memcpy(copiaFile + offsetFile, copiaMemoriaSecundaria + offsetMemoria, superBloque->block_size);
 		unlock(&mutexMemoriaSecundaria);
