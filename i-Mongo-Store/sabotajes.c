@@ -53,7 +53,8 @@ void sabotajesFile(t_file2* archivo){
 bool haySabotajeCantBloquesEnSuperBloque(){
 
 	uint32_t cant1 = cantBloquesEnBlocks();
-	t_config* config = config_create(superBloque->path);
+	t_config* config;
+	crearConfig(&config,superBloque->path);
 	uint32_t cant2 = config_get_long_value(config, "BLOCKS");
 	config_destroy(config);
 
@@ -65,8 +66,12 @@ bool haySabotajeCantBloquesEnSuperBloque(){
 //PROBADA V.1
 void arreglarSabotajeCantBloquesEnSuperBloque(){
 
-	t_config* config = config_create(superBloque->path);
-	t_config* configSB = config_create(superBloque->path);
+	t_config* config;
+	t_config* configSB;
+
+	crearConfig(&config,superBloque->path);
+	crearConfig(&configSB,superBloque->path);
+
 	uint32_t valor = config_get_long_value(config, "BLOCKS");
 
 	log_info(logImongo,"YA SE SOLUCIONO EL SABOTAJE, la cant de bloques"
@@ -86,7 +91,8 @@ void arreglarSabotajeCantBloquesEnSuperBloque(){
 //PROBADA V.1
 bool haySabotajeBitmapEnSuperBloque(){
 
-	t_config* configSB = config_create(superBloque->path);
+	t_config* configSB;
+	crearConfig(&configSB,superBloque->path);
 	char* stringBitmap = config_get_string_value(configSB, "BITMAP");
 	uint32_t cantBloques = config_get_long_value(configSB, "BLOCKS");
 
@@ -107,15 +113,16 @@ bool haySabotajeBitmapEnSuperBloque(){
 		return result;
 	}
 
-	t_config* config = config_create(oxigeno->path);
+	t_config* config;
+	crearConfig(&config,oxigeno->path);
 	agregarBloquesOcupados(listaBloques, config);
 	config_destroy(config);
 
-	config = config_create(basura->path);
+	crearConfig(&config,basura->path);
 	agregarBloquesOcupados(listaBloques, config);
 	config_destroy(config);
 
-	config = config_create(comida->path);
+	crearConfig(&config,comida->path);
 	agregarBloquesOcupados(listaBloques, config);
 	config_destroy(config);
 
@@ -180,15 +187,16 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 		return result;
 	}
 
-	t_config* config = config_create(oxigeno->path);
+	t_config* config;
+	crearConfig(&config,oxigeno->path);
 	agregarBloquesOcupados(listaBloques, config);
 	config_destroy(config);
 
-	config = config_create(basura->path);
+	crearConfig(&config,basura->path);
 	agregarBloquesOcupados(listaBloques, config);
 	config_destroy(config);
 
-	config = config_create(comida->path);
+	crearConfig(&config,comida->path);
 	agregarBloquesOcupados(listaBloques, config);
 	config_destroy(config);
 
@@ -203,7 +211,8 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 		config_destroy(configBitacora);
 	}
 
-	t_config* configSB = config_create(superBloque->path);
+	t_config* configSB;
+	crearConfig(&configSB,superBloque->path);
 	uint32_t cantBloques = config_get_long_value(configSB, "BLOCKS");
 	int tamanioBitmap = (int) ceil ((float) cantBloques / (float) 8);
 	char* espacioBitmap = malloc(tamanioBitmap);
@@ -256,7 +265,8 @@ bool haySabotajeSizeEnFile(t_file2* archivo){
 //PROBADA V.1
 void arreglarSabotajeSizeEnFile(t_file2* archivo){
 
-	t_config* config = config_create(archivo->path);
+	t_config* config;
+	crearConfig(&config,archivo->path);
 	uint32_t size = sizeSegunBlocks(archivo);
 
 	log_info(logImongo,"---- YA SE SOLUCIONO EL SABOTAJE, el tamanio del file %s"
@@ -276,7 +286,8 @@ void arreglarSabotajeSizeEnFile(t_file2* archivo){
 bool haySabotajeCantBloquesEnFile(t_file2* archivo){
 
 	uint32_t cant1 = cantBloquesSegunLista(archivo);
-	t_config* config = config_create(archivo->path);
+	t_config* config;
+	crearConfig(&config,archivo->path);
 	uint32_t cant2 = config_get_long_value(config, "BLOCK_COUNT");
 
 	//log_info(logImongo,"la cant segun lista es %d y en el config %d", cant1, cant2);
@@ -290,7 +301,8 @@ bool haySabotajeCantBloquesEnFile(t_file2* archivo){
 void arreglarSabotajeCantBloquesEnFile(t_file2* archivo){
 
 	uint32_t cantBloquesReal = cantBloquesSegunLista(archivo);
-	t_config* config = config_create(archivo->path);
+	t_config* config;
+	crearConfig(&config,archivo->path);
 
 	log_info(logImongo,"---- YA SE SOLUCIONO EL SABOTAJE, la cant de bloques"
 			"del file tanto no era %d sino %d ----",
@@ -307,7 +319,8 @@ void arreglarSabotajeCantBloquesEnFile(t_file2* archivo){
 
 bool haySabotajeBloquesEnFile(t_file2* archivo){
 
-	t_config* config = config_create(archivo->path);
+	t_config* config;
+	crearConfig(&config,archivo->path);
 	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
 
@@ -344,14 +357,16 @@ bool haySabotajeBloquesEnFile(t_file2* archivo){
 
 void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 
-	t_config* config = config_create(archivo->path);
+	t_config* config;
+	crearConfig(&config,archivo->path);
 	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloques = convertirEnLista(arrayPosiciones);
 
 	uint32_t cantCaracteresAescribir = config_get_long_value(config, "SIZE");
 	char* stringCaracter = config_get_string_value(config, "CARACTER_LLENADO");
 	char caracter = * stringCaracter;
-	t_config* configSB = config_create(superBloque->path);
+	t_config* configSB;
+	crearConfig(&configSB,archivo->path);
 	uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
 
 	for(uint32_t i = 0; i < list_size(listaBloques); i++){
@@ -413,8 +428,10 @@ uint32_t cantBloquesEnBlocks(){
 // PROBADA
 uint32_t sizeSegunBlocks(t_file2* archivo){
 
-	t_config* config = config_create(archivo->path);
-	t_config* configSB = config_create(superBloque->path);
+	t_config* config;
+	crearConfig(&config,archivo->path);
+	t_config* configSB;
+	crearConfig(&configSB,archivo->path);
 
 	uint32_t blockCount = max(config_get_long_value(config, "BLOCK_COUNT") - 1, 0);
 	uint32_t blockSize = config_get_long_value(configSB, "BLOCK_SIZE");
@@ -428,7 +445,8 @@ uint32_t sizeSegunBlocks(t_file2* archivo){
 // PROBADA
 uint32_t tamanioUltimoBloque(t_file2* archivo){
 
-	t_config* config = config_create(archivo->path);
+	t_config* config;
+	crearConfig(&config,archivo->path);
 	char** arrayBloques = config_get_array_value(config, "BLOCKS");
 	t_list* bloquesOcupados = convertirEnLista(arrayBloques);
 	uint32_t offset=0;
@@ -446,7 +464,8 @@ uint32_t tamanioUltimoBloque(t_file2* archivo){
 
 		//log_info(logImongo,"El caracter de llenado es %c", caracterLLenado);
 
-		t_config* configSB = config_create(superBloque->path);
+		t_config* configSB;
+		crearConfig(&configSB,superBloque->path);
 		uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
 
 		lock(&mutexMemoriaSecundaria);
@@ -475,7 +494,8 @@ uint32_t tamanioUltimoBloque(t_file2* archivo){
 // PROBADAs
 uint32_t cantBloquesSegunLista(t_file2* archivo){
 
-	t_config* config = config_create(archivo->path);
+	t_config* config;
+	crearConfig(&config,archivo->path);
 	char** arrayBloques = config_get_array_value(config, "BLOCKS");
 	t_list* listaBloquesOcupados = convertirEnLista(arrayBloques);
 	uint32_t cantidadBloques = list_size(listaBloquesOcupados);

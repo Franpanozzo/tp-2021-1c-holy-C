@@ -374,7 +374,11 @@ uint32_t deserializarID(void* stream){
 	uint32_t *id = malloc(sizeof(uint32_t));
 	memcpy(id, stream, sizeof(uint32_t));
 
-	return *id;
+	uint32_t idTripulante = *id;
+
+	free(id);
+
+	return idTripulante;
 }
 
 

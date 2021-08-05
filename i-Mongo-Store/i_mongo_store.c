@@ -424,13 +424,15 @@ void eliminarBitacorasAnteriores(){
 
 		 i++;
 
+		 free(pathBitacoraTripulante);
+
 		 pathBitacoraTripulante = strdup(pathBitacoras);
 
 		 string_append_with_format(&pathBitacoraTripulante,"/Tripulante%d.ims",i);
 
 		}
 
-		free(pathBitacoraTripulante);
+
 
 }
 
