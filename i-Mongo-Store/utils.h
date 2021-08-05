@@ -12,7 +12,7 @@ char* crearDestinoApartirDeRaiz(char*);
 void cargarPaths();
 void cargarDatosConfig();
 void iniciarMutex();
-void liberarConfiguracion();
+void liberarEstructuraDatosConfig();
 int indiceTarea(t_tarea*);
 void asignarTareas();
 int leerHaySabotaje();
@@ -37,7 +37,7 @@ char* convertirBitmapEnString(t_bitarray*);
 
 t_desplazamiento* deserializarDesplazamiento(void*);
 t_avisoTarea* deserializarAvisoTarea(void*);
-int deserializarID(void*);
+uint32_t deserializarID(void*);
 
 void crearBitacora(char*);
 char* pathBitacoraTripulante(char*);

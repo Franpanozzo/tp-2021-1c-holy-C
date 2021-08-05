@@ -245,17 +245,25 @@ void sincronizarMemoriaSecundaria(){
 
 
 char * reconstruirArchivo(t_list * bloques){
-	int cantidadBloques = list_size(bloques);
-	int tamanio = cantidadBloques*superBloque->block_size;
 
-	char * copiaFile = malloc(tamanio+1);
+	uint32_t cantidadBloques = list_size(bloques);
+	uint32_t tamanio = cantidadBloques*superBloque->block_size;
+
+	char* lista = convertirListaEnString(bloques);
+
+	log_info(logImongo,"Los numeros dentro de la lista de bloque son es: ----%s---- y la cantidad de bloques es: ----%d----",lista,cantidadBloques);
+
+	free(lista);
+
+	char * copiaFile = malloc(tamanio + 1);
 
 	for(int i=0; i<cantidadBloques;i++){
-		int * bloque = list_get(bloques, i);
-		int offsetMemoria =  (*bloque) * superBloque->block_size;
-		int offsetFile = i * superBloque->block_size;
-		//log_info(logImongo,"offset memoria %d",offsetMemoria);
-		//log_info(logImongo,"offset file %d",offsetFile);
+		uint32_t * bloque = list_get(bloques, i);
+		log_info(logImongo,"Numero del bloque es %d",*bloque);
+		uint32_t offsetMemoria =  (*bloque) * superBloque->block_size;
+		uint32_t offsetFile = i * superBloque->block_size;
+		log_info(logImongo,"offset memoria %d",offsetMemoria);
+		log_info(logImongo,"offset file %d",offsetFile);
 		lock(&mutexMemoriaSecundaria);
 		memcpy(copiaFile + offsetFile, copiaMemoriaSecundaria + offsetMemoria, superBloque->block_size);
 		unlock(&mutexMemoriaSecundaria);
@@ -263,11 +271,13 @@ char * reconstruirArchivo(t_list * bloques){
 	copiaFile[tamanio] = '\0';
 	log_info(logImongo,"archivo reconstruido es: %s",copiaFile);
 	return copiaFile;
+
 }
 
 
 char * obtenerMD5(t_list * bloques){
-	int md5Size = 32;
+
+	uint32_t md5Size = 32;
 
 	char* copiaFile = reconstruirArchivo(bloques);
 	char * comando = string_from_format("echo -n \"%s\" | md5sum", copiaFile);
@@ -275,10 +285,11 @@ char * obtenerMD5(t_list * bloques){
 	FILE * file = popen(comando, "r");
 
 	fgets(md5, md5Size+1, file);
-	/*
+
 	fclose(file);
 	free(comando);
-	free(copiaFile);*/
+	free(copiaFile);
+
 	return md5;
 }
 
@@ -358,9 +369,9 @@ t_avisoTarea* deserializarAvisoTarea(void* stream){
 }
 
 
-int deserializarID(void* stream){
+uint32_t deserializarID(void* stream){
 
-	int *id = malloc(sizeof(uint32_t));
+	uint32_t *id = malloc(sizeof(uint32_t));
 	memcpy(id, stream, sizeof(uint32_t));
 
 	return *id;
@@ -389,7 +400,7 @@ char* pathBitacoraTripulante(char* idTripulante){
 }
 
 
-void liberarConfiguracion(){
+void liberarEstructuraDatosConfig(){
 	free(datosConfig->puntoMontaje);
 	free(datosConfig->posicionesSabotaje);
 	free(datosConfig);
@@ -460,33 +471,43 @@ void generarTarea2(t_file2* archivo, uint32_t cantidad){
 	log_info(logImongo, "El archivo %s va a ocupar los bloques %s", archivo->path, stringBloques);
 	free(stringBloques);
 
+
+
 	if(!list_is_empty(bloquesAocupar) || cantidad <= fragmentacionArchivo){//SI LOS BLOQUES A OCUPAR NO SON 0 Y SI CANTIDAD DE CARACTERES A GENERAR ES MENOR O IGUAL A LA FRAGMENTACION DEL ARCHIVO
 
 		archivo->tamanioArchivo += cantidad;//SE ACTUALIZA LA ESTRUCTURA CON EL TAMAÑO NUEVO PORQUE EN ESTE CASO LO UNICO QUE SE MODIFICA ES EL TAMAÑO
 		log_info(logImongo, "Se agrego %d bytes al archivo %s y paso a tener un tamanio de %d",
 				cantidad, archivo->path, archivo->tamanioArchivo);
 
+
+
 		if(fragmentacionArchivo > 0){// SI LA FRAGMENTACION ES MAYOR A 0
 
-			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);//ESCRIBIR EN EL ULTIMO BLOQUE DE LA LISTA
-			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(fragmentacionArchivo, cantidad)),
-					superBloque->block_size - fragmentacionArchivo);//SE ESCRIBE EL EQUIVALENTE A LA FRAGMENTACION EN EL ULTIMO BLOQUE
+			bloque = * (uint32_t*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);//ESCRIBIR EN EL ULTIMO BLOQUE DE LA LISTA
+			char* aGuardarUltimoBloque = string_repeat(*archivo->caracterLlenado, min(fragmentacionArchivo, cantidad));
+			escribirBloque(bloque, aGuardarUltimoBloque ,superBloque->block_size - fragmentacionArchivo);//SE ESCRIBE EL EQUIVALENTE A LA FRAGMENTACION EN EL ULTIMO BLOQUE
 			cantidad -= fragmentacionArchivo;//SE LE RESTA LA FRAGMENTACION RECIEN OCUPADA A LA CANTIDAD DE CARACTERES QUE SE IBAN A CONSUMIR DE UN PRINCIPIO
+			free(aGuardarUltimoBloque);
 		}
+
+
 
 		while(!list_is_empty(bloquesAocupar)){//MIENTRAS EXISTAN BLOQUES A OCUPAR
 
 			list_add(archivo->bloques, list_remove(bloquesAocupar, 0));//AGREGA LOS BLOQUES QUE VA A GUARDAR A LA ESTRUCTURA ADMINISTRATIVA
-			bloque = * (int*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);// AGARRA EL NUMERO DE BLOQUE A GUARDAR
+			bloque = * (uint32_t*) list_get(archivo->bloques, list_size(archivo->bloques) - 1);// AGARRA EL NUMERO DE BLOQUE A GUARDAR
 			log_info(logImongo, "Se agrego el bloque %d al archivo %s", bloque, archivo->path);
-			escribirBloque(bloque, string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad)), 0);// SE ESCRIBE EN EL BLOQUE, EL 0 SIGNIFICA BLOQUE ENTERO
+			char* aGuardar = string_repeat(*archivo->caracterLlenado, min(superBloque->block_size, cantidad));
+			escribirBloque(bloque, aGuardar, 0);// SE ESCRIBE EN EL BLOQUE, EL 0 SIGNIFICA BLOQUE ENTERO
 			ocuparBloque(bloque);//ACTUALIZA BIT ARRAY
 			cantidad -= superBloque->block_size;// DECREMENTA LA CANTIDAD DE CARACTERES A GUARDAR (LA CANTIDAD DEL TAMAÑO DEL BLOQUE)
+			free(aGuardar);
 		}
 
 		actualizarSuperBloque();//ACTUALIZA ESTRUCTURA SUPERBLOQUE
 		unlock(&mutexBitMap);
 
+		//free(archivo->md5_archivo);
 		archivo->md5_archivo = obtenerMD5(archivo->bloques);
 
 		actualizarFile(archivo);//ACTUALIZA META DATA CON ESTRUCTURAS ADMINISTRATIVAS
@@ -497,6 +518,8 @@ void generarTarea2(t_file2* archivo, uint32_t cantidad){
 	}
 
 	unlock(&archivo->mutex);
+
+	list_destroy(bloquesAocupar);
 }
 
 
@@ -516,18 +539,19 @@ void consumirTarea2(t_file2* archivo, uint32_t cantidad){
 
 	if(fragmentacionArchivo > 0){ // SI LA FRAGMENTACION ES MAYOR A 0
 
-		uint32_t* bloque = (uint32_t*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+		uint32_t* bloqueFragmentacion = (uint32_t*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
 		uint32_t tamanioUltBloque = superBloque->block_size - fragmentacionArchivo; // GUARDO EN UNA VARIABLE EL TAMAÑO DEL ÚLTIMO BLOQUE
-		consumirBloque(*bloque, min(cantidad, tamanioUltBloque), tamanioUltBloque);//  SE CONSUME DEL ULTIMO BLOQUE EL MINIMO ENTRE LA CANTIDAD A CONSUMIR Y EL TAMANIO QUE HAY
+		consumirBloque(*bloqueFragmentacion, min(cantidad, tamanioUltBloque), tamanioUltBloque);//  SE CONSUME DEL ULTIMO BLOQUE EL MINIMO ENTRE LA CANTIDAD A CONSUMIR Y EL TAMANIO QUE HAY
 		if(cantidad >= tamanioUltBloque){ //SI LA CANTIDAD A CONSUMIR ES MAYOR O IGUAL A LO QUE HABIA EN EL ULTIMO BLOQUE
 			cantidad -= tamanioUltBloque; //LE RESTO LO QUE CONSUMI DEL ULTIMO BLOQUE A LO QUE ME QUEDA POR CONSUMIR
-			liberarBloque(*bloque);//LIBERO BLOQUE EN EL BITMAP
-			free(bloque);
+			liberarBloque(*bloqueFragmentacion);//LIBERO BLOQUE EN EL BITMAP
+			free(bloqueFragmentacion);
 		}
 		else{
 			cantidad = 0;// ESTE CASO ES CUANDO LA FRAGMENTACION ALCANZO A CONSUMIR, NO QUEDA MAS CANATIDAD POR CONSUMIR
-			list_add(archivo->bloques, bloque);
+			list_add(archivo->bloques, bloqueFragmentacion);
 		}
+
 	}
 
 	while(cantidad > 0){//MIENTRAS HAYA CARACTERES POR CONSUMIR
@@ -538,16 +562,21 @@ void consumirTarea2(t_file2* archivo, uint32_t cantidad){
 			cantidad -= superBloque->block_size; // LE RESTO EL TAMAÑO DEL BLOQUE
 			liberarBloque(*bloque);
 			free(bloque);
+
 		}
 		else{
 			cantidad = 0;//SI SOLO ES LA FRAGMENTACION INTERNA LO QUE SE CONSUMIO, NO SE PUEDE CONSUMIR MAS
 			list_add(archivo->bloques, bloque);// COMO SE SACO EL ULTIMO BLOQUE, SE VUELVE A AGREGAR EN LA ESTRUCTURA ADMINISTRATIVA
 		}
-		//free(bloque);
+
+
 	}
 
 	actualizarSuperBloque();// SE ACTUALIZA SUPERBLOQUE
+
 	unlock(&mutexBitMap);
+
+	//free(archivo->md5_archivo);
 
 	archivo->md5_archivo = obtenerMD5(archivo->bloques);// SE ACTUALIZA MD5
 
@@ -586,23 +615,29 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 
 		if(fragmentacionArchivo > 0){
 
-			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
+			bloque = * (uint32_t*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
 			char* contenidoUltimoBloque = string_substring_until(mensaje, min(fragmentacionArchivo, tamanioMensaje));
 			escribirBloque(bloque, contenidoUltimoBloque, superBloque->block_size - fragmentacionArchivo);
 			offsetMensaje = min(fragmentacionArchivo, tamanioMensaje);
+			free(contenidoUltimoBloque);
+
 		}
+
+
 
 		while(!list_is_empty(bloquesAocupar)){
 
 			char* fragmentoAescribir = string_substring(mensaje,
 					offsetMensaje, min(tamanioMensaje, superBloque->block_size));
 			list_add(bitacora->bloques, list_remove(bloquesAocupar, 0));
-			bloque = * (int*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
+			bloque = * (uint32_t*) list_get(bitacora->bloques, list_size(bitacora->bloques) - 1);
 			escribirBloque(bloque, fragmentoAescribir, 0);
 			ocuparBloque(bloque);
 			offsetMensaje += superBloque->block_size;
-			//free(fragmentoAescribir);
+			free(fragmentoAescribir);
 		}
+
+
 
 		actualizarSuperBloque();
 		unlock(&mutexBitMap);
@@ -610,10 +645,15 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 		actualizarBitacora(bitacora);
 	}
 	else{
+
 		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA BITACORA ---");
+
 	}
 
 	unlock(&bitacora->mutex);
+
+	list_destroy(bloquesAocupar);
+
 }
 
 
@@ -646,9 +686,13 @@ void consumirBloque(uint32_t bloque, uint32_t cantidadConsumir, uint32_t tamanio
 	uint32_t cantBytesFinalesEnBloque = tamanioBloque - cantidadConsumir;
 	uint32_t posicionEnBites = bloque * superBloque->block_size + cantBytesFinalesEnBloque;
 
+	char* consumirCantidad = string_repeat('\0', cantidadConsumir);
+
 	lock(&mutexMemoriaSecundaria);
-	memcpy(copiaMemoriaSecundaria + posicionEnBites , string_repeat('\0', cantidadConsumir), cantidadConsumir);
+	memcpy(copiaMemoriaSecundaria + posicionEnBites ,consumirCantidad , cantidadConsumir);
 	unlock(&mutexMemoriaSecundaria);
+
+	free(consumirCantidad);
 
 	log_info(logImongo, "Se consumio %d del bloque %d y quedo %d bytes en el bloque",
 			cantidadConsumir, bloque, cantBytesFinalesEnBloque);
@@ -675,7 +719,7 @@ t_list* buscarBloques2(uint32_t cantBytes){
 
 	if(list_size(bloquesAocupar) < cantBloques){ // CASO EN EL Q NO ALCANZARON LOS BLOQUES PARA ESCRIBIR TODA LA TAREA
 
-		void eliminarEntero(int* n){
+		void eliminarEntero(uint32_t* n){
 			free(n);
 		}
 
@@ -714,8 +758,13 @@ void actualizarFile(t_file2* archivo){
 	config_set_value(configFile, "BLOCK_COUNT", stringCantBloques);
 	config_set_value(configFile, "CARACTER_LLENADO", archivo->caracterLlenado);
 
+	free(stringBloques);
+	free(stringCantBloques);
+	free(stringSize);
+
 	config_save(configFile);
 	config_destroy(configFile);
+
 }
 
 
@@ -729,6 +778,9 @@ void actualizarBitacora(t_bitacora_tripulante* bitacora){
 	config_set_value(configBitacora, "BLOCKS", stringBloques);
 	config_set_value(configBitacora, "SIZE", stringSize);
 
+	free(stringBloques);
+	free(stringSize);
+
 	config_save(configBitacora);
 	config_destroy(configBitacora);
 }
@@ -738,10 +790,13 @@ void actualizarSuperBloque(){
 
 	char* stringBitmap = convertirBitmapEnString(superBloque->bitmap);
 
-	t_config* configSB = config_create(superBloque->path);
+	t_config* configSB;
+
+	crearConfig(&configSB,superBloque->path);
 
 	config_set_value(configSB, "BITMAP", stringBitmap);
-	//free(stringBitmap);
+
+	free(stringBitmap);
 
 	config_save(configSB);
 	config_destroy(configSB);

@@ -42,11 +42,8 @@ int main(void) {
 
 	proximoPosSabotaje = 0;
 
-	//liberarConfiguracion();
-	//liberarTareas();
-	//log_destroy(logImongo); PREGUNTAR AYUDANTE DIOS MIO
-	//config_destroy(configImongo); PREGUNTAR AYUDANTE DIOS MIO
-	//liberarTodosLosStructTareas();
+	liberarRecursosGlobalesAlTerminar();
+
 	free(path);
 	return EXIT_SUCCESS;
 }
@@ -128,6 +125,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora2(stringIdtripulante, mensaje);
 
+			free(stringIdtripulante);
 			free(mensaje);
 			free(desplazamiento);
 
@@ -158,6 +156,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
+			free(stringIdtripulante);
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
 
@@ -188,7 +187,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
-
+			free(stringIdtripulante);
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
 
@@ -533,10 +532,22 @@ void crearSuperBloque(){
 	FILE* SB = fopen(superBloque->path,"wb");
 	fclose(SB);
 
-	t_config* configSB = config_create(superBloque->path);
-	config_set_value(configSB,"BLOCK_SIZE",string_itoa(superBloque->block_size));
-	config_set_value(configSB,"BLOCKS",string_itoa(superBloque->blocks));
+	t_config* configSB;
+
+	crearConfig(&configSB,superBloque->path);
+
+	char* superBloqueBlockSize = string_itoa(superBloque->block_size);
+	char* superBloqueBlocks = string_itoa(superBloque->blocks);
+
+	config_set_value(configSB,"BLOCK_SIZE",superBloqueBlockSize);
+	config_set_value(configSB,"BLOCKS",superBloqueBlocks);
+
 	config_save(configSB);
+	config_destroy(configSB);
+
+	free(superBloqueBlockSize);
+	free(superBloqueBlocks);
+
 	actualizarSuperBloque();
 }
 
@@ -583,4 +594,49 @@ void iniciarFileSystem(){
 				"SuperBloque.ims y Blocks.ims, creando archivos...");
 		crearFileSystemDesdeCero();
 	}
+}
+
+
+void liberarSuperBloque(){
+
+	free(superBloque->path);
+	bitarray_destroy(superBloque->bitmap);
+	free(superBloque);
+
+}
+
+
+void liberarEstructuraFile(t_file2* file){
+
+	free(file->caracterLlenado);
+	free(file->md5_archivo);
+	free(file->path);
+	list_destroy(file->bloques);
+	free(file);
+
+}
+
+
+void liberarRecursosGlobalesAlTerminar(){
+
+	liberarEstructuraDatosConfig();
+	log_destroy(logImongo);
+	config_destroy(configImongo);
+	liberarEstructuraFile(oxigeno);
+	liberarEstructuraFile(basura);
+	liberarEstructuraFile(comida);
+	dictionary_destroy(bitacoras);
+	free(pathFiles);
+	free(pathBitacoras);
+	free(pathBloque);
+	free(copiaMemoriaSecundaria);
+	free(memoriaSecundaria);
+	list_destroy(listaPosicionesSabotaje);
+	free(bitArray);
+	for(int i=0;i<6;i++){
+		free(tareas[i]);
+	}
+	free(tareas);
+	liberarSuperBloque();
+
 }
