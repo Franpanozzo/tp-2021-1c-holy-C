@@ -85,7 +85,7 @@ bool haySabotajeBitmapEnSuperBloque(){
 	char* stringBitmap = config_get_string_value(configSB, "BITMAP");
 	uint32_t cantBloques = config_get_long_value(configSB, "BLOCKS");
 
-	char* espacioBitmap;
+	char* espacioBitmap = NULL;
 	t_bitarray* bitmap = crearBitmap(stringBitmap, espacioBitmap);
 	t_list* listaBloques = list_create();
 

@@ -49,6 +49,10 @@ void cargarFile(t_file2*);
 void eliminarBitacorasAnteriores();
 void eliminarBloquesDeBitacoraTripulante(t_config*);
 
+void liberarSuperBloque();
+void liberarEstructuraFile(t_file2*);
+void liberarRecursosGlobalesAlTerminar();
+
 
 #endif
 
