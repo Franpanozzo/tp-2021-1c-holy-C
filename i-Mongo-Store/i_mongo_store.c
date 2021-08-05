@@ -18,6 +18,9 @@ int main(void) {
 
 	bitacoras = dictionary_create();
 
+	haySabotaje = false;
+	cantEscriturasPendientes = 0;
+
 	char* path = pathLog();
 	logImongo = iniciarLogger(path, "i-mongo-store",1);
 	crearConfig(&configImongo,"/home/utnso/tp-2021-1c-holy-C/i-Mongo-Store/i_mongo_store.config");
@@ -117,6 +120,12 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				crearBitacora(stringIdtripulante);
 			}
 			unlock(&mutexExisteBitacora);
+
+			if(leerHaySabotaje()){
+				modificarCantEscriturasPendientes(leerCantEscriturasPendientes() + 1);
+				sem_wait(&sabotajeResuelto);
+			}
+
 			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
@@ -140,6 +149,11 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				crearBitacora(stringIdtripulante);
 			}
 			unlock(&mutexExisteBitacora);
+
+			if(leerHaySabotaje()){
+				modificarCantEscriturasPendientes(leerCantEscriturasPendientes() + 1);
+				sem_wait(&sabotajeResuelto);
+			}
 
 			escribirBitacora2(stringIdtripulante, mensaje);
 
@@ -165,6 +179,11 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				crearBitacora(stringIdtripulante);
 			}
 			unlock(&mutexExisteBitacora);
+
+			if(leerHaySabotaje()){
+				modificarCantEscriturasPendientes(leerCantEscriturasPendientes() + 1);
+				sem_wait(&sabotajeResuelto);
+			}
 
 			escribirBitacora2(stringIdtripulante, mensaje);
 
@@ -193,7 +212,11 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 			}
 			unlock(&mutexExisteBitacora);
 
-			sem_wait(&sabotajeResuelto);
+			if(leerHaySabotaje()){
+				modificarCantEscriturasPendientes(leerCantEscriturasPendientes() + 1);
+				sem_wait(&sabotajeResuelto);
+			}
+
 			escribirBitacora2(stringIdtripulante, mensaje);
 
 			free(mensaje);
@@ -229,11 +252,11 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 		{
 			int idTripulante = deserializarID(paquete->buffer->stream);
 
-			log_info(logImongo,"Se va a buscar la bitacora del tripulante de ID %d", idTripulante);
-
 			char * stringIdtripulante = string_itoa(idTripulante);
 
-			if(!dictionary_has_key(bitacoras, stringIdtripulante)){
+			log_info(logImongo,"Se va a buscar la bitacora del tripulante de ID %s", stringIdtripulante);
+
+			if(dictionary_has_key(bitacoras, stringIdtripulante)){
 
 				t_bitacora_tripulante* bitacora = (t_bitacora_tripulante*) dictionary_get(bitacoras, stringIdtripulante);
 

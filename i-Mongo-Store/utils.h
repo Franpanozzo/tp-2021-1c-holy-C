@@ -15,6 +15,10 @@ void iniciarMutex();
 void liberarConfiguracion();
 int indiceTarea(t_tarea*);
 void asignarTareas();
+int leerHaySabotaje();
+void modificarHaySabotaje(bool);
+int leerCantEscriturasPendientes();
+void modificarCantEscriturasPendientes(int);
 
 int min(int ,int );
 int max(int, int);

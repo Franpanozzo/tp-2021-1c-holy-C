@@ -21,7 +21,7 @@ uint32_t sizeSegunBlocks(t_file2*);
 uint32_t tamanioUltimoBloque(t_file2*);
 uint32_t cantBloquesSegunLista(t_file2*);
 bool existeBitacoraTripulante(int);
-t_bitarray* crearBitmap(char*, char*);
+void cargarBitmap(char*,  t_bitarray*);
 void agregarBloquesOcupados(t_list*, t_config*);
 void sabotajesFile(t_file2*);
 

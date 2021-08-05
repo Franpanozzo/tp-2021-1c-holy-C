@@ -18,7 +18,12 @@ void fsck(){
 	sabotajesFile(comida);
 	sabotajesFile(basura);
 
-	sem_post(&sabotajeResuelto);
+	modificarHaySabotaje(false);
+
+	while(leerCantEscriturasPendientes() > 0){
+		modificarCantEscriturasPendientes(leerCantEscriturasPendientes() - 1);
+		sem_post(&sabotajeResuelto);
+	}
 }
 
 
@@ -54,6 +59,7 @@ bool haySabotajeCantBloquesEnSuperBloque(){
 
 	//log_info(logImongo,"el cantEnBlocks es %d y en el config %d", cant1, cant2);
 
+	log_info(logImongo,"SABO 1 SIN FALLA");
 	return cant1 != cant2;
 }
 
@@ -85,8 +91,11 @@ bool haySabotajeBitmapEnSuperBloque(){
 	char* stringBitmap = config_get_string_value(configSB, "BITMAP");
 	uint32_t cantBloques = config_get_long_value(configSB, "BLOCKS");
 
-	char* espacioBitmap;
-	t_bitarray* bitmap = crearBitmap(stringBitmap, espacioBitmap);
+	int tamanioBitmap = (int) ceil ((float) strlen(stringBitmap) / (float) 8);
+	char* espacioBitmap = malloc(tamanioBitmap);
+	t_bitarray* bitmap = bitarray_create_with_mode(espacioBitmap, tamanioBitmap, MSB_FIRST);
+	cargarBitmap(stringBitmap, bitmap);
+
 	t_list* listaBloques = list_create();
 
 	bool estaEnLaLista(int i){
@@ -143,14 +152,17 @@ bool haySabotajeBitmapEnSuperBloque(){
 	}
 
 	config_destroy(configSB);
-	free(stringBitmap);
-	//free(espacioBitmap);
-
-	/*
-	list_destroy(listaBloques);
+	free(espacioBitmap);
 	bitarray_destroy(bitmap);
-	 */
 
+	void eliminarEntero(int* n){
+		free(n);
+	}
+
+	//list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
+	//log_info(logImongo,"SABO 2 SIN FALLA 1.5");
+
+	log_info(logImongo,"SABO 2 SIN FALLA");
 	return result;
 }
 
@@ -216,10 +228,11 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 			"el bitmap indicaba mal el estado de un bloque ----");
 
 	config_save(configSB);
-	free(stringMap);
+	config_destroy(configSB);
+	free(espacioBitmap);
+	bitarray_destroy(bitmap);
 	/*
 	free(stringMap);
-	bitarray_destroy(bitmap);
 	list_destroy(listaBloques);
 	*/
 }
@@ -234,7 +247,7 @@ bool haySabotajeSizeEnFile(t_file2* archivo){
 	config_destroy(config);
 
 	//log_info(logImongo,"el size segun blocks es %d y en el config %d", cant1, cant2);
-
+	log_info(logImongo,"SABO 3 SIN FALLA");
 	return cant1 != cant2;
 }
 
@@ -269,6 +282,7 @@ bool haySabotajeCantBloquesEnFile(t_file2* archivo){
 	//log_info(logImongo,"la cant segun lista es %d y en el config %d", cant1, cant2);
 	config_destroy(config);
 
+	log_info(logImongo,"SABO 4 SIN FALLA");
 	return cant1 != cant2;
 }
 
@@ -311,14 +325,14 @@ bool haySabotajeBloquesEnFile(t_file2* archivo){
 	config_destroy(config);
 
 	free(md5calculado);
-	free(md5real);
-	liberarDoblesPunterosAChar(arrayPosiciones);
+	//free(md5real);
+	//liberarDoblesPunterosAChar(arrayPosiciones);
 	/*
 	//falta liberar los elementos de la lista
 	list_destroy(listaBloques);
 	// falta liberar en arrayPosiciones
 	 */
-
+	log_info(logImongo,"SABO 5 SIN FALLA");
 	return result;
 }
 
@@ -350,15 +364,15 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 	config_save(config);
 	config_destroy(config);
 	config_destroy(configSB);
-	free(stringCaracter);
-	liberarDoblesPunterosAChar(arrayPosiciones);
-	/*
-	 * 		void eliminarEntero(int* n){
-			free(n);
-		}
+	//free(stringCaracter);
+	//liberarDoblesPunterosAChar(arrayPosiciones);
 
-		list_clean_and_destroy_elements(bloquesAocupar, (void*) eliminarEntero);
-	 */
+	void eliminarEntero(uint32_t* n){
+		free(n);
+	}
+
+	list_destroy_and_destroy_elements(archivo->bloques, (void*) eliminarEntero);
+
 
 	archivo->bloques = listaBloques;
 	/*
@@ -452,21 +466,15 @@ uint32_t cantBloquesSegunLista(t_file2* archivo){
 	uint32_t cantidadBloques = list_size(listaBloquesOcupados);
 
 	list_destroy(listaBloquesOcupados);
+	//liberarDoblesPunterosAChar(arrayBloques);
 	config_destroy(config);
-	liberarDoblesPunterosAChar(arrayBloques);
 
 	return cantidadBloques;
 }
 
 
 //PROBADA
-t_bitarray* crearBitmap(char* stringBitmap, char* espacioBitmap){
-
-	int tamanioBitmap = (int) ceil ((float) strlen(stringBitmap) / (float) 8);
-
-	espacioBitmap = malloc(tamanioBitmap);
-
-	t_bitarray* bitmap = bitarray_create_with_mode(espacioBitmap, tamanioBitmap, MSB_FIRST);
+void cargarBitmap(char* stringBitmap,  t_bitarray* bitmap){
 
 	for(int i=0; i<strlen(stringBitmap); i++){
 
@@ -477,8 +485,6 @@ t_bitarray* crearBitmap(char* stringBitmap, char* espacioBitmap){
 			bitarray_clean_bit(bitmap, i);
 		}
 	}
-
-	return bitmap;
 }
 
 

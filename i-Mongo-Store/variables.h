@@ -53,13 +53,19 @@ pthread_mutex_t mutexMemoriaSecundaria;
 pthread_mutex_t mutexBitMap;
 pthread_mutex_t mutexEstructurasFile;
 pthread_mutex_t mutexExisteBitacora;
+pthread_mutex_t mutexCantEscriturasPendientes;
+pthread_mutex_t mutexHaySabotaje;
 pthread_t manejoTripulante;
 pthread_t hiloSincronizador;
+
 t_config* configImongo;
 t_log* logImongo;
 t_datosConfig* datosConfig;
 char* bitArray;
 char** tareas;
+
+int cantEscriturasPendientes;
+bool haySabotaje;
 
 t_superBloque* superBloque;
 t_file2* oxigeno;
