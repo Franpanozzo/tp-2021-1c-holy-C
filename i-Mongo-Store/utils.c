@@ -95,6 +95,38 @@ void iniciarMutex(){
 	pthread_mutex_init(&comida->mutex,NULL);
 	pthread_mutex_init(&basura->mutex,NULL);
 	pthread_mutex_init(&mutexExisteBitacora,NULL);
+	pthread_mutex_init(&mutexCantEscriturasPendientes,NULL);
+	pthread_mutex_init(&mutexHaySabotaje,NULL);
+}
+
+
+int leerHaySabotaje(){
+	lock(&mutexHaySabotaje);
+	bool sabotaje = haySabotaje;
+	unlock(&mutexHaySabotaje);
+	return sabotaje;
+}
+
+
+void modificarHaySabotaje(bool valor){
+	lock(&mutexHaySabotaje);
+	haySabotaje = valor;
+	unlock(&mutexHaySabotaje);
+}
+
+
+int leerCantEscriturasPendientes(){
+	lock(&mutexCantEscriturasPendientes);
+	int cant = cantEscriturasPendientes;
+	unlock(&mutexCantEscriturasPendientes);
+	return cant;
+}
+
+
+void modificarCantEscriturasPendientes(int cant){
+	lock(&mutexCantEscriturasPendientes);
+	cantEscriturasPendientes = cant;
+	unlock(&mutexCantEscriturasPendientes);
 }
 
 
@@ -408,19 +440,20 @@ t_list* listaCoordenadasSabotaje() {
 
 void sabotaje(int signal) {
 
-  t_coordenadas* coordenadasSabotaje = list_get(listaPosicionesSabotaje, proximoPosSabotaje);
+	modificarHaySabotaje(true);
+	t_coordenadas* coordenadasSabotaje = list_get(listaPosicionesSabotaje, proximoPosSabotaje);
 
-  proximoPosSabotaje++;
-  if(proximoPosSabotaje == list_size(listaPosicionesSabotaje)) proximoPosSabotaje = 0;
+	proximoPosSabotaje++;
+	if(proximoPosSabotaje == list_size(listaPosicionesSabotaje)) proximoPosSabotaje = 0;
 
-  t_paquete* paqueteEnviado = armarPaqueteCon((void*) coordenadasSabotaje, COORDENADAS_SABOTAJE);
+	t_paquete* paqueteEnviado = armarPaqueteCon((void*) coordenadasSabotaje, COORDENADAS_SABOTAJE);
 
-  log_info(logImongo,"\nSABOTAJE - AVISANDO A DISCORDADOR QUE ES EN POS: X:%d - Y:%d\n",
-		  coordenadasSabotaje->posX, coordenadasSabotaje->posY);
+	log_info(logImongo,"\nSABOTAJE - AVISANDO A DISCORDADOR QUE ES EN POS: X:%d - Y:%d\n",
+			coordenadasSabotaje->posX, coordenadasSabotaje->posY);
 
-  int socketDisc = iniciarConexionDesdeClienteHacia((void*) puertoEIPDisc);
-  enviarPaquete(paqueteEnviado, socketDisc);
-  close(socketDisc);
+	int socketDisc = iniciarConexionDesdeClienteHacia((void*) puertoEIPDisc);
+	enviarPaquete(paqueteEnviado, socketDisc);
+	close(socketDisc);
 }
 
 

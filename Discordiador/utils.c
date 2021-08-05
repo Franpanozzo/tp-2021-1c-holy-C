@@ -427,6 +427,9 @@ void recibirBitacora(int server_socket, uint32_t idTripulante){
 		log_info(logDiscordiador,"La bitacora del tripulante %d es:\n%s", idTripulante, bitacora);
 		free(bitacora);
 	}
+	else{
+		log_error(logDiscordiador,"No se encontro la bitacora del tripulante %d", idTripulante);
+	}
 
 	eliminarPaquete(paqueteRecibido);
 }
