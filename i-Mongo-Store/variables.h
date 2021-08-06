@@ -55,6 +55,7 @@ pthread_mutex_t mutexEstructurasFile;
 pthread_mutex_t mutexExisteBitacora;
 pthread_mutex_t mutexCantEscriturasPendientes;
 pthread_mutex_t mutexHaySabotaje;
+pthread_mutex_t mutexSP;
 pthread_t manejoTripulante;
 pthread_t hiloSincronizador;
 

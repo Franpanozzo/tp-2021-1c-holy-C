@@ -90,6 +90,7 @@ pthread_mutex_t mutexTiempo;
 pthread_mutex_t mutexMapa;
 pthread_mutex_t mutexChequearUltTripu;
 pthread_mutex_t mutexFlagExpulsion;
+pthread_mutex_t mutexDelimitar;
 
 
 

@@ -50,7 +50,6 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-
 void atenderTripulantes(int* serverSock) {
 
     while(1){
@@ -65,7 +64,6 @@ void atenderTripulantes(int* serverSock) {
 		pthread_detach(t);
     }
 }
-
 
 int esperarTripulante(int serverSock) {
 
@@ -299,6 +297,8 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				t_paquete* paquete = armarPaqueteCon(bitacoraTripulante,STRING);
 
 				enviarPaquete(paquete,*tripulanteSock);
+
+				free(bitacoraTripulante);
 			}
 
 			free(stringIdtripulante);
@@ -681,8 +681,6 @@ void liberarRecursosGlobalesAlTerminar(){
 	liberarSuperBloque();
 
 }
-
-
 
 
 

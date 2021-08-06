@@ -41,16 +41,11 @@ void atenderTripulantes(int* serverSock) {
 		*tripulanteSock = esperarTripulante(*serverSock);
 
 		pthread_t t;
-
-		//pthread_t t = malloc(sizeof(pthread_t));
-
-		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
-
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setstacksize(&attr, 16384);
+		pthread_create(&t, &attr, (void*) manejarTripulante, (void*) tripulanteSock);
 		pthread_detach(t);
-		//free(t);
-		//Para hacerle free hay que pasarlo por parametro en pthread_create
-
-		//pthread_join(t, (void**) NULL);
     }
 }
 
@@ -249,6 +244,7 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexMapa, NULL);
     pthread_mutex_init(&mutexChequearUltTripu, NULL);
     pthread_mutex_init(&mutexFlagExpulsion, NULL);
+	pthread_mutex_init(&mutexDelimitar, NULL);
 
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
@@ -378,7 +374,9 @@ char* delimitarTareas(char* stringTareas) {
 
     for(int i =0; arrayDeTareas[i] != NULL; i++){
 
+    	lock(&mutexDelimitar);
         string_trim(&arrayDeTareas[i]);
+        unlock(&mutexDelimitar);
         string_append(&arrayDeTareas[i],"|");
         string_append(&tareasDelimitadas, arrayDeTareas[i]);
     }
