@@ -66,7 +66,15 @@ void leerConsola(){
 			sabotaje->coordenadas.posX = 6;
 			sabotaje->coordenadas.posY = 6;
 			sabotaje->haySabotaje = 1;
+		}
+		else if(strcmp(comandoYparametros[cursor], "OBTENER_BITACORA") == 0){
 
+			log_info(logDiscordiador, "Se ingreso el comando OBTENER_BITACORA");
+			cursor ++;
+			uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
+			int socketMongo = enviarA(puertoEIPMongo, &idTripulante, OBTENER_BITACORA);
+			recibirBitacora(socketMongo, idTripulante);
+			close(socketMongo);
 		}
 		else{
 			log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);

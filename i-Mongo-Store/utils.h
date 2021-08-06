@@ -2,41 +2,60 @@
 #define UTILS_H_
 
 
-#include "variables.h"
+//#include "variables.h"
 #include "i_mongo_store.h"
 
 
 void crearConfig(t_config**, char*);
 char * pathLog();
-void cargarDatosConfig();
-void liberarConfiguracion();
-int indiceTarea(t_tarea*);
 char* crearDestinoApartirDeRaiz(char*);
-bool validarExistenciaFileSystem(char*, char*,char*);
-void crearMemoria(int);
-void generarOxigeno(t_tarea*,int*);
-void consumirOxigeno(t_tarea*,int*);
-void generarTarea(tarea*, t_tarea*, int*);
-void generarComida(t_tarea*,int*);
-void consumirComida(t_tarea*,int*);
-void generarBasura(t_tarea*,int*);
-void actualizarEstructurasFile(t_file*, t_config*, pthread_mutex_t *);
-void descartarBasura(t_tarea*,int*);
-void mandarErrorAdiscordiador(int*);
-int* obtenerArrayDePosiciones(int);
-bool bloquesLibres(int);
-void actualizarPosicionesFile(t_file*, int*, t_config*,int);
-int min(int ,int );
-void actualizarStringBitMap();
 void cargarPaths();
+void cargarDatosConfig();
+void iniciarMutex();
+void liberarEstructuraDatosConfig();
+int indiceTarea(t_tarea*);
+void asignarTareas();
+int leerHaySabotaje();
+void modificarHaySabotaje(bool);
+int leerCantEscriturasPendientes();
+void modificarCantEscriturasPendientes(int);
+
+int min(int ,int );
+int max(int, int);
 void detallesArchivo(int);
 bool verificarSiExiste(char*);
-void mallocTareas();
-void liberarStructTareas(t_file*);
-void liberarTodosLosStructTareas();
+bool validarExistenciaFileSystem(char*, char*, char*);
+
+void crearMemoria(int);
 void sincronizarMemoriaSecundaria();
-void iniciarMutex();
-void actualizarMD5(tarea* );
+char* reconstruirArchivo(t_list*);
+char* obtenerMD5(t_list*);
+
+t_list* convertirEnLista(char**);
+char* convertirListaEnString(t_list*);
+char* convertirBitmapEnString(t_bitarray*);
+
+t_desplazamiento* deserializarDesplazamiento(void*);
+t_avisoTarea* deserializarAvisoTarea(void*);
+uint32_t deserializarID(void*);
+
+void crearBitacora(char*);
+char* pathBitacoraTripulante(char*);
+
+void generarTarea2(t_file2*, uint32_t);
+void consumirTarea2(t_file2*, uint32_t);
+void escribirBitacora2(char*, char*);
+uint32_t fragmentacion(uint32_t);
+void escribirBloque(uint32_t, char*, uint32_t);
+void consumirBloque(uint32_t, uint32_t, uint32_t);
+t_list* buscarBloques2(uint32_t);
+void ocuparBloque(uint32_t);
+void liberarBloque(uint32_t);
+
+void actualizarFile(t_file2*);
+void actualizarBitacora(t_bitacora_tripulante*);
+void actualizarSuperBloque();
+
 t_list* listaCoordenadasSabotaje();
 void sabotaje(int);
 

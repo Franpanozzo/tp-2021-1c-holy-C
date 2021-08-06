@@ -1,4 +1,3 @@
-
 #ifndef DISCORDIADOR_H_
 #define DISCORDIADOR_H_
 
@@ -26,9 +25,12 @@
 #include <math.h>
 
 void hiloPlanificador();
+void procedimientoSabotaje(int*);
+int esperarSabotaje(int);
+void atenderSabotaje(int*);
 void hiloTripulante(t_tripulante*);
 
-void iniciarTripulante(t_coordenadas, uint32_t);
+void iniciarTripulante(t_coordenadas, uint32_t, t_list*);
 void iniciarPatota(t_coordenadas*, char*, uint32_t);
 
 void actualizarListaEyB(t_lista*, t_estado);
@@ -36,8 +38,5 @@ void actualizarListaReady();
 void actualizarListaNew();
 void actualizarListaExec();
 void actualizarListaBlocked();
-void procedimientoSabotaje(int*);
-int esperarSabotaje(int);
-void atenderSabotaje(int*);
 
 #endif

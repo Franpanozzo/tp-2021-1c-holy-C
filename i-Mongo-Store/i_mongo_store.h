@@ -20,8 +20,9 @@
 #include <commons/bitarray.h>
 #include <commons/temporal.h>
 #include <stdbool.h>
-#include "utils.h"
 #include "variables.h"
+#include "utils.h"
+#include "sabotajes.h"
 #include <math.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -33,14 +34,24 @@
 void atenderTripulantes(int*);
 int esperarTripulante(int);
 void manejarTripulante(int*);
-void deserializarSegun(t_paquete*, int*);
+void deserializarSegun(t_paquete*,int*);
+void seleccionarTarea(t_tarea*);
+
 void iniciarFileSystem();
 void crearFileSystemDesdeCero();
+void crearSuperBloque();
+void crearFile(t_file2*);
+
 void crearFileSystemExistente();
-void seleccionarTarea(t_tarea*, int*);
-void liberarTareas();
-void asignarTareas();
+void cargarSuperBloque();
+void cargarBlocks();
+void cargarFile(t_file2*);
+void eliminarBitacorasAnteriores();
+void eliminarBloquesDeBitacoraTripulante(t_config*);
+
+void liberarSuperBloque();
+void liberarEstructuraFile(t_file2*);
+void liberarRecursosGlobalesAlTerminar();
 
 
 #endif
-

@@ -45,6 +45,7 @@ void iniciarMutex(){
 	pthread_mutex_init(&mutexTotalTripus, NULL);
 	pthread_mutex_init(&mutexIdTripulanteBlocked, NULL);
 	pthread_mutex_init(&mutexPlanificador, NULL);
+	pthread_mutex_init(&mutexEliminarPatota, NULL);
 }
 
 void cargarConfiguracion(){
@@ -319,7 +320,7 @@ void pasarDeLista(t_tripulante* tripulante){
 }
 
 
-bool patotaSinTripulantes(uint32_t idPatota){
+bool patotaSinTripulantes(uint32_t idPatota, uint32_t idTripulante){
 
 	t_list* listaAux = list_create();
 
@@ -333,6 +334,10 @@ bool patotaSinTripulantes(uint32_t idPatota){
 		return idPatota == tripulante->idPatota;
 	}
 
+	bool estaEnExit(t_tripulante* tripulante){
+		return idTripulante == tripulante->idTripulante;
+	}
+
 	agregarAlista(listaNew);
 	agregarAlista(listaReady);
 	agregarAlista(listaExec);
@@ -341,7 +346,10 @@ bool patotaSinTripulantes(uint32_t idPatota){
 	if(sabotaje->tripulanteSabotaje != NULL)
 		list_add(listaAux, sabotaje->tripulanteSabotaje);
 
-	bool result = list_any_satisfy(listaAux, (void*)esDeLaPatota) == 0;
+
+	bool result = list_any_satisfy(listaAux, (void*)esDeLaPatota) == 0 &&
+			list_any_satisfy(listaExit->elementos, (void*)estaEnExit);
+
 	list_destroy(listaAux);
 	return result;
 }
@@ -409,6 +417,24 @@ bool confirmacion(int server_socket){
 }
 
 
+void recibirBitacora(int server_socket, uint32_t idTripulante){
+
+	t_paquete* paqueteRecibido = recibirPaquete(server_socket);
+
+	if(paqueteRecibido->codigoOperacion == STRING){
+
+		char* bitacora = deserializarString(paqueteRecibido);
+		log_info(logDiscordiador,"La bitacora del tripulante %d es:\n%s", idTripulante, bitacora);
+		free(bitacora);
+	}
+	else{
+		log_error(logDiscordiador,"No se encontro la bitacora del tripulante %d", idTripulante);
+	}
+
+	eliminarPaquete(paqueteRecibido);
+}
+
+
 int esIO(char* tarea){
 
 	for(int i=0; todasLasTareasIO[i] != NULL; i++){
@@ -436,9 +462,9 @@ uint32_t calculoCiclosExec(t_tripulante* tripulante){
 
 void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 
-//	t_desplazamiento desplazamiento;
-//	desplazamiento.id = tripulante->idTripulante;
-//	desplazamiento.inicio = tripulante->coordenadas;
+	t_desplazamiento* desplazamiento = malloc(sizeof(t_desplazamiento));
+	desplazamiento->idTripulante = tripulante->idTripulante;
+	desplazamiento->inicio = tripulante->coordenadas;
 
 	int diferenciaEnX = diferencia(tripulante->coordenadas.posX, destino.posX);
 	int diferenciaEnY = diferencia(tripulante->coordenadas.posY, destino.posY);
@@ -455,11 +481,14 @@ void desplazarse(t_tripulante* tripulante, t_coordenadas destino){
 		tripulante->coordenadas.posY -= restaEnY / diferenciaEnY;
 	}
 
-//	desplazamiento.fin = tripulante->coordenadas;
+	desplazamiento->fin = tripulante->coordenadas;
 
 	int socket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE); // FALTA EL CLOSE
     close(socket);
-//	enviarA(puertoEIPMongo, tripulante, DESPLAZAMIENTO);
+    int socketIMongo = enviarA(puertoEIPMongo, desplazamiento, DESPLAZAMIENTO);
+    close(socketIMongo);
+
+    free(desplazamiento);
 //	log_info(logDiscordiador,"A la posicion en X|Y ==> %d|%d  ",
 //			tripulante->coordenadas.posX, tripulante->coordenadas.posY);
 
@@ -595,10 +624,6 @@ void ponerEnSabotaje(t_tripulante* unTripulante){
 
 
 void mandarTCBaMiRAM(t_tripulante* tripulante){
-
-	log_info(logDiscordiador, "Mandando a guardar por primera vez a memoria el tripu ID:%d",
-			    			tripulante->idTripulante);
-
 	int miRAMsocket = enviarA(puertoEIPRAM, tripulante, TRIPULANTE);
 
 	if(!confirmacion(miRAMsocket)) {
@@ -607,7 +632,6 @@ void mandarTCBaMiRAM(t_tripulante* tripulante){
 		log_info(logDiscordiador, "NO HAY ESPACIO EN MEMORIA PARA GUARDAR AL TRIPULANTE DE ID: %d",
 				    			tripulante->idTripulante);
 	}
-
 	close(miRAMsocket);
 }
 

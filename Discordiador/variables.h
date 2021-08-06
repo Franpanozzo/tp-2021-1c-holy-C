@@ -12,9 +12,9 @@
 	t_log* logDiscordiador;
 
 	pthread_t planificador;
-	pthread_t sabo;
 	pthread_t manejoSabotaje;
 
+	sem_t semHayTripulantes;
 
 	puertoEIP* puertoEIPRAM;
 	puertoEIP* puertoEIPMongo;
@@ -28,14 +28,12 @@
 	int idTripulanteBlocked;
 	int puertoDisc;
 
-
 	t_estado estadoAcomparar;
 	t_sabotaje* sabotaje;
 
 	sem_t semPlanificacion;
 
 	char** todasLasTareasIO;
-
 
 	t_lista* listaExec;
 	t_lista* listaBlocked;
@@ -44,10 +42,10 @@
 	t_lista* listaSabotaje;
 	t_lista* listaExit;
 
-
 	pthread_mutex_t mutexTotalTripus;
 	pthread_mutex_t mutexIdTripulanteBlocked;
 	pthread_mutex_t mutexPlanificador;
+	pthread_mutex_t mutexEliminarPatota;
 
 
 

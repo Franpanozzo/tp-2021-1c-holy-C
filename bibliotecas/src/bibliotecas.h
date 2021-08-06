@@ -40,9 +40,10 @@
 		INICIO_TAREA, // id tripulante  y nombre tarea solamente (char)
 		FIN_TAREA, // id tripulante y nombre tarea solamente (char)
 		ID_SABOTAJE, // id tripulante
-		FIN_SABOTAJE,// id tripulante
+		RESOLUCION_SABOTAJE,// id tripulante
 		COORDENADAS_SABOTAJE,
-		STRING
+		STRING,
+		OBTENER_BITACORA
 
 	} tipoDeDato;
 
