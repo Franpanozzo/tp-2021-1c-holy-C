@@ -55,7 +55,7 @@ void fsck(){
 
 
 
-void sabotajesFile(t_file2* archivo){
+void sabotajesFile(t_file* archivo){
 
 	if(haySabotajeBlocksBloqueExtra2(archivo)){
 		log_info(logImongo,"---- Se detecto un sabotaje, hay un bloque extra en el file %s ----", archivo->path);
@@ -286,7 +286,7 @@ void arreglarSabotajeBitmapEnSuperBloque(){
 
 
 //PROBADA V.1
-bool haySabotajeSizeEnFile(t_file2* archivo){
+bool haySabotajeSizeEnFile(t_file* archivo){
 
 	uint32_t cant1 = sizeSegunBlocks(archivo);
 	t_config* config = config_create(archivo->path);
@@ -300,7 +300,7 @@ bool haySabotajeSizeEnFile(t_file2* archivo){
 
 // REVISAR QUE STRING_ITOA ANDA YA QUE RECIBE UN INT Y NO UN LONG
 //PROBADA V.1
-void arreglarSabotajeSizeEnFile(t_file2* archivo){
+void arreglarSabotajeSizeEnFile(t_file* archivo){
 
 	t_config* config;
 	crearConfig(&config,archivo->path);
@@ -320,7 +320,7 @@ void arreglarSabotajeSizeEnFile(t_file2* archivo){
 
 
 //PROBADA V.1
-bool haySabotajeCantBloquesEnFile(t_file2* archivo){
+bool haySabotajeCantBloquesEnFile(t_file* archivo){
 
 	uint32_t cant1 = cantBloquesSegunLista(archivo);
 	t_config* config;
@@ -335,7 +335,7 @@ bool haySabotajeCantBloquesEnFile(t_file2* archivo){
 
 
 //PROBADA V.1
-void arreglarSabotajeCantBloquesEnFile(t_file2* archivo){
+void arreglarSabotajeCantBloquesEnFile(t_file* archivo){
 
 	uint32_t cantBloquesReal = cantBloquesSegunLista(archivo);
 	t_config* config;
@@ -354,7 +354,7 @@ void arreglarSabotajeCantBloquesEnFile(t_file2* archivo){
 }
 
 
-bool haySabotajeBloquesEnFile(t_file2* archivo){
+bool haySabotajeBloquesEnFile(t_file* archivo){
 
 	t_config* config;
 	crearConfig(&config,archivo->path);
@@ -392,7 +392,7 @@ bool haySabotajeBloquesEnFile(t_file2* archivo){
 }
 
 
-void arreglarSabotajeBloquesEnFile(t_file2* archivo){
+void arreglarSabotajeBloquesEnFile(t_file* archivo){
 
 	t_config* config;
 	crearConfig(&config,archivo->path);
@@ -440,7 +440,7 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 }
 
 
-bool haySabotajeBlocksBloqueExtra(t_file2* archivo){
+bool haySabotajeBlocksBloqueExtra(t_file* archivo){
 
 	t_config* config;
 	crearConfig(&config,archivo->path);
@@ -494,7 +494,7 @@ bool haySabotajeBlocksBloqueExtra(t_file2* archivo){
 }
 
 
-bool haySabotajeBlocksBloqueExtra2(t_file2* archivo){
+bool haySabotajeBlocksBloqueExtra2(t_file* archivo){
 
 	t_config* configSB;
 	crearConfig(&configSB,superBloque->path);
@@ -531,7 +531,7 @@ bool haySabotajeBlocksBloqueExtra2(t_file2* archivo){
 }
 
 
-void arreglarSabotajeBlocksBloqueExtra(t_file2* archivo){
+void arreglarSabotajeBlocksBloqueExtra(t_file* archivo){
 
 	t_config* config;
 	crearConfig(&config,archivo->path);
@@ -629,7 +629,7 @@ uint32_t cantBloquesEnBlocks(){
 
 
 // PROBADA
-uint32_t sizeSegunBlocks(t_file2* archivo){
+uint32_t sizeSegunBlocks(t_file* archivo){
 
 	t_config* config;
 	crearConfig(&config,archivo->path);
@@ -646,7 +646,7 @@ uint32_t sizeSegunBlocks(t_file2* archivo){
 
 
 // PROBADA
-uint32_t tamanioUltimoBloque(t_file2* archivo){
+uint32_t tamanioUltimoBloque(t_file* archivo){
 
 	t_config* config;
 	crearConfig(&config,archivo->path);
@@ -695,7 +695,7 @@ uint32_t tamanioUltimoBloque(t_file2* archivo){
 
 
 // PROBADAs
-uint32_t cantBloquesSegunLista(t_file2* archivo){
+uint32_t cantBloquesSegunLista(t_file* archivo){
 
 	t_config* config;
 	crearConfig(&config,archivo->path);

@@ -5,11 +5,11 @@ int main(void) {
 
 	signal(SIGUSR1, sabotaje);
 
-	oxigeno = malloc(sizeof(t_file2));
+	oxigeno = malloc(sizeof(t_file));
 	oxigeno->caracterLlenado = "O";
-	comida = malloc(sizeof(t_file2));
+	comida = malloc(sizeof(t_file));
 	comida->caracterLlenado = "C";
-	basura = malloc(sizeof(t_file2));
+	basura = malloc(sizeof(t_file));
 	basura->caracterLlenado = "B";
 
 	sem_init(&sabotajeResuelto, 0, 0);
@@ -126,7 +126,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				sem_wait(&sabotajeResuelto);
 			}
 
-			escribirBitacora2(stringIdtripulante, mensaje);
+			escribirBitacora(stringIdtripulante, mensaje);
 
 			free(stringIdtripulante);
 			free(mensaje);
@@ -156,7 +156,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				sem_wait(&sabotajeResuelto);
 			}
 
-			escribirBitacora2(stringIdtripulante, mensaje);
+			escribirBitacora(stringIdtripulante, mensaje);
 
 			free(mensaje);
 			free(stringIdtripulante);
@@ -214,7 +214,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				sem_wait(&sabotajeResuelto);
 			}
 
-			escribirBitacora2(stringIdtripulante, mensaje);
+			escribirBitacora(stringIdtripulante, mensaje);
 
 			free(mensaje);
 			free(stringIdtripulante);
@@ -246,7 +246,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				sem_wait(&sabotajeResuelto);
 			}
 
-			escribirBitacora2(stringIdtripulante, mensaje);
+			escribirBitacora(stringIdtripulante, mensaje);
 
 			free(stringIdtripulante);
 
@@ -273,7 +273,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			fsck();
 
-			escribirBitacora2(stringIdtripulante, mensaje);
+			escribirBitacora(stringIdtripulante, mensaje);
 			free(mensaje);
 			free(stringIdtripulante);
 
@@ -325,32 +325,32 @@ void seleccionarTarea(t_tarea* tarea){
 
 		case 0:
 		{
-			generarTarea2(oxigeno, tarea->parametro);
+			generarTarea(oxigeno, tarea->parametro);
 			break;
 		}
 
 		case 1:
 		{
 
-			consumirTarea2(oxigeno, tarea->parametro);
+			consumirTarea(oxigeno, tarea->parametro);
 			break;
 		}
 
 		case 2:
 		{
-			generarTarea2(comida, tarea->parametro);
+			generarTarea(comida, tarea->parametro);
 			break;
 		}
 
 		case 3:
 		{
-			consumirTarea2(comida,tarea->parametro);
+			consumirTarea(comida,tarea->parametro);
 			break;
 		}
 
 		case 4:
 		{
-			generarTarea2(basura, tarea->parametro);
+			generarTarea(basura, tarea->parametro);
 			break;
 		}
 
@@ -359,7 +359,7 @@ void seleccionarTarea(t_tarea* tarea){
 			lock(&basura->mutex);
 			uint32_t cantConsumir = basura->tamanioArchivo;
 			unlock(&basura->mutex);
-			consumirTarea2(basura, cantConsumir);
+			consumirTarea(basura, cantConsumir);
 			break;
 		}
 
@@ -507,7 +507,7 @@ void cargarBlocks(){
 
 
 
-void cargarFile(t_file2* archivo){
+void cargarFile(t_file* archivo){
 
 	t_config* config = config_create(archivo->path);
 
@@ -593,7 +593,7 @@ void crearSuperBloque(){
 }
 
 
-void crearFile(t_file2* archivo){
+void crearFile(t_file* archivo){
 
 	FILE* fd = fopen(archivo->path,"wb");
 	fclose(fd);
@@ -647,7 +647,7 @@ void liberarSuperBloque(){
 }
 
 
-void liberarEstructuraFile(t_file2* file){
+void liberarEstructuraFile(t_file* file){
 
 	free(file->caracterLlenado);
 	free(file->md5_archivo);

@@ -412,6 +412,8 @@ void liberarEstructuraDatosConfig(){
 
 t_list* listaCoordenadasSabotaje() {
 
+	//char** arrayStringsCoordenadas = config_get_array_value(configImongo, "POSICIONES_SABOTAJE");
+
     char* stringCoordenadas = datosConfig->posicionesSabotaje;
     stringCoordenadas = string_substring(stringCoordenadas, 1, strlen(stringCoordenadas)-2 ); //Le saco los corchetes
     //Aca puede ir un log info para chequear que se haya hecho
@@ -421,12 +423,15 @@ t_list* listaCoordenadasSabotaje() {
     int i = 0;
     while(arrayStringsCoordenadas[i] != NULL) {
 
-        char** parCoordenadas = string_split(stringCoordenadas, "|");
+        char** parCoordenadas = string_split(arrayStringsCoordenadas[i], "|");
 
         t_coordenadas* coordenadasSabotaje = malloc(sizeof(t_coordenadas));
 
         coordenadasSabotaje->posX = (uint32_t) atoi(parCoordenadas[0]);
         coordenadasSabotaje->posY = (uint32_t) atoi(parCoordenadas[1]);
+
+        log_info(logImongo, "SE CARGO LA COORDENADA %d|%d A LA LISTA",
+        		coordenadasSabotaje->posX, coordenadasSabotaje->posY);
 
         list_add(listaCoordenadas, coordenadasSabotaje);
 
@@ -447,7 +452,10 @@ void sabotaje(int signal) {
 	t_coordenadas* coordenadasSabotaje = list_get(listaPosicionesSabotaje, proximoPosSabotaje);
 
 	proximoPosSabotaje++;
-	if(proximoPosSabotaje == list_size(listaPosicionesSabotaje)) proximoPosSabotaje = 0;
+	if(proximoPosSabotaje == list_size(listaPosicionesSabotaje)){
+		log_info(logImongo, "ENTRO ACA");
+		proximoPosSabotaje = 0;
+	}
 
 	t_paquete* paqueteEnviado = armarPaqueteCon((void*) coordenadasSabotaje, COORDENADAS_SABOTAJE);
 
@@ -460,7 +468,7 @@ void sabotaje(int signal) {
 }
 
 
-void generarTarea2(t_file2* archivo, uint32_t cantidad){
+void generarTarea(t_file* archivo, uint32_t cantidad){
 
 	lock(&archivo->mutex);
 	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);//SACA LA FRAGMENTACION DE ACUERDO AL ARCHIVO
@@ -468,7 +476,7 @@ void generarTarea2(t_file2* archivo, uint32_t cantidad){
 	uint32_t bloque = 0;
 
 	lock(&mutexBitMap);
-	t_list* bloquesAocupar = buscarBloques2(max(0, cantidad - fragmentacionArchivo));//BUSCA LOS BLOQUES LIBRES BIT ARRAY Y LOS METE EN UNA LISTA
+	t_list* bloquesAocupar = buscarBloques(max(0, cantidad - fragmentacionArchivo));//BUSCA LOS BLOQUES LIBRES BIT ARRAY Y LOS METE EN UNA LISTA
 
 	char* stringBloques = convertirListaEnString(bloquesAocupar);//CONVIERTE LA LISTA DE BLOQUES A OCUPAR EN STRING
 	log_info(logImongo, "El archivo %s va a ocupar los bloques %s", archivo->path, stringBloques);
@@ -528,7 +536,7 @@ void generarTarea2(t_file2* archivo, uint32_t cantidad){
 }
 
 
-void consumirTarea2(t_file2* archivo, uint32_t cantidad){
+void consumirTarea(t_file* archivo, uint32_t cantidad){
 
 	lock(&archivo->mutex);
 
@@ -592,7 +600,7 @@ void consumirTarea2(t_file2* archivo, uint32_t cantidad){
 
 
 // LA CREACION DEL ARCHIVO LA HAGO APARTE
-void escribirBitacora2(char* idTripulante, char* mensaje){
+void escribirBitacora(char* idTripulante, char* mensaje){
 
 	t_bitacora_tripulante* bitacora = dictionary_get(bitacoras, idTripulante);
 
@@ -608,7 +616,7 @@ void escribirBitacora2(char* idTripulante, char* mensaje){
 			"la bitacora del tripulante %s", mensaje, tamanioMensaje, idTripulante);
 
 	lock(&mutexBitMap);
-	t_list* bloquesAocupar = buscarBloques2(max(0, tamanioMensaje - fragmentacionArchivo));
+	t_list* bloquesAocupar = buscarBloques(max(0, tamanioMensaje - fragmentacionArchivo));
 
 	char* stringBloques = convertirListaEnString(bloquesAocupar);
 	log_info(logImongo, "La bitacora del tripulante %s va a ocupar los bloques %s", idTripulante, stringBloques);
@@ -704,7 +712,7 @@ void consumirBloque(uint32_t bloque, uint32_t cantidadConsumir, uint32_t tamanio
 }
 
 
-t_list* buscarBloques2(uint32_t cantBytes){
+t_list* buscarBloques(uint32_t cantBytes){
 
 	int cantBloques = (int) ceil((float) cantBytes / (float) superBloque->block_size);
 
@@ -749,7 +757,7 @@ void liberarBloque(uint32_t bloque){
 }
 
 
-void actualizarFile(t_file2* archivo){
+void actualizarFile(t_file* archivo){
 
 	t_config* configFile = config_create(archivo->path);
 

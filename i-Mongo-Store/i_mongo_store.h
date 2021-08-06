@@ -40,17 +40,17 @@ void seleccionarTarea(t_tarea*);
 void iniciarFileSystem();
 void crearFileSystemDesdeCero();
 void crearSuperBloque();
-void crearFile(t_file2*);
+void crearFile(t_file*);
 
 void crearFileSystemExistente();
 void cargarSuperBloque();
 void cargarBlocks();
-void cargarFile(t_file2*);
+void cargarFile(t_file*);
 void eliminarBitacorasAnteriores();
 void eliminarBloquesDeBitacoraTripulante(t_config*);
 
 void liberarSuperBloque();
-void liberarEstructuraFile(t_file2*);
+void liberarEstructuraFile(t_file*);
 void liberarRecursosGlobalesAlTerminar();
 
 

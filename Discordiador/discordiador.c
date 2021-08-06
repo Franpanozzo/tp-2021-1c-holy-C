@@ -189,9 +189,10 @@ void hiloTripulante(t_tripulante* tripulante){
 				}
 				quantumPendiente = quantum;
         
-				log_info(logDiscordiador,"el tripulante %d esta en ready con %d ciclos",
+				log_info(logDiscordiador,"el tripulante %d esta en ready con %d ciclos y posicion %d|%d",
 						tripulante->idTripulante, ciclosExec +
-						distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas));
+						distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas),
+						tripulante->coordenadas.posX, tripulante->coordenadas.posY);
 
 				sem_post(&tripulante->semaforoFin);
 				sem_wait(&tripulante->semaforoInicio);
@@ -200,9 +201,10 @@ void hiloTripulante(t_tripulante* tripulante){
 			case EXEC:
 
 				if(quantumPendiente < 0){
-					log_info(logDiscordiador,"el tripulante %d esta en exec con %d ciclos",
+					log_info(logDiscordiador,"el tripulante %d esta en exec con %d ciclos y posicion %d|%d",
 							tripulante->idTripulante, ciclosExec +
-							distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas));
+							distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas),
+							tripulante->coordenadas.posX, tripulante->coordenadas.posY);
 				}
 				else{
 					log_info(logDiscordiador,"el tripulante %d esta en exec con %d ciclos y %d quantum",

@@ -42,17 +42,17 @@ uint32_t deserializarID(void*);
 void crearBitacora(char*);
 char* pathBitacoraTripulante(char*);
 
-void generarTarea2(t_file2*, uint32_t);
-void consumirTarea2(t_file2*, uint32_t);
-void escribirBitacora2(char*, char*);
+void generarTarea(t_file*, uint32_t);
+void consumirTarea(t_file*, uint32_t);
+void escribirBitacora(char*, char*);
 uint32_t fragmentacion(uint32_t);
 void escribirBloque(uint32_t, char*, uint32_t);
 void consumirBloque(uint32_t, uint32_t, uint32_t);
-t_list* buscarBloques2(uint32_t);
+t_list* buscarBloques(uint32_t);
 void ocuparBloque(uint32_t);
 void liberarBloque(uint32_t);
 
-void actualizarFile(t_file2*);
+void actualizarFile(t_file*);
 void actualizarBitacora(t_bitacora_tripulante*);
 void actualizarSuperBloque();
 

@@ -34,7 +34,7 @@ typedef struct{
 	pthread_mutex_t mutex;
 	char * path;
 
-}t_file2;
+}t_file;
 
 
 typedef struct{
@@ -69,9 +69,9 @@ int cantEscriturasPendientes;
 bool haySabotaje;
 
 t_superBloque* superBloque;
-t_file2* oxigeno;
-t_file2* comida;
-t_file2* basura;
+t_file* oxigeno;
+t_file* comida;
+t_file* basura;
 t_dictionary * bitacoras;
 
 sem_t sabotajeResuelto;
