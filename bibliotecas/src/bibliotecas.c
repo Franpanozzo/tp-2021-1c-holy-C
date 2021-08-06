@@ -156,13 +156,13 @@ int tamanioEstructura(void* estructura ,tipoDeDato cod_op){
 		case INICIO_TAREA:
 		{
 			t_avisoTarea* aviso = (t_avisoTarea*) estructura;
-			return sizeof(uint32_t)*2 + strlen(aviso->nombreTarea) + 1;
+			return sizeof(uint32_t)*2 + strlen(aviso->nombreTarea) + 1 + sizeof(int);
 		}
 
 		case FIN_TAREA:
 		{
 			t_avisoTarea* aviso = (t_avisoTarea*) estructura;
-			return sizeof(uint32_t)*2 + strlen(aviso->nombreTarea) + 1;
+			return sizeof(uint32_t)*2 + strlen(aviso->nombreTarea) + 1 + sizeof(int);
 		}
 
 		case ID_SABOTAJE:
@@ -340,6 +340,9 @@ void* serializarAvisoTarea(void* stream, void* estructura, int offset){
 	memcpy(stream + offset, &tamanioNombreTarea , sizeof(uint32_t));
 	offset += sizeof(uint32_t);
 	memcpy(stream + offset, avisoTarea->nombreTarea , tamanioNombreTarea);
+	offset += tamanioNombreTarea;
+	memcpy(stream + offset, &(avisoTarea->numero),sizeof(int));
+	offset += sizeof(int);
 
 	return stream;
 }

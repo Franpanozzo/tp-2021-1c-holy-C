@@ -172,6 +172,7 @@ void hiloTripulante(t_tripulante* tripulante){
 	int ciclosExec = 0;
 	int ciclosBlocked = 0;
 	int quantumPendiente = quantum;
+	int nroAviso = 0;
 	t_avisoTarea* avisoTarea = NULL;
 
 	while(leerEstado(tripulante) != EXIT){
@@ -224,6 +225,7 @@ void hiloTripulante(t_tripulante* tripulante){
 						avisoTarea = malloc(sizeof(t_avisoTarea));
 						avisoTarea->idTripulante = tripulante->idTripulante;
 						avisoTarea->nombreTarea = tripulante->instruccionAejecutar->nombreTarea;
+						avisoTarea->numero = nroAviso;
 						log_info(logDiscordiador,"El tripulante %d esta enviando el INICIO de la tarea: %s",tripulante->idTripulante, avisoTarea->nombreTarea);
 						int socketMongo = enviarA(puertoEIPMongo, avisoTarea, INICIO_TAREA);
 						close(socketMongo);
@@ -240,6 +242,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					close(socketMongo);
 					free(avisoTarea);
 					avisoTarea = NULL;
+					nroAviso ++;
 
 					if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
 						log_info(logDiscordiador,"El tripulante %d esta enviando la TAREA: %s",tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
@@ -265,7 +268,7 @@ void hiloTripulante(t_tripulante* tripulante){
 					log_info(logDiscordiador,"el tripulante %d esta en block con %d ciclos",
 							tripulante->idTripulante, ciclosBlocked);
 					ciclosBlocked --;
-					if(ciclosBlocked == 0){
+					if(ciclosBlocked <= 0){
 						modificarTripulanteBlocked(NO_HAY_TRIPULANTE_BLOQUEADO);
 						if(leerEstado(tripulante) != EXIT){
 							modificarEstado(tripulante, READY);
