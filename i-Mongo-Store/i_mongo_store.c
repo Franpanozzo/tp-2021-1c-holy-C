@@ -58,7 +58,10 @@ void atenderTripulantes(int* serverSock) {
 		int* tripulanteSock = malloc(sizeof(int));
 		*tripulanteSock = esperarTripulante(*serverSock);
 		pthread_t t;
-		pthread_create(&t, NULL, (void*) manejarTripulante, (void*) tripulanteSock);
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setstacksize(&attr, 16384);
+		pthread_create(&t, &attr, (void*) manejarTripulante, (void*) tripulanteSock);
 		pthread_detach(t);
     }
 }
