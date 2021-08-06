@@ -71,7 +71,11 @@ void cargarConfiguracion(){
 	free(algoritmo);
 
 	sabotaje->tiempo = config_get_int_value(config,"DURACION_SABOTAJE");
-	retardoCiclosCPU = config_get_int_value(config,"RETARDO_CICLO_CPU");
+	retardoCiclosCPU = 1000000 * config_get_int_value(config,"RETARDO_CICLO_CPU");
+
+	if(retardoCiclosCPU == 0) {
+		retardoCiclosCPU = 12221;
+	}
 }
 
 

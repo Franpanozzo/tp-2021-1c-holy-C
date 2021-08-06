@@ -213,7 +213,7 @@ void hiloTripulante(t_tripulante* tripulante){
 							quantumPendiente);
 				}
 
-				sleep(retardoCiclosCPU);
+				usleep(retardoCiclosCPU);
 				quantumPendiente--;
 
 				if(distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas) > 0){
@@ -261,7 +261,7 @@ void hiloTripulante(t_tripulante* tripulante){
 
 			case BLOCKED:
 				if(tripulante->idTripulante == leerTripulanteBlocked()){
-					sleep(retardoCiclosCPU);
+					usleep(retardoCiclosCPU);
 					log_info(logDiscordiador,"el tripulante %d esta en block con %d ciclos",
 							tripulante->idTripulante, ciclosBlocked);
 					ciclosBlocked --;
@@ -284,7 +284,7 @@ void hiloTripulante(t_tripulante* tripulante){
 				ciclosExec = 0;
 				if(distancia(tripulante->coordenadas, sabotaje->coordenadas) > 0){
 					desplazarse(tripulante, sabotaje->coordenadas);
-					sleep(retardoCiclosCPU);
+					usleep(retardoCiclosCPU);
 
 					log_info(logDiscordiador,"el tripulante %d esta yendo al sabo, esta a %d de distancia",
 							tripulante->idTripulante, distancia(tripulante->coordenadas, sabotaje->coordenadas));
