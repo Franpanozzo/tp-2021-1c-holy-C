@@ -9,6 +9,7 @@ int main(void) {
 	logMemoria = iniciarLogger(pathDelLogMemoria,"Memoria",0);
 
 	nave = nivel_crear("naveAmong");
+	mutexsTripus = dictionary_create();
 
 	cargar_configuracion();
 	iniciarMemoria();
@@ -245,6 +246,7 @@ void iniciarMemoria() {
     pthread_mutex_init(&mutexChequearUltTripu, NULL);
     pthread_mutex_init(&mutexFlagExpulsion, NULL);
 	pthread_mutex_init(&mutexDelimitar, NULL);
+	pthread_mutex_init(&mutexDictionary, NULL);
 
 	sem_init(&habilitarExpulsionEnRam,0,1);
 
@@ -288,8 +290,17 @@ int recibirActualizarTripulante(t_paquete* paquete) {
 	log_info(logMemoria,"Recibi el tribulante de id %d de la  patota %d en estado %c, en pos X: %d | pos Y: %d",
 			nuevoTCB->idTripulante, idPatota, nuevoTCB->estado, nuevoTCB->posX, nuevoTCB->posY);
 
-	int confirmacion = actualizarTripulante(nuevoTCB,idPatota);
+	char* idString = string_itoa(nuevoTCB->idTripulante);
 
+	lock(&mutexDictionary);
+	pthread_mutex_t* mutexTripu = dictionary_get(mutexsTripus, idString);
+	unlock(&mutexDictionary);
+
+	lock(mutexTripu);
+	int confirmacion = actualizarTripulante(nuevoTCB,idPatota);
+	unlock(mutexTripu);
+
+	free(idString);
 	free(nuevoTCB);
 	return confirmacion;
 
@@ -306,12 +317,24 @@ t_tarea* deserializarSolicitudTarea(t_paquete* paquete) {
 	offset += sizeof(uint32_t);
 	memcpy(&(idTripulante), stream + offset, sizeof(uint32_t));
 
+	char* idString = string_itoa(idTripulante);
+	lock(&mutexDictionary);
+	pthread_mutex_t* mutexTripu = dictionary_get(mutexsTripus, idString);
+	unlock(&mutexDictionary);
+
+	lock(mutexTripu);
 	t_tarea* tarea = asignarProxTarea(idPatota, idTripulante);
+	unlock(mutexTripu);
 
 	if(strcmp(tarea->nombreTarea, "TAREA_NULA") == 0)
 	{
+		lock(mutexTripu);
 		expulsarTripulante(idTripulante, idPatota);
+		unlock(mutexTripu);
+
+		dictionary_remove_and_destroy(mutexsTripus, idString, (void*) free);
 	}
+	free(idString);
 
 	return tarea;
 }
@@ -333,11 +356,23 @@ void deserializarExpulsionTripulante(t_paquete* paquete) {
 
 	log_info(logMemoria, "Se procede a eliminar de la memoria el tripulante %d de la patota %d", idTripu, idPatota);
 
+	char* idString = string_itoa(idTripu);
+
+	lock(&mutexDictionary);
+	pthread_mutex_t* mutexTripu = dictionary_get(mutexsTripus, idString);
+	unlock(&mutexDictionary);
 
 	sem_wait(&habilitarExpulsionEnRam);
 	//lock(&mutexExpulsionTripulante);
+	lock(mutexTripu);
 	expulsarTripulante(idTripu,idPatota);
+	unlock(mutexTripu);
 	//unlock(&mutexExpulsionTripulante);
+	dictionary_remove_and_destroy(mutexsTripus, idString, (void*) free);
+
+	free(idString);
+
+
 }
 
 
@@ -425,9 +460,24 @@ int deserializarTripulante(t_paquete* paquete) {
 		sem_post(&habilitarPatotaEnRam);
 		return tarea_error();
 	}*/
+	char* idString = string_itoa(nuevoTCB->idTripulante);
 
+	pthread_mutex_t* mutexTripu = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(mutexTripu, NULL);
+
+    lock(&mutexDictionary);
+    dictionary_put(mutexsTripus, idString, mutexTripu);
+    unlock(&mutexDictionary);
+
+    lock(mutexTripu);
 	int confirmacion = guardarTCB(nuevoTCB,idPatota);
+	unlock(mutexTripu);
 
+	if(confirmacion == 0) {
+		dictionary_remove_and_destroy(mutexsTripus, idString, (void*) free);
+	}
+
+	free(idString);
 	free(nuevoTCB);
 
 	return confirmacion;

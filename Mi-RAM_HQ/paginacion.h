@@ -72,6 +72,7 @@ int tiempo;
 int punteroClock;
 int chequeoUltTripu;
 int expulsarPosta;
+t_dictionary* mutexsTripus;
 
 t_list* tablasPaginasPatotas;
 
@@ -91,7 +92,7 @@ pthread_mutex_t mutexMapa;
 pthread_mutex_t mutexChequearUltTripu;
 pthread_mutex_t mutexFlagExpulsion;
 pthread_mutex_t mutexDelimitar;
-
+pthread_mutex_t mutexDictionary;
 
 
 

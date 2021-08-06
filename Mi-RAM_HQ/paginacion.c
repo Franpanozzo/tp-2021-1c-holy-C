@@ -480,6 +480,7 @@ int guardarTCBPag(tcb* tcbAGuardar,int idPatota) {
 	if(res == 0) {
 		log_info(logMemoria, "El tripulante %d no entro completo en memoria, se procede a borrar las paginas que si entraron");
 		expulsarTripulantePag(tcbAGuardar->idTripulante, idPatota);
+
 		return 0;
 	}
 
