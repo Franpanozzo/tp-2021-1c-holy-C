@@ -140,7 +140,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			log_info(logImongo,"Se recibio el inicio de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
-			char* mensaje = string_from_format("Comenzo la tarea %s.", avisoTarea->nombreTarea);
+			char* mensaje = string_from_format("Empieza la tarea %s.", avisoTarea->nombreTarea);
 
 			char* stringIdtripulante = string_itoa(avisoTarea->idTripulante);
 
@@ -432,7 +432,7 @@ void eliminarBitacorasAnteriores(){
 
 		}
 
-
+		free(pathBitacoraTripulante);
 
 }
 

@@ -353,6 +353,7 @@ void iniciarPatota(t_coordenadas* coordenadas, char* tareasString, uint32_t cant
 	}
 
 
+	list_destroy(listaTripulantes);
 	eliminarPatota(patota);
 	close(miRAMsocket);
 }

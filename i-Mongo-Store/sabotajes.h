@@ -15,6 +15,9 @@ bool haySabotajeCantBloquesEnFile(t_file2*);
 void arreglarSabotajeCantBloquesEnFile(t_file2*);
 bool haySabotajeBloquesEnFile(t_file2*);
 void arreglarSabotajeBloquesEnFile(t_file2*);
+bool haySabotajeBlocksBloqueExtra(t_file2*);
+bool haySabotajeBlocksBloqueExtra2(t_file2*);
+void arreglarSabotajeBlocksBloqueExtra(t_file2*);
 
 uint32_t cantBloquesEnBlocks();
 uint32_t sizeSegunBlocks(t_file2*);

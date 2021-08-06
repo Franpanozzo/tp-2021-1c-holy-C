@@ -26,11 +26,43 @@ void fsck(){
 	}
 }
 
+/*
+ * 1.FIJARSE SI HAY UN BLOQUE FANTASMA, NO PUEDO HACER ANTES EL BITMAP NI
+ *
+ * ME FIJO SI EN EL BLOCK.IMS ESTAN TODOS LOS BLOQUES ESCRITOS CON EL
+ * CARACTER DE LLENADO.
+ *
+ * AHI YA SE QUE TODO_ EL RESTO DE LAS COSAS ESTAN BIEN, LO UNICO QUE HAY Q HACER SE SACARLO DE LA LISTA
+ *
+ *
+ * 2.FIJARSE SI HAY ALGUN BLOQUE CON UN TAMANIO IRREAL EXTRA
+ *
+ * ME FIJO CON EL BLOCKS DEL SUPER BLOQUE. SOLO NECESITA QUE SE HAYA DETECTADO
+ * SI HUBO O NO SABOTAJE EN EL BLOCKS DEL SUPER BLOQUE ANTES.
+ *
+ * LA RESOLUCION TAMBIEN TENGO QUE VER EL BITMAP Y LOS BLOQUES QUE OCUPAN LOS OTROS
+ * PARA SABER SI ME SACARO UN BLOQUE Q YO TENIA Y VOLVERLO A AGREGAR Y TAMBIEN
+ * TENGO QUE VER EL SIZE PARA VER SI ME LO SACARON EL BLOQUE O LOS QUE TENGO ESTAN BIEN
+ *
+ *
+ * 3.FIJARSE SI ME ELIMINARON UN BLOQUE
+ *
+ *
+ *
+ */
+
+
+
+
 
 void sabotajesFile(t_file2* archivo){
 
-	if(haySabotajeBloquesEnFile(archivo)){
-		log_info(logImongo,"---- Se detecto un sabotaje en los bloques del file %s ----", archivo->path);
+	if(haySabotajeBlocksBloqueExtra2(archivo)){
+		log_info(logImongo,"---- Se detecto un sabotaje, hay un bloque extra en el file %s ----", archivo->path);
+		arreglarSabotajeBlocksBloqueExtra(archivo);
+	}
+	else if(haySabotajeBloquesEnFile(archivo)){
+		log_info(logImongo,"---- Se detecto un sabotaje en el orden de los bloques del file %s ----", archivo->path);
 		arreglarSabotajeBloquesEnFile(archivo);
 	}
 	else if(haySabotajeCantBloquesEnFile(archivo)){
@@ -91,82 +123,87 @@ void arreglarSabotajeCantBloquesEnSuperBloque(){
 //PROBADA V.1
 bool haySabotajeBitmapEnSuperBloque(){
 
-	t_config* configSB;
-	crearConfig(&configSB,superBloque->path);
-	char* stringBitmap = config_get_string_value(configSB, "BITMAP");
-	uint32_t cantBloques = config_get_long_value(configSB, "BLOCKS");
-
-	int tamanioBitmap = (int) ceil ((float) strlen(stringBitmap) / (float) 8);
-	char* espacioBitmap = malloc(tamanioBitmap);
-	t_bitarray* bitmap = bitarray_create_with_mode(espacioBitmap, tamanioBitmap, MSB_FIRST);
-	cargarBitmap(stringBitmap, bitmap);
-
-	t_list* listaBloques = list_create();
-
-	bool estaEnLaLista(int i){
-
-		bool result = false;
-		for(int c=0; c<list_size(listaBloques) && result == false; c++){
-
-			result = i == * (int*) list_get(listaBloques, c);
-		}
-		return result;
-	}
-
-	t_config* config;
-	crearConfig(&config,oxigeno->path);
-	agregarBloquesOcupados(listaBloques, config);
-	config_destroy(config);
-
-	crearConfig(&config,basura->path);
-	agregarBloquesOcupados(listaBloques, config);
-	config_destroy(config);
-
-	crearConfig(&config,comida->path);
-	agregarBloquesOcupados(listaBloques, config);
-	config_destroy(config);
-
-
-	for(int i=1; existeBitacoraTripulante(i); i++){
-		char* stringIdTripulante = string_itoa(i);
-		char* path = pathBitacoraTripulante(stringIdTripulante);
-		t_config* configBitacora = config_create(path);
-		agregarBloquesOcupados(listaBloques, configBitacora);
-		free(stringIdTripulante);
-		free(path);
-		config_destroy(configBitacora);
-	}
-
 	bool result = false;
 
-	if(list_is_empty(listaBloques)){
-		for(int i=0; i<cantBloques && result == false; i++){
+	if(!haySabotajeBlocksBloqueExtra2(oxigeno) &&
+			!haySabotajeBlocksBloqueExtra2(comida) && !haySabotajeBlocksBloqueExtra2(basura)){
 
-			result = bitarray_test_bit(bitmap, i);
-		}
-	}
-	else{
-		for(int i=0; i<cantBloques && result == false; i++){
+		t_config* configSB;
+		crearConfig(&configSB,superBloque->path);
+		char* stringBitmap = config_get_string_value(configSB, "BITMAP");
+		uint32_t cantBloques = config_get_long_value(configSB, "BLOCKS");
 
-			if(estaEnLaLista(i)){
-				result = !bitarray_test_bit(bitmap, i);
+		int tamanioBitmap = (int) ceil ((float) strlen(stringBitmap) / (float) 8);
+		char* espacioBitmap = malloc(tamanioBitmap);
+		t_bitarray* bitmap = bitarray_create_with_mode(espacioBitmap, tamanioBitmap, MSB_FIRST);
+		cargarBitmap(stringBitmap, bitmap);
+
+		t_list* listaBloques = list_create();
+
+		bool estaEnLaLista(int i){
+
+			bool result = false;
+			for(int c=0; c<list_size(listaBloques) && result == false; c++){
+
+				result = i == * (int*) list_get(listaBloques, c);
 			}
-			else{
+			return result;
+		}
+
+		t_config* config;
+		crearConfig(&config,oxigeno->path);
+		agregarBloquesOcupados(listaBloques, config);
+		config_destroy(config);
+
+		crearConfig(&config,basura->path);
+		agregarBloquesOcupados(listaBloques, config);
+		config_destroy(config);
+
+		crearConfig(&config,comida->path);
+		agregarBloquesOcupados(listaBloques, config);
+		config_destroy(config);
+
+
+		for(int i=1; existeBitacoraTripulante(i); i++){
+			char* stringIdTripulante = string_itoa(i);
+			char* path = pathBitacoraTripulante(stringIdTripulante);
+			t_config* configBitacora = config_create(path);
+			agregarBloquesOcupados(listaBloques, configBitacora);
+			free(stringIdTripulante);
+			free(path);
+			config_destroy(configBitacora);
+		}
+
+
+		if(list_is_empty(listaBloques)){
+			for(int i=0; i<cantBloques && result == false; i++){
+
 				result = bitarray_test_bit(bitmap, i);
 			}
 		}
+		else{
+			for(int i=0; i<cantBloques && result == false; i++){
+
+				if(estaEnLaLista(i)){
+					result = !bitarray_test_bit(bitmap, i);
+				}
+				else{
+					result = bitarray_test_bit(bitmap, i);
+				}
+			}
+		}
+
+		config_destroy(configSB);
+		free(espacioBitmap);
+		bitarray_destroy(bitmap);
+
+		void eliminarEntero(int* n){
+			free(n);
+		}
+
+		list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
+		//log_info(logImongo,"SABO 2 SIN FALLA 1.5");
 	}
-
-	config_destroy(configSB);
-	free(espacioBitmap);
-	bitarray_destroy(bitmap);
-
-	void eliminarEntero(int* n){
-		free(n);
-	}
-
-	list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
-	//log_info(logImongo,"SABO 2 SIN FALLA 1.5");
 
 	return result;
 }
@@ -366,7 +403,7 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 	char* stringCaracter = config_get_string_value(config, "CARACTER_LLENADO");
 	char caracter = * stringCaracter;
 	t_config* configSB;
-	crearConfig(&configSB,archivo->path);
+	crearConfig(&configSB,superBloque->path);
 	uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
 
 	for(uint32_t i = 0; i < list_size(listaBloques); i++){
@@ -403,6 +440,172 @@ void arreglarSabotajeBloquesEnFile(t_file2* archivo){
 }
 
 
+bool haySabotajeBlocksBloqueExtra(t_file2* archivo){
+
+	t_config* config;
+	crearConfig(&config,archivo->path);
+
+	t_config* configSB;
+	crearConfig(&configSB,superBloque->path);
+
+	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
+	t_list* listaBloques = convertirEnLista(arrayPosiciones);
+
+	char* stringCaracterLlenado = config_get_string_value(config, "CARACTER_LLENADO");
+	char caracterLLenado = *stringCaracterLlenado;
+
+	uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
+	uint32_t cantBloques = config_get_long_value(configSB, "BLOCKS");
+
+
+	bool noPertenceAlArchivo(uint32_t* bloque){
+
+		lock(&mutexMemoriaSecundaria);
+		bool result = *(copiaMemoriaSecundaria + *bloque * tamanioBloque) != caracterLLenado
+				|| *bloque > cantBloques;
+		unlock(&mutexMemoriaSecundaria);
+
+		return result;
+	}
+
+	config_destroy(config);
+	config_destroy(configSB);
+
+	liberarDoblesPunterosAChar(arrayPosiciones);
+
+	bool result = false;
+
+	if(!list_is_empty(listaBloques)){
+
+		result = list_any_satisfy(listaBloques, (void *) noPertenceAlArchivo);
+
+		void eliminarEntero(uint32_t* n){
+			free(n);
+		}
+
+		list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
+	}
+	else{
+		list_destroy(listaBloques);
+	}
+
+
+	return result;
+}
+
+
+bool haySabotajeBlocksBloqueExtra2(t_file2* archivo){
+
+	t_config* configSB;
+	crearConfig(&configSB,superBloque->path);
+
+	long int tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
+
+	t_config* config;
+	crearConfig(&config,archivo->path);
+
+	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
+	t_list* listaBloques = convertirEnLista(arrayPosiciones);
+
+	long int tamanioArchivo = config_get_long_value(config, "SIZE");
+
+	long int cantBloquesMenosUno = (list_size(listaBloques) - 1);
+
+	log_info(logImongo, "LA CANT DE BLOQUE ES %d, EL TAMANIO DEL ARCHIVO ES %d",
+			cantBloquesMenosUno, tamanioArchivo);
+
+	bool result = cantBloquesMenosUno * tamanioBloque >= tamanioArchivo;
+
+	config_destroy(config);
+	config_destroy(configSB);
+
+	liberarDoblesPunterosAChar(arrayPosiciones);
+
+	void eliminarEntero(uint32_t* n){
+		free(n);
+	}
+
+	list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
+
+	return haySabotajeCantBloquesEnFile(archivo) && result;
+}
+
+
+void arreglarSabotajeBlocksBloqueExtra(t_file2* archivo){
+
+	t_config* config;
+	crearConfig(&config,archivo->path);
+
+	t_config* configSB;
+	crearConfig(&configSB,superBloque->path);
+
+	char** arrayPosiciones = config_get_array_value(config, "BLOCKS");
+	t_list* listaBloques = convertirEnLista(arrayPosiciones);
+
+	char* stringCaracterLlenado = config_get_string_value(config, "CARACTER_LLENADO");
+	char caracterLLenado = *stringCaracterLlenado;
+
+	uint32_t tamanioBloque = config_get_long_value(configSB, "BLOCK_SIZE");
+	uint32_t cantBloques = config_get_long_value(configSB, "BLOCKS");
+
+	bool noPertenceAlArchivo(uint32_t* bloque){
+
+		log_info(logImongo, "LA CANT DE BLOQUE ES %d "
+				"Y EL BLOQUE QUE SE ESTA COMPARANDO ES %d", cantBloques, *bloque);
+
+		bool result = *bloque >= cantBloques;
+
+		if(!result){
+			lock(&mutexMemoriaSecundaria);
+			result = *(copiaMemoriaSecundaria + *bloque * tamanioBloque) != caracterLLenado;
+			unlock(&mutexMemoriaSecundaria);
+		}
+
+		return result;
+	}
+
+	config_destroy(configSB);
+
+	liberarDoblesPunterosAChar(arrayPosiciones);
+
+	bool sigueConsultando = true;
+
+	for(uint32_t i=0; i < list_size(listaBloques) && sigueConsultando; i++){
+
+		if(noPertenceAlArchivo(list_get(listaBloques, i))){
+
+			uint32_t* bloque = list_remove(listaBloques, i);
+			log_info(logImongo, "EL BLOQUE %d NO PERTENECE AL ARCHIVO", *bloque);
+			sigueConsultando = false;
+			free(bloque);
+		}
+	}
+
+	char* stringListaBloques = convertirListaEnString(listaBloques);
+
+	config_set_value(config, "BLOCKS", stringListaBloques);
+	config_save(config);
+	config_destroy(config);
+
+	log_info(logImongo,"---- YA SE SOLUCIONO EL SABOTAJE, "
+			"la lista de bloques en realidad era %s ----", stringListaBloques);
+
+	free(stringListaBloques);
+
+	if(list_is_empty(listaBloques)){
+
+		list_destroy(listaBloques);
+	}
+	else{
+		void eliminarEntero(uint32_t* n){
+			free(n);
+		}
+
+		list_destroy_and_destroy_elements(listaBloques, (void*) eliminarEntero);
+	}
+}
+
+
 // ------ FUNCIONAS AUXILIARES ------
 
 
@@ -431,7 +634,7 @@ uint32_t sizeSegunBlocks(t_file2* archivo){
 	t_config* config;
 	crearConfig(&config,archivo->path);
 	t_config* configSB;
-	crearConfig(&configSB,archivo->path);
+	crearConfig(&configSB,superBloque->path);
 
 	uint32_t blockCount = max(config_get_long_value(config, "BLOCK_COUNT") - 1, 0);
 	uint32_t blockSize = config_get_long_value(configSB, "BLOCK_SIZE");
