@@ -112,6 +112,7 @@
 	typedef struct{
 		uint32_t idTripulante;
 		char* nombreTarea;
+		int numero;
 	} t_avisoTarea;
 
 	typedef struct{

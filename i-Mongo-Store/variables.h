@@ -30,7 +30,6 @@ typedef struct{
 	uint32_t tamanioArchivo;
 	t_list* bloques;
 	char* caracterLlenado;
-	char* md5_archivo;
 	pthread_mutex_t mutex;
 	char * path;
 
@@ -56,6 +55,7 @@ pthread_mutex_t mutexExisteBitacora;
 pthread_mutex_t mutexCantEscriturasPendientes;
 pthread_mutex_t mutexHaySabotaje;
 pthread_mutex_t mutexSP;
+pthread_mutex_t mutexSemaforosTareas;
 pthread_t manejoTripulante;
 pthread_t hiloSincronizador;
 
@@ -72,7 +72,8 @@ t_superBloque* superBloque;
 t_file* oxigeno;
 t_file* comida;
 t_file* basura;
-t_dictionary * bitacoras;
+t_dictionary* bitacoras;
+t_dictionary* semaforosTareas;
 
 sem_t sabotajeResuelto;
 sem_t semTarea;

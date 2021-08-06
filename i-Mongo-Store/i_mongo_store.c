@@ -19,6 +19,7 @@ int main(void) {
 	superBloque = malloc(sizeof(t_superBloque));
 
 	bitacoras = dictionary_create();
+	semaforosTareas = dictionary_create();
 
 	haySabotaje = false;
 	cantEscriturasPendientes = 0;
@@ -85,6 +86,18 @@ void manejarTripulante(int *tripulanteSock) {
 
 
 void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
+
+	char* armarKey(t_avisoTarea* avisoTarea){
+
+		char* key = string_from_format("%s ID %d NRO AVISO %d",
+				avisoTarea->nombreTarea, avisoTarea->idTripulante, avisoTarea->numero);
+
+		log_info(logImongo,"La key es %s", key);
+
+		return key;
+	}
+
+
 
 	switch(paquete->codigoOperacion){
 
@@ -158,47 +171,61 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora(stringIdtripulante, mensaje);
 
-			free(mensaje);
-			free(stringIdtripulante);
-			free(avisoTarea->nombreTarea);
-			free(avisoTarea);
+			char* key = armarKey(avisoTarea);
 
-			/*
-			if(!dictionary_has_key(semaforosTareas, stringIdtripulante)){
-				sem_t* semTarea = (sem_t*) dictionary_get(semaforosTareas, stringIdtripulante);
+			lock(&mutexSemaforosTareas);
+			if(dictionary_has_key(semaforosTareas, key)){
+				//log_info(logImongo,"ESTA EN EL DIC INICIAR");
+				sem_t* semTarea = (sem_t*) dictionary_remove(semaforosTareas, key);
 				sem_post(semTarea);
+				//log_info(logImongo,"ESTA EN EL DIC INICIAR LE HIZO POST");
+				free(semTarea);
 			}
 			else{
 				sem_t* semTarea = malloc(sizeof(sem_t));
 				sem_init(semTarea, 0, 0);
-				dictionary_put(semaforosTareas, stringIdtripulante, semTarea);
+				sem_post(semTarea);
+				dictionary_put(semaforosTareas, key, semTarea);
+				//log_info(logImongo,"NO ESTA EN EL DIC INICIAR Y LE HIZO POST");
 			}
-			*/
+			unlock(&mutexSemaforosTareas);
 
+			free(key);
+			free(mensaje);
+			free(avisoTarea->nombreTarea);
+			free(avisoTarea);
+			free(stringIdtripulante);
 			break;
 		}
 
 		case FIN_TAREA:
 		{
-
-
 			t_avisoTarea* avisoTarea = deserializarAvisoTarea(paquete->buffer->stream);
 			char* stringIdtripulante = string_itoa(avisoTarea->idTripulante);
 
-			/*
-			//FALTA MUTEX
-			if(!dictionary_has_key(semaforosTareas, stringIdtripulante)){
-				sem_t* semTarea = (sem_t*) dictionary_get(semaforosTareas, stringIdtripulante);
+			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
+
+			char* key = armarKey(avisoTarea);
+
+			lock(&mutexSemaforosTareas);
+			if(dictionary_has_key(semaforosTareas, key)){
+				//log_info(logImongo,"ESTA EN EL DIC FIN");
+				sem_t* semTarea = (sem_t*) dictionary_remove(semaforosTareas, key);
+				//log_info(logImongo,"ESTA EN EL DIC FIN Y SE QUEDA ESPERANDO");
+				unlock(&mutexSemaforosTareas);
 				sem_wait(semTarea);
+				//free(semTarea);
 			}
 			else{
 				sem_t* semTarea = malloc(sizeof(sem_t));
 				sem_init(semTarea, 0, 0);
-				dictionary_put(semaforosTareas, stringIdtripulante, semTarea);
+				dictionary_put(semaforosTareas, key, semTarea);
+				//log_info(logImongo,"NO ESTA EN EL DIC FIN Y SE QUEDA ESPERANDO");
+				unlock(&mutexSemaforosTareas);
 				sem_wait(semTarea);
+
 			}
-			*/
-			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
+
 
 			char* mensaje = string_from_format("Termino la tarea %s.", avisoTarea->nombreTarea);
 
@@ -216,6 +243,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora(stringIdtripulante, mensaje);
 
+			free(key);
 			free(mensaje);
 			free(stringIdtripulante);
 			free(avisoTarea->nombreTarea);
@@ -514,7 +542,6 @@ void cargarFile(t_file* archivo){
 	archivo->tamanioArchivo = config_get_long_value(config,"SIZE");
 	char** b = config_get_array_value(config,"BLOCKS");
 	archivo->bloques = convertirEnLista(b);
-	archivo->md5_archivo = config_get_string_value(config,"MD5_ARCHIVO");
 
 	config_destroy(config);
 
@@ -600,7 +627,6 @@ void crearFile(t_file* archivo){
 
 	archivo->tamanioArchivo = 0;
 	archivo->bloques = list_create();
-	archivo->md5_archivo = string_new();
 
 	actualizarFile(archivo);
 
@@ -650,11 +676,9 @@ void liberarSuperBloque(){
 void liberarEstructuraFile(t_file* file){
 
 	free(file->caracterLlenado);
-	free(file->md5_archivo);
 	free(file->path);
 	list_destroy(file->bloques);
 	free(file);
-
 }
 
 
