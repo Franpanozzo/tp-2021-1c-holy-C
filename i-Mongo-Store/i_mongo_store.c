@@ -7,14 +7,21 @@ int main(void) {
 
 	oxigeno = malloc(sizeof(t_file));
 	oxigeno->caracterLlenado = "O";
+	oxigeno->tamanioArchivo = 0;
+	oxigeno->bloques = list_create();
+
 	comida = malloc(sizeof(t_file));
 	comida->caracterLlenado = "C";
+	comida->tamanioArchivo = 0;
+	comida->bloques = list_create();
+
 	basura = malloc(sizeof(t_file));
 	basura->caracterLlenado = "B";
+	basura->tamanioArchivo = 0;
+	basura->bloques = list_create();
 
 	sem_init(&sabotajeResuelto, 0, 0);
 	sem_init(&semTarea, 0, 0);
-
 
 	superBloque = malloc(sizeof(t_superBloque));
 
@@ -374,7 +381,7 @@ void seleccionarTarea(t_tarea* tarea){
 				consumirTarea(oxigeno, tarea->parametro);
 			}
 			else{
-				log_error(logImongo, "No se puede consumir el archivo ")
+				log_error(logImongo, "No se puede consumir el archivo %s porque no existe", oxigeno->path);
 			}
 
 			break;
@@ -393,7 +400,14 @@ void seleccionarTarea(t_tarea* tarea){
 
 		case 3:
 		{
-			consumirTarea(comida,tarea->parametro);
+			if(verificarSiExiste(comida->path)){
+
+				consumirTarea(comida, tarea->parametro);
+			}
+			else{
+				log_error(logImongo, "No se puede consumir el archivo %s porque no existe", comida->path);
+			}
+
 			break;
 		}
 
@@ -408,10 +422,19 @@ void seleccionarTarea(t_tarea* tarea){
 
 		case 5:
 		{
-			lock(&basura->mutex);
-			uint32_t cantConsumir = basura->tamanioArchivo;
-			unlock(&basura->mutex);
-			consumirTarea(basura, cantConsumir);
+			if(verificarSiExiste(basura->path)){
+
+				lock(&basura->mutex);
+				uint32_t cantConsumir = basura->tamanioArchivo;
+				unlock(&basura->mutex);
+				consumirTarea(basura, cantConsumir);
+
+				remove(basura->path);
+			}
+			else{
+				log_error(logImongo, "No se puede consumir el archivo %s porque no existe", comida->path);
+			}
+
 			break;
 		}
 
@@ -494,9 +517,22 @@ void crearFileSystemExistente(){
 
 	cargarSuperBloque();
 	cargarBlocks();
-	cargarFile(oxigeno);
-	cargarFile(comida);
-	cargarFile(basura);
+
+	if(verificarSiExiste(oxigeno->path)){
+
+		cargarFile(oxigeno);
+	}
+
+	if(verificarSiExiste(basura->path)){
+
+		cargarFile(basura);
+	}
+
+	if(verificarSiExiste(comida->path)){
+
+		cargarFile(comida);
+	}
+
 
 	if(!verificarSiExiste(pathBitacoras)){
 
@@ -581,9 +617,6 @@ void crearFileSystemDesdeCero(){
 		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
 	}
 
-	crearFile(oxigeno);
-	crearFile(comida);
-	crearFile(basura);
 
 	if(!verificarSiExiste(pathBitacoras)){
 
