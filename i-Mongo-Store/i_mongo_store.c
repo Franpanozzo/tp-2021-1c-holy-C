@@ -87,6 +87,7 @@ void manejarTripulante(int *tripulanteSock) {
 
 void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
+	/*
 	char* armarKey(t_avisoTarea* avisoTarea){
 
 		char* key = string_from_format("%s ID %d NRO AVISO %d",
@@ -96,7 +97,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 		return key;
 	}
-
+	*/
 
 
 	switch(paquete->codigoOperacion){
@@ -171,6 +172,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora(stringIdtripulante, mensaje);
 
+			/*
 			char* key = armarKey(avisoTarea);
 
 			lock(&mutexSemaforosTareas);
@@ -191,6 +193,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 			unlock(&mutexSemaforosTareas);
 
 			free(key);
+			*/
 			free(mensaje);
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
@@ -205,6 +208,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
+			/*
 			char* key = armarKey(avisoTarea);
 
 			lock(&mutexSemaforosTareas);
@@ -225,7 +229,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				sem_wait(semTarea);
 
 			}
-
+			*/
 
 			char* mensaje = string_from_format("Termino la tarea %s.", avisoTarea->nombreTarea);
 
@@ -243,7 +247,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora(stringIdtripulante, mensaje);
 
-			free(key);
+			//free(key);
 			free(mensaje);
 			free(stringIdtripulante);
 			free(avisoTarea->nombreTarea);
@@ -353,20 +357,37 @@ void seleccionarTarea(t_tarea* tarea){
 
 		case 0:
 		{
+			if(!verificarSiExiste(oxigeno->path)){
+				crearFile(oxigeno);
+			}
+
 			generarTarea(oxigeno, tarea->parametro);
+
 			break;
 		}
 
 		case 1:
 		{
 
-			consumirTarea(oxigeno, tarea->parametro);
+			if(verificarSiExiste(oxigeno->path)){
+
+				consumirTarea(oxigeno, tarea->parametro);
+			}
+			else{
+				log_error(logImongo, "No se puede consumir el archivo ")
+			}
+
 			break;
 		}
 
 		case 2:
 		{
+			if(!verificarSiExiste(comida->path)){
+				crearFile(comida);
+			}
+
 			generarTarea(comida, tarea->parametro);
+
 			break;
 		}
 
@@ -378,6 +399,9 @@ void seleccionarTarea(t_tarea* tarea){
 
 		case 4:
 		{
+			if(!verificarSiExiste(basura->path)){
+				crearFile(basura);
+			}
 			generarTarea(basura, tarea->parametro);
 			break;
 		}
