@@ -595,12 +595,14 @@ void arreglarSabotajeBlocksBloqueExtra(t_file* archivo){
 	    uint32_t* elementoActual = list_remove(listaBloques, i);
 
 		bool estaRepetido(uint32_t* elemento) {
-			return elemento == elementoActual;
+			return *elemento == *elementoActual;
 		}
 
 	    int cantRepetidos = list_count_satisfying(listaBloques, (void*) estaRepetido);
 
 	    if(cantRepetidos >= 1) {
+	    	log_info(logImongo, "EL BLOQUE %d ESTA REPETIDO", *elementoActual);
+	    	free(elementoActual);
 	        break;
 	    }
 
