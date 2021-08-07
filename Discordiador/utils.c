@@ -389,7 +389,7 @@ void actualizarEstadoEnRAM(t_tripulante* tripulante){
 	if(leerEstado(tripulante) != EXIT && leerEstado(tripulante) != SABOTAJE) {
 		int miRAMsocket = enviarA(puertoEIPRAM, tripulante, ESTADO_TRIPULANTE);
 		if(!confirmacion(miRAMsocket))
-			log_error(logDiscordiador,"No se pudo actalizar en miRam el estado "
+			log_info(logDiscordiador,"No se pudo actalizar en miRam el estado "
 					"del tripulante %d", tripulante->idTripulante);
 		close(miRAMsocket);
 	}
@@ -549,7 +549,7 @@ void eliminarTripulante(int id){
 	}
 
 	if(tripulanteAeliminar == NULL){
-		log_info(logDiscordiador,"No se encontro al tripulante %d", id);
+		log_error(logDiscordiador,"No se encontro al tripulante %d", id);
 	}
 	else{
 		if(tripulanteAeliminar->idTripulante == leerTripulanteBlocked()){

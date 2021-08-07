@@ -106,6 +106,16 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 	}
 	*/
 
+	/*
+	id
+	semTerminaTarea
+	semEmpiezaTarea
+	*/
+	/*
+	 * Cuando hay un inicio de tarea crea la estructura y la mete en la lista
+	 * Si llega otro inicio se fija si esta el id en la lista, si esta, espera a q termine
+	 * la tarea empezada (se hace post cuando de termina de escribir la finalizacion)
+	*/
 
 	switch(paquete->codigoOperacion){
 
@@ -381,7 +391,7 @@ void seleccionarTarea(t_tarea* tarea){
 				consumirTarea(oxigeno, tarea->parametro);
 			}
 			else{
-				log_error(logImongo, "No se puede consumir el archivo %s porque no existe", oxigeno->path);
+				log_info(logImongo, "No se puede consumir el archivo %s porque no existe", oxigeno->path);
 			}
 
 			break;
@@ -405,7 +415,7 @@ void seleccionarTarea(t_tarea* tarea){
 				consumirTarea(comida, tarea->parametro);
 			}
 			else{
-				log_error(logImongo, "No se puede consumir el archivo %s porque no existe", comida->path);
+				log_info(logImongo, "No se puede consumir el archivo %s porque no existe", comida->path);
 			}
 
 			break;
@@ -432,7 +442,7 @@ void seleccionarTarea(t_tarea* tarea){
 				remove(basura->path);
 			}
 			else{
-				log_error(logImongo, "No se puede consumir el archivo %s porque no existe", comida->path);
+				log_info(logImongo, "No se puede consumir el archivo %s porque no existe", basura->path);
 			}
 
 			break;
@@ -457,7 +467,6 @@ void eliminarBloquesDeBitacoraTripulante(t_config* config){
 	while((*(bloquesQueOcupa + i)) != NULL){
 
 		bloque = atoi(*(bloquesQueOcupa + i));
-		log_info(logImongo,"Los bloques que ocupa la tarea en curso son %d", bloque);
 		consumirBloque(bloque,superBloque->block_size,superBloque->block_size);
 		liberarBloque(bloque);
 		i++;
@@ -490,7 +499,7 @@ void eliminarBitacorasAnteriores(){
 
 		while(verificarSiExiste(pathBitacoraTripulante)){
 
-		log_info(logImongo,"El path de la metadata del tripulante %d es %s",i,pathBitacoraTripulante);
+		//log_info(logImongo,"El path de la metadata del tripulante %d es %s",i,pathBitacoraTripulante);
 
 		 crearConfig(&config,pathBitacoraTripulante);
 

@@ -550,9 +550,6 @@ void arreglarSabotajeBlocksBloqueExtra(t_file* archivo){
 
 	bool noPertenceAlArchivo(uint32_t* bloque){
 
-		log_info(logImongo, "LA CANT DE BLOQUE ES %d "
-				"Y EL BLOQUE QUE SE ESTA COMPARANDO ES %d", cantBloques, *bloque);
-
 		bool result = *bloque >= cantBloques;
 
 		if(!result){
@@ -564,11 +561,51 @@ void arreglarSabotajeBlocksBloqueExtra(t_file* archivo){
 		return result;
 	}
 
+	/*
+	bloqueAsacar
+
+	bool estaRepetido(uint32_t* bloqueDeLista){
+
+		if(*bloqueAcomparar == * bloqueDeLista){
+
+			bloqueAsacar = bloqueDeLista;
+
+			return true;
+		}
+
+		return false;
+	}
+
+
+	if(list_count_satisfying(listaBloques, (void*) estaRepetido) >= 2){
+
+		list_find_any()
+	}
+	*/
+
 	config_destroy(configSB);
 
 	liberarDoblesPunterosAChar(arrayPosiciones);
 
 	bool sigueConsultando = true;
+
+
+	for(int i=0; i < list_size(listaBloques); i++) {
+
+	    uint32_t* elementoActual = list_remove(listaBloques, i);
+
+		bool estaRepetido(uint32_t* elemento) {
+			return elemento == elementoActual;
+		}
+
+	    int cantRepetidos = list_count_satisfying(listaBloques, (void*) estaRepetido);
+
+	    if(cantRepetidos >= 1) {
+	        break;
+	    }
+
+	    list_add_in_index(listaBloques, i, elementoActual);
+	}
 
 	for(uint32_t i=0; i < list_size(listaBloques) && sigueConsultando; i++){
 
