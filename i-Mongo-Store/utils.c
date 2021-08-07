@@ -231,7 +231,7 @@ void sincronizarMemoriaSecundaria(){
 		int flag = msync(memoriaSecundaria,size,MS_SYNC);
 
 		if(flag ==0){
-			log_info(logImongo, "Se sincronizo la memoria con éxito");
+			log_info(logImongo, "Se sincronizo la memoria");
 		}
 		else if(flag == -1){
 			log_error(logImongo, "No se sincronizo bien la memoria");
@@ -432,9 +432,6 @@ t_list* listaCoordenadasSabotaje() {
         coordenadasSabotaje->posX = (uint32_t) atoi(parCoordenadas[0]);
         coordenadasSabotaje->posY = (uint32_t) atoi(parCoordenadas[1]);
 
-        log_info(logImongo, "SE CARGO LA COORDENADA %d|%d A LA LISTA",
-        		coordenadasSabotaje->posX, coordenadasSabotaje->posY);
-
         list_add(listaCoordenadas, coordenadasSabotaje);
 
         liberarDoblesPunterosAChar(parCoordenadas);
@@ -455,7 +452,6 @@ void sabotaje(int signal) {
 
 	proximoPosSabotaje++;
 	if(proximoPosSabotaje == list_size(listaPosicionesSabotaje)){
-		log_info(logImongo, "ENTRO ACA");
 		proximoPosSabotaje = 0;
 	}
 
@@ -592,11 +588,11 @@ void escribirBitacora(char* idTripulante, char* mensaje){
 	lock(&bitacora->mutex);
 
 	uint32_t fragmentacionArchivo = fragmentacion(bitacora->tamanioArchivo);
-	//log_info(logImongo, "La bitacora del tripulante %s tiene una fragmentacion de %d", idTripulante, fragmentacionArchivo);
-/*
+	log_info(logImongo, "La bitacora del tripulante %s tiene una fragmentacion de %d", idTripulante, fragmentacionArchivo);
+
 	log_info(logImongo, "Se va a escribir el mensaje '%s' de %d bytes en "
 			"la bitacora del tripulante %s", mensaje, tamanioMensaje, idTripulante);
-*/
+
 	lock(&mutexBitMap);
 	t_list* bloquesAocupar = buscarBloques(max(0, tamanioMensaje - fragmentacionArchivo));
 	actualizarSuperBloque();
@@ -632,7 +628,7 @@ void escribirBitacora(char* idTripulante, char* mensaje){
 	}
 	else{
 
-		log_error(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA BITACORA ---");
+		log_info(logImongo,"--- NO HAY BLOQUES DISPONIBLES PARA LA BITACORA ---");
 
 	}
 
@@ -662,10 +658,10 @@ void escribirBloque(uint32_t bloque, char* contenido, uint32_t tamanioBloque){
 	memcpy(copiaMemoriaSecundaria + posicionEnBites , contenido, strlen(contenido));
 	unlock(&mutexMemoriaSecundaria);
 
-	/*
+
 	log_info(logImongo, "Escribio '%s' en el bloque %d a partir de la posicion %d",
 			contenido, bloque, tamanioBloque);
-	*/
+
 }
 
 
@@ -691,7 +687,7 @@ t_list* buscarBloques(uint32_t cantBytes){
 
 	int cantBloques = (int) ceil((float) cantBytes / (float) superBloque->block_size);
 
-	log_info(logImongo, "La cant de bloques a ocupar es %d", cantBloques);
+	//log_info(logImongo, "La cant de bloques a ocupar es %d", cantBloques);
 
 	t_list* bloquesAocupar = list_create();
 

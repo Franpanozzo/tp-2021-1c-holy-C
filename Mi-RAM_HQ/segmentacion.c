@@ -579,12 +579,7 @@ void compactarMemoria() {
 
 		int inicioProximoSegmento = lugarLibre->inicio + lugarLibre->bytesAlojados;
 
-		log_info(logMemoria, "EL PRIMER LUGAR LIBRE ARRANCA EN %d - EL INICIO DEL PROX SEG. A BUSCAR ES EN: %d",
-				lugarLibre->inicio, inicioProximoSegmento);
-
 		t_info_segmento* info_segmento = encontrarSegmentoQueArrancaEn(lugarLibre->inicio + lugarLibre->bytesAlojados);
-
-		log_info(logMemoria, "MOVIENDO BLOQUE QUE ARRANCA EN %d HACIA %d", info_segmento->deslazamientoInicial, lugarLibre->inicio);
 
 		info_segmento->deslazamientoInicial = lugarLibre->inicio;
 		lugarLibre->inicio += info_segmento->bytesAlojados;
@@ -594,8 +589,6 @@ void compactarMemoria() {
 
 		if(lugarLibre2 != NULL) //Antes decia "lugarlibre != NULL"
 		{
-			log_info(logMemoria, "SE UNE EL ESPACIO LIBRE QUE TERMINA EN %d CON EL QUE ARRANCA EN %d",
-					lugarLibre->inicio + lugarLibre->bytesAlojados, lugarLibre2->inicio);
 
 		lugarLibre->bytesAlojados += lugarLibre2->bytesAlojados;
 		borrarLugarLibre(lugarLibre2);

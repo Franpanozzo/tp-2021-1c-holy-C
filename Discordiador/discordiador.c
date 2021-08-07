@@ -3,7 +3,7 @@
 int tripulantes;
 int main() {
 	char * path = pathLog();
-	logDiscordiador = iniciarLogger(path,"Discordiador",1);
+	logDiscordiador = iniciarLogger(path,"Discordiador",0);
 	crearConfig(); // Crear config para puerto e IP de Mongo y Ram
 
 
@@ -12,7 +12,6 @@ int main() {
 	iniciarTareasIO();
 
 	sabotaje = malloc(sizeof(t_sabotaje));
-//	sabotaje->tripulanteSabotaje = malloc(sizeof(t_tripulante));
 	sabotaje->tripulanteSabotaje = NULL;
 	sabotaje->haySabotaje = 0;
 
@@ -201,6 +200,7 @@ void hiloTripulante(t_tripulante* tripulante){
 
 			case EXEC:
 
+
 				if(quantumPendiente < 0){
 					log_info(logDiscordiador,"el tripulante %d esta en exec con %d ciclos y posicion %d|%d",
 							tripulante->idTripulante, ciclosExec +
@@ -214,38 +214,39 @@ void hiloTripulante(t_tripulante* tripulante){
 							quantumPendiente);
 				}
 
-				usleep(retardoCiclosCPU);
 				quantumPendiente--;
 
+
+				usleep(retardoCiclosCPU);
+
+				if(distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas) == 0
+											&& avisoTarea == NULL){
+
+					avisoTarea = malloc(sizeof(t_avisoTarea));
+					avisoTarea->idTripulante = tripulante->idTripulante;
+					avisoTarea->nombreTarea = strdup(tripulante->instruccionAejecutar->nombreTarea);
+					avisoTarea->numero = nroAviso;
+					int socketMongo = enviarA(puertoEIPMongo, avisoTarea, INICIO_TAREA);
+					//log_info(logDiscordiador,"El tripulante %d esta enviando el INICIO de la tarea: %s",tripulante->idTripulante, avisoTarea->nombreTarea);
+					close(socketMongo);
+				}
+
 				if(distancia(tripulante->coordenadas, tripulante->instruccionAejecutar->coordenadas) > 0){
+
 					desplazarse(tripulante, tripulante->instruccionAejecutar->coordenadas);
 				}
 				else{
-					if(avisoTarea == NULL){
-						avisoTarea = malloc(sizeof(t_avisoTarea));
-						avisoTarea->idTripulante = tripulante->idTripulante;
-						avisoTarea->nombreTarea = tripulante->instruccionAejecutar->nombreTarea;
-						avisoTarea->numero = nroAviso;
-						log_info(logDiscordiador,"El tripulante %d esta enviando el INICIO de la tarea: %s",tripulante->idTripulante, avisoTarea->nombreTarea);
-						int socketMongo = enviarA(puertoEIPMongo, avisoTarea, INICIO_TAREA);
-						close(socketMongo);
-					}
 					ciclosExec --;
 				}
+
 				if(quantumPendiente == 0 && leerEstado(tripulante) != EXIT){
 					modificarEstado(tripulante, READY);
 				}
+
 				if(ciclosExec <= 0){
 
-					int socketMongo = enviarA(puertoEIPMongo, avisoTarea, FIN_TAREA);
-					log_info(logDiscordiador,"El tripulante %d esta enviando el FIN de la tarea: %s",tripulante->idTripulante, avisoTarea->nombreTarea);
-					close(socketMongo);
-					free(avisoTarea);
-					avisoTarea = NULL;
-					nroAviso ++;
-
 					if(esIO(tripulante->instruccionAejecutar->nombreTarea)){
-						log_info(logDiscordiador,"El tripulante %d esta enviando la TAREA: %s",tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
+						//log_info(logDiscordiador,"El tripulante %d esta enviando la TAREA: %s",tripulante->idTripulante, tripulante->instruccionAejecutar->nombreTarea);
 						int socketMongo = enviarA(puertoEIPMongo, tripulante->instruccionAejecutar, TAREA);
 						close(socketMongo);
 						ciclosBlocked = tripulante->instruccionAejecutar->tiempo;
@@ -257,6 +258,13 @@ void hiloTripulante(t_tripulante* tripulante){
 						recibirProximaTareaDeMiRAM(tripulante);
 						ciclosExec = calculoCiclosExec(tripulante);
 					}
+
+					nroAviso ++;
+					//log_info(logDiscordiador,"El tripulante %d esta enviando el FIN de la tarea: %s",tripulante->idTripulante, avisoTarea->nombreTarea);
+					int socketMongo = enviarA(puertoEIPMongo, avisoTarea, FIN_TAREA);
+					close(socketMongo);
+					free(avisoTarea);
+					avisoTarea = NULL;
 				}
 				sem_post(&tripulante->semaforoFin);
 				sem_wait(&tripulante->semaforoInicio);
