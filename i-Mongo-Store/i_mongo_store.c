@@ -7,10 +7,18 @@ int main(void) {
 
 	oxigeno = malloc(sizeof(t_file));
 	oxigeno->caracterLlenado = "O";
+	oxigeno->tamanioArchivo = 0;
+	oxigeno->bloques = list_create();
+
 	comida = malloc(sizeof(t_file));
 	comida->caracterLlenado = "C";
+	comida->tamanioArchivo = 0;
+	comida->bloques = list_create();
+
 	basura = malloc(sizeof(t_file));
 	basura->caracterLlenado = "B";
+	basura->tamanioArchivo = 0;
+	basura->bloques = list_create();
 
 	sem_init(&sabotajeResuelto, 0, 0);
 	sem_init(&semTarea, 0, 0);
@@ -87,6 +95,7 @@ void manejarTripulante(int *tripulanteSock) {
 
 void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
+	/*
 	char* armarKey(t_avisoTarea* avisoTarea){
 
 		char* key = string_from_format("%s ID %d NRO AVISO %d",
@@ -96,7 +105,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 		return key;
 	}
-
+*/
 
 
 	switch(paquete->codigoOperacion){
@@ -171,6 +180,8 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora(stringIdtripulante, mensaje);
 
+			/*
+
 			char* key = armarKey(avisoTarea);
 
 			lock(&mutexSemaforosTareas);
@@ -191,6 +202,8 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 			unlock(&mutexSemaforosTareas);
 
 			free(key);
+			*/
+
 			free(mensaje);
 			free(avisoTarea->nombreTarea);
 			free(avisoTarea);
@@ -205,6 +218,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			log_info(logImongo,"Se recibio el fin de tarea del tripulante de ID %d", avisoTarea->idTripulante);
 
+			/*
 			char* key = armarKey(avisoTarea);
 
 			lock(&mutexSemaforosTareas);
@@ -225,7 +239,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 				sem_wait(semTarea);
 
 			}
-
+			*/
 
 			char* mensaje = string_from_format("Termino la tarea %s.", avisoTarea->nombreTarea);
 
@@ -243,7 +257,7 @@ void deserializarSegun(t_paquete* paquete, int* tripulanteSock){
 
 			escribirBitacora(stringIdtripulante, mensaje);
 
-			free(key);
+			//free(key);
 			free(mensaje);
 			free(stringIdtripulante);
 			free(avisoTarea->nombreTarea);
@@ -353,41 +367,75 @@ void seleccionarTarea(t_tarea* tarea){
 
 		case 0:
 		{
+			if(!verificarSiExiste(oxigeno->path)){
+				crearFile(oxigeno);
+			}
+
 			generarTarea(oxigeno, tarea->parametro);
+
 			break;
 		}
 
 		case 1:
 		{
+			if(verificarSiExiste(oxigeno->path)){
+				consumirTarea(oxigeno, tarea->parametro);
+			}
+			else{
+				log_error(logImongo, "No existe el archivo %s", oxigeno->path);
+			}
 
-			consumirTarea(oxigeno, tarea->parametro);
 			break;
 		}
 
 		case 2:
 		{
+			if(!verificarSiExiste(comida->path)){
+				crearFile(comida);
+			}
+
 			generarTarea(comida, tarea->parametro);
 			break;
 		}
 
 		case 3:
 		{
-			consumirTarea(comida,tarea->parametro);
+			if(verificarSiExiste(comida->path)){
+				consumirTarea(comida, tarea->parametro);
+			}
+			else{
+				log_error(logImongo, "No existe el archivo %s", comida->path);
+			}
+
 			break;
 		}
 
 		case 4:
 		{
+			if(!verificarSiExiste(basura->path)){
+				crearFile(basura);
+			}
+
 			generarTarea(basura, tarea->parametro);
+
 			break;
 		}
 
 		case 5:
 		{
-			lock(&basura->mutex);
-			uint32_t cantConsumir = basura->tamanioArchivo;
-			unlock(&basura->mutex);
-			consumirTarea(basura, cantConsumir);
+			if(verificarSiExiste(basura->path)){
+
+				lock(&basura->mutex);
+				uint32_t cantConsumir = basura->tamanioArchivo;
+				unlock(&basura->mutex);
+				consumirTarea(basura, cantConsumir);
+
+				remove(comida->path);
+			}
+			else{
+				log_error(logImongo, "No existe el archivo %s", basura->path);
+			}
+
 			break;
 		}
 
@@ -423,7 +471,6 @@ void eliminarBloquesDeBitacoraTripulante(t_config* config){
 	for(int j=0; j<i; j++){
 
 		free(*(bloquesQueOcupa + j));
-
 	}
 
 	free(bloquesQueOcupa);
@@ -470,9 +517,15 @@ void crearFileSystemExistente(){
 
 	cargarSuperBloque();
 	cargarBlocks();
-	cargarFile(oxigeno);
-	cargarFile(comida);
-	cargarFile(basura);
+
+	if(verificarSiExiste(oxigeno->path))
+		cargarFile(oxigeno);
+
+	if(verificarSiExiste(comida->path))
+		cargarFile(comida);
+
+	if(verificarSiExiste(basura->path))
+		cargarFile(basura);
 
 	if(!verificarSiExiste(pathBitacoras)){
 
@@ -557,10 +610,6 @@ void crearFileSystemDesdeCero(){
 		log_info(logImongo, "Hubo un error al crear el directorio %s", pathFiles);
 	}
 
-	crearFile(oxigeno);
-	crearFile(comida);
-	crearFile(basura);
-
 	if(!verificarSiExiste(pathBitacoras)){
 
 		mkdir(pathBitacoras,0777);
@@ -624,9 +673,6 @@ void crearFile(t_file* archivo){
 
 	FILE* fd = fopen(archivo->path,"wb");
 	fclose(fd);
-
-	archivo->tamanioArchivo = 0;
-	archivo->bloques = list_create();
 
 	actualizarFile(archivo);
 

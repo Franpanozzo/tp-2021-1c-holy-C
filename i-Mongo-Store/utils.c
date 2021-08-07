@@ -433,9 +433,6 @@ t_list* listaCoordenadasSabotaje() {
         coordenadasSabotaje->posX = (uint32_t) atoi(parCoordenadas[0]);
         coordenadasSabotaje->posY = (uint32_t) atoi(parCoordenadas[1]);
 
-        log_info(logImongo, "SE CARGO LA COORDENADA %d|%d A LA LISTA",
-        		coordenadasSabotaje->posX, coordenadasSabotaje->posY);
-
         list_add(listaCoordenadas, coordenadasSabotaje);
 
         liberarDoblesPunterosAChar(parCoordenadas);
@@ -456,7 +453,6 @@ void sabotaje(int signal) {
 
 	proximoPosSabotaje++;
 	if(proximoPosSabotaje == list_size(listaPosicionesSabotaje)){
-		log_info(logImongo, "ENTRO ACA");
 		proximoPosSabotaje = 0;
 	}
 
@@ -474,6 +470,7 @@ void sabotaje(int signal) {
 void generarTarea(t_file* archivo, uint32_t cantidad){
 
 	lock(&archivo->mutex);
+
 	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);//SACA LA FRAGMENTACION DE ACUERDO AL ARCHIVO
 	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacionArchivo);
 	uint32_t bloque = 0;
@@ -528,57 +525,64 @@ void generarTarea(t_file* archivo, uint32_t cantidad){
 
 void consumirTarea(t_file* archivo, uint32_t cantidad){
 
-	lock(&archivo->mutex);
 
-	cantidad = min(cantidad, archivo->tamanioArchivo);// FIJA LA VARIABLE CANTIDAD COMO EL MINIMO ENTRE LO QUE HAY Y LO QUE HAY Q CONSUMIR, ES DECIR, SI HAY Q CONSUMIR 7 Y HAY 5, SE CONSUMEN 5
-	uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);// GUARDAMOS LA FRAGMENTACIÓN A CUANDO QUEREMOS CONSUMIR
-	log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacionArchivo);
+	if(verificarSiExiste(archivo->path)){
 
-	archivo->tamanioArchivo -= cantidad;//LE RESTAMOS AL ARCHIVO LA CANTIDAD QUE SE VA A CONSUMIR
-	log_info(logImongo, "Se consumio %d bytes del archivo %s y paso a tener un tamanio de %d",
-			cantidad, archivo->path, archivo->tamanioArchivo);
+		lock(&archivo->mutex);
 
-	unlock(&mutexBitMap);
+		cantidad = min(cantidad, archivo->tamanioArchivo);// FIJA LA VARIABLE CANTIDAD COMO EL MINIMO ENTRE LO QUE HAY Y LO QUE HAY Q CONSUMIR, ES DECIR, SI HAY Q CONSUMIR 7 Y HAY 5, SE CONSUMEN 5
+		uint32_t fragmentacionArchivo = fragmentacion(archivo->tamanioArchivo);// GUARDAMOS LA FRAGMENTACIÓN A CUANDO QUEREMOS CONSUMIR
+		log_info(logImongo, "El archivo %s tiene una fragmentacion de %d", archivo->path, fragmentacionArchivo);
 
-	if(fragmentacionArchivo > 0){ // SI LA FRAGMENTACION ES MAYOR A 0
+		archivo->tamanioArchivo -= cantidad;//LE RESTAMOS AL ARCHIVO LA CANTIDAD QUE SE VA A CONSUMIR
+		log_info(logImongo, "Se consumio %d bytes del archivo %s y paso a tener un tamanio de %d",
+				cantidad, archivo->path, archivo->tamanioArchivo);
 
-		uint32_t* bloqueFragmentacion = (uint32_t*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
-		uint32_t tamanioUltBloque = superBloque->block_size - fragmentacionArchivo; // GUARDO EN UNA VARIABLE EL TAMAÑO DEL ÚLTIMO BLOQUE
-		consumirBloque(*bloqueFragmentacion, min(cantidad, tamanioUltBloque), tamanioUltBloque);//  SE CONSUME DEL ULTIMO BLOQUE EL MINIMO ENTRE LA CANTIDAD A CONSUMIR Y EL TAMANIO QUE HAY
-		if(cantidad >= tamanioUltBloque){ //SI LA CANTIDAD A CONSUMIR ES MAYOR O IGUAL A LO QUE HABIA EN EL ULTIMO BLOQUE
-			cantidad -= tamanioUltBloque; //LE RESTO LO QUE CONSUMI DEL ULTIMO BLOQUE A LO QUE ME QUEDA POR CONSUMIR
-			liberarBloque(*bloqueFragmentacion);//LIBERO BLOQUE EN EL BITMAP
-			free(bloqueFragmentacion);
+		unlock(&mutexBitMap);
+
+		if(fragmentacionArchivo > 0){ // SI LA FRAGMENTACION ES MAYOR A 0
+
+			uint32_t* bloqueFragmentacion = (uint32_t*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);
+			uint32_t tamanioUltBloque = superBloque->block_size - fragmentacionArchivo; // GUARDO EN UNA VARIABLE EL TAMAÑO DEL ÚLTIMO BLOQUE
+			consumirBloque(*bloqueFragmentacion, min(cantidad, tamanioUltBloque), tamanioUltBloque);//  SE CONSUME DEL ULTIMO BLOQUE EL MINIMO ENTRE LA CANTIDAD A CONSUMIR Y EL TAMANIO QUE HAY
+			if(cantidad >= tamanioUltBloque){ //SI LA CANTIDAD A CONSUMIR ES MAYOR O IGUAL A LO QUE HABIA EN EL ULTIMO BLOQUE
+				cantidad -= tamanioUltBloque; //LE RESTO LO QUE CONSUMI DEL ULTIMO BLOQUE A LO QUE ME QUEDA POR CONSUMIR
+				liberarBloque(*bloqueFragmentacion);//LIBERO BLOQUE EN EL BITMAP
+				free(bloqueFragmentacion);
+			}
+			else{
+				cantidad = 0;// ESTE CASO ES CUANDO LA FRAGMENTACION ALCANZO A CONSUMIR, NO QUEDA MAS CANATIDAD POR CONSUMIR
+				list_add(archivo->bloques, bloqueFragmentacion);
+			}
 		}
-		else{
-			cantidad = 0;// ESTE CASO ES CUANDO LA FRAGMENTACION ALCANZO A CONSUMIR, NO QUEDA MAS CANATIDAD POR CONSUMIR
-			list_add(archivo->bloques, bloqueFragmentacion);
+
+		while(cantidad > 0){//MIENTRAS HAYA CARACTERES POR CONSUMIR
+
+			uint32_t* bloque = (uint32_t*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);// SE AGARRA EL BLOQUE QUE ESTA EN LA ULTIMA POSICION
+			consumirBloque(*bloque, min(cantidad, superBloque->block_size), superBloque->block_size);// SE CONSUME SIEMPRE LA CANTIDAD DEL BLOQUE COMO MAXIMO
+			if(cantidad >= superBloque->block_size){//SI LA CANTIDAD A CONSUMIR ES MAYOR A LA DEL BLOQUE
+				cantidad -= superBloque->block_size; // LE RESTO EL TAMAÑO DEL BLOQUE
+				liberarBloque(*bloque);
+				free(bloque);
+
+			}
+			else{
+				cantidad = 0;//SI SOLO ES LA FRAGMENTACION INTERNA LO QUE SE CONSUMIO, NO SE PUEDE CONSUMIR MAS
+				list_add(archivo->bloques, bloque);// COMO SE SACO EL ULTIMO BLOQUE, SE VUELVE A AGREGAR EN LA ESTRUCTURA ADMINISTRATIVA
+			}
 		}
+
+		actualizarSuperBloque();// SE ACTUALIZA SUPERBLOQUE
+
+		unlock(&mutexBitMap);
+
+		actualizarFile(archivo);//SE ACTUALIZA LA METADATA
+
+		unlock(&archivo->mutex);
 	}
-
-	while(cantidad > 0){//MIENTRAS HAYA CARACTERES POR CONSUMIR
-
-		uint32_t* bloque = (uint32_t*) list_remove(archivo->bloques, list_size(archivo->bloques) - 1);// SE AGARRA EL BLOQUE QUE ESTA EN LA ULTIMA POSICION
-		consumirBloque(*bloque, min(cantidad, superBloque->block_size), superBloque->block_size);// SE CONSUME SIEMPRE LA CANTIDAD DEL BLOQUE COMO MAXIMO
-		if(cantidad >= superBloque->block_size){//SI LA CANTIDAD A CONSUMIR ES MAYOR A LA DEL BLOQUE
-			cantidad -= superBloque->block_size; // LE RESTO EL TAMAÑO DEL BLOQUE
-			liberarBloque(*bloque);
-			free(bloque);
-
-		}
-		else{
-			cantidad = 0;//SI SOLO ES LA FRAGMENTACION INTERNA LO QUE SE CONSUMIO, NO SE PUEDE CONSUMIR MAS
-			list_add(archivo->bloques, bloque);// COMO SE SACO EL ULTIMO BLOQUE, SE VUELVE A AGREGAR EN LA ESTRUCTURA ADMINISTRATIVA
-		}
+	else{
+		log_error(logImongo, "No existe el archivo %s", archivo->path);
 	}
-
-	actualizarSuperBloque();// SE ACTUALIZA SUPERBLOQUE
-
-	unlock(&mutexBitMap);
-
-	actualizarFile(archivo);//SE ACTUALIZA LA METADATA
-
-	unlock(&archivo->mutex);
 }
 
 

@@ -14,9 +14,15 @@ void fsck(){
 		log_info(logImongo,"---- NO SE DETECTO NINGUN SABOTAJE EN EL SUPER BLOQUE ----");
 	}
 
-	sabotajesFile(oxigeno);
-	sabotajesFile(comida);
-	sabotajesFile(basura);
+	if(!verificarSiExiste(oxigeno->path)){
+		sabotajesFile(oxigeno);
+	}
+	if(!verificarSiExiste(comida->path)){
+		sabotajesFile(comida);
+	}
+	if(!verificarSiExiste(basura->path)){
+		sabotajesFile(basura);
+	}
 
 	modificarHaySabotaje(false);
 
@@ -25,34 +31,6 @@ void fsck(){
 		sem_post(&sabotajeResuelto);
 	}
 }
-
-/*
- * 1.FIJARSE SI HAY UN BLOQUE FANTASMA, NO PUEDO HACER ANTES EL BITMAP NI
- *
- * ME FIJO SI EN EL BLOCK.IMS ESTAN TODOS LOS BLOQUES ESCRITOS CON EL
- * CARACTER DE LLENADO.
- *
- * AHI YA SE QUE TODO_ EL RESTO DE LAS COSAS ESTAN BIEN, LO UNICO QUE HAY Q HACER SE SACARLO DE LA LISTA
- *
- *
- * 2.FIJARSE SI HAY ALGUN BLOQUE CON UN TAMANIO IRREAL EXTRA
- *
- * ME FIJO CON EL BLOCKS DEL SUPER BLOQUE. SOLO NECESITA QUE SE HAYA DETECTADO
- * SI HUBO O NO SABOTAJE EN EL BLOCKS DEL SUPER BLOQUE ANTES.
- *
- * LA RESOLUCION TAMBIEN TENGO QUE VER EL BITMAP Y LOS BLOQUES QUE OCUPAN LOS OTROS
- * PARA SABER SI ME SACARO UN BLOQUE Q YO TENIA Y VOLVERLO A AGREGAR Y TAMBIEN
- * TENGO QUE VER EL SIZE PARA VER SI ME LO SACARON EL BLOQUE O LOS QUE TENGO ESTAN BIEN
- *
- *
- * 3.FIJARSE SI ME ELIMINARON UN BLOQUE
- *
- *
- *
- */
-
-
-
 
 
 void sabotajesFile(t_file* archivo){
