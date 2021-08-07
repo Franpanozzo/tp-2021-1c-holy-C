@@ -14,9 +14,17 @@ void fsck(){
 		log_info(logImongo,"---- NO SE DETECTO NINGUN SABOTAJE EN EL SUPER BLOQUE ----");
 	}
 
-	sabotajesFile(oxigeno);
-	sabotajesFile(comida);
-	sabotajesFile(basura);
+	if(verificarSiExiste(oxigeno->path)){
+		sabotajesFile(oxigeno);
+	}
+
+	if(verificarSiExiste(comida->path)){
+		sabotajesFile(comida);
+	}
+
+	if(verificarSiExiste(basura->path)){
+		sabotajesFile(basura);
+	}
 
 	modificarHaySabotaje(false);
 

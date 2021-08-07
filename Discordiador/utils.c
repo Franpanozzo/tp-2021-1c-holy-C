@@ -428,11 +428,11 @@ void recibirBitacora(int server_socket, uint32_t idTripulante){
 	if(paqueteRecibido->codigoOperacion == STRING){
 
 		char* bitacora = deserializarString(paqueteRecibido);
-		log_info(logDiscordiador,"La bitacora del tripulante %d es:\n%s", idTripulante, bitacora);
+		printf("La bitacora del tripulante %d es:\n%s", idTripulante, bitacora);
 		free(bitacora);
 	}
 	else{
-		log_error(logDiscordiador,"No se encontro la bitacora del tripulante %d", idTripulante);
+		printf("No se encontro la bitacora del tripulante %d", idTripulante);
 	}
 
 	eliminarPaquete(paqueteRecibido);
@@ -510,12 +510,12 @@ void listarTripulantes(){
 	}
 
  	void imprimirTripulante(t_tripulante* tripulante){
-		log_info(logDiscordiador,"Tripulante: %d    Patota: %d    Estado: %s",
+ 		printf("Tripulante: %d    Patota: %d    Estado: %s",
 				tripulante->idTripulante, tripulante->idPatota, traducirEstado(leerEstado(tripulante)));
 	}
 
  	char* hora = temporal_get_string_time("%d-%m-%y %H:%M:%S");
-	log_info(logDiscordiador,"Estado de la nave: %s", hora);
+ 	printf("Estado de la nave: %s", hora);
 	free(hora);
 
 	agregarAlista(listaNew);

@@ -15,7 +15,7 @@ void leerConsola(){
 
 		if(strcmp(comandoYparametros[cursor], "INICIAR_PATOTA") == 0){
 
-			log_info(logDiscordiador, "Se ingreso el comando iniciar patota");
+			printf("Se ingreso el comando iniciar patota");
 			cursor ++;
 
 			uint32_t cantidadTripulantes = procesarCantidadTripulantes(comandoYparametros, &cursor);
@@ -32,17 +32,17 @@ void leerConsola(){
 		else if (strcmp(comandoYparametros[cursor], "INICIAR_PLANIFICACION") == 0){
 			if(leerPlanificacion() == PAUSADA){
 				modificarPlanificacion(CORRIENDO);
-				log_info(logDiscordiador, "Se inicio la planificacion");
+				printf("Se inicio la planificacion");
 				sem_post(&semPlanificacion);
 			}
 			else{
-				log_info(logDiscordiador, "La planificacion ya esta iniciada");
+				printf("La planificacion ya esta iniciada");
 			}
 		}
 		else if (strcmp(comandoYparametros[cursor], "PAUSAR_PLANIFICACION") == 0){
 			if(leerPlanificacion() == CORRIENDO){
 				modificarPlanificacion(PAUSADA);
-				log_info(logDiscordiador, "Se pauso la planificacion");
+				printf("Se pauso la planificacion");
 				sem_wait(&semPlanificacion);
 			}
 			else{
@@ -54,14 +54,14 @@ void leerConsola(){
 			listarTripulantes();
 		}
 		else if (strcmp(comandoYparametros[cursor], "ELIMINAR_TRIPULANTE") == 0){
-			log_info(logDiscordiador, "Se ingreso el comando ELIMINAR_TRIPULANTE");
+			printf("Se ingreso el comando ELIMINAR_TRIPULANTE");
 			cursor ++;
 			uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
 			eliminarTripulante(idTripulante);
 
 		}
 		else if (strcmp(comandoYparametros[cursor], "SABOTAJE") == 0){
-			log_info(logDiscordiador, "Se ingreso el comando SABOTAJE");
+			printf("Se ingreso el comando SABOTAJE");
 			cursor ++;
 			sabotaje->coordenadas.posX = 6;
 			sabotaje->coordenadas.posY = 6;
@@ -69,7 +69,7 @@ void leerConsola(){
 		}
 		else if(strcmp(comandoYparametros[cursor], "OBTENER_BITACORA") == 0){
 
-			log_info(logDiscordiador, "Se ingreso el comando OBTENER_BITACORA");
+			printf("Se ingreso el comando OBTENER_BITACORA");
 			cursor ++;
 			uint32_t idTripulante = procesarCantidadTripulantes(comandoYparametros, &cursor);
 			int socketMongo = enviarA(puertoEIPMongo, &idTripulante, OBTENER_BITACORA);
@@ -77,7 +77,7 @@ void leerConsola(){
 			close(socketMongo);
 		}
 		else{
-			log_error(logDiscordiador, "\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
+			printf("\n No se reconoce el comando %s\n", comandoYparametros[cursor]);
 		}
 		liberarStringSplit(comandoYparametros);
 		free(leido);
