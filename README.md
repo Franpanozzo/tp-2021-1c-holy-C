@@ -1,1 +1,3 @@
-# tp-2021-1c-holy-C
+# A-MongOS Trabajo Práctico 2021-1C holy-C
+
+A-MongOS es un proyecto de Sistemas Operativos, en el que aprendimos a hacer una biblioteca compartida, crear un protocolo de comunicación, administrar la memoria para evitar pérdidas de memoria, utilizandose conceptos de Memoria Ram con memoria virtual como paginación y segmentación, así como la compactación de memoria y los conceptos de fragmentación interna y externa. Por otro lado, la sincronización de hilos se implementa utilizando algortimos de planificacion de corto plazo como Round Robin y FIFO, y finalmente una implementación de un File System para poder persistir la data.
